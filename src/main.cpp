@@ -32,7 +32,6 @@ BleManager g_remoteControls;
 Animation g_animation;
 LuaInterface g_lua;
 TaskHandle_t g_secondCore;
-TaskHandle_t g_firstCore;
 EditMode g_editMode;
 
 void second_loop(void*);
@@ -114,6 +113,7 @@ void setup() {
       delay(1000);
     }
   }
+  #ifdef ENABLE_HUB75_PANEL
   Devices::CalculateMemmoryUsage(); 
   if (!DMADisplay::Start()){
     OledScreen::CriticalFail("Failed to initialize DMA display!");
@@ -123,6 +123,7 @@ void setup() {
     for(;;){}
   }
   Logger::Info("DMA display initialized!");
+  #endif 
 
   Devices::CalculateMemmoryUsage(); 
   if (!g_lua.LoadFile("/init.lua")){
@@ -152,8 +153,9 @@ void setup() {
   g_frameRepo.displayFFATInfo();
   Serial.printf("Running upon %d\n", xPortGetCoreID());
   
+  #ifndef SINGLE_CORE_RUN
   xTaskCreatePinnedToCore(second_loop, "second loop", 10000, NULL, ( 2 | portPRIVILEGE_BIT ), &g_secondCore, 0);
-
+  #endif
   Devices::CalculateMemmoryUsage();  
   Devices::BuzzerTone(880);
   delay(100);
@@ -164,7 +166,7 @@ void setup() {
 }
 
 void second_loop(void*){
-  
+  #ifndef SINGLE_CORE_RUN
   for( ;; )
   { 
     uint32_t st = millis();
@@ -185,6 +187,7 @@ void second_loop(void*){
     }
     vTaskDelay(3);
   }
+  #endif
 }
 
 
@@ -205,5 +208,13 @@ void loop() {
   g_remoteControls.update();
   g_remoteControls.updateButtons();
   g_lua.CallFunctionT("onLoop", Devices::getDeltaTime());
+  #ifdef SINGLE_CORE_RUN
+  g_animation.Update(g_frameRepo.takeFile());
+  g_frameRepo.freeFile();
+  g_leds.Update();
+  if (g_leds.IsManaged()){
+    g_leds.Display();
+  }
+  #endif
   Devices::EndFrame();  
 }

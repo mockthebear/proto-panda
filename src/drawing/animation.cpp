@@ -9,8 +9,10 @@
 #include "FS.h"
 #include "SPIFFS.h"
 
-
 unsigned char Animation::buffer[FILE_SIZE];
+
+#ifdef ENABLE_HUB75_PANEL
+
 
 
 
@@ -230,7 +232,7 @@ void Animation::DrawFrame(File *file, int i){
 
         DMADisplay::Display->color565to888(color, r, g, b);
 
-        if (m_shader == 1 || (r == 60 && b == 120 && g == 180)){
+        if (m_shader == 1 || (r == 57 && g == 121 && b == 181)){
             float gray = (r+g+b)/3.0f;
             hsv_to_rgb(  (((frameId+x)%64) / 64.0f) * 255, 255, gray, r, g, b);
         }
@@ -379,3 +381,4 @@ void Animation::SetAnimation(int duration, std::vector<int> frames, int repeatTi
 }
 
 
+#endif

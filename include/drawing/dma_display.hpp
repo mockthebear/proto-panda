@@ -1,5 +1,6 @@
 #pragma once
 #include "config.hpp"
+#ifdef ENABLE_HUB75_PANEL
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 
 class MatrixPanel_I2S_DMA_2 : public MatrixPanel_I2S_DMA{
@@ -34,3 +35,4 @@ class DMADisplay{
 
 
 
+#endif

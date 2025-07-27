@@ -2,7 +2,7 @@
 /*
     Avoid changing this vile, change the config.hpp instead if you need custom configuration
 */
-#define PANDA_VERSION "1.1.6"
+#define PANDA_VERSION "1.1.7"
 /*
     Pin to enable the buck converter.
     With this pin on HIGH the buck converter will start regulating the USB/Battery input
@@ -10,7 +10,10 @@
 */
 #define PIN_ENABLE_REGULATOR 13
 #define BUILT_IN_POWER_MODE POWER_MODE_REGULATOR_PD
-
+/*
+    Run all tasks on a single core. This can help leave the BLE to have a dedicated core and this will avoid crashes related to BLE on crowded areas.
+*/
+//#define SINGLE_CORE_RUN 1
 /*
     This pin is the pin where the input will be read from the voltage divider.
     The resistors are R9 and R8 (3k and 10k)
@@ -86,7 +89,7 @@
 #define MAX_LED_GROUPS 16
 
 /*
-    
+    Buzzer
 */
 #define USE_BUZZER 1
 #define BUZZER_PIN 40
@@ -111,9 +114,11 @@ Servos
 // #define USE_SERVO
 #define SERVO_COUNT 4
 
+
 /*
     DMA display, or actual display
 */
+#define ENABLE_HUB75_PANEL 1
 #define PANEL_WIDTH 64      // Number of pixels wide of each INDIVIDUAL panel module. 
 #define PANEL_HEIGHT 32     // Number of pixels tall of each INDIVIDUAL panel module.
 #define PANEL_CHAIN 2      // Total number of panels chained one to another

@@ -1,5 +1,6 @@
 #include "drawing/dma_display.hpp"
 
+#ifdef ENABLE_HUB75_PANEL
 
 MatrixPanel_I2S_DMA_2 *DMADisplay::Display = nullptr;
 
@@ -69,3 +70,5 @@ void DMADisplay::DrawTestScreen(){
     }
     DMADisplay::Display->flipDMABuffer();
 }
+
+#endif

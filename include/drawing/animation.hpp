@@ -6,6 +6,19 @@
 #include <FS.h>
 #include "config.hpp"
 
+
+enum ColorMode{
+    COLOR_MODE_RGB,
+    COLOR_MODE_RBG,
+    COLOR_MODE_GRB,
+    COLOR_MODE_GBR,
+    COLOR_MODE_BRG,
+    COLOR_MODE_BGR,
+    
+};
+
+#ifdef ENABLE_HUB75_PANEL
+
 enum AnimationFrameAction{
     ANIMATION_NO_CHANGE,
     ANIMATION_FRAME_CHANGED,
@@ -31,15 +44,7 @@ class AnimationSequence{
     
 };
 
-enum ColorMode{
-    COLOR_MODE_RGB,
-    COLOR_MODE_RBG,
-    COLOR_MODE_GRB,
-    COLOR_MODE_GBR,
-    COLOR_MODE_BRG,
-    COLOR_MODE_BGR,
-    
-};
+
 
 class Animation{
     public:
@@ -120,3 +125,46 @@ class Animation{
 
 
 extern Animation g_animation;
+#else
+class Animation{
+    public:
+        Animation(){};
+
+        void Update(File *file){}
+
+        void SetAnimation(int duration, std::vector<int> frames, int repeatTimes, bool dropAll, int externalStorageId=-1){}
+        void SetInterruptAnimation(int duration, std::vector<int> frames){}
+        void SetInterruptPin(int pin){       }
+        void DrawFrame(File *file, int i){}
+        void DrawCurrentFrame(File *file){}
+
+        bool PopAnimation(){return false;}
+        void MakeFlip(){}
+        void SetShader(int id){}
+
+        void setColorMode(ColorMode mode){
+           
+        };
+
+        bool needFlipScreen(){
+            return 0;
+        };
+        void setManaged(bool v){}
+        bool isManaged(){
+            return 0;
+        }
+        int getCurrentFace(){
+            return 0;
+        }
+
+        int getCurrentAnimationStorage(){ return 0;}
+        float getFps(){ return 0; }
+        int getAnimationStackSize(){ return 0; }
+
+        void setRainbowShader(bool enabled){}
+        static unsigned char buffer[FILE_SIZE];
+        uint32_t getDrawDuration() { return 0;};
+        uint32_t getLoadDuration() { return 0;};
+};
+extern Animation g_animation;
+#endif

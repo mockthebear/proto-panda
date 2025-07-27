@@ -4,16 +4,16 @@
 #include "tools/sensors.hpp"
 #include "tools/oledscreen.hpp"
 #include "tools/storage.hpp"
-#include "drawing/dma_display.hpp"
-#include "drawing/framerepository.hpp"
 #include "drawing/animation.hpp"
 #include "drawing/ledstrip.hpp"
 #include "ble_client.hpp"
-
+#include "drawing/dma_display.hpp"
+#include "soc/rtc_cntl_reg.h"
+#include "soc/soc.h"
 #include <FFat.h>
+#include "lua/luafunctions/drawingfunctions.hpp"
 
-extern FrameRepository g_frameRepo;
-extern Animation g_animation;
+
 extern LedStrip g_leds;
 
 
@@ -21,45 +21,6 @@ static PersistentDictionary dict;
 
 bool LuaInterface::HaltIfError = true;
 std::string LuaInterface::lastError;
-
-void FlipScreen()
-{
-  g_animation.MakeFlip();
-}
-
-bool StartPanels()
-{
-  return g_frameRepo.Begin() && DMADisplay::Start(4);
-}
-
-
-int ClearScreen()
-{
-  DMADisplay::Display->clearScreen();
-  return 0;
-}
-
-int GetOffsetByName(std::string aliasName)
-{
-  return g_frameRepo.getOffsetByName(aliasName);
-}
-
-int GetFrameCountByName(std::string aliasName)
-{
-  return g_frameRepo.getFrameCountByName(aliasName);
-}
-
-int DrawFace(int i)
-{
-  g_animation.DrawFrame(g_frameRepo.takeFile(), i);
-  g_frameRepo.freeFile();
-  return 0;
-}
-void DrawCurrentFrame()
-{
-  g_animation.DrawCurrentFrame(g_frameRepo.takeFile());
-  g_frameRepo.freeFile();
-}
 
 int getInternalButtonStatus()
 {
@@ -199,102 +160,13 @@ void restart() {
   esp_restart();
 }
 
+
 void setBrownoutDetection(bool enable) {
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, enable ? 1 : 0);
 }
 
 int getResetReason() {
   return (int)esp_reset_reason();
-}
-void setPanelBrightness(uint8_t bright)
-{
-  DMADisplay::Display->setBrightness(bright);
-  DMADisplay::Display->setBrightnessExt(bright);
-  return;
-}
-
-uint8_t getPanelBrightness()
-{
-  return DMADisplay::Display->getBrightnessExt();
-}
-
-
-
-
-void gentlySetPanelBrightness(uint8_t bright, uint8_t rate)
-{
-  Devices::SetGentlyBrightness(bright, rate);
-  return;
-}
-
-
-bool popPanelAnimation()
-{
-  return g_animation.PopAnimation();
-}
-
-void setColorMode(int mode){
-  g_animation.setColorMode((ColorMode)mode);
-}
-
-
-void DrawPixels(std::vector<Pixel> pixels)
-{
-  DMADisplay::Display->startWrite();
-  for (auto &it : pixels ){
-    DMADisplay::Display->updateMatrixDMABuffer_2(it.x, it.y, it.r, it.g, it.b);
-  }
-  DMADisplay::Display->endWrite();
-}
-
-
-void DrawPixel(int16_t x, int16_t y, uint16_t color)
-{
-  DMADisplay::Display->drawPixel(x, y, color);
-}
-
-void DrawChar(int16_t x, int16_t y, uint8_t c, uint16_t color, uint16_t bg, uint8_t size)
-{
-  DMADisplay::Display->drawChar(x, y, c, color, bg, size);
-}
-
-
-void DrawFillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
-{
-  DMADisplay::Display->fillRect(x, y, w, h, color);
-}
-
-void DrawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
-{
-  DMADisplay::Display->drawRect(x, y, w, h, color);
-}
-
-int DrawLine(int16_t x, int16_t y, int16_t x1, int16_t x2, uint16_t color)
-{
-  DMADisplay::Display->drawLine(x, y, x1, x2, color);
-  return 0;
-}
-
-int DrawCircle(int16_t x, int16_t y, int16_t r, uint16_t color)
-{
-  DMADisplay::Display->drawCircle(x, y, r, color);
-  return 0;
-}
-
-int DrawFillCircle(int16_t x, int16_t y, int16_t r, uint16_t color)
-{
-  DMADisplay::Display->fillCircle(x, y, r, color);
-  return 0;
-}
-
-uint16_t color444(uint8_t r, uint8_t g, uint8_t b)
-{
-  return DMADisplay::Display->color444(r, g, b);
-}
-
-uint16_t color565(uint8_t r, uint8_t g, uint8_t b)
-{
-  return DMADisplay::Display->color565(r,g,b);
 }
 
 uint16_t readLidar()
@@ -390,32 +262,6 @@ static int dumpStackToSerial(lua_State *L)
   return 0;
 }
 
-/*static int lua_wrapper_print(lua_State *L)
-{
-  int n = lua_gettop(L); 
-  int i;
-  lua_getglobal(L, "tostring");
-  for (i = 1; i <= n; i++)
-  {
-    const char *s;
-    size_t l;
-    lua_pushvalue(L, -1); 
-    lua_pushvalue(L, i); 
-    lua_call(L, 1, 1);
-    s = lua_tolstring(L, -1, &l); 
-    if (s == NULL)
-      return luaL_error(L, "'tostring' must return a string to 'print'");
-    if (i > 1)
-    {
-      Logger::Print("\t");
-    }
-    Logger::Print(s);
-    lua_pop(L, 1);
-  }
-  Logger::Println("");
-  return 0;
-}*/
-
 void setHaltOnError(bool halt)
 {
   LuaInterface::HaltIfError = halt;
@@ -486,18 +332,12 @@ bool fileExists(std::string path){
   return SD.exists(path.c_str());
 }
 
-void deleteBulkFile(){
-  FFat.remove("/frames.bulk");
-}
-
 bool formatFFAT(bool full){
   return FFat.format(full);
 }
 
-void composeBulkFile()
-{
-  g_frameRepo.composeBulkFile();
-}
+
+
 
 void powerOff()
 {
@@ -560,48 +400,6 @@ void setMaximumControls(int id)
 int acceptTypes(std::string service, std::string charactestisticStream, std::string characteristicId)
 {
   return g_remoteControls.acceptTypes(service, charactestisticStream, characteristicId);
-}
-
-void setAnimation(std::vector<int> frames, int duration, int repeatTimes, bool dropAll, int externalStorageId)
-{
-  g_animation.SetAnimation(duration, frames, repeatTimes, dropAll, externalStorageId);
-}
-
-void setInterruptFrames(std::vector<int> frames, int duration )
-{
-  g_animation.SetInterruptAnimation(duration, frames);
-}
-void setInterruptAnimationPin(int pin)
-{
-  if (pin > 0){
-    pinMode(pin, INPUT);
-  }
-  g_animation.SetInterruptPin(pin);
-}
-
-
-void setManaged(bool bn)
-{
-  g_animation.setManaged(bn);
-}
-bool isManaged()
-{
-  return g_animation.isManaged();
-}
-
-int getCurrentAnimationStorage()
-{
-  return g_animation.getCurrentAnimationStorage();
-}
-int getCurrentFace()
-{
-  return g_animation.getCurrentFace();
-}
-
-void DrawPanelFaceToScreen(int x, int y)
-{
-  OledScreen::DrawPanelFaceToScreen(x, y);
-  return;
 }
 
 SizedArray *decodePng(std::string filename)
@@ -733,7 +531,9 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("dictLoad", dictLoad);
   m_lua->FuncRegister("dictFormat", dictFormat);
   //Oleed display internal
+  #ifdef ENABLE_HUB75_PANEL
   m_lua->FuncRegister("oledFaceToScreen", DrawPanelFaceToScreen);
+  #endif
   m_lua->FuncRegister("oledCreateIcon", OledScreen::CreateIcon);
   m_lua->FuncRegister("oledDrawIcon", OledScreen::DrawIcon);
   m_lua->FuncRegister("oledDrawBottomBar", OledScreen::DrawBottomBar);
@@ -771,9 +571,11 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("getFps", Devices::getFps); 
   m_lua->FuncRegister("getFreePsram", Devices::getFreePsram); 
   m_lua->FuncRegister("getFreeHeap", Devices::getFreeHeap); 
+  #ifdef USE_SERVO
   m_lua->FuncRegister("servoPause", Devices::ServoPause);
   m_lua->FuncRegister("servoResume", Devices::ServoResume); 
   m_lua->FuncRegister("servoMove", Devices::ServoMove);
+  #endif
   m_lua->FuncRegister("hasServo", Devices::HasServo);
   //BLE
   m_lua->FuncRegister("readButtonStatus", readButtonStatus);
@@ -791,6 +593,7 @@ void LuaInterface::RegisterMethods()
   //Internal sensor
   m_lua->FuncRegister("getInternalButtonStatus", getInternalButtonStatus); 
   //Panels
+  #ifdef ENABLE_HUB75_PANEL
   m_lua->FuncRegister("startPanels", StartPanels); 
   m_lua->FuncRegister("flipPanelBuffer", FlipScreen);
   m_lua->FuncRegister("drawPanelRect", DrawRect);
@@ -822,6 +625,7 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("color444", color444);
   m_lua->FuncRegister("getFrameOffsetByName", GetOffsetByName);
   m_lua->FuncRegister("getFrameCountByName", GetFrameCountByName);
+  #endif
   m_lua->FuncRegister("decodePng", decodePng); 
   //Aarduino
   m_lua->FuncRegister("tone", Devices::BuzzerTone);
@@ -894,9 +698,12 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("removeFile", removeFile);
   m_lua->FuncRegister("createDir", createDir);
   m_lua->FuncRegister("fileExists", fileExists);
-  m_lua->FuncRegister("composeBulkFile", composeBulkFile);
+  
   m_lua->FuncRegister("formatFFAT", formatFFAT);
+  #ifdef ENABLE_HUB75_PANEL
+  m_lua->FuncRegister("composeBulkFile", composeBulkFile);
   m_lua->FuncRegister("deleteBulkFile", deleteBulkFile);
+  #endif
 }
 
 void LuaInterface::RegisterConstants()
@@ -1019,13 +826,14 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("SERVO_COUNT", SERVO_COUNT);
   m_lua->setConstant("PANEL_CHAIN", PANEL_CHAIN);
 
+  #ifdef ENABLE_HUB75_PANEL
   m_lua->setConstant("COLOR_MODE_RGB", (int)COLOR_MODE_RGB);
   m_lua->setConstant("COLOR_MODE_RBG", (int)COLOR_MODE_RBG);
   m_lua->setConstant("COLOR_MODE_GRB", (int)COLOR_MODE_GRB);
   m_lua->setConstant("COLOR_MODE_GBR", (int)COLOR_MODE_GBR);
   m_lua->setConstant("COLOR_MODE_BRG", (int)COLOR_MODE_BRG);
   m_lua->setConstant("COLOR_MODE_BGR", (int)COLOR_MODE_BGR);
-
+  #endif
 
 }
 

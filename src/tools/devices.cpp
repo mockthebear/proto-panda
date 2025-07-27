@@ -153,7 +153,7 @@ bool Devices::AutoCheckPowerLevel(){
 }
 
 bool Devices::CheckPowerLevel(){
-
+  #ifdef ENABLE_HUB75_PANEL
   if (Sensors::GetAvgBatteryVoltage() < VoltageStopThreshold){
     DMADisplay::Display->clearScreen();
     DMADisplay::Display->flipDMABuffer();
@@ -161,12 +161,15 @@ bool Devices::CheckPowerLevel(){
     DMADisplay::Display->flipDMABuffer();
     return false;
   }
+  #endif
   return true;
 }
 
 void Devices::SetMaxBrightness(uint8_t b){
   maxBrightness = b;
+  #ifdef ENABLE_HUB75_PANEL
   DMADisplay::Display->setBrightness(b); 
+  #endif
 }
 
 
@@ -193,8 +196,10 @@ bool Devices::WaitForPower(uint8_t brightness){
   digitalWrite(PIN_ENABLE_REGULATOR, LOW);
   #endif
   while (Sensors::GetAvgBatteryVoltage() <= VoltageStartThreshold){
+      #ifdef ENABLE_HUB75_PANEL
       DMADisplay::Display->clearScreen();
       DMADisplay::Display->flipDMABuffer();
+      #endif
       OledScreen::DrawWaitForPower(Sensors::GetAvgBatteryVoltage());
       Sensors::MeasureVoltage();
   }
@@ -222,8 +227,10 @@ bool Devices::WaitForPower(uint8_t brightness){
       delay(1000);
       goto retry;
     }
+    #ifdef ENABLE_HUB75_PANEL
     DMADisplay::Display->setBrightness(a); 
     DMADisplay::DrawTestScreen();
+    #endif
   }
   SetMaxBrightness(brightness);
   g_animation.setManaged(oldState);
