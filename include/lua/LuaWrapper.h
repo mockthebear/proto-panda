@@ -21,11 +21,20 @@ typedef struct PixelStruct{
     uint8_t b;
 } Pixel;
 
+enum ReturnType{
+    RETURN_NIL = -3,
+    RETURN_ERROR = -2,
+    RETURN_NOTFOUND = -1,
+    RETURN_FALSE = 0,
+    RETURN_TRUE = 1,
+};
+
+
 struct QuickDebug{
 
-    static void DumpLua(lua_State *L,int start=0,std::string msg=""){
-        for (int i=start;i<10;i++){
-            int type = lua_type(L,-i);
+    static void DumpLua(lua_State *L,int start=-5,std::string msg=""){
+        for (int i=start;i<5;i++){
+            int type = lua_type(L,i);
             std::string vaav = "?";
             isthis(type,LUA_TNIL,lua_topointer);
             isthis(type,LUA_TNUMBER,lua_tonumber);
@@ -36,7 +45,7 @@ struct QuickDebug{
             isthis(type,LUA_TUSERDATA,lua_topointer);
             isthis(type,LUA_TTHREAD,lua_topointer);
             isthis(type,LUA_TLIGHTUSERDATA,lua_topointer);
-            Serial.printf("%s[Dump: %d] %s\n",msg.c_str(),-i,vaav.c_str());
+            Serial.printf("%s[Dump: %d] %s\n",msg.c_str(),i,vaav.c_str());
         }
     };
 };
@@ -962,7 +971,9 @@ class LuaWrapper {
     lua_State *GetState(){
         return _state;
     }
+
   private:
+
     void (*_errorCallback)(const char*,lua_State *L);
     lua_State *_state;
 
