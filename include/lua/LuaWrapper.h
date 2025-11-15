@@ -977,7 +977,7 @@ class LuaWrapper {
     void (*_errorCallback)(const char*,lua_State *L);
     lua_State *_state;
 
-        void pushParam(std::string parameter){
+    void pushParam(std::string parameter){
       lua_pushstring(_state, parameter.c_str());
     }
     void pushParam(int parameter){
@@ -1014,6 +1014,16 @@ class LuaWrapper {
 
     void pushParam(uint32_t parameter) {
         lua_pushinteger(_state, parameter);
+    }
+
+    template<typename T>
+    void pushParam(const std::vector<T>& parameters) {
+        lua_createtable(_state, static_cast<int>(parameters.size()), 0);
+        
+        for (size_t i = 0; i < parameters.size(); ++i) {
+            pushParam(parameters[i]);                  
+            lua_rawseti(_state, -2, static_cast<int>(i + 1)); 
+        }
     }
 };
 

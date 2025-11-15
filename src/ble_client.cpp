@@ -12,6 +12,8 @@ static bool isScanning = false;
 static ConnectTuple *toConnect = nullptr;
 
 
+BleManager* BleManager::m_myself = nullptr;
+
 BleSensorHandlerData BleManager::remoteData[MAX_BLE_CLIENTS];
 
 
@@ -55,6 +57,9 @@ bool ClientCallbacks::onConfirmPIN(uint32_t pass_key){
     return true;
 }
 
+
+
+
 void ClientCallbacks::onAuthenticationComplete(ble_gap_conn_desc* desc){
     if(!desc->sec_state.encrypted) {
         NimBLEDevice::getClientByID(desc->conn_handle)->disconnect();
@@ -80,17 +85,45 @@ void AdvertisedDeviceCallbacks::onResult(NimBLEAdvertisedDevice* advertisedDevic
 }
 
 
+void BleServiceHandler::AddMessage(uint8_t* pData, size_t length, bool isNotify){
+ xSemaphoreTake(queueMutex, portMAX_DELAY);
+  if (dataQueue.size() > 100) {
+    dataQueue.pop();
+  }
+  dataQueue.emplace(pData, length);
+  xSemaphoreGive(queueMutex);
+}
+
+
+void BleManager::AddMessageToQueue(NimBLEUUID &&svcUUID, NimBLEUUID &&charUUID, uint8_t* pData, size_t length, bool isNotify){
+  
+  BleServiceHandler* svcHandler = handlers[svcUUID];
+  if (svcHandler != nullptr){
+    svcHandler->AddMessage(pData, length, isNotify);
+  }else{
+    Logger::Error("Message arrived on service unmapped uuid %s with characteristics %s and lenght %d", svcUUID.toString().c_str(), charUUID.toString().c_str(), length);
+  }
+}
+
 
 void notifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify){
-  BleSensorData* data = (BleSensorData*)pData;
+  //BleSensorData* data = (BleSensorData*)pData;
 
   if (pRemoteCharacteristic != nullptr){
+
+    
+    BleManager::Get()->AddMessageToQueue(pRemoteCharacteristic->getRemoteService()->getUUID(), pRemoteCharacteristic->getUUID(), pData, length, isNotify);
+
+    /*
+
     int16_t *data16 = &((int16_t*)pData)[7];
     int id = ((uint8_t*)data16)[0];    
     if (id >= 0 && id < MAX_BLE_CLIENTS){
       BleManager::remoteData[id].copy(data);
       BleManager::remoteData[id].setLastUpdate();
-    }
+    }*/
+
+
   }
 }
 
@@ -207,12 +240,14 @@ bool BleManager::connectToServer(ConnectTuple *tlp){
   return true;
 }
 
-
+BleManager* BleManager::Get(){
+  return m_myself
+};
 
 bool BleManager::begin(){
   NimBLEDevice::init("");
   NimBLEDevice::setSecurityAuth(/*BLE_SM_PAIR_AUTHREQ_BOND | BLE_SM_PAIR_AUTHREQ_MITM |*/ BLE_SM_PAIR_AUTHREQ_SC);
-
+  m_myself = this;
 #ifdef ESP_PLATFORM
     NimBLEDevice::setPower(ESP_PWR_LVL_P9); /** +9db */
 #else

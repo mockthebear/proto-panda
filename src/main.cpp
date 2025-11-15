@@ -207,6 +207,17 @@ void loop() {
   Devices::ReadSensors();
   g_remoteControls.update();
   g_remoteControls.updateButtons();
+
+  while(!BleManager::dataQueue.empty()){
+    std::vector<uint8_t> vec;
+    xSemaphoreTake(BleManager::queueMutex, portMAX_DELAY);
+    vec = BleManager::dataQueue.front().message;
+    BleManager::dataQueue.pop();
+    xSemaphoreGive(BleManager::queueMutex);
+    g_lua.CallFunctionT("onBluetoothCallback", vec);
+  }
+  
+
   g_lua.CallFunctionT("onLoop", Devices::getDeltaTime());
   #ifdef SINGLE_CORE_RUN
   g_animation.Update(g_frameRepo.takeFile());

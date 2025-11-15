@@ -5,12 +5,32 @@
 #include <map>
 #include <vector>
 #include <stack>
+#include <queue>
 #include <cstring> 
 
 #define BUTTON_RELEASED 0
 #define BUTTON_JUST_PRESSED 1
 #define BUTTON_PRESSED 2
 #define BUTTON_JUST_RELEASED 3
+
+class BleServiceHandler{
+  public:
+    BleServiceHandler(NimBLEUUID u):uuid(u){
+      queueMutex = xSemaphoreCreateMutex();
+    }
+    void AddMessage(uint8_t* pData, size_t length, bool isNotify);
+  private: 
+    SemaphoreHandle_t queueMutex;
+    std::queue<BleMessage> dataQueue;
+    NimBLEUUID uuid;
+};
+
+
+class BleMessage{
+  public:
+    BleMessage(uint8_t* pData, size_t length):message(pData, pData + length){}
+    std::vector<uint8_t> message;
+};
 
 class BleManager;
 
@@ -31,7 +51,7 @@ class BleSensorData{
 class BleSensorHandlerData : public BleSensorData{
   public:
     BleSensorHandlerData():BleSensorData(){}
-
+  
     void copy(BleSensorData* aux){
       this->x = aux->x;
       this->y = aux->y;
@@ -135,7 +155,11 @@ class BleManager{
     std::vector<std::tuple<NimBLEUUID,NimBLEUUID,NimBLEUUID>> GetAcceptedUUIDS(){
       return m_acceptedUUIDs;
     }
+
+    void AddMessageToQueue(NimBLEUUID &&svcUUID, NimBLEUUID &&charUUID, uint8_t* pData, size_t length, bool isNotify);
+    static BleManager* Get();
   private:
+    std::map<NimBLEUUID, BleServiceHandler*> handlers;
     std::map<std::string,ConnectTuple*> clients;
     bool connectToServer(ConnectTuple *tpl);
     uint16_t clientCount;
@@ -147,6 +171,7 @@ class BleManager{
 
     std::vector<std::tuple<NimBLEUUID,NimBLEUUID,NimBLEUUID>> m_acceptedUUIDs;
     SemaphoreHandle_t m_mutex;
+    static BleManager *m_myself;
     friend class ClientCallbacks;
 };
 
