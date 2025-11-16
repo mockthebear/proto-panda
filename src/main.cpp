@@ -23,7 +23,7 @@
 
 #include "editmode/editmode.hpp"
 
-#include "ble_client.hpp"
+#include "bluetooth/ble_client.hpp"
 
 
 LedStrip g_leds;
@@ -149,7 +149,6 @@ void setup() {
   Devices::BuzzerNoTone();
   Devices::CalculateMemmoryUsage();
 
-
   g_frameRepo.displayFFATInfo();
   Serial.printf("Running upon %d\n", xPortGetCoreID());
   
@@ -197,7 +196,6 @@ void loop() {
     return;
   }
   
-
   if (Devices::AutoCheckPowerLevel() && !Devices::CheckPowerLevel()){
     Devices::WaitForPower(0);
     return;
@@ -206,17 +204,10 @@ void loop() {
   Devices::BeginFrame();
   Devices::ReadSensors();
   g_remoteControls.update();
-  g_remoteControls.updateButtons();
+  //g_remoteControls.updateButtons();
 
-  while(!BleManager::dataQueue.empty()){
-    std::vector<uint8_t> vec;
-    xSemaphoreTake(BleManager::queueMutex, portMAX_DELAY);
-    vec = BleManager::dataQueue.front().message;
-    BleManager::dataQueue.pop();
-    xSemaphoreGive(BleManager::queueMutex);
-    g_lua.CallFunctionT("onBluetoothCallback", vec);
-  }
-  
+  g_remoteControls.sendUpdatesToLua();
+
 
   g_lua.CallFunctionT("onLoop", Devices::getDeltaTime());
   #ifdef SINGLE_CORE_RUN

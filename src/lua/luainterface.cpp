@@ -7,7 +7,7 @@
 #include "tools/storage.hpp"
 #include "drawing/animation.hpp"
 #include "drawing/ledstrip.hpp"
-#include "ble_client.hpp"
+#include "bluetooth/ble_client.hpp"
 #include "drawing/dma_display.hpp"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc.h"
@@ -364,7 +364,7 @@ void LuaInterface::luaCallbackError(const char *errMsg, lua_State *L)
 
 int getConnectedRemoteControls()
 {
-  return g_remoteControls.getConnectedClients();
+  return g_remoteControls.getConnectedClientsCount();
 }
 
 bool startBLE()

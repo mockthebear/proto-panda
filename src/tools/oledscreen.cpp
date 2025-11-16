@@ -2,7 +2,7 @@
 #include "tools/logger.hpp"
 #include "tools/sensors.hpp"
 #include "tools/devices.hpp"
-#include "ble_client.hpp"
+#include "bluetooth/ble_client.hpp"
 #include "drawing/animation.hpp"
 
 #include "drawing/icons/icons.hpp"
