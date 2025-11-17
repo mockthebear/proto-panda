@@ -7,11 +7,21 @@ class Batata{
     public:
     Batata(){count = 0;};
     ~Batata(){
-        Serial.printf("THE BATATA IS DEAD MAN\n");
+        Serial.printf("THE BATATA %d IS DEAD MAN\n", (int)this);
     };
+    int SumBatata(Batata *bat){
+        return count + bat->Get();
+    };
+    Batata *CloneBatata(){
+        Serial.printf("CLONE, I AM %d\n", (int)this);
+        Batata *aux = new Batata();
+        Serial.printf("THE NEW IS %d\n", (int)aux);
+        aux->Set(Get());
+        return aux;
+    }
     uint32_t Get(){return count;};
     void Set(uint32_t c){ count = c;};
-    uint32_t Sum(uint32_t a, uint32_t b){ count = a+b; return count;};
+    uint32_t Sum(uint32_t a, uint32_t b){ count += a+b; return count;};
     uint32_t count;
 };
 
@@ -225,15 +235,19 @@ template<typename T1,typename ObjT> struct FieldToLuaHandler{
         Modify field
     */
     static int Newindex(lua_State *L){
-        std::string field = lua_tostring(L,-2);
         bool hasErr = false;
-        T1 *self = LuaCaller::GetSelf<T1>(L, -2);
+        ObjT         data = GenericLuaGetter<ObjT>::Call(hasErr, L,-1);
+        if (hasErr){
+            return 1;
+        }
+        std::string field = lua_tostring(L,-1);
+        lua_pop(L, 1);        
+        T1 *self = LuaCaller::GetSelf<T1>(L, -1);
         if (!self){
             return 0;
         }
         std::map<std::string,ObjT T1::*> &fieldData = FieldToLuaHandler<T1,ObjT>::getAddr();
         if (fieldData[field]){
-            ObjT         data = GenericLuaGetter<ObjT>::Call(hasErr, L,-1);
             ObjT T1::* fieldptr = fieldData[field];
             self->*fieldptr = data;
         }
@@ -243,6 +257,7 @@ template<typename T1,typename ObjT> struct FieldToLuaHandler{
         Request field
     */
     static int Index(lua_State *L){
+        
         std::string field = lua_tostring(L,-1);
         T1 *self = LuaCaller::GetSelf<T1>(L, -2);
         if (!self){
@@ -334,10 +349,8 @@ template<typename T1> struct ClassRegister{
             luaL_checktype(L, 1, LUA_TTABLE);
         }
         
-        // Create the object table
         lua_newtable(L);
         
-        // Set basic properties
         lua_pushstring(L, "id");
         lua_pushnumber(L, (uint64_t)obj);
         lua_settable(L, -3);
@@ -357,18 +370,12 @@ template<typename T1> struct ClassRegister{
         lua_pushvalue(L, 1);
         lua_setfield(L, 1, "__index");
         
-        // Create userdata for the object
         T1 **usr = static_cast<T1**>(lua_newuserdata(L, sizeof(T1*)));
         *usr = obj;
 
         lua_getglobal(L, name.c_str());
         lua_setmetatable(L, -2);
         lua_setfield(L, -2, "__self");
-
-        // The created object table is now on top of the stack
-        // No insertion into __REFS anymore
-        
-        // If we need to return the object, it's already on top of the stack
     };
 
      static void RegisterClassType(lua_State *L,std::string name,
@@ -518,3 +525,75 @@ static void RegisterClassVirtual(lua_State *L,std::string name,
 
 
 };
+
+//obj specific
+
+template<typename T1> struct MakeLuaObject{
+    static int Make(lua_State *L, T1* obj, std::string name){
+        if (obj == nullptr){
+            lua_pushnil(L);
+            return 1;
+        }
+        ClassRegister<T1>::RegisterObject(L, name, obj, false);
+        return 1;
+    };
+};
+
+
+template<> struct GenericLuaReturner<Batata*>{
+    static void Ret(Batata* vr,lua_State *L,bool forceTable = false){
+        MakeLuaObject<Batata>::Make(L, vr, "Batata");
+    };
+};
+
+
+
+template<> struct GenericLuaGetter<Batata*> {
+    static inline Batata* Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true) {
+
+        if (!lua_istable(L, stackPos)) {
+            hasArgError = true;
+            const char* function_name = lua_tostring(L, lua_upvalueindex(1));
+            luaL_error(L, "Expected a table value on parameter %d of function %s", lua_gettop(L), function_name);
+            return nullptr;
+        }
+        if (!lua_istable(L, stackPos)){
+             hasArgError = true;
+            const char* function_name = lua_tostring(L, lua_upvalueindex(1));
+            luaL_error(L, "Expected a table value on parameter %d of function %s", lua_gettop(L), function_name);
+            return nullptr;
+        }
+
+        lua_getfield(L, -2, "__self");
+        Batata** sp = (Batata**)lua_touserdata(L,-1);
+        if (!sp){
+            luaL_error(L, "Expected a lua object");
+            return nullptr;
+        }
+        lua_pop(L, 1);
+        lua_getfield(L, -2, "type");
+          
+        std::string otherType = std::string(lua_tostring(L, -1));
+        lua_pop(L, 1);
+
+        if (otherType != "Batata"){
+            luaL_error(L, "Type mismatched, expecting 'Batata' instead got %s", otherType.c_str());
+            return nullptr;
+        }
+
+        if (*sp == nullptr){
+            luaL_error(L, "Null userdata in to the object");
+            return nullptr;
+        }
+
+        if (pop) {
+            lua_pop(L, 1);
+        }  
+        return  (*sp);
+    }
+};
+
+
+           
+              
+            

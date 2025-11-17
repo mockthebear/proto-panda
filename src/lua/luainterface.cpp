@@ -860,8 +860,10 @@ bool LuaInterface::Start()
   });
     
   ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","Get",&Batata::Get);
-  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","Sum",&Batata::Sum, 2);
+  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","Sum",&Batata::Sum, 0);
   ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","Set",&Batata::Set);
+  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","SumBatata",&Batata::SumBatata);
+  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","CloneBatata",&Batata::CloneBatata);
 
   ClassRegister<Batata>::RegisterField(_state, "count", &Batata::count);
 
