@@ -510,6 +510,11 @@ function _M.manageBoop(dt)
                         return
                     end
                 end
+                local menu = require("menu")
+                if menu.menuExpression == config.boopAnimationName then
+                    --Avoid dropping the animation if it was a user selected one
+                    return
+                end
                 _M.boopIsOn = false   
                 popPanelAnimation()       
             end

@@ -11,13 +11,6 @@ function _M.setAutoPowerMode(brightness)
 	if BUILT_IN_POWER_MODE == POWER_MODE_USB_9V or BUILT_IN_POWER_MODE == POWER_MODE_BATTERY then 
 		waitForPower(brightness)
 	else
-		if BUILT_IN_POWER_MODE == POWER_MODE_REGULATOR_PD then 
-			local volts = getBatteryVoltage()
-			if volts < VCC_THRESHOLD_START then
-				noTone()
-				_M.displayWarning("Undervoltage = "..tostring(volts).." V", "Your power supply is probally not suited to this protogen.", 5000, 1)
-			end
-		end
 		panelPowerOn()
 	end
 end
@@ -31,23 +24,18 @@ function _M.displaySplashMessage(msg)
 	oledSetFontSize(1)
 end
 
-function _M.displayWarning(headMessage, message, duration, textSize)
+function _M.displayWarning(headMessage, message, duration)
 	duration = duration or 2000
-	textSize = textSize or 2
 	log(headMessage..": "..message)
 	local stop = millis()+duration
-	local maxText = 80
-	if textSize == 2 then 
-		maxText = 20
-	end
-	local scroll = _M.scrollingText(message, maxText, 250)
+	local scroll = _M.scrollingText(message, 20, 250)
 	while scroll.cycles <= 0 or stop > millis() do
 		oledClearScreen()
 		oledSetCursor(0,0)
 		oledSetFontSize(1)
 		oledDrawText(headMessage)
 		oledDrawLine(0, 15, OLED_SCREEN_WIDTH, 15, WHITE)
-		oledSetFontSize(textSize)
+		oledSetFontSize(2)
 		oledSetCursor(0,16)
 		scroll:update()
 		oledDrawText(scroll:text())

@@ -92,8 +92,6 @@ function _M.setup(expressions)
         setPanelBrightness(0)
         panelPowerOff()
         noTone() --Since the beep is managed by the same core thats running the composing, the beep wouldn't stop. So we kill it right now
-        generic.displayWarning("Formatting", "Formatting", 1000)
-        formatFFAT(true)
         composeBulkFile()
         generic.displayWarning("Restart", "System will reboot", 2000)
         restart()
@@ -138,6 +136,7 @@ function _M.setup(expressions)
         end)
     end
 
+
 end
 
 function _M.reapplyButtons()
@@ -179,7 +178,7 @@ function _M.enterFaceMenu()
     else 
         _M.mode = MODE_FACE_QUICK
     end
-    _M.quit_timer = 2000
+    _M.quit_timer = 1500
     _M.selected = 1
 end
 
@@ -226,8 +225,8 @@ function _M.draw()
         end
         oledFaceToScreen(32, 14)
         oledDrawBottomBar()
-        if (_M.quit_timer < 2000) then 
-            local rad =  - ((_M.quit_timer-2000) / 2000 ) * 128
+        if (_M.quit_timer < 1000) then 
+            local rad =  - ((_M.quit_timer-1000) / 1000 ) * 128
             oledDrawFilledCircle(64,32 , rad, 0)
             oledDrawCircle(64,32 , rad, 1)
             local sin = math.sin(math.rad(45)) * rad
@@ -255,7 +254,7 @@ function _M.draw()
             local realIdx = idx
             idx = idx - skipIdx
             if idx > 0 then
-                oledSetCursor(1 + xOffset, 1 + (idx-1) * MENU_SPACING + yOffset)
+                oledSetCursor(3 + xOffset, 1 + (idx-1) * MENU_SPACING + yOffset)
                 if #name > 10 then 
                     name = name:sub(1, 10)
                 end
@@ -283,8 +282,8 @@ function _M.draw()
             oledFaceToScreen(32, 16)
         end
 
-        if (_M.quit_timer < 2000) then 
-            local rad =  - ((_M.quit_timer-2000) / 2000 ) * 128
+        if (_M.quit_timer < 1000) then 
+            local rad =  - ((_M.quit_timer-1000) / 1000 ) * 128
             oledDrawFilledCircle(64,32 , rad, 0)
             oledDrawCircle(64,32 , rad, 1)
             local sin = math.sin(math.rad(45)) * rad
@@ -470,13 +469,19 @@ end
 
 function _M.handleFaceQuickMenu(dt)
     if readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED then
-        expressions.Previous()
+        local exp = expressions.Previous()
+        if exp and exp.name then  
+            _M.menuExpression = exp.name
+        end
         boop.reset()
         toneDuration(340, 10)
     end
 
     if readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED then
-        expressions.Next()
+        local exp = expressions.Next()
+        if exp and exp.name then  
+            _M.menuExpression = exp.name
+        end
         boop.reset()
         toneDuration(540, 10)
     end
@@ -489,12 +494,13 @@ function _M.handleFaceQuickMenu(dt)
             return
         end
     else 
-        _M.quit_timer = 3000
+        _M.quit_timer = 1500
     end
 end
 
 
 function _M.handleFaceMenu(dt)
+
     _M.timer = _M.timer - dt
     if readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED then 
         toneDuration(340, 50)
@@ -553,21 +559,29 @@ function _M.handleFaceMenu(dt)
             _M.selected = (lastPage*MAX_INTERFACE_ICONS)+1
         end
     end
-
+    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
+        _M.hasConfirmPressedToAvoidUnwantedSelection = true
+    end
     if readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED then 
+        
         _M.quit_timer = _M.quit_timer - dt 
         if (_M.quit_timer <= 0) then 
+            _M.hasConfirmPressedToAvoidUnwantedSelection = false
             _M.enterMainMenu()
             return
         end
     else 
-        _M.quit_timer = 3000
+        _M.quit_timer = 1500
     end
 
     if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_RELEASED then 
+        if not _M.hasConfirmPressedToAvoidUnwantedSelection then  
+            return
+        end
         local exps = expressions.GetExpressions()
         expressions.SetExpression(exps[_M.selected])
         boop.reset()
+        _M.menuExpression = exps[_M.selected]
         _M.timer = _M.displayTime
         toneDuration(440, 10)
 

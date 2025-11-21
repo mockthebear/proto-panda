@@ -7,6 +7,7 @@ local _M = {
 	count = 0,
 }
 
+
 function _M.Load()
 	content = nil
 	local conf = configloader.Get()
@@ -23,21 +24,34 @@ function _M.Load()
 			b.frame_offset = offset
 			local animation = b.animation
 			if type(b.animation) ~= 'table' then  
-				if b.animation == "auto" then  
+				if b.animation == "auto" then 
+					b.animation = "loop" --Compatibility
+				end
+				if b.animation == "loop" or b.animation == "auto_backwards" or b.animation == "pingpong" then 
+					local name = b.animation
 					b.animation = {}
-					animation = b.animation
 					if not b.frames then  
-						error("Cannot use 'frames=auto' when there is no alias defined")
+						error("Cannot use 'frames=loop' when there is no alias defined")
 					end
 					local count = getFrameCountByName(b.frames)
 					if count == 0 then  
 						error("Using frame group '"..b.frames.."' returned 0 frames. Are you sure this alias has loaded frames?")
-					end
+					end 
 					for i=1,count do  
-						b.animation[i] = i
+						local idx = i  
+						if name == "auto_backwards" then 
+							idx = count-i+1
+						end
+						b.animation[i] = idx
 					end
+					if name == "pingpong" then  
+						for i=1,count do  
+							b.animation[#b.animation + 1] = count-i+1
+						end
+					end
+					animation = b.animation
 				else 
-					error("Animation can only e numeric array or 'auto'")
+					error("Animation can only have numeric array or 'loop', got "..tostring(b.animation).." in animation id "..tostring(id))
 				end
 			end
 			for a,c in pairs(b.animation) do 
@@ -197,7 +211,9 @@ function _M.SetExpression(id)
 		end
 
 		_M.previousExpression = aux
+		return aux
 	end
+	return nil
 end
 
 function _M.IsFrameFromAnimation(frameId, id)
