@@ -1,36 +1,553 @@
 {
   "frames": [
-    {"pattern": "/expressions/normal_by_maremar (%d).png", "flip_left": true, "from": 1, "to": 4, "name": "frames_normal"},
-    {"pattern": "/expressions/noise (%d).png", "flip_left": false, "from": 1, "to": 3, "name": "frames_noise"},
-    {"pattern": "/expressions/amogus (%d).png", "flip_left": true, "from": 1, "to": 2, "name": "frames_amogus"},
-    {"pattern": "/expressions/boop_cycle_%d.png", "flip_left": true, "from": 1, "to": 3, "name": "frames_boop"},
-    {"pattern": "/expressions/boop_transiction_%d.png", "flip_left": true, "from": 1, "to": 3, "name": "frames_boop_transition"}
+    {
+      "pattern": "/expressions/angry/angry%d.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 5,
+      "to": 9,
+      "name": "frames_angry"
+    },
+    {
+      "pattern": "/expressions/angry/angry%d transition.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 1,
+      "to": 4,
+      "name": "frames_angry_transition"
+    },
+    {
+      "pattern": "/expressions/blink/blink%d.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 1,
+      "to": 8,
+      "name": "frames_blink"
+    },
+    {
+      "pattern": "/expressions/boop/boop%d.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 7,
+      "to": 14,
+      "name": "frames_boop"
+    },
+    {
+      "pattern": "/expressions/boop/boop%d transition.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 1,
+      "to": 6,
+      "name": "frames_boop_transition"
+    },
+    {
+      "pattern": "/expressions/bored/bored%d.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 5,
+      "to": 12,
+      "name": "frames_bored"
+    },
+    {
+      "pattern": "/expressions/bored/bored%d transition.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 1,
+      "to": 4,
+      "name": "frames_bored_transition"
+    },
+    {
+      "pattern": "/expressions/charging/charging%d.png",
+      "flip_left": false,
+      "flip_right": false,
+      "from": 5,
+      "to": 12,
+      "name": "frames_charging"
+    },
+    {
+      "pattern": "/expressions/charging/charging%d transition.png",
+      "flip_left": false,
+      "flip_right": false,
+      "from": 1,
+      "to": 4,
+      "name": "frames_charging_transition"
+    },
+    {
+      "pattern": "/expressions/confused/confused%d.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 5,
+      "to": 12,
+      "name": "frames_confused"
+    },
+    {
+      "pattern": "/expressions/confused/confused%d transition.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 1,
+      "to": 4,
+      "name": "frames_confused_transition"
+    },
+    {
+      "pattern": "/expressions/crash/crash%d.png",
+      "flip_left": false,
+      "flip_right": false,
+      "from": 9,
+      "to": 12,
+      "name": "frames_crash"
+    },
+    {
+      "pattern": "/expressions/crash/crash%d transition.png",
+      "flip_left": false,
+      "flip_right": false,
+      "from": 1,
+      "to": 8,
+      "name": "frames_crash_transition"
+    },
+    {
+      "pattern": "/expressions/dizzy/dizzy%d.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 5,
+      "to": 12,
+      "name": "frames_dizzy"
+    },
+    {
+      "pattern": "/expressions/dizzy/dizzy%d transition.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 1,
+      "to": 4,
+      "name": "frames_dizzy_transition"
+    },
+    {
+      "pattern": "/expressions/inlove/inlove%d.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 5,
+      "to": 12,
+      "name": "frames_inlove"
+    },
+    {
+      "pattern": "/expressions/inlove/inlove%d transition.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 1,
+      "to": 4,
+      "name": "frames_inlove_transition"
+    },
+    {
+      "pattern": "/expressions/loading/loading%d.png",
+      "flip_left": false,
+      "flip_right": false,
+      "from": 5,
+      "to": 12,
+      "name": "frames_loading"
+    },
+    {
+      "pattern": "/expressions/loading/loading%d transition.png",
+      "flip_left": false,
+      "flip_right": false,
+      "from": 1,
+      "to": 4,
+      "name": "frames_loading_transition"
+    },
+    {
+      "pattern": "/expressions/sad/sad%d.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 5,
+      "to": 12,
+      "name": "frames_sad"
+    },
+    {
+      "pattern": "/expressions/sad/sad%d transition.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 1,
+      "to": 4,
+      "name": "frames_sad_transition"
+    },
+    {
+      "pattern": "/expressions/sleeping/sleeping%d.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 5,
+      "to": 12,
+      "name": "frames_sleeping"
+    },
+    {
+      "pattern": "/expressions/sleeping/sleeping%d transition.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 1,
+      "to": 4,
+      "name": "frames_sleeping_transition"
+    },
+    {
+      "pattern": "/expressions/UwU/UwU%d.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 5,
+      "to": 12,
+      "name": "frames_UwU"
+    },
+    {
+      "pattern": "/expressions/UwU/UwU%d transition.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 1,
+      "to": 4,
+      "name": "frames_UwU_transition"
+    },
+    {
+      "pattern": "/expressions/noise/noise%d.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 1,
+      "to": 3,
+      "name": "frames_noise"
+    }
+
+
+
   ],
   "expressions": [
-    {"name": "normal", "frames": "frames_normal", "animation": [1,2,1,2,1,2,3,4,3], "duration": 250},
-    {"name": "sus", "frames": "frames_amogus", "animation": "auto", "duration": 200},
-    {"name": "noise", "frames": "frames_noise", "animation":  "auto", "duration": 5, "onEnter": "ledsStackCurrentBehavior()  ledsSegmentBehavior(0, BEHAVIOR_NOISE) ledsSegmentBehavior(1, BEHAVIOR_NOISE)", "onLeave": "ledsPopBehavior()"},
-    {"name": "boop", "frames": "frames_boop", "animation": [1,2,3,2], "duration": 250},
-    {"name": "boop_begin", "frames": "frames_boop_transition", "animation": [1,2,3], "duration": 250, "transition": true},
-    {"name": "boop_end", "frames": "frames_boop_transition", "animation": [3,2,1], "duration": 250, "transition": true}
+    {
+      "name": "normal",
+      "frames": "frames_blink",
+      "animation": [
+        1,1,1,1,1,1,1,1,
+        1,2,3,4,5,6,7,8,
+        7,6,5,4,3,2,1
+      ],
+      "duration": 75
+    },
+
+
+    {
+      "name": "angry_intro",
+      "frames": "frames_angry_transition",
+      "animation": "loop",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "angry_outro",
+      "frames": "frames_angry_transition",
+      "animation": "auto_backwards",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "angry",
+      "frames": "frames_angry",
+      "animation": "pingpong",
+      "intro": "angry_intro",
+      "outro": "angry_outro",
+      "duration": 100
+    },
+
+    {
+      "name": "boop_intro",
+      "frames": "frames_boop_transition",
+      "animation": "loop",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "boop_outro",
+      "frames": "frames_boop_transition",
+      "animation": "auto_backwards",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "boop",
+      "frames": "frames_boop",
+      "animation": "pingpong",
+      "intro": "boop_intro",
+      "outro": "boop_outro",
+      "duration": 100
+    },
+
+
+        {
+      "name": "bored_intro",
+      "frames": "frames_bored_transition",
+      "animation": "loop",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "bored_outro",
+      "frames": "frames_bored_transition",
+      "animation": "auto_backwards",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "bored",
+      "frames": "frames_bored",
+      "animation": "pingpong",
+      "intro": "bored_intro",
+      "outro": "bored_outro",
+      "duration": 100
+    },
+
+    
+    {
+      "name": "charging_intro",
+      "frames": "frames_charging_transition",
+      "animation": "loop",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "charging",
+      "frames": "frames_charging",
+      "animation": "loop",
+      "intro": "charging_intro",
+      "duration": 100
+    },
+
+    
+    {
+      "name": "confused_intro",
+      "frames": "frames_confused_transition",
+      "animation": "loop",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "confused_outro",
+      "frames": "frames_confused_transition",
+      "animation": "auto_backwards",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "confused",
+      "frames": "frames_confused",
+      "animation": "auto",
+      "intro": "confused_intro",
+      "outro": "confused_outro",
+      "duration": 100
+    },
+    {
+      "name": "crash_intro",
+      "frames": "frames_crash_transition",
+      "animation": "loop",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "crash",
+      "frames": "frames_crash",
+      "animation": "pingpong",
+      "intro": "crash_intro",
+      "duration": 100
+    },
+
+    
+    {
+      "name": "dizzy_intro",
+      "frames": "frames_dizzy_transition",
+      "animation": "loop",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "dizzy_outro",
+      "frames": "frames_dizzy_transition",
+      "animation": "auto_backwards",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "dizzy",
+      "frames": "frames_dizzy",
+      "animation": "loop",
+      "intro": "dizzy_intro",
+      "outro": "dizzy_outro",
+      "duration": 100
+    },
+
+    
+    {
+      "name": "inlove_intro",
+      "frames": "frames_inlove_transition",
+      "animation": "loop",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "inlove_outro",
+      "frames": "frames_inlove_transition",
+      "animation": "auto_backwards",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "inlove",
+      "frames": "frames_inlove",
+      "animation": "auto",
+      "intro": "inlove_intro",
+      "outro": "inlove_outro",
+      "duration": 100
+    },
+
+    
+    {
+      "name": "loading_intro",
+      "frames": "frames_loading_transition",
+      "animation": "loop",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "loading",
+      "frames": "frames_loading",
+      "animation": "loop",
+      "intro": "loading_intro",
+      "duration": 100
+    },
+
+    
+    {
+      "name": "sad_intro",
+      "frames": "frames_sad_transition",
+      "animation": "loop",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "sad_outro",
+      "frames": "frames_sad_transition",
+      "animation": "auto_backwards",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "sad",
+      "frames": "frames_sad",
+      "animation": "pingpong",
+      "intro": "sad_intro",
+      "outro": "sad_outro",
+      "duration": 100
+    },
+
+    
+    {
+      "name": "sleeping_intro",
+      "frames": "frames_sleeping_transition",
+      "animation": "loop",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "sleeping_outro",
+      "frames": "frames_sleeping_transition",
+      "animation": "auto_backwards",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "sleeping",
+      "frames": "frames_sleeping",
+      "animation": "pingpong",
+      "intro": "sleeping_intro",
+      "outro": "sleeping_outro",
+      "duration": 100
+    },
+
+    
+    {
+      "name": "UwU_intro",
+      "frames": "frames_UwU_transition",
+      "animation": "loop",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "UwU_outro",
+      "frames": "frames_UwU_transition",
+      "animation": "auto_backwards",
+      "transition": true,
+      "duration": 100
+    },
+    {
+      "name": "UwU",
+      "frames": "frames_UwU",
+      "animation": "pingpong",
+      "intro": "UwU_intro",
+      "outro": "UwU_outro",
+      "duration": 100
+    },
+
+
+    {
+      "name": "noise",
+      "frames": "frames_noise",
+      "animation": "loop",
+      "duration": 5,
+      "onEnter": "ledsStackCurrentBehavior()  ledsSegmentBehavior(0, BEHAVIOR_NOISE) ledsSegmentBehavior(1, BEHAVIOR_NOISE)",
+      "onLeave": "ledsPopBehavior()"
+    }
+
+
+
   ],
-  "scripts":[
-    {"name": "lidar test", "file": "/scripts/lidartest.lua"},
-    {"name": "color test", "file": "/scripts/colortest.lua"},
-    {"name": "screen test", "file": "/scripts/screentest.lua"},
-    {"name": "controls test", "file": "/scripts/controls.lua"},
-    {"name": "snake", "file": "/scripts/snake.lua"},
-    {"name": "jumping wah", "file": "/scripts/wah.lua"},
-    {"name": "tetris", "file": "/scripts/tetris.lua"},
-    {"name": "proximity game", "file": "/scripts/proximitygame.lua"},
-    {"name": "breakout", "file": "/scripts/breakout.lua"},
-    {"name": "color shift", "file": "/scripts/colorshift.lua"},
-    {"name": "FFT", "file": "/scripts/fft.lua"}
-  ], 
+  "scripts": [
+    {
+      "name": "lidar test",
+      "file": "/scripts/lidartest.lua"
+    },
+    {
+      "name": "color test",
+      "file": "/scripts/colortest.lua"
+    },
+    {
+      "name": "screen test",
+      "file": "/scripts/screentest.lua"
+    },
+    {
+      "name": "controls test",
+      "file": "/scripts/controls.lua"
+    },
+    {
+      "name": "snake",
+      "file": "/scripts/snake.lua"
+    },
+    {
+      "name": "jumping wah",
+      "file": "/scripts/wah.lua"
+    },
+    {
+      "name": "tetris",
+      "file": "/scripts/tetris.lua"
+    },
+    {
+      "name": "proximity game",
+      "file": "/scripts/proximitygame.lua"
+    },
+    {
+      "name": "breakout",
+      "file": "/scripts/breakout.lua"
+    },
+    {
+      "name": "color shift",
+      "file": "/scripts/colorshift.lua"
+    },
+    {
+      "name": "FFT",
+      "file": "/scripts/fft.lua"
+    }
+  ],
   "boop": {
     "enabled": true,
-    "transitionIn": "boop_begin", 
-    "transitionOut":  "boop_end",
+    "transitionIn": "boop_intro",
+    "transitionOut": "boop_outro",
     "boopAnimationName": "boop",
     "transictionOnlyOnAnimation": "normal",
     "transictionInOnlyOnSpecificFrame": 1
