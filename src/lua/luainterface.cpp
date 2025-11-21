@@ -851,21 +851,6 @@ bool LuaInterface::Start()
 
   RegisterMethods();
   RegisterConstants();
-
-  auto _state = m_lua->GetState();
-  
-  ClassRegister<Batata>::RegisterClassType(_state,"Batata",[](lua_State* L){
-        Batata *t = new Batata();
-        return t;
-  });
-    
-  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","Get",&Batata::Get);
-  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","Sum",&Batata::Sum, 2);
-  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","Set",&Batata::Set);
-
-  ClassRegister<Batata>::RegisterField(_state, "count", &Batata::count);
-
-
   lastError = "";
 
   return true;
