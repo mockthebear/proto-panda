@@ -11,11 +11,11 @@ BluetoothDeviceHandler::~BluetoothDeviceHandler(){
 }
 
 void BleServiceHandler::AddCharacteristics(NimBLEUUID charId){
-    m_characteristics[charId.toString()] = new BleCharacteristicsHandler(charId);
+    m_characteristics[charId.to16().toString()] = new BleCharacteristicsHandler(charId);
 }
 
 void BleServiceHandler::AddCharacteristics_TMP(NimBLEUUID charId){
-    m_characteristics[charId.toString()] = new BleCharacteristicsHandler(charId, true, false, true);
+    m_characteristics[charId.to16().toString()] = new BleCharacteristicsHandler(charId, true, false, true);
 }
 
 void BleServiceHandler::AddMessage(NimBLEUUID &charId,uint8_t* pData, size_t length, bool isNotify){

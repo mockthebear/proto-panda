@@ -147,10 +147,32 @@ bool BleManager::connectToServer(){
   }
 
   NimBLERemoteService* pSvc = nullptr;
-  NimBLERemoteCharacteristic* pChr = nullptr;
 
 
-  
+  std::vector<NimBLERemoteService*>* svlist = pClient->getServices(true);
+  for (auto svc : *svlist) {
+    Logger::Error("[BLE] Currently with %s service", svc->getUUID().to128().toString().c_str());
+    std::vector<NimBLERemoteCharacteristic*>* pChars = svc->getCharacteristics(true);
+    for (auto pChr : *pChars) {
+       NimBLEUUID uuid = pChr->getUUID();
+       Serial.printf(
+              "[%s] Found characteristic: %s | Handle=%d | Notify=%d, Read=%d, Write=%d\n",
+              svc->getUUID().to128().toString().c_str(),
+              uuid.toString().c_str(),
+              pChr->getDefHandle(),
+              pChr->canNotify(),
+              pChr->canRead(),
+              pChr->canWrite()
+              
+          );
+      if(pChr->canNotify()) {
+        if(pChr->subscribe(true, notifyCB)) {
+          Logger::Error("[BLE] YEEEB OOOOOOOOOOOOOOOOOOOOOY: %s\n", pChr->getUUID().toString().c_str());
+        }
+      }
+    }
+    vTaskDelay(10);
+  }
 
   pSvc = pClient->getService(handler->uuid);
   if(!pSvc) { 
@@ -162,53 +184,79 @@ bool BleManager::connectToServer(){
     return false; 
   }
 
+  std::vector<NimBLERemoteCharacteristic*>* pChars = pSvc->getCharacteristics();
   std::vector<BleCharacteristicsHandler*> searchList = handler->getCharacteristics();
-
-  for (auto &element : searchList){
-    pChr = pSvc->getCharacteristic(element->uuid);
-    if (!pChr){
-      if (!element->required){
-        continue;
-      }
-      Logger::Error("[BLE] Not found required characteristics %s in service %s, dropping.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
-      pClient->disconnect();
-      NimBLEDevice::deleteClient(pClient);
-      g_remoteControls.availableIds.push(device->m_controllerId);
-      delete device;
-      return false;
-    }
-
-    if (element->temporary_send_legacy_packet){
-      delay(300);
-      if(pChr && pChr->canWrite()) {
-        if (!pChr->writeValue((uint8_t*)&device->m_controllerId, sizeof(uint32_t), true)){
-          Logger::Info("[BLE] Fail to sned woah");
-        }else{
-          Logger::Info("[BLE] Sent controller id: %d", device->m_controllerId);
+  for (auto pChr : *pChars) {
+    vTaskDelay(1);
+     NimBLEUUID uuid = pChr->getUUID();
+     bool matched = false;
+     Serial.printf(
+              "Found characteristic: %s | Handle=%d | Notify=%d, Read=%d, Write=%d\n",
+              uuid.toString().c_str(),
+              pChr->getDefHandle(),
+              pChr->canNotify(),
+              pChr->canRead(),
+              pChr->canWrite()
+              
+          );
+     
+    for (auto &element : searchList){
+      if (pChr->getUUID() != element->uuid){
+        if (!element->required){
+          if(pChr->canNotify()) {
+            if(!pChr->subscribe(true, notifyCB)) {
+              Logger::Error("[BLE] YEEEB OOOOOOOOOOOOOOOOOOOOOY: %s\n", pChr->getUUID().toString());
+            }
+          }
+          continue;
         }
-      }
-    }
-
-    if (element->notify){
-      if(pChr->canNotify()) {
-        if(!pChr->subscribe(true, notifyCB)) {
-          Logger::Error("[BLE] Characteristics %s in service %s, failed to subscribe, dropping.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
-          pClient->disconnect();
-          NimBLEDevice::deleteClient(pClient);
-          g_remoteControls.availableIds.push(device->m_controllerId);         
-          delete device;
-          return false;
-        }else{
-          Logger::Info("[BLE] subscribed on meme");
-        }
-      }else{
-        Logger::Error("[BLE] Characteristics %s in service %s, does not have notify, dropping.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
+        /*Logger::Error("[BLE] Not found required characteristics %s in service %s, dropping.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
         pClient->disconnect();
         NimBLEDevice::deleteClient(pClient);
         g_remoteControls.availableIds.push(device->m_controllerId);
         delete device;
-        return false;
+        return false;*/
       }
+      matched = true;
+
+      if (element->temporary_send_legacy_packet){
+        vTaskDelay(300);
+        if(pChr && pChr->canWrite()) {
+          if (!pChr->writeValue((uint8_t*)&device->m_controllerId, sizeof(uint32_t), true)){
+            Logger::Info("[BLE] Fail to sned woah");
+          }else{
+            Logger::Info("[BLE] Sent controller id: %d", device->m_controllerId);
+          }
+        }
+      }
+
+      if (element->notify){
+        if(pChr->canNotify()) {
+          if(!pChr->subscribe(true, notifyCB)) {
+            Logger::Error("[BLE] Characteristics %s in service %s, failed to subscribe, dropping.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
+            pClient->disconnect();
+            NimBLEDevice::deleteClient(pClient);
+            g_remoteControls.availableIds.push(device->m_controllerId);         
+            delete device;
+            return false;
+          }else{
+            Logger::Info("[BLE] Subscribed on: %s", pChr->getUUID().toString().c_str());
+            break;
+          }
+        }else{
+          Logger::Error("[BLE] Characteristics %s in service %s, does not have notify.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
+          break;
+          /*pClient->disconnect();
+          NimBLEDevice::deleteClient(pClient);
+          g_remoteControls.availableIds.push(device->m_controllerId);
+          delete device;
+          return false;
+          */
+        }
+      }
+    }
+    if (!matched){
+        Logger::Error("[BLE] Unhandled characteristics: %s", uuid.to128().toString());
     }
   }
   device->connected = true;
@@ -277,6 +325,7 @@ bool BleManager::begin(){
 
 void BleManager::AddMessageToQueue(NimBLEUUID &&svcUUID, NimBLEUUID &&charUUID, NimBLEAddress &&addr, uint8_t* pData, size_t length, bool isNotify){
   //TODO: what top do with the addr? send to lua? does it need?
+  Logger::Error("Message arrived on service unmapped %s with characteristics %s and lenght %d", svcUUID .toString().c_str(), charUUID.toString().c_str(), length);
   BleServiceHandler* svcHandler = handlers[svcUUID.toString()];
   if (svcHandler != nullptr){
     svcHandler->AddMessage(charUUID, pData, length, isNotify);
@@ -396,6 +445,14 @@ int BleManager::acceptTypes(std::string service, std::string characteristicStrea
   std::string modified2 = service;
   modified2.replace(4, 4, characteristicId); 
 
+  NimBLEUUID servHIDUUID("00001812-0000-1000-8000-00805f9b34fb");
+  BleServiceHandler *hand2 = new BleServiceHandler(servHIDUUID);
+  hand2->AddCharacteristics(NimBLEUUID("00002a4d-0000-1000-8000-00805f9b34fb"));
+  hand2->AddCharacteristics(NimBLEUUID("00002aee-0000-1000-8000-00805f9b34fb"));
+  handlers[servHIDUUID.to16().toString()] = hand2;
+
+
+
   NimBLEUUID servUUID(service);
   NimBLEUUID streamUUID(modified1);
   NimBLEUUID idUUID(modified2);
@@ -406,6 +463,7 @@ int BleManager::acceptTypes(std::string service, std::string characteristicStrea
   hand->AddCharacteristics(streamUUID);
   hand->AddCharacteristics_TMP(idUUID);
   handlers[servUUID.toString()] = hand;
+
   return 0;
 }
 
