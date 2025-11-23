@@ -4,18 +4,24 @@
 #include "tools/devices.hpp"
 #include <Arduino.h>
 
-void ClientCallbacks::onConnect(NimBLEClient* pClient) {
+void ClientCallbacks::onConnect(NimBLEClient* pClient) { 
+  Serial.printf("Connected to HID device\n"); 
   Logger::Info("[BLE] Device Connected");
-  auto aux = g_remoteControls.clients[pClient->getPeerAddress().toString()];
-  if (aux != nullptr){
+  //xSemaphoreTake(g_remoteControls.m_mutex, portMAX_DELAY);
+  //auto aux = g_remoteControls.clients[pClient->getPeerAddress().toString()];
+  //Logger::Info("[BLE] aaaaa");
+  //xSemaphoreGive(g_remoteControls.m_mutex);
+  /*if (aux != nullptr){
+    Logger::Info("[BLE] vamos");
     aux->m_client = pClient;
-  }
+    Logger::Info("[BLE] fois");
+  }*/
 }
 
 
-void ClientCallbacks::onDisconnect(NimBLEClient* pClient) {
+void ClientCallbacks::onDisconnect(NimBLEClient* pClient, int reason){
   Devices::BuzzerToneDuration(400, 300);
-  Logger::Info("[BLE] Device disconnected");
+  Logger::Info("[BLE] %s Device disconnected, reason=%d", pClient->getPeerAddress().toString().c_str(), reason);
   xSemaphoreTake(g_remoteControls.m_mutex, portMAX_DELAY);
 
   auto aux = g_remoteControls.clients[pClient->getPeerAddress().toString()];
@@ -29,30 +35,25 @@ void ClientCallbacks::onDisconnect(NimBLEClient* pClient) {
   xSemaphoreGive(g_remoteControls.m_mutex);
 }
 
-bool ClientCallbacks::onConnParamsUpdateRequest(NimBLEClient* pClient, const ble_gap_upd_params* params) {
-    if(params->itvl_min < 24) { /** 1.25ms units */
-        return false;
-    } else if(params->itvl_max > 40) { /** 1.25ms units */
-        return false;
-    } else if(params->latency > 2) { /** Number of intervals allowed to skip */
-        return false;
-    } else if(params->supervision_timeout > 100) { /** 10ms units */
-        return false;
-    }
-    return true;
+
+void ClientCallbacks::onPassKeyEntry(NimBLEConnInfo& connInfo)  {
+        Serial.printf("Server Passkey Entry\n");
+        /** This should prompt the user to enter the passkey displayed on the peer device. */
+        NimBLEDevice::injectPassKey(connInfo, 123456);
+  }
+
+
+void ClientCallbacks::onConfirmPasskey(NimBLEConnInfo& connInfo, uint32_t pass_key) {
+        Serial.printf("The passkey YES/NO number: %" PRIu32 "\n", pass_key);
+        /** Inject false if passkeys don't match. */
+        NimBLEDevice::injectConfirmPasskey(connInfo, true);
 }
 
-uint32_t ClientCallbacks::onPassKeyRequest(){
-    return 123456;
-}
-
-bool ClientCallbacks::onConfirmPIN(uint32_t pass_key){
-    return true;
-}
-
-void ClientCallbacks::onAuthenticationComplete(ble_gap_conn_desc* desc){
-    if(!desc->sec_state.encrypted) {
-        NimBLEDevice::getClientByID(desc->conn_handle)->disconnect();
-        return;
-    }
+void ClientCallbacks::onAuthenticationComplete(NimBLEConnInfo& connInfo) {
+  if (!connInfo.isEncrypted()) {
+    Serial.printf("Encrypt connection failed - disconnecting\n");
+    /** Find the client with the connection handle provided in connInfo */
+    NimBLEDevice::getClientByHandle(connInfo.getConnHandle())->disconnect();
+    return;
+  }
 }

@@ -62,8 +62,9 @@ class BleSensorHandlerData : public BleSensorData{
 
 
 
-class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
-  void onResult(NimBLEAdvertisedDevice* advertisedDevice);
+class AdvertisedDeviceCallbacks: public NimBLEScanCallbacks {
+  void onResult(const NimBLEAdvertisedDevice* advertisedDevice) override;
+  void onScanEnd(const NimBLEScanResults& results, int reason) override ;
   public:
     BleManager *bleObj;
 };
@@ -115,13 +116,14 @@ class BleManager{
     void setScanningMode(bool scan);
 
 
-    void AddMessageToQueue(NimBLEUUID &&svcUUID, NimBLEUUID &&charUUID, NimBLEAddress &&addr, uint8_t* pData, size_t length, bool isNotify);
+    void AddMessageToQueue(const NimBLEUUID &svcUUID,const NimBLEUUID &charUUID,NimBLEAddress &&addr, uint8_t* pData, size_t length, bool isNotify);
     static BleManager* Get();
   private:
     std::map<std::string, BleServiceHandler*> handlers; //Handlers are stored by their UUID
     std::map<std::string, BluetoothDeviceHandler*> clients; //Clients are stored by their address
 
     bool connectToServer();
+    bool connectToServerOLD();
     uint16_t clientCount;
   
     uint32_t  maxClients, lastScanClearTime;

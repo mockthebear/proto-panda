@@ -4,10 +4,7 @@
 
 
 BluetoothDeviceHandler::~BluetoothDeviceHandler(){
-    if (m_callbacks != nullptr){
-        delete m_callbacks;
-        m_callbacks = nullptr;
-    }
+    m_callbacks = nullptr;
 }
 
 void BleServiceHandler::AddCharacteristics(NimBLEUUID charId){
@@ -18,7 +15,7 @@ void BleServiceHandler::AddCharacteristics_TMP(NimBLEUUID charId){
     m_characteristics[charId.to16().toString()] = new BleCharacteristicsHandler(charId, true, false, true);
 }
 
-void BleServiceHandler::AddMessage(NimBLEUUID &charId,uint8_t* pData, size_t length, bool isNotify){
+void BleServiceHandler::AddMessage(const NimBLEUUID &charId,uint8_t* pData, size_t length, bool isNotify){
     BleCharacteristicsHandler* characteristic = m_characteristics[charId.toString()];
     if (characteristic){
         characteristic->AddMessage(pData, length, isNotify);

@@ -3,33 +3,21 @@
 #include "tools/devices.hpp"
 #include <Arduino.h>
 
-
-
-void scanEndedCB(NimBLEScanResults results){
-  Logger::Info("[BLE] Scan Ended");
-}
-
-
-//static ConnectTuple *toConnect = nullptr;
-
-
 BleManager* BleManager::m_myself = nullptr;
 
 BleSensorHandlerData BleManager::remoteData[MAX_BLE_CLIENTS];
 
-
-
-void AdvertisedDeviceCallbacks::onResult(NimBLEAdvertisedDevice* advertisedDevice) {
+void AdvertisedDeviceCallbacks::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
   if (bleObj->canLogDiscoveredClients()){
     Logger::Info("[BLE] Advertised Device found: %s", advertisedDevice->toString().c_str());
   }
-
-
   auto acceptedServices = bleObj->GetAcceptedServices();
   
   for (auto &it : acceptedServices) {
 
     if(it.second != nullptr && advertisedDevice->isAdvertisingService(it.second->uuid)){
+      Serial.printf("Found HID Device: %s\n", advertisedDevice->getName().c_str());
+      Serial.printf("Address: %s\n", advertisedDevice->getAddress().toString().c_str());
       bleObj->setScanningMode(false);
       bleObj->toConnect = ConnectionRequest(advertisedDevice, it.second);
       //toConnect = new ConnectTuple(advertisedDevice, std::get<0>(it), std::get<1>(it), std::get<2>(it));
@@ -38,19 +26,21 @@ void AdvertisedDeviceCallbacks::onResult(NimBLEAdvertisedDevice* advertisedDevic
   }
 }
 
+void AdvertisedDeviceCallbacks::onScanEnd(const NimBLEScanResults& results, int reason)  {
+        Serial.printf("Scan Ended, reason: %d, device count: %d; Restarting scan\n", reason, results.getCount());
+        NimBLEDevice::getScan()->start(0, false, true);
+    }
 
 
 void notifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify){
-  //BleSensorData* data = (BleSensorData*)pData;
-
   if (pRemoteCharacteristic == nullptr){
     return;
   }
 
-  NimBLERemoteService* svc = pRemoteCharacteristic->getRemoteService();
+  const NimBLERemoteService* svc = pRemoteCharacteristic->getRemoteService();
   if (svc == nullptr){
     Logger::Info("[BLE] noooo1");
-    return;
+    return; 
   }
   NimBLEClient* client =  svc->getClient();
   if (client == nullptr){
@@ -72,202 +62,146 @@ void notifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData,
   //}
 }
 
-bool BleManager::connectToServer(){
+template<int S> void hidReportNotifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
+    Serial.printf("[%d]char: %s, len %d: ", S,  pRemoteCharacteristic->getUUID().toString().c_str(), length);
+    for (size_t i=0;i<length;i++){
+        Serial.printf("%d,", pData[i]);
+    }
+    Serial.printf("\n");
+}
 
+
+
+
+
+bool BleManager::connectToServer(){
+  static ClientCallbacks callbacks;
   NimBLEClient* pClient = nullptr;
-  NimBLEAdvertisedDevice* advDevice = toConnect.advertisedDevice;
+  const NimBLEAdvertisedDevice* advDevice = toConnect.advertisedDevice;
   BleServiceHandler *handler = toConnect.handler;
 
-
   BluetoothDeviceHandler *device = new BluetoothDeviceHandler();
-  device->m_callbacks = new ClientCallbacks();
-  device->m_callbacks->bleObj = this;
-
+  device->m_callbacks = &callbacks;
+  device->m_device = advDevice;
+  
   /** Check if we have a client we should reuse first **/
-  if(NimBLEDevice::getClientListSize()) {
-    pClient = NimBLEDevice::getClientByPeerAddress(advDevice->getAddress());
-    if(pClient){
-        if(!pClient->connect(advDevice, false)) {
-          Logger::Info("[BLE] Fail on 1");
+
+  if (NimBLEDevice::getCreatedClientCount()) {
+      pClient = NimBLEDevice::getClientByPeerAddress(advDevice->getAddress());
+      if (pClient) {
+        device->m_client = pClient;
+        if (!pClient->connect(advDevice, false)) {
+            Logger::Info("[BLE] Fail on 1");
+            return false;
+        }
+        Logger::Info("[BLE] Reconnected client");
+      } else {
+          pClient = NimBLEDevice::getDisconnectedClient();
+      }
+  }
+
+  /** No client to reuse? Create a new one. */
+  if (!pClient) {
+      if (NimBLEDevice::getCreatedClientCount() >= NIMBLE_MAX_CONNECTIONS) {
+          Logger::Info("[BLE] Max clients reached - no more connections available\n");
+          return false;
+      }
+
+      pClient = NimBLEDevice::createClient();
+      device->m_client = pClient;
+    
+      Logger::Info("[BLE] New client created\n");
+
+      
+      
+      pClient->setClientCallbacks(device->m_callbacks, false);
+      pClient->setConnectionParams(12, 12, 0, 150);
+      pClient->setConnectTimeout(5 * 1000);
+
+        if (!pClient->connect(advDevice)) {
+            NimBLEDevice::deleteClient(pClient);
+            Serial.printf("Failed to connect, deleted client 1\n");
+            delete device;
+            return false;
+        }
+    }
+
+    if (!pClient->isConnected()) {
+      if (!pClient->connect(advDevice)) {
+          Serial.printf("Failed to connect 2\n");
           delete device;
           return false;
-        }
-    }else {
-        pClient = NimBLEDevice::getDisconnectedClient();
-    }
-  }
-  /** No client to reuse? Create a new one. */
-  if(!pClient) {
-    if(NimBLEDevice::getClientListSize() >= NIMBLE_MAX_CONNECTIONS) {
-        Logger::Info("[BLE] Fail on 2");
-        delete device;
-        return false;
+      }
     }
 
-    pClient = NimBLEDevice::createClient();
+    Serial.printf("Connected to: %s RSSI: %d\n", pClient->getPeerAddress().toString().c_str(), pClient->getRssi());
 
+    /** Now we can access the HID service characteristics */
+    NimBLERemoteService* pSvc = nullptr;
 
-    pClient->setClientCallbacks(device->m_callbacks, false);    
-    pClient->setConnectionParams(12,12,0,51);
-    pClient->setConnectTimeout(5);
-
-    if (!pClient->connect(advDevice)) {
-        NimBLEDevice::deleteClient(pClient);
-        Logger::Info("[BLE] Fail on 3");
-        delete device;
-        return false;
-    }
-  }
-
-
-  if(!pClient->isConnected()) {
-    if (!pClient->connect(advDevice)) {
-      Logger::Info("[BLE] Failed to connect");
-      delete device;
-      return false;
-    }
-  }
-
-  device->m_client = pClient;
-  device->m_device = advDevice;
-
-  
-
-  if (!pClient->discoverAttributes()) {
-    Logger::Info("[BLE] Attribute discovery failed!");
-    delete device;
-    return false;
-  }
-
-  if (!availableIds.empty()) {
+    if (!availableIds.empty()) {
     device->m_controllerId = availableIds.top();
     availableIds.pop();
   } else {
       device->m_controllerId = nextId++;
   }
 
-  NimBLERemoteService* pSvc = nullptr;
-
-
-  std::vector<NimBLERemoteService*>* svlist = pClient->getServices(true);
-  for (auto svc : *svlist) {
-    Logger::Error("[BLE] Currently with %s service", svc->getUUID().to128().toString().c_str());
-    std::vector<NimBLERemoteCharacteristic*>* pChars = svc->getCharacteristics(true);
-    for (auto pChr : *pChars) {
-       NimBLEUUID uuid = pChr->getUUID();
-       Serial.printf(
-              "[%s] Found characteristic: %s | Handle=%d | Notify=%d, Read=%d, Write=%d\n",
-              svc->getUUID().to128().toString().c_str(),
-              uuid.toString().c_str(),
-              pChr->getDefHandle(),
-              pChr->canNotify(),
-              pChr->canRead(),
-              pChr->canWrite()
-              
-          );
-      if(pChr->canNotify()) {
-        if(pChr->subscribe(true, notifyCB)) {
-          Logger::Error("[BLE] YEEEB OOOOOOOOOOOOOOOOOOOOOY: %s\n", pChr->getUUID().toString().c_str());
-        }
-      }
-    }
-    vTaskDelay(10);
-  }
+  
 
   pSvc = pClient->getService(handler->uuid);
-  if(!pSvc) { 
-    Logger::Error("[BLE] For some reason, client dont seems to have the required service.");
-    pClient->disconnect();
-    NimBLEDevice::deleteClient(pClient);
-    g_remoteControls.availableIds.push(device->m_controllerId);
-    delete device;
-    return false; 
+  if (!pSvc) {
+      Serial.printf("HID service not found!\n");
+      pClient->disconnect();
+      return false;
   }
 
-  std::vector<NimBLERemoteCharacteristic*>* pChars = pSvc->getCharacteristics();
+  Serial.printf("Found HID service\n");
+  // Look for report characteristics to subscribe to
+  // Instead of using getProperties(), we'll try to subscribe and see if it works
   std::vector<BleCharacteristicsHandler*> searchList = handler->getCharacteristics();
-  for (auto pChr : *pChars) {
+  std::vector<NimBLERemoteCharacteristic*> pChars = pSvc->getCharacteristics(true);
+  for (auto &element : searchList){
     vTaskDelay(1);
-     NimBLEUUID uuid = pChr->getUUID();
-     bool matched = false;
-     Serial.printf(
-              "Found characteristic: %s | Handle=%d | Notify=%d, Read=%d, Write=%d\n",
-              uuid.toString().c_str(),
-              pChr->getDefHandle(),
-              pChr->canNotify(),
-              pChr->canRead(),
-              pChr->canWrite()
-              
-          );
-     
-    for (auto &element : searchList){
-      if (pChr->getUUID() != element->uuid){
-        if (!element->required){
+    bool matched = false;
+    for (auto pChr : pChars) {
+        if (pChr->getUUID() == element->uuid){
+          matched = true;
           if(pChr->canNotify()) {
             if(!pChr->subscribe(true, notifyCB)) {
-              Logger::Error("[BLE] YEEEB OOOOOOOOOOOOOOOOOOOOOY: %s\n", pChr->getUUID().toString());
+              Logger::Error("[BLE] Characteristics %s in service %s, failed to subscribe, dropping.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
+              pClient->disconnect();
+              NimBLEDevice::deleteClient(pClient);
+              g_remoteControls.availableIds.push(device->m_controllerId);         
+              delete device;
+              return false;
+            }else{
+              Logger::Error("[BLE] Subscribed on characteristics %s in service %s, failed to subscribe.", element->uuid.toString().c_str(), pChr->getUUID().toString().c_str());
             }
-          }
-          continue;
-        }
-        /*Logger::Error("[BLE] Not found required characteristics %s in service %s, dropping.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
-        pClient->disconnect();
-        NimBLEDevice::deleteClient(pClient);
-        g_remoteControls.availableIds.push(device->m_controllerId);
-        delete device;
-        return false;*/
-      }
-      matched = true;
-
-      if (element->temporary_send_legacy_packet){
-        vTaskDelay(300);
-        if(pChr && pChr->canWrite()) {
-          if (!pChr->writeValue((uint8_t*)&device->m_controllerId, sizeof(uint32_t), true)){
-            Logger::Info("[BLE] Fail to sned woah");
-          }else{
-            Logger::Info("[BLE] Sent controller id: %d", device->m_controllerId);
+            continue;
           }
         }
-      }
-
-      if (element->notify){
-        if(pChr->canNotify()) {
-          if(!pChr->subscribe(true, notifyCB)) {
-            Logger::Error("[BLE] Characteristics %s in service %s, failed to subscribe, dropping.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
-            pClient->disconnect();
-            NimBLEDevice::deleteClient(pClient);
-            g_remoteControls.availableIds.push(device->m_controllerId);         
-            delete device;
-            return false;
-          }else{
-            Logger::Info("[BLE] Subscribed on: %s", pChr->getUUID().toString().c_str());
-            break;
-          }
-        }else{
-          Logger::Error("[BLE] Characteristics %s in service %s, does not have notify.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
-          break;
-          /*pClient->disconnect();
-          NimBLEDevice::deleteClient(pClient);
-          g_remoteControls.availableIds.push(device->m_controllerId);
-          delete device;
-          return false;
-          */
-        }
-      }
     }
-    if (!matched){
-        Logger::Error("[BLE] Unhandled characteristics: %s", uuid.to128().toString());
+    if (element->required && matched == false){
+      Logger::Error("[BLE] Characteristics %s in service %s, is required but not present, dropping.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
+      pClient->disconnect();
+      NimBLEDevice::deleteClient(pClient);
+      g_remoteControls.availableIds.push(device->m_controllerId);         
+      delete device;
+      return false;
     }
   }
+
   device->connected = true;
+  Serial.printf("iz complete\n");
+  
   clients[pClient->getPeerAddress().toString()] = device;
   clientCount++;
-
-  Logger::Info("[BLE] Done with this device! ConnID=%d %s", pClient->getConnId(), pClient->getPeerAddress().toString().c_str());
+  Logger::Info("[BLE] Done with this device! ConnID=%d %s", -1, pClient->getPeerAddress().toString().c_str());
   Devices::BuzzerToneDuration(1500, 300);
 
   return true;
 }
+
 
 void BleManager::setScanningMode(bool mode){
   if (mode == false){
@@ -281,8 +215,8 @@ BleManager* BleManager::Get(){
 };
 
 bool BleManager::begin(){
-  NimBLEDevice::init("");
-  NimBLEDevice::setSecurityAuth(/*BLE_SM_PAIR_AUTHREQ_BOND | BLE_SM_PAIR_AUTHREQ_MITM |*/ BLE_SM_PAIR_AUTHREQ_SC);
+  NimBLEDevice::init("NimBLE-HID-Client");
+  NimBLEDevice::setSecurityAuth(true, true, true);
   m_myself = this;
 #ifdef ESP_PLATFORM
     NimBLEDevice::setPower(ESP_PWR_LVL_P9); /** +9db */
@@ -304,7 +238,7 @@ bool BleManager::begin(){
   }
   cb->bleObj = this;
 
-  pScan->setAdvertisedDeviceCallbacks(cb);
+  pScan->setScanCallbacks(cb, false);
 
     /** Set scan interval (how often) and window (how long) in milliseconds */
   pScan->setInterval(45);
@@ -315,7 +249,7 @@ bool BleManager::begin(){
   *  Optional callback for when scanning stops.
   */  
   m_started = true;
-  NimBLEDevice::getScan()->start(0, scanEndedCB);
+  pScan->start(0);
   return true;
 }
 
@@ -323,9 +257,8 @@ bool BleManager::begin(){
 
 
 
-void BleManager::AddMessageToQueue(NimBLEUUID &&svcUUID, NimBLEUUID &&charUUID, NimBLEAddress &&addr, uint8_t* pData, size_t length, bool isNotify){
+void BleManager::AddMessageToQueue(const NimBLEUUID &svcUUID,const NimBLEUUID &charUUID,NimBLEAddress &&addr, uint8_t* pData, size_t length, bool isNotify){
   //TODO: what top do with the addr? send to lua? does it need?
-  Logger::Error("Message arrived on service unmapped %s with characteristics %s and lenght %d", svcUUID .toString().c_str(), charUUID.toString().c_str(), length);
   BleServiceHandler* svcHandler = handlers[svcUUID.toString()];
   if (svcHandler != nullptr){
     svcHandler->AddMessage(charUUID, pData, length, isNotify);
@@ -377,14 +310,17 @@ void BleManager::update(){
   }
   
   if (millis() - lastScanClearTime >= (30*1000) ) {
-    NimBLEDevice::getScan()->clearDuplicateCache();
-    NimBLEDevice::getScan()->clearResults(); // Clear the scan results
+    if (!isScanning){
+      //NimBLEDevice::getScan()->clearDuplicateCache();
+      NimBLEDevice::getScan()->clearResults(); // Clear the scan results
+      Logger::Info("[BLE] Scan results cleared");
+    }
     lastScanClearTime = millis(); // Reset the timer
-    Logger::Info("[BLE] Scan results cleared");
     Devices::CalculateMemmoryUsage();
   }
   
-  if (toConnect.advertisedDevice != nullptr) {
+  
+  if (toConnect.ready) {
     connectToServer();
     toConnect.erase();
     return;
@@ -394,9 +330,10 @@ void BleManager::update(){
     if (clientCount < maxClients){
       if (!isScanning){
         isScanning = true;
-        NimBLEDevice::getScan()->clearDuplicateCache();
+        Logger::Info("[BLE] Scan resumed");
+        //NimBLEDevice::getScan()->clearDuplicateCache();
         NimBLEDevice::getScan()->clearResults();
-        NimBLEDevice::getScan()->start(0, scanEndedCB);
+        NimBLEDevice::getScan()->start(0);
       }
     }
       
@@ -448,12 +385,11 @@ int BleManager::acceptTypes(std::string service, std::string characteristicStrea
   NimBLEUUID servHIDUUID("00001812-0000-1000-8000-00805f9b34fb");
   BleServiceHandler *hand2 = new BleServiceHandler(servHIDUUID);
   hand2->AddCharacteristics(NimBLEUUID("00002a4d-0000-1000-8000-00805f9b34fb"));
-  hand2->AddCharacteristics(NimBLEUUID("00002aee-0000-1000-8000-00805f9b34fb"));
   handlers[servHIDUUID.to16().toString()] = hand2;
 
 
 
-  NimBLEUUID servUUID(service);
+  /*NimBLEUUID servUUID(service);
   NimBLEUUID streamUUID(modified1);
   NimBLEUUID idUUID(modified2);
 
@@ -462,7 +398,8 @@ int BleManager::acceptTypes(std::string service, std::string characteristicStrea
   BleServiceHandler *hand = new BleServiceHandler(servUUID);
   hand->AddCharacteristics(streamUUID);
   hand->AddCharacteristics_TMP(idUUID);
-  handlers[servUUID.toString()] = hand;
+  handlers[servUUID.toString()] = hand;*/
+  
 
   return 0;
 }

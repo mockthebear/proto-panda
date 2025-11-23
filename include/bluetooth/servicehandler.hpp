@@ -20,7 +20,7 @@ class BleServiceHandler{
     }
     void AddCharacteristics(NimBLEUUID charId);
     void AddCharacteristics_TMP(NimBLEUUID charId);
-    void AddMessage(NimBLEUUID &charId, uint8_t* pData, size_t length, bool isNotify);
+    void AddMessage(const NimBLEUUID &charId, uint8_t* pData, size_t length, bool isNotify);
     void SendMessages();
     std::vector<BleCharacteristicsHandler*> getCharacteristics();
     NimBLEUUID uuid;
@@ -33,12 +33,14 @@ class BleServiceHandler{
 class ConnectionRequest{
     public:
         ConnectionRequest():advertisedDevice(nullptr),handler(nullptr){};
-        ConnectionRequest(NimBLEAdvertisedDevice* device, BleServiceHandler* handlerObj):advertisedDevice(device),handler(handlerObj){};
+        ConnectionRequest(const NimBLEAdvertisedDevice* device, BleServiceHandler* handlerObj):ready(false),advertisedDevice(device),handler(handlerObj){if (handler != nullptr) ready = true;};
         void erase(){
             advertisedDevice = nullptr;
             handler = nullptr;
+            ready = false;
         };
-        NimBLEAdvertisedDevice* advertisedDevice;
+        bool ready;
+        const NimBLEAdvertisedDevice* advertisedDevice;
         BleServiceHandler* handler;
 };
 
@@ -46,7 +48,7 @@ class BluetoothDeviceHandler{
     public: 
         BluetoothDeviceHandler():m_device(nullptr),m_callbacks(nullptr),m_client(nullptr),m_controllerId(0xffff),connected(false){};
         ~BluetoothDeviceHandler();
-        NimBLEAdvertisedDevice* m_device;
+        const NimBLEAdvertisedDevice* m_device;
         ClientCallbacks * m_callbacks;
         NimBLEClient* m_client;
         uint32_t m_controllerId;
