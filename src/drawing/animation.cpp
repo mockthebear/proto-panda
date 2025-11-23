@@ -209,24 +209,38 @@ void Animation::DrawFrame(File *file, int i){
 
     
     uint8_t r, g, b;
-    uint8_t reverse = buffer[0];
-    
-    int byteId = 1;
+    uint8_t version = buffer[0];
+    if (version != PANDA_CACHE_VERSION){
+        Serial.printf("Mismatched cached frame version. Current version is %d but in cache got %d. Clear the cache or rebuild bulk: %d", PANDA_CACHE_VERSION, version, buffer[1]);
+        return;
+    }
+    uint8_t flip_left = buffer[1];
+    uint8_t flip_right = buffer[2];
+    if (m_colorMode == 0){
+        m_colorMode = (ColorMode)buffer[3];
+    }
+    //Need to divide by 2 (size of uint16_t) because the buffer is converted to a uin16_t pixels.
+    //And the header must be a multiple of 2 to avoid byte skipping
+    int byteId = FILE_HEADER_BYTES / sizeof(uint16_t);
+    int byteIdOled = 0;
+
     uint16_t *readBuffer = (uint16_t *)(buffer);
     
     DMADisplay::Display->startWrite();
     for (int16_t y=0;y<PANEL_HEIGHT;y++){
       for (int16_t x=0;x<PANEL_WIDTH;x++){
-        uint16_t color = readBuffer[byteId++];
+        uint16_t color = readBuffer[byteId];
         //1100011100011000    = 0xC718
         //We know each color has 5 6 and 5 bits. So to check if the color is strong enough, we're using this mask that discards
         //each of 3 initial bits of each color
         //If any of the remaining bits are 1, the whole condition will give != 0 and therefore color!
         if ((color & 0x8610) != 0) { 
-            OledScreen::DisplayFace[byteId] = 1;
+            OledScreen::DisplayFace[byteIdOled] = 1;
         }else{
-            OledScreen::DisplayFace[byteId] = 0;
+            OledScreen::DisplayFace[byteIdOled] = 0;
         }
+        byteIdOled++;
+        byteId++;
         
         
 
@@ -239,11 +253,15 @@ void Animation::DrawFrame(File *file, int i){
 
         reorder_rgb(currentMode, &r, &g, &b);
 
-        DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH-1)-x, y, r, g, b);
-        if (reverse&1){
-           DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH)+x, y, r, g, b);
+        if (flip_left&1){
+            DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH-1)-x, y, r, g, b);
         }else{
-           DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH+PANEL_WIDTH-1)-x, y, r, g, b);
+            DMADisplay::Display->updateMatrixDMABuffer_2(x, y, r, g, b);
+        }
+        if (flip_right&1){
+            DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH+PANEL_WIDTH-1)-x, y, r, g, b);
+        }else{
+            DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH)+x, y, r, g, b);
         }
         
       }
@@ -287,6 +305,15 @@ void Animation::Update(File *file){
             PopAnimation();
         }
     }else{
+        if (!m_onBlankScreen){
+            DMADisplay::Display->clearScreen();
+            DMADisplay::Display->drawLine(0          , 0            , PANEL_WIDTH    , PANEL_HEIGHT  , DMADisplay::Display->color565(255,255,255));
+            DMADisplay::Display->drawLine(0          ,  PANEL_HEIGHT, PANEL_WIDTH    , 0             , DMADisplay::Display->color565(255,255,255));
+
+            DMADisplay::Display->drawLine(PANEL_WIDTH, 0            , PANEL_WIDTH*2  , PANEL_HEIGHT  , DMADisplay::Display->color565(255,255,255));
+            DMADisplay::Display->drawLine(PANEL_WIDTH, PANEL_HEIGHT , PANEL_WIDTH*2  , 0             , DMADisplay::Display->color565(255,255,255));
+            m_needFlip = true;
+        }
         xSemaphoreGive(m_mutex);
     }
     if (isManaged() && needFlipScreen()){

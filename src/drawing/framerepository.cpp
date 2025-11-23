@@ -29,9 +29,19 @@ bool FrameRepository::Begin(){
     if (!FFat.begin(true)) {
         Logger::Info("FFat Mount Failed");
         Logger::Info("Formatting FFat");
-        FFat.format();
+        if (!FFat.format()){
+            OledScreen::CriticalFail("Corrupted FLASH. run 'esptool --chip esp32s3 --port COM10 erase_flash'");
+            return false;
+        }
         if (!FFat.begin(true)) {
             Logger::Info("FFat Mount Failed");
+            return false;
+        }
+    }
+    if (FFat.usedBytes() == FFat.totalBytes()){
+        FFat.format(true);
+        if (FFat.usedBytes() == FFat.totalBytes()){
+            OledScreen::CriticalFail("Corrupted FLASH. run 'esptool --chip esp32s3 --port COM10 erase_flash'");
             return false;
         }
     }
@@ -49,6 +59,9 @@ bool FrameRepository::Begin(){
 
     OledScreen::DrawCircularProgress(FFat.usedBytes(), FFat.totalBytes(), "Flash usage");
     delay(1000);
+    if (FFat.usedBytes() == FFat.totalBytes()){
+        OledScreen::CriticalFail("Flash is full. Run 'esptool --chip esp32s3 --port COM10 erase_flash'");
+    }
     Logger::Info("Completed");
 
     return true;
@@ -60,10 +73,14 @@ void FrameRepository::displayFFATInfo(){
     Logger::Info("FFAT Avaliable=%2.2f%%", (1.0f - (FFat.usedBytes()/(float)FFat.totalBytes()) ) * 100.0f );
 }
 
-void FrameRepository::extractModes(JsonVariant &element, bool &flip_left, int &color_scheme_left){
+void FrameRepository::extractModes(JsonVariant &element, bool &flip_left, bool &flip_right, int &color_scheme_left){
     
     if (element.containsKey("flip_left") && element["flip_left"].is<bool>()) {
         flip_left = element["flip_left"];
+    }
+
+    if (element.containsKey("flip_right") && element["flip_right"].is<bool>()) {
+        flip_right = element["flip_right"];
     }
                 
     if (element.containsKey("color_scheme_left") && element["color_scheme_left"].is<const char*>()) {
@@ -277,15 +294,16 @@ void FrameRepository::composeBulkFile(){
                 if (strlen(filePath) >= 1024){
                     FrameBufferCriticalError(&bulkFile, "Path name is too big at element %d", filePath, jsonElement);
                 }
-                bool flipe_left = false; 
+                bool flip_left = true; 
+                bool flip_right = false; 
                 int color_scheme_left = 0;
-                extractModes(element, flipe_left, color_scheme_left);
+                extractModes(element, flip_left, flip_right, color_scheme_left);
 
                 sprintf(miniHBuffer, "Copy frame %d\n%s", fileIdx+1, filePath);
                 OledScreen::DrawProgressBar(fileIdx+1, maxFrames+1, miniHBuffer);
 
                 m_bulkPercentage = (fileIdx+1)/float(maxFrames+1);
-                if (!decodeFile(filePath, flipe_left, color_scheme_left)){
+                if (!decodeFile(filePath, flip_left, flip_right, color_scheme_left)){
                     FrameBufferCriticalError(&bulkFile, "Failed to decode %s at element %d", filePath, jsonElement);
                 }
                 m_frameCountByAlias[currentName]++;
@@ -298,16 +316,17 @@ void FrameRepository::composeBulkFile(){
                 }
                 int from = element["from"];
                 int to = element["to"];
-                bool flipe_left = false; 
+                bool flip_left = true; 
+                bool flip_right = false; 
                 int color_scheme_left = 0;
-                extractModes(element, flipe_left, color_scheme_left);
+                extractModes(element, flip_left, flip_right, color_scheme_left);
                 
                 for (int i=from;i<=to;i++){
                     sprintf(headerFileName, pattern, i);
                     sprintf(miniHBuffer, "Copy frame %d\n%s", fileIdx+1, headerFileName);
                     OledScreen::DrawProgressBar(fileIdx+1, maxFrames+1, miniHBuffer);
                     m_bulkPercentage = (fileIdx+1)/float(maxFrames+1);
-                    if (!decodeFile(headerFileName, flipe_left, color_scheme_left)){
+                    if (!decodeFile(headerFileName, flip_left, flip_right, color_scheme_left)){
                         FrameBufferCriticalError(&bulkFile, "Failed decode %s at element %d", headerFileName, jsonElement);
                     }
                     fdesc.printf("%d = %s\n", fileIdx, headerFileName);
@@ -315,9 +334,10 @@ void FrameRepository::composeBulkFile(){
                     fileIdx++;
                 }
             }else if (element.containsKey("files")){
-                bool flipe_left = false; 
+                bool flip_left = true; 
+                bool flip_right = false; 
                 int color_scheme_left = 0;
-                extractModes(element, flipe_left, color_scheme_left);
+                extractModes(element, flip_left, flip_right, color_scheme_left);
                 
                 JsonArray filesArray = element["files"];
                 for (JsonVariant file : filesArray) {
@@ -325,7 +345,7 @@ void FrameRepository::composeBulkFile(){
                     sprintf(miniHBuffer, "Copy frame %d\n%s", fileIdx+1, filename);
                     OledScreen::DrawProgressBar(fileIdx+1, maxFrames+1, miniHBuffer);
                     m_bulkPercentage = (fileIdx+1)/float(maxFrames+1);
-                    if (!decodeFile(filename, flipe_left, color_scheme_left)){
+                    if (!decodeFile(filename, flip_left, flip_right, color_scheme_left)){
                         FrameBufferCriticalError(&bulkFile, "Failed decode %s at element %d", filename, jsonElement);
                     }
                     fdesc.printf("%d = %s\n", fileIdx, filename);
@@ -402,14 +422,17 @@ std::string PngErrorToString(int error) {
     }
 }
 
-bool FrameRepository::decodeFile(const char *pathName, bool flip, int color_mode){
+bool FrameRepository::decodeFile(const char *pathName, bool flip_left, bool flip_right, int color_mode){
     int lastRcError = 0;
     uint16_t* res = Storage::DecodePNGForBuffer(pathName, lastRcError);
     if (res) {
-        uint8_t meme = flip ? 1 : 0;
-        bulkFile.write(&meme, sizeof(uint8_t));
-        meme = color_mode;
-        bulkFile.write(&meme, sizeof(uint8_t));
+        uint8_t content[FILE_HEADER_BYTES];
+        content[0] =  PANDA_CACHE_VERSION;
+        content[1] =  flip_left ? 1 : 0;
+        content[2] =  flip_right ? 1 : 0;
+        content[3] =  color_mode;
+        bulkFile.write((const uint8_t*)content, sizeof(uint8_t)*FILE_HEADER_BYTES);
+        //Or a uin32
         int rd = bulkFile.write((const uint8_t*)res, FILE_SIZE_BULK_SIZE);
         if (rd != FILE_SIZE_BULK_SIZE){
             Logger::Info("Error writing data in the FFAT: exptected %d got %d\n",FILE_SIZE, rd);
