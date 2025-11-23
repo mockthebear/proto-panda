@@ -75,14 +75,34 @@ void setup() {
     return;
   }
 
+  #ifdef ENABLE_HUB75_PANEL
+  Devices::CalculateMemmoryUsage(); 
+  if (!DMADisplay::Start()){
+    OledScreen::CriticalFail("Failed to initialize DMA display!");
+    Devices::BuzzerTone(300);
+    delay(1500);
+    Devices::BuzzerNoTone();
+    for(;;){}
+  }
+  Logger::Info("DMA display initialized!");
+  Devices::CalculateMemmoryUsage(); 
+  #endif 
+
   while (!Storage::Begin()){
+    DMADisplay::Display->clearScreen();
+    DMADisplay::Display->setBrightness8(8);
+    DMADisplay::Display->drawRGBBitmap(0,0, icon_panel_nosd, 64, 32);
+    DMADisplay::Display->drawRGBBitmap(63,0, icon_panel_nosd, 64, 32);
+    DMADisplay::Display->flipDMABuffer();
     OledScreen::display.clearDisplay();
     OledScreen::display.drawBitmap(0,0, icon_sd, 128, 64, 1);
     OledScreen::display.display();
     delay(500);
     OledScreen::display.clearDisplay();
     OledScreen::display.display();
+    DMADisplay::Display->setBrightness8(1);
   }
+  DMADisplay::Display->setBrightness8(0);
 
   Logger::Begin();
   Devices::DisplayResetInfo();
@@ -113,17 +133,7 @@ void setup() {
       delay(1000);
     }
   }
-  #ifdef ENABLE_HUB75_PANEL
-  Devices::CalculateMemmoryUsage(); 
-  if (!DMADisplay::Start()){
-    OledScreen::CriticalFail("Failed to initialize DMA display!");
-    Devices::BuzzerTone(300);
-    delay(1500);
-    Devices::BuzzerNoTone();
-    for(;;){}
-  }
-  Logger::Info("DMA display initialized!");
-  #endif 
+
 
   Devices::CalculateMemmoryUsage(); 
   if (!g_lua.LoadFile("/init.lua")){

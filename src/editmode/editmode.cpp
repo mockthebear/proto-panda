@@ -20,7 +20,7 @@ WiFiServer *luaServer;
 
 
 
-
+extern FrameRepository g_frameRepo;
 extern LuaInterface g_lua;
 
 void _callback(FtpOperation ftpOperation, unsigned int freeSpace, unsigned int totalSpace)
@@ -102,6 +102,18 @@ void EditMode::DoBegin(bool useSSID)
     for (;;){}
   }
   Logger::Begin();
+
+  if (!g_frameRepo.Begin()){
+    OledScreen::CriticalFail("Frame repository has failed! If restarting does not solve, its a hardware problem.");
+    for (;;){
+      Devices::BuzzerTone(420);
+      delay(200);
+      Devices::BuzzerTone(420);
+      delay(200);
+      Devices::BuzzerNoTone();
+      delay(1000);
+    }
+  }
 
   if (useSSID)
   {
