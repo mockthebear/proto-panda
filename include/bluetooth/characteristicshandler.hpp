@@ -15,8 +15,12 @@ class BleMessage{
 
 class BleCharacteristicsHandler{
   public:
+    BleCharacteristicsHandler():uuid(uint32_t(0)),required(false),notify(false),queueMutex(xSemaphoreCreateMutex()){};
     BleCharacteristicsHandler(NimBLEUUID u, bool req=true, bool notif=true, bool tpsendp=false):uuid(u),required(req),notify(notif),temporary_send_legacy_packet(tpsendp),queueMutex(xSemaphoreCreateMutex()){
     }
+    void SetSubscribeCallback(int n){
+      Serial.printf("chamou o set callback, que gay: %d\n", n);
+    };
     void AddMessage(uint8_t* pData, size_t length, bool isNotify);
     void SendMessages();
     NimBLEUUID uuid;
@@ -27,5 +31,5 @@ class BleCharacteristicsHandler{
     
     SemaphoreHandle_t queueMutex;
     std::queue<BleMessage> dataQueue;
-    
+      
 };

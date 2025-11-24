@@ -215,21 +215,28 @@ BleManager* BleManager::Get(){
 };
 
 bool BleManager::begin(){
-  NimBLEDevice::init("NimBLE-HID-Client");
-  NimBLEDevice::setSecurityAuth(true, true, true);
+
   m_myself = this;
-#ifdef ESP_PLATFORM
-    NimBLEDevice::setPower(ESP_PWR_LVL_P9); /** +9db */
-#else
-    NimBLEDevice::setPower(9); /** +9db */
-#endif
+  
+  for (int i = 0; i<MAX_BLE_CLIENTS;i++){
+    remoteData[i] = BleSensorHandlerData();
+  }
+
+  
+
+  m_started = true;
+  
+  return true;
+}
+
+bool BleManager::beginRadio(){
+  NimBLEDevice::init("Protopanda");
+  NimBLEDevice::setSecurityAuth(true, true, true);
+  NimBLEDevice::setPower(ESP_PWR_LVL_P9); /** +9db */
 
   NimBLEScan* pScan = NimBLEDevice::getScan();
   if (!pScan){
     return false;
-  }
-  for (int i = 0; i<MAX_BLE_CLIENTS;i++){
-    remoteData[i] = BleSensorHandlerData();
   }
 
   AdvertisedDeviceCallbacks *cb = new AdvertisedDeviceCallbacks();
@@ -245,14 +252,10 @@ bool BleManager::begin(){
   pScan->setWindow(15);
 
   pScan->setActiveScan(true);
-  /** Start scanning for advertisers for the scan time specified (in seconds) 0 = forever
-  *  Optional callback for when scanning stops.
-  */  
-  m_started = true;
   pScan->start(0);
+
   return true;
 }
-
 
 
 

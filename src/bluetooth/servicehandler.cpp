@@ -7,12 +7,14 @@ BluetoothDeviceHandler::~BluetoothDeviceHandler(){
     m_callbacks = nullptr;
 }
 
-void BleServiceHandler::AddCharacteristics(NimBLEUUID charId){
-    m_characteristics[charId.to16().toString()] = new BleCharacteristicsHandler(charId);
-}
-
-void BleServiceHandler::AddCharacteristics_TMP(NimBLEUUID charId){
-    m_characteristics[charId.to16().toString()] = new BleCharacteristicsHandler(charId, true, false, true);
+BleCharacteristicsHandler* BleServiceHandler::AddCharacteristics(std::string uuid){
+    if (uuid.length() != 36 ) {
+        return nullptr;
+    }
+    NimBLEUUID charId(uuid);
+    auto obj = new BleCharacteristicsHandler(charId);
+    m_characteristics[charId.to16().toString()] = obj;
+    return obj;
 }
 
 void BleServiceHandler::AddMessage(const NimBLEUUID &charId,uint8_t* pData, size_t length, bool isNotify){

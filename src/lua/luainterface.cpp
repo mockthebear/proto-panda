@@ -380,6 +380,14 @@ bool startBLE()
   Devices::CalculateMemmoryUsage();
   return true;
 }
+
+bool beginRadio()
+{
+  g_remoteControls.beginRadio();
+  Devices::CalculateMemmoryUsage();
+  return true;
+}
+
 void setLogDiscoveredBle(bool log)
 {
   g_remoteControls.setLogDiscoveredClients(log);
@@ -552,6 +560,7 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("oledDrawFilledCircle", DrawFilledCircleScreen);
   //BLE
   m_lua->FuncRegister("startBLE", startBLE);
+  m_lua->FuncRegister("startBLERadio", beginRadio);
   m_lua->FuncRegister("getConnectedRemoteControls", getConnectedRemoteControls);
   m_lua->FuncRegister("isElementIdConnected", isElementIdConnected);
   m_lua->FuncRegister("beginBleScanning", beginScanning);
@@ -853,6 +862,8 @@ bool LuaInterface::Start()
   RegisterConstants();
 
   auto _state = m_lua->GetState();
+
+  
   
   ClassRegister<Batata>::RegisterClassType(_state,"Batata",[](lua_State* L){
         Batata *t = new Batata();
@@ -868,6 +879,39 @@ bool LuaInterface::Start()
   ClassRegister<Batata>::RegisterField(_state, "count", &Batata::count);
 
 
+
+  
+  ClassRegister<BleServiceHandler>::RegisterClassType(_state,"BleServiceHandler",[](lua_State* L) -> BleServiceHandler*{
+    if (lua_gettop(L) == 2){ 
+      bool hasErr;
+      std::string service = GenericLuaGetter<std::string>::Call(hasErr, L);
+      if (service.length() != 36 ) {
+        luaL_error(L, "Malformed servie UUID");
+        return nullptr;
+      }
+      NimBLEUUID uuid(service);
+      Logger::Info("Vamos a: %s\n", service.c_str());
+      auto obj = new BleServiceHandler(uuid);
+      Logger::Info("criado");
+      auto handlers = BleManager::Get()->GetAcceptedServices();
+      Logger::Info("Addado");
+      handlers[uuid.to16().toString()] = obj;
+      Logger::Info("retornado");
+      return obj;
+    }else{
+      luaL_error(L, "Missing UUID parameter");
+      return nullptr;
+    }
+  });
+    
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","AddCharacteristics",&BleServiceHandler::AddCharacteristics);
+
+
+  ClassRegister<BleCharacteristicsHandler>::RegisterClassType(_state,"BleCharacteristicsHandler",[](lua_State* L){ return new  BleCharacteristicsHandler();});
+
+  
+  ClassRegister<BleCharacteristicsHandler>::RegisterClassMethod(_state,"BleCharacteristicsHandler","SetSubscribeCallback",&BleCharacteristicsHandler::SetSubscribeCallback);
+  
   lastError = "";
 
   return true;

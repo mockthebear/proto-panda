@@ -79,6 +79,7 @@ class BleManager{
   public:
     BleManager():clientCount(0), maxClients(1),lastScanClearTime(0),m_started(false),m_canScan(false),m_logDiscoveredClients(false),isScanning(false),nextId(0),m_mutex(xSemaphoreCreateMutex()){}
     bool begin();
+    bool beginRadio();
     void update();
     void sendUpdatesToLua();
     void updateButtons();

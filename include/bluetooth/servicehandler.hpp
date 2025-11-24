@@ -18,8 +18,7 @@ class BleServiceHandler{
   public:
     BleServiceHandler(NimBLEUUID u):uuid(u),queueMutex(xSemaphoreCreateMutex()){
     }
-    void AddCharacteristics(NimBLEUUID charId);
-    void AddCharacteristics_TMP(NimBLEUUID charId);
+    BleCharacteristicsHandler* AddCharacteristics(std::string uuid);
     void AddMessage(const NimBLEUUID &charId, uint8_t* pData, size_t length, bool isNotify);
     void SendMessages();
     std::vector<BleCharacteristicsHandler*> getCharacteristics();
