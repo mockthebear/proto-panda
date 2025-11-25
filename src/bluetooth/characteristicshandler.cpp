@@ -16,12 +16,16 @@ void BleCharacteristicsHandler::AddMessage(uint8_t* pData, size_t length, bool i
 
 
 void BleCharacteristicsHandler::SendMessages(){
+    luaCallback->callLuaFunction("pica");
     while (!dataQueue.empty()){
         std::vector<uint8_t> vec;
         xSemaphoreTake(queueMutex, portMAX_DELAY);
         vec = dataQueue.front().message;
         dataQueue.pop();
         xSemaphoreGive(queueMutex);
-        g_lua.CallFunctionT("onBluetoothCallback", vec);
+        if (luaCallback != nullptr){
+            luaCallback->callLuaFunction(vec);
+        }
+        //g_lua.CallFunctionT("onBluetoothCallback", vec);
   }
 }

@@ -880,7 +880,9 @@ bool LuaInterface::Start()
 
 
 
-  
+  static LuaCFunctionLambda EmptyGC = [](lua_State* L) -> int{
+    return 0;
+  };
   ClassRegister<BleServiceHandler>::RegisterClassType(_state,"BleServiceHandler",[](lua_State* L) -> BleServiceHandler*{
     if (lua_gettop(L) == 2){ 
       bool hasErr;
@@ -890,27 +892,21 @@ bool LuaInterface::Start()
         return nullptr;
       }
       NimBLEUUID uuid(service);
-      Logger::Info("Vamos a: %s\n", service.c_str());
       auto obj = new BleServiceHandler(uuid);
-      Logger::Info("criado");
       auto handlers = BleManager::Get()->GetAcceptedServices();
-      Logger::Info("Addado");
       handlers[uuid.to16().toString()] = obj;
-      Logger::Info("retornado");
       return obj;
     }else{
       luaL_error(L, "Missing UUID parameter");
       return nullptr;
     }
-  });
-    
+  }, &EmptyGC);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","AddCharacteristics",&BleServiceHandler::AddCharacteristics);
 
 
-  ClassRegister<BleCharacteristicsHandler>::RegisterClassType(_state,"BleCharacteristicsHandler",[](lua_State* L){ return new  BleCharacteristicsHandler();});
-
-  
+  ClassRegister<BleCharacteristicsHandler>::RegisterClassType(_state,"BleCharacteristicsHandler",[](lua_State* L){ luaL_error(L, "Cannot create a empty object of this class"); return nullptr;}, &EmptyGC);
   ClassRegister<BleCharacteristicsHandler>::RegisterClassMethod(_state,"BleCharacteristicsHandler","SetSubscribeCallback",&BleCharacteristicsHandler::SetSubscribeCallback);
+  ClassRegister<BleCharacteristicsHandler>::RegisterClassMethod(_state,"BleCharacteristicsHandler","SendMessages",&BleCharacteristicsHandler::SendMessages);
   
   lastError = "";
 

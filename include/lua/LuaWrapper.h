@@ -1027,6 +1027,124 @@ class LuaWrapper {
     }
 };
 
+class LuaFunctionCallback{
+    public:
+        LuaFunctionCallback(lua_State* L) : functionRef(LUA_NOREF),_state(L) {}
 
+        template<typename... Args> bool callLuaFunction(Args&&... args) {
+            lua_rawgeti(_state, LUA_REGISTRYINDEX, functionRef);
+
+            if (!lua_isfunction(_state, -1) || lua_isnil(_state, -1)) {
+                lua_pop(_state, 1);
+                return false;
+            }
+
+            (void)std::initializer_list<int>{(pushParamInternal(std::forward<Args>(args)), 0)...};
+
+            int numParams = sizeof...(args);
+
+            if (lua_pcall(_state, numParams, 0, 0) != 0) {
+                const char* errorMessage = lua_tostring(_state, -1);
+                lua_pop(_state, 1);
+                return false;
+            }
+            
+            return true;
+        };
+        bool setFunction(int stackPos = -1) {
+            if (!lua_isfunction(_state, stackPos)) {
+                return false;
+            }
+            
+            // Remove any existing function reference
+            if (functionRef != LUA_NOREF) {
+                luaL_unref(_state, LUA_REGISTRYINDEX, functionRef);
+            }
+            
+            // Store the function in the registry and get a reference
+            lua_pushvalue(_state, stackPos);
+            functionRef = luaL_ref(_state, LUA_REGISTRYINDEX);
+            return true;
+        }
+    private:
+        int functionRef;
+        lua_State* _state;
+
+        void pushParamInternal(std::string parameter){
+        lua_pushstring(_state, parameter.c_str());
+        }
+        void pushParamInternal(int parameter){
+        lua_pushnumber(_state, parameter);
+        }
+
+        void pushParamInternal(float parameter) {
+            lua_pushnumber(_state, parameter);
+        }
+
+        void pushParamInternal(int64_t parameter) {
+            lua_pushinteger(_state, parameter);
+        }
+
+        void pushParamInternal(double parameter) {
+            lua_pushnumber(_state, parameter);
+        }
+
+        void pushParamInternal(char* parameter) {
+            lua_pushstring(_state, parameter);
+        }
+
+        void pushParamInternal(const char* parameter) {
+            lua_pushstring(_state, parameter);
+        }
+
+        void pushParamInternal(char parameter) {
+            lua_pushinteger(_state, static_cast<int>(parameter));
+        }
+
+        void pushParamInternal(uint8_t parameter) {
+            lua_pushinteger(_state, parameter);
+        }
+
+        void pushParamInternal(uint32_t parameter) {
+            lua_pushinteger(_state, parameter);
+        }
+
+        template<typename T>
+        void pushParamInternal(const std::vector<T>& parameters) {
+            lua_createtable(_state, static_cast<int>(parameters.size()), 0);
+            
+            for (size_t i = 0; i < parameters.size(); ++i) {
+                pushParamInternal(parameters[i]);                  
+                lua_rawseti(_state, -2, static_cast<int>(i + 1)); 
+            }
+        }
+};
+
+template<> struct GenericLuaGetter<LuaFunctionCallback*> {
+    static inline LuaFunctionCallback* Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true) {
+        if (!lua_isfunction(L, stackPos)) {
+            hasArgError = true;
+            const char* function_name = lua_tostring(L, lua_upvalueindex(1));
+            luaL_error(L, "Expected a function value on parameter %d of function %s", stackPos, function_name);
+            return nullptr;
+        }
+        
+        // Create a new LuaFunctionCallback and store the function
+        LuaFunctionCallback* callback = new LuaFunctionCallback(L);
+        if (!callback->setFunction(stackPos)) {
+            delete callback;
+            hasArgError = true;
+            const char* function_name = lua_tostring(L, lua_upvalueindex(1));
+            luaL_error(L, "Failed to store Lua function on parameter %d of function %s", stackPos, function_name);
+            return nullptr;
+        }
+        
+        if (pop) {
+            lua_pop(L, 1);
+        }
+        
+        return callback;
+    }
+};
 
 #endif
