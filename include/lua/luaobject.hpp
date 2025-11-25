@@ -57,6 +57,7 @@ class LuaCaller{
 
         
         template <typename T> static int GC(lua_State *L){
+            lua_getfield(L, -1, "__self");
             T** part = (T**)lua_touserdata(L, -1);
             if (part && *part){
                 delete (*part);
@@ -393,6 +394,7 @@ template<typename T1> struct ClassRegister{
         //methods.
         lua_pushcclosure(L, LuaCaller::BaseEmpty<1>,1);
         lua_settable(L, -3);
+
         //When executing name() it will call a c closure BaseEmpty with 1 parameter. The parameter is the userdata for the lambda function address. Then BaseEmpty will deal with it lol
         //setmetatable(class, methods)
         lua_setmetatable(L, -2);
@@ -424,6 +426,18 @@ template<typename T1> struct ClassRegister{
         lua_pushstring(L, "__index"); //Now this is -1 '__index', metatable is -2 and class is -3
         lua_pushvalue(L, -3); //copy 'class' that is in -3. now class is -1, '__metatable' is -2, metatable is -3 and class is -4
         lua_settable(L, -3);  //metatable.__index = class
+
+        //Same as previous, but adding the garbage collector function
+        lua_pushstring(L, "__gc");
+        if (gc_func != nullptr) {
+            baseF = static_cast<LuaCFunctionLambda**>(lua_newuserdata(L, sizeof(LuaCFunctionLambda) ));
+            (*baseF) = &(*gc_func);
+            lua_pushcclosure(L, LuaCaller::Base<1>,1);
+        }else{
+            lua_pushcfunction(L, LuaCaller::GC<T1>);
+        }
+        lua_settable(L, -3); 
+        
         lua_pop(L, 2);
         //Class created~
     };
