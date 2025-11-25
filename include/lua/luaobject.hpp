@@ -317,67 +317,67 @@ template<typename T1> struct ClassRegister{
             lua_error(L);
             return;
         }
-
+        //The object!
+        //local obj = {}
         lua_newtable(L);
-        
+        //Register ID
+        //obj.id = something
         lua_pushstring(L, "id");
         lua_pushnumber(L, (uint64_t)obj);
         lua_settable(L, -3);
-
+        //Type as string
+        //obj.type = 'name'
         lua_pushstring(L, "type");
         lua_pushstring(L, name.c_str());
         lua_settable(L, -3);
-
-        lua_pushstring(L, "data");
+        //Now create a table
+        //local data = {}
+        lua_pushstring(L, "data"); //Here we're saying: obj['data'] = <what follows>
         lua_newtable(L);
+        //data.__self = userdata
         lua_pushstring(L, "__self");
         T1 **usr = static_cast<T1**>(lua_newuserdata(L, sizeof(T1*)));
         *usr = obj;
         lua_settable(L, -3);
         
+        //local meta = {}
         lua_newtable(L);
+        //meta.__index = <func>
+        lua_pushstring(L, "__index");
         lua_pushcfunction(L, IndexerHelper<T1>::Index);
-        lua_setfield(L, -2, "__index");
-        lua_pushcfunction(L, IndexerHelper<T1>::Newindex);
-        lua_setfield(L, -2, "__newindex");
-        
-        lua_setmetatable(L, -2); 
         lua_settable(L, -3);
-
+        //meta.__newindex = <func>
+        lua_pushstring(L, "__newindex");
+        lua_pushcfunction(L, IndexerHelper<T1>::Newindex);
+        lua_settable(L, -3);
+        //setmetatable(data, meta)
+        lua_setmetatable(L, -2); 
+        //obj.data = data //basically the completion of lua_pushstring(L, "data");
+        lua_settable(L, -3);
+        //obj.__self = userdata
         lua_pushstring(L, "__self");
         T1 **usr2 = static_cast<T1**>(lua_newuserdata(L, sizeof(T1*)));
         *usr2 = obj;
-        
-
-        lua_newtable(L); 
-        lua_pushstring(L, "__gc");
-        lua_pushcfunction(L, LuaCaller::GC<T1>); 
         lua_settable(L, -3);
-        lua_setmetatable(L, -2);  
-        
-        lua_settable(L, -3);
-
-
+        //We have a completed object 'obj'
+        //setmetatable(obj, metatable_name)
         luaL_getmetatable(L, name.c_str());
-        if (lua_istable(L, -1)) {
-            lua_setmetatable(L, -2);     
-        } else {
-            lua_pop(L, 1);
-        }
+        lua_setmetatable(L, -2);     
+
     };
 
      static void RegisterClassType(lua_State *L,std::string name,
 		 std::function<T1*(lua_State*)> makerF = std::function<T1*(lua_State*)>(),
                                       LuaCFunctionLambda *gc_func = nullptr){
-
+        //local class = {}
         lua_newtable(L);
+        // _G[name] = class
         lua_pushvalue(L, -1);
         lua_setglobal(L, name.c_str());
-
-        int methods = lua_gettop(L);
+        //local methods = {}
         lua_newtable(L);
-        int methodsTable = lua_gettop(L);
-
+        //Creating the method so when wer call name() it executes
+        lua_pushstring(L, "__call");
         static LuaCFunctionLambda Flambb = [name,makerF](lua_State* Ls) -> int{
 			T1 *obj = makerF(Ls);
 			if (!obj){
@@ -386,19 +386,46 @@ template<typename T1> struct ClassRegister{
 			RegisterObject(Ls,name,obj,false);
             return 1;
         };
-
+        //When calling methods()
         LuaCFunctionLambda** baseF = static_cast<LuaCFunctionLambda**>(lua_newuserdata(L, sizeof(LuaCFunctionLambda) ));
         (*baseF) = &Flambb;
+
+        //methods.
         lua_pushcclosure(L, LuaCaller::BaseEmpty<1>,1);
-        lua_setfield(L, methodsTable, "__call");
-        lua_setmetatable(L, methods);
-        luaL_newmetatable(L, name.c_str());
-        int metatable = lua_gettop(L);
-        lua_pushvalue(L, methods);
-        lua_setfield(L, metatable, "__metatable");
-        lua_pushvalue(L, methods);
-        lua_setfield(L, metatable, "__index");
+        lua_settable(L, -3);
+        //When executing name() it will call a c closure BaseEmpty with 1 parameter. The parameter is the userdata for the lambda function address. Then BaseEmpty will deal with it lol
+        //setmetatable(class, methods)
+        lua_setmetatable(L, -2);
+        //Technically we have it.
+        //if we do lua_pop(L, 1); we leave without 'returning' anything.
+        //1 on the stack is 'class'
+        //-1 in stack is 'class'
+
+        //Now we create a global metatable named 'name'
+        luaL_newmetatable(L, name.c_str()); //metatable is in -1 and class is -2
+
+        lua_pushstring(L, "__metatable"); //Now this is -1 '__metatable', metatable is -2 and class is -3
+        lua_pushvalue(L, -3); //copy 'class' that is in -3. now class is -1, '__metatable' is -2, metatable is -3 and class is -4
+        /*
+        -> QuickDebug::DumpLua(L);
+        [Dump: -5] LUA_TNIL
+        [Dump: -4] LUA_TTABLE THECLASS;
+        [Dump: -3] LUA_TTABLE metatable_obj;
+        [Dump: -2] LUA_TSTRING __metatable;
+        [Dump: -1] LUA_TTABLE THECLASS;
+        [Dump: 0] LUA_TNIL
+        [Dump: 1] LUA_TTABLE THECLASS;
+        [Dump: 2] LUA_TTABLE metatable_obj;
+        [Dump: 3] LUA_TSTRING __metatable;
+        [Dump: 4] LUA_TTABLE THECLASS;        
+        */
+        lua_settable(L, -3); //metatable.__metatable = class
+        
+        lua_pushstring(L, "__index"); //Now this is -1 '__index', metatable is -2 and class is -3
+        lua_pushvalue(L, -3); //copy 'class' that is in -3. now class is -1, '__metatable' is -2, metatable is -3 and class is -4
+        lua_settable(L, -3);  //metatable.__index = class
         lua_pop(L, 2);
+        //Class created~
     };
 
     template<typename RetType,typename ... Types> static void RegisterClassLambdaMethod(lua_State *L,std::string name,std::string methodName,std::function<RetType(Types ... args)> func){
