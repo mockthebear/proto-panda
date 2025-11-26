@@ -406,10 +406,6 @@ void setMaximumControls(int id)
   g_remoteControls.setMaximumControls(id);
 }
 
-int acceptTypes(std::string service, std::string charactestisticStream, std::string characteristicId)
-{
-  return g_remoteControls.acceptTypes(service, charactestisticStream, characteristicId);
-}
 
 SizedArray *decodePng(std::string filename)
 {
@@ -565,7 +561,6 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("isElementIdConnected", isElementIdConnected);
   m_lua->FuncRegister("beginBleScanning", beginScanning);
   m_lua->FuncRegister("setMaximumControls", setMaximumControls);
-  m_lua->FuncRegister("acceptBLETypes", acceptTypes);
   m_lua->FuncRegister("setLogDiscoveredBleDevices", setLogDiscoveredBle);
   //System
   m_lua->FuncRegister("panelPowerOn", powerOn);
@@ -883,6 +878,7 @@ bool LuaInterface::Start()
   static LuaCFunctionLambda EmptyGC = [](lua_State* L) -> int{
     return 0;
   };
+  
   ClassRegister<BleServiceHandler>::RegisterClassType(_state,"BleServiceHandler",[](lua_State* L) -> BleServiceHandler*{
     if (lua_gettop(L) == 2){ 
       bool hasErr;
@@ -892,9 +888,9 @@ bool LuaInterface::Start()
         return nullptr;
       }
       NimBLEUUID uuid(service);
-      auto obj = new BleServiceHandler(uuid);
-      auto handlers = BleManager::Get()->GetAcceptedServices();
-      handlers[uuid.to16().toString()] = obj;
+      BleServiceHandler *obj = new BleServiceHandler(uuid.to16());
+      g_remoteControls.AddAcceptedService(uuid.to16().toString().c_str(), obj);
+      Logger::Info("Accepting service: %s", uuid.to16().toString().c_str());
       return obj;
     }else{
       luaL_error(L, "Missing UUID parameter");
@@ -906,7 +902,6 @@ bool LuaInterface::Start()
 
   ClassRegister<BleCharacteristicsHandler>::RegisterClassType(_state,"BleCharacteristicsHandler",[](lua_State* L){ luaL_error(L, "Cannot create a empty object of this class"); return nullptr;}, &EmptyGC);
   ClassRegister<BleCharacteristicsHandler>::RegisterClassMethod(_state,"BleCharacteristicsHandler","SetSubscribeCallback",&BleCharacteristicsHandler::SetSubscribeCallback);
-  ClassRegister<BleCharacteristicsHandler>::RegisterClassMethod(_state,"BleCharacteristicsHandler","SendMessages",&BleCharacteristicsHandler::SendMessages);
   
   lastError = "";
 

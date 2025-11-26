@@ -105,19 +105,16 @@ class BleManager{
 
 
     static BleSensorHandlerData remoteData[MAX_BLE_CLIENTS];
-
+    void AddAcceptedService(std::string name, BleServiceHandler* obj);
 
     std::map<std::string, BleServiceHandler*> &GetAcceptedServices(){
       return handlers;
     }
 
-    int acceptTypes(std::string service, std::string characteristic, std::string characteristicId);
-
-
     void setScanningMode(bool scan);
 
-
-    void AddMessageToQueue(const NimBLEUUID &svcUUID,const NimBLEUUID &charUUID,NimBLEAddress &&addr, uint8_t* pData, size_t length, bool isNotify);
+    //void AddMessageToQueue(NimBLEUUID svcUUID, NimBLEUUID charUUID,NimBLEAddress addr, uint8_t* pData, size_t length, bool isNotify);
+    void AddMessageToQueue(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify);
     static BleManager* Get();
   private:
     std::map<std::string, BleServiceHandler*> handlers; //Handlers are stored by their UUID

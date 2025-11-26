@@ -1032,9 +1032,13 @@ class LuaFunctionCallback{
         LuaFunctionCallback(lua_State* L) : functionRef(LUA_NOREF),_state(L) {}
 
         template<typename... Args> bool callLuaFunction(Args&&... args) {
+            if (functionRef == LUA_NOREF){
+                return false;
+            }
             lua_rawgeti(_state, LUA_REGISTRYINDEX, functionRef);
 
             if (!lua_isfunction(_state, -1) || lua_isnil(_state, -1)) {
+                //Logger::Error("Luas error on calling C callback, lua function is missing");
                 lua_pop(_state, 1);
                 return false;
             }
@@ -1044,7 +1048,8 @@ class LuaFunctionCallback{
             int numParams = sizeof...(args);
 
             if (lua_pcall(_state, numParams, 0, 0) != 0) {
-                const char* errorMessage = lua_tostring(_state, -1);
+                //const char* errorMessage = lua_tostring(_state, -1);
+                //Logger::Error("Luas error on calling C callback: %s", errorMessage);
                 lua_pop(_state, 1);
                 return false;
             }

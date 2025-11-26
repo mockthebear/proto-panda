@@ -8,9 +8,10 @@ BluetoothDeviceHandler::~BluetoothDeviceHandler(){
 }
 
 BleCharacteristicsHandler* BleServiceHandler::AddCharacteristics(std::string uuid){
-    if (uuid.length() != 36 ) {
+    if (uuid.length() != 4 ) {
         return nullptr;
     }
+
     NimBLEUUID charId(uuid);
     auto obj = new BleCharacteristicsHandler(charId);
     m_characteristics[charId.to16().toString()] = obj;
@@ -18,10 +19,16 @@ BleCharacteristicsHandler* BleServiceHandler::AddCharacteristics(std::string uui
 }
 
 void BleServiceHandler::AddMessage(const NimBLEUUID &charId,uint8_t* pData, size_t length, bool isNotify){
-    BleCharacteristicsHandler* characteristic = m_characteristics[charId.toString()];
+    std::string charName = charId.toString();
+    BleCharacteristicsHandler* characteristic = m_characteristics[charName];
     if (characteristic){
         characteristic->AddMessage(pData, length, isNotify);
-    }    
+    }else{
+        if (warnedMap[charName] == false){
+            Logger::Error("Message arrived on unmapped characteristics %s ", charName.c_str());
+            warnedMap[charName] = true;
+        }
+    }  
 }
 
 void BleServiceHandler::SendMessages(){

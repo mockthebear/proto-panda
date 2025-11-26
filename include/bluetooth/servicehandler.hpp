@@ -26,6 +26,7 @@ class BleServiceHandler{
   private: 
     SemaphoreHandle_t queueMutex;
     std::map<std::string, BleCharacteristicsHandler*> m_characteristics;    
+    std::map<std::string,bool> warnedMap;
 };
 
 

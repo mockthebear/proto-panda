@@ -15,11 +15,10 @@ class BleMessage{
 
 class BleCharacteristicsHandler{
   public:
-    BleCharacteristicsHandler():uuid(uint32_t(0)),required(false),notify(false),queueMutex(xSemaphoreCreateMutex()){};
-    BleCharacteristicsHandler(NimBLEUUID u, bool req=true, bool notif=true, bool tpsendp=false):uuid(u),required(req),notify(notif),temporary_send_legacy_packet(tpsendp),queueMutex(xSemaphoreCreateMutex()){
+    BleCharacteristicsHandler():uuid(uint32_t(0)),required(false),notify(false),luaCallback(nullptr),queueMutex(xSemaphoreCreateMutex()){};
+    BleCharacteristicsHandler(NimBLEUUID u, bool req=true, bool notif=true):uuid(u),required(req),notify(notif),luaCallback(nullptr),queueMutex(xSemaphoreCreateMutex()){
     }
     void SetSubscribeCallback(LuaFunctionCallback *lcb){
-      Serial.printf("chamou o set callback, que gay");
       luaCallback = lcb;
     };
     void AddMessage(uint8_t* pData, size_t length, bool isNotify);
@@ -27,7 +26,6 @@ class BleCharacteristicsHandler{
     NimBLEUUID uuid;
     bool required;
     bool notify;
-    bool temporary_send_legacy_packet;
     LuaFunctionCallback *luaCallback;
   private: 
     

@@ -36,19 +36,7 @@ void notifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData,
   if (pRemoteCharacteristic == nullptr){
     return;
   }
-
-  const NimBLERemoteService* svc = pRemoteCharacteristic->getRemoteService();
-  if (svc == nullptr){
-    Logger::Info("[BLE] noooo1");
-    return; 
-  }
-  NimBLEClient* client =  svc->getClient();
-  if (client == nullptr){
-    Logger::Info("[BLE] noooo 2");
-    return;
-  }
-  BleManager::Get()->AddMessageToQueue(pRemoteCharacteristic->getRemoteService()->getUUID(), pRemoteCharacteristic->getUUID(), client->getPeerAddress(), pData, length, isNotify);
-
+  g_remoteControls.AddMessageToQueue(pRemoteCharacteristic, pData, length, isNotify);
     /*
 
     int16_t *data16 = &((int16_t*)pData)[7];
@@ -61,16 +49,6 @@ void notifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData,
 
   //}
 }
-
-template<int S> void hidReportNotifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
-    Serial.printf("[%d]char: %s, len %d: ", S,  pRemoteCharacteristic->getUUID().toString().c_str(), length);
-    for (size_t i=0;i<length;i++){
-        Serial.printf("%d,", pData[i]);
-    }
-    Serial.printf("\n");
-}
-
-
 
 
 
@@ -260,14 +238,42 @@ bool BleManager::beginRadio(){
 
 
 
-void BleManager::AddMessageToQueue(const NimBLEUUID &svcUUID,const NimBLEUUID &charUUID,NimBLEAddress &&addr, uint8_t* pData, size_t length, bool isNotify){
-  //TODO: what top do with the addr? send to lua? does it need?
-  BleServiceHandler* svcHandler = handlers[svcUUID.toString()];
-  if (svcHandler != nullptr){
-    svcHandler->AddMessage(charUUID, pData, length, isNotify);
-  }else{
-    Logger::Error("Message arrived on service unmapped uuid %s with characteristics %s and lenght %d", svcUUID.toString().c_str(), charUUID.toString().c_str(), length);
+void BleManager::AddMessageToQueue(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify){
+  const NimBLERemoteService* svc = pRemoteCharacteristic->getRemoteService();
+  if (svc == nullptr){
+    Logger::Info("[BLE] noooo1");
+    return; 
   }
+
+  static std::map<std::string,bool> warnedMap;
+
+  std::string name = svc->getUUID().toString();
+  BleServiceHandler* svcHandler = handlers[name];
+  if (svcHandler != nullptr){
+    svcHandler->AddMessage(pRemoteCharacteristic->getUUID(), pData, length, isNotify);
+  }else{
+    if (warnedMap[name] == false){
+      Logger::Error("Message arrived on service unmapped with service %s ", name.c_str());
+      warnedMap[name] = true;
+    }
+  }
+  /*NimBLEClient* client =  svc->getClient();
+  if (client == nullptr){
+    Logger::Info("[BLE] noooo 2");
+    return;
+  }*/
+
+//void BleManager::AddMessageToQueue(NimBLEUUID svcUUID, NimBLEUUID charUUID,NimBLEAddress addr, uint8_t* pData, size_t length, bool isNotify){
+  //TODO: what top do with the addr? send to lua? does it need?
+  //xSemaphoreTake(m_mutex, portMAX_DELAY);
+  //
+  //xSemaphoreGive(m_mutex);
+ // if (svcHandler != nullptr){
+    //Logger::Error("Adding message to %s", svcUUID.toString().c_str());
+    //svcHandler->AddMessage(charUUID, pData, length, isNotify);
+  //}else{
+    //Logger::Error("Message arrived on service unmapped with lenght %d and i am %d ",length, (int)this);
+  //}
 }
 
 
@@ -307,10 +313,15 @@ void BleManager::beginScanning(){
   m_canScan = true;
 }
 
+void BleManager::AddAcceptedService(std::string name, BleServiceHandler* obj){
+  handlers[name] = obj;
+}
+
 void BleManager::update(){
   if (!m_started){
     return;
   }
+
   
   if (millis() - lastScanClearTime >= (30*1000) ) {
     if (!isScanning){
@@ -362,50 +373,6 @@ void BleManager::update(){
 
 }
 
-int BleManager::acceptTypes(std::string service, std::string characteristicStream, std::string characteristicId){
-
-  // Validate input lengths
-  if (service.length() != 36 ) {
-    Logger::Info("[BLE] Malformed servie UUID");
-    return -1;
-  }
-  if (characteristicStream.length() != 4) {
-    Logger::Info("[BLE] Malformed characteristicStream UUID");
-    return -1;
-  }
-
-  if (characteristicId.length() != 4) {
-    Logger::Info("[BLE] Malformed characteristicId UUID");
-    return -1;
-  }
-
-  std::string modified1 = service;
-  modified1.replace(4, 4, characteristicStream); 
-
-  std::string modified2 = service;
-  modified2.replace(4, 4, characteristicId); 
-
-  NimBLEUUID servHIDUUID("00001812-0000-1000-8000-00805f9b34fb");
-  BleServiceHandler *hand2 = new BleServiceHandler(servHIDUUID);
-  hand2->AddCharacteristics(NimBLEUUID("00002a4d-0000-1000-8000-00805f9b34fb"));
-  handlers[servHIDUUID.to16().toString()] = hand2;
-
-
-
-  /*NimBLEUUID servUUID(service);
-  NimBLEUUID streamUUID(modified1);
-  NimBLEUUID idUUID(modified2);
-
-  Logger::Info("[BLE] Following characteristics are beeing listen:\nService: %s\nStream: %s\nID: %s\n", servUUID.toString().c_str(), streamUUID.toString().c_str(), idUUID.toString().c_str());
-
-  BleServiceHandler *hand = new BleServiceHandler(servUUID);
-  hand->AddCharacteristics(streamUUID);
-  hand->AddCharacteristics_TMP(idUUID);
-  handlers[servUUID.toString()] = hand;*/
-  
-
-  return 0;
-}
 
 bool BleManager::hasChangedClients(){
   xSemaphoreTake(m_mutex, portMAX_DELAY);
