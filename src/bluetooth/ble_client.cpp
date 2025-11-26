@@ -160,17 +160,24 @@ bool BleManager::connectToServer(){
         }
     }
     if (element->required && matched == false){
-      Logger::Error("[BLE] Characteristics %s in service %s, is required but not present, dropping.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
+      Logger::Error("[BLE] Characteristics %s in service %s, is required but not present, dropping. Here follows the list of the avaliable uuids:", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
+      std::stringstream ss;
+      for (auto pChr : pChars) {
+        NimBLEUUID aux = pChr->getUUID();
+        ss << aux.to16().toString().c_str() << ", ";
+      }
+      Logger::Error("[BLE] avaliable characteristics: %s", ss.str().c_str());
       pClient->disconnect();
       NimBLEDevice::deleteClient(pClient);
-      g_remoteControls.availableIds.push(device->m_controllerId);         
+      g_remoteControls.availableIds.push(device->m_controllerId);       
       delete device;
       return false;
     }
   }
 
+  handler->AddDevice(device);
+
   device->connected = true;
-  Serial.printf("iz complete\n");
   
   clients[pClient->getPeerAddress().toString()] = device;
   clientCount++;
@@ -361,11 +368,13 @@ void BleManager::update(){
       }
         
       if (toErase.size() > 0){
-        Logger::Info("[BLE] Aw man, we're killing it");
-        NimBLEDevice::deleteClient(clients[toErase]->m_client);
-        delete clients[toErase];
-        clients.erase(toErase);
-        clientCount--;
+
+        if (clients.find(toErase) != clients.end()){
+          NimBLEDevice::deleteClient(clients[toErase]->m_client);
+          delete clients[toErase];
+          clients.erase(toErase);
+          clientCount--;
+        }        
       }
       xSemaphoreGive(m_mutex);
     }
@@ -388,7 +397,7 @@ bool BleManager::hasChangedClients(){
 bool BleManager::isElementIdConnected(int id){
   xSemaphoreTake(m_mutex, portMAX_DELAY);
   for (auto &obj : clients){
-    if (obj.second->m_controllerId == id){
+    if (obj.second && obj.second->m_controllerId == id){
       xSemaphoreGive(m_mutex);
       return true;
     }

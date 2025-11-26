@@ -898,6 +898,7 @@ bool LuaInterface::Start()
     }
   }, &EmptyGC);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","AddCharacteristics",&BleServiceHandler::AddCharacteristics);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","SetOnConnectCallback",&BleServiceHandler::SetOnConnectCallback);
 
 
   ClassRegister<BleCharacteristicsHandler>::RegisterClassType(_state,"BleCharacteristicsHandler",[](lua_State* L){ luaL_error(L, "Cannot create a empty object of this class"); return nullptr;}, &EmptyGC);

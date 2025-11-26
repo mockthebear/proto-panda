@@ -31,10 +31,26 @@ void BleServiceHandler::AddMessage(const NimBLEUUID &charId,uint8_t* pData, size
     }  
 }
 
+void BleServiceHandler::AddDevice(BluetoothDeviceHandler *dev){
+    xSemaphoreTake(queueMutex, portMAX_DELAY);
+    devicesToNotify.push(dev);
+    xSemaphoreGive(queueMutex);
+}
+
 void BleServiceHandler::SendMessages(){
+    if (devicesToNotify.size() > 0){
+        xSemaphoreTake(queueMutex, portMAX_DELAY);
+        BluetoothDeviceHandler *dev = devicesToNotify.top();
+        devicesToNotify.pop();
+        xSemaphoreGive(queueMutex);
+        if (luaOnConnectCallback != nullptr){
+            luaOnConnectCallback->callLuaFunction("penis~");
+        }
+    }
     for (auto &it : m_characteristics){
         it.second->SendMessages();
     }  
+    
 }
 
 std::vector<BleCharacteristicsHandler*> BleServiceHandler::getCharacteristics(){

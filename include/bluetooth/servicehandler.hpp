@@ -4,6 +4,7 @@
 #include "Arduino.h"
 #include "config.hpp"
 #include <queue>
+#include <stack>
 #include <cstring> 
 #include <map> 
 #include "bluetooth/characteristicshandler.hpp"
@@ -12,21 +13,39 @@
 
 
 
+class BluetoothDeviceHandler{
+    public: 
+        BluetoothDeviceHandler():m_device(nullptr),m_callbacks(nullptr),m_client(nullptr),m_controllerId(0xffff),connected(false){};
+        ~BluetoothDeviceHandler();
+        const NimBLEAdvertisedDevice* m_device;
+        ClientCallbacks * m_callbacks;
+        NimBLEClient* m_client;
+        uint32_t m_controllerId;
+        bool connected;
+};
+
 
 
 class BleServiceHandler{
   public:
-    BleServiceHandler(NimBLEUUID u):uuid(u),queueMutex(xSemaphoreCreateMutex()){
+    BleServiceHandler(NimBLEUUID u):uuid(u),queueMutex(xSemaphoreCreateMutex()),luaOnConnectCallback(nullptr){
     }
     BleCharacteristicsHandler* AddCharacteristics(std::string uuid);
+    void SetOnConnectCallback(LuaFunctionCallback * cb){
+      luaOnConnectCallback = cb;
+    }
+    void AddDevice(BluetoothDeviceHandler *dev);
     void AddMessage(const NimBLEUUID &charId, uint8_t* pData, size_t length, bool isNotify);
     void SendMessages();
     std::vector<BleCharacteristicsHandler*> getCharacteristics();
     NimBLEUUID uuid;
   private: 
     SemaphoreHandle_t queueMutex;
+    std::stack<BluetoothDeviceHandler*> devicesToNotify;
     std::map<std::string, BleCharacteristicsHandler*> m_characteristics;    
     std::map<std::string,bool> warnedMap;
+
+    LuaFunctionCallback *luaOnConnectCallback;
 };
 
 
@@ -42,15 +61,4 @@ class ConnectionRequest{
         bool ready;
         const NimBLEAdvertisedDevice* advertisedDevice;
         BleServiceHandler* handler;
-};
-
-class BluetoothDeviceHandler{
-    public: 
-        BluetoothDeviceHandler():m_device(nullptr),m_callbacks(nullptr),m_client(nullptr),m_controllerId(0xffff),connected(false){};
-        ~BluetoothDeviceHandler();
-        const NimBLEAdvertisedDevice* m_device;
-        ClientCallbacks * m_callbacks;
-        NimBLEClient* m_client;
-        uint32_t m_controllerId;
-        bool connected;
 };

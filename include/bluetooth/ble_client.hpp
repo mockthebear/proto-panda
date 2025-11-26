@@ -89,7 +89,7 @@ class BleManager{
     void setMaximumControls(int n){maxClients = n;};
 
     int getConnectedClientsCount(){
-      return handlers.size();
+      return 0; handlers.size();
     }
 
     bool isElementIdConnected(int id);
