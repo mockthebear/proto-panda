@@ -37,6 +37,7 @@ class BleServiceHandler{
     void AddDevice(BluetoothDeviceHandler *dev);
     void AddMessage(const NimBLEUUID &charId, uint8_t* pData, size_t length, bool isNotify);
     void SendMessages();
+    bool WriteToCharacteristics(std::vector<uint8_t> bytes, int clientId, std::string charName, bool reply);
     std::vector<BleCharacteristicsHandler*> getCharacteristics();
     NimBLEUUID uuid;
   private: 
@@ -44,6 +45,7 @@ class BleServiceHandler{
     std::stack<BluetoothDeviceHandler*> devicesToNotify;
     std::map<std::string, BleCharacteristicsHandler*> m_characteristics;    
     std::map<std::string,bool> warnedMap;
+    std::vector<BluetoothDeviceHandler*> m_connectedDevices;
 
     LuaFunctionCallback *luaOnConnectCallback;
 };

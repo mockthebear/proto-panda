@@ -155,7 +155,6 @@ template<typename T1,typename ClassObj,typename ... Types> struct internal_regis
                 luaL_error(L2, "Wrong arguments");
                 return 1;
             }
-
             T1 rData = expanderClass<sizeof...(Types),ClassObj,T1>::expand(ArgumentList,L2,func);
             GenericLuaReturner<T1>::Ret(rData,L2);
             return 1;

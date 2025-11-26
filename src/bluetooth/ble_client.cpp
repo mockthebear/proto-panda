@@ -125,7 +125,7 @@ bool BleManager::connectToServer(){
   }
 
   
-
+  device->m_client = pClient;
   pSvc = pClient->getService(handler->uuid);
   if (!pSvc) {
       Serial.printf("HID service not found!\n");

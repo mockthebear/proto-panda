@@ -236,12 +236,17 @@ template<typename T> inline std::vector<T> GenericLuaVector(bool &hasArgError, l
         luaL_error(L, "Expected an uniform table value on parameter %d of function %s", lua_gettop(L), function_name);
         return n;
     }
+    int pos = 1;
+    if ( lua_gettop(L) == 2){
+        pos = 2;
+    }
     lua_pushnil(L);
-    while (lua_next(L, 1)) {
+    while (lua_next(L, pos)) {
         n.push_back(GenericLuaGetter<T>::Call(hasArgError, L, -1, true));
     }
-    if (pop)
+    if (pop){
         lua_pop(L,1);
+    }
     return n;
 }
 
@@ -1048,7 +1053,8 @@ class LuaFunctionCallback{
             int numParams = sizeof...(args);
 
             if (lua_pcall(_state, numParams, 0, 0) != 0) {
-                //const char* errorMessage = lua_tostring(_state, -1);
+                const char* errorMessage = lua_tostring(_state, -1);
+                Serial.printf("Error running lua: %s\n", errorMessage);
                 //Logger::Error("Luas error on calling C callback: %s", errorMessage);
                 lua_pop(_state, 1);
                 return false;
