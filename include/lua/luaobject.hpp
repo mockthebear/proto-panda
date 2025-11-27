@@ -156,6 +156,7 @@ template<typename T1,typename ClassObj,typename ... Types> struct internal_regis
                 return 1;
             }
             T1 rData = expanderClass<sizeof...(Types),ClassObj,T1>::expand(ArgumentList,L2,func);
+
             GenericLuaReturner<T1>::Ret(rData,L2);
             return 1;
         };
@@ -523,7 +524,7 @@ template<> struct GenericLuaReturner<BleCharacteristicsHandler*>{
 
 
 template<> struct GenericLuaGetter<BleCharacteristicsHandler*> {
-    static inline BleCharacteristicsHandler* Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true) {
+    static inline BleCharacteristicsHandler* Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
 
         if (!lua_istable(L, stackPos)) {
             hasArgError = true;
@@ -581,7 +582,7 @@ template<> struct GenericLuaReturner<Batata*>{
 
 
 template<> struct GenericLuaGetter<Batata*> {
-    static inline Batata* Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true) {
+    static inline Batata* Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
 
         if (!lua_istable(L, stackPos)) {
             hasArgError = true;

@@ -104,7 +104,7 @@ template<typename T> inline T GenericLuaBool(bool &hasArgError, lua_State *L,int
 
 
 template<typename T1> struct GenericLuaGetter{
-     static inline  T1 Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
+     static inline  T1 Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return T1(GenericLuaTonumber<int>(hasArgError, L, stackPos, pop));
     };
 
@@ -116,57 +116,57 @@ template<typename T1> struct GenericLuaGetter{
 */
 
 template<> struct GenericLuaGetter<uint16_t> {
-    static inline uint16_t Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
+    static inline uint16_t Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaTonumber<uint16_t>(hasArgError, L, stackPos, pop);
     }
 };
 
 template<> struct GenericLuaGetter<unsigned long> {
-    static inline unsigned long Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
+    static inline unsigned long Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaTonumber<unsigned long>(hasArgError, L, stackPos, pop);
     }
 };
 
 template<> struct GenericLuaGetter<char> {
-    static inline char Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
+    static inline char Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaTonumber<char>(hasArgError, L, stackPos, pop);
     }
 };
 
 template<> struct GenericLuaGetter<uint8_t> {
-    static inline uint8_t Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
+    static inline uint8_t Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaTonumber<uint8_t>(hasArgError, L, stackPos, pop);
     }
 };
 
 template<> struct GenericLuaGetter<uint32_t> {
-    static inline uint32_t Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
+    static inline uint32_t Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaTonumber<uint32_t>(hasArgError, L, stackPos, pop);
     }
 };
 template<> struct GenericLuaGetter<uint64_t> {
-    static inline uint64_t Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
+    static inline uint64_t Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaTonumber<uint64_t>(hasArgError, L, stackPos, pop);
     }
 };
 template<> struct GenericLuaGetter<int> {
-    static inline int Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
+    static inline int Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaTonumber<int>(hasArgError, L, stackPos, pop);
     }
 };
 template<> struct GenericLuaGetter<int16_t> {
-    static inline int16_t Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
+    static inline int16_t Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaTonumber<int16_t>(hasArgError, L, stackPos, pop);
     }
 };
 template<> struct GenericLuaGetter<float> {
-    static inline float Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
+    static inline float Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaTonumber<float>(hasArgError, L, stackPos, pop);
     }
 };
 
 template<> struct GenericLuaGetter<PixelStruct> {
-    static inline PixelStruct Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true) {
+    static inline PixelStruct Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
         PixelStruct pixel = {0, 0, 0, 0, 0};
 
         if (!lua_istable(L, stackPos)) {
@@ -206,14 +206,14 @@ template<> struct GenericLuaGetter<PixelStruct> {
 
 template<>
     struct GenericLuaGetter<std::string> {
-     static inline std::string Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
+     static inline std::string Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaString<std::string>(hasArgError, L, stackPos, pop);
     };
 };
 
 template<>
     struct GenericLuaGetter<String> {
-     static inline String Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
+     static inline String Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaString<String>(hasArgError, L, stackPos, pop);
     };
 };
@@ -222,13 +222,13 @@ template<>
 
 template<>
     struct GenericLuaGetter<const char*> {
-     static inline const char* Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
+     static inline const char* Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaString<const char*>(hasArgError, L, stackPos, pop);
     };
 };
 
 
-template<typename T> inline std::vector<T> GenericLuaVector(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
+template<typename T> inline std::vector<T> GenericLuaVector(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
     std::vector<T> n;
     if (!lua_istable(L,stackPos)) {
         hasArgError = true;
@@ -236,10 +236,11 @@ template<typename T> inline std::vector<T> GenericLuaVector(bool &hasArgError, l
         luaL_error(L, "Expected an uniform table value on parameter %d of function %s", lua_gettop(L), function_name);
         return n;
     }
-    int pos = 1;
-    if ( lua_gettop(L) == 2){
+    Serial.printf("The offset is %d\n", offsetStack);
+    int pos = 1+offsetStack;
+    /*if ( lua_gettop(L) == 2){
         pos = 2;
-    }
+    }*/
     lua_pushnil(L);
     while (lua_next(L, pos)) {
         n.push_back(GenericLuaGetter<T>::Call(hasArgError, L, -1, true));
@@ -253,22 +254,22 @@ template<typename T> inline std::vector<T> GenericLuaVector(bool &hasArgError, l
 
 template<>
     struct GenericLuaGetter<std::vector<int>> {
-     static inline std::vector<int> Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
-        return GenericLuaVector<int>(hasArgError, L, stackPos, pop);
+     static inline std::vector<int> Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
+        return GenericLuaVector<int>(hasArgError, L, stackPos, pop, offsetStack);
     };
 };
 
 template<>
     struct GenericLuaGetter<std::vector<uint8_t>> {
-     static inline std::vector<uint8_t> Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
-        return GenericLuaVector<uint8_t>(hasArgError, L, stackPos, pop);
+     static inline std::vector<uint8_t> Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
+        return GenericLuaVector<uint8_t>(hasArgError, L, stackPos, pop, offsetStack);
     };
 };
 
 template<>
     struct GenericLuaGetter<std::vector<PixelStruct>> {
-     static inline std::vector<PixelStruct> Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
-        return GenericLuaVector<PixelStruct>(hasArgError, L, stackPos, pop);
+     static inline std::vector<PixelStruct> Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
+        return GenericLuaVector<PixelStruct>(hasArgError, L, stackPos, pop, offsetStack);
     };
 };
 
@@ -431,7 +432,7 @@ template<> struct GenericLuaReturner<std::vector<uint8_t>>{
 
 template<>
     struct GenericLuaGetter<bool> {
-     static inline bool Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
+     static inline bool Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaBool<bool>(hasArgError, L, stackPos, pop);
     }
 };
@@ -467,7 +468,7 @@ template<int N>
     struct readLuaValues {
     template<typename Tuple> static inline void Read(bool &hasArgError, Tuple& tuple,lua_State *L,int stackpos = -1,int offsetStack=0) {
         typedef typename std::tuple_element<N-1, Tuple>::type ValueType;
-        ValueType v = GenericLuaGetter<ValueType>::Call(hasArgError, L,stackpos);
+        ValueType v = GenericLuaGetter<ValueType>::Call(hasArgError, L,stackpos, true, offsetStack);
         if (hasArgError){
             return;
         }
@@ -479,7 +480,7 @@ template<int N>
         typedef typename std::tuple_element<N-1, Tuple>::type ValueType;
         int argCountLua = lua_gettop(L)-offsetStack;
         if (N <= argCountLua){
-            ValueType v = GenericLuaGetter<ValueType>::Call(hasArgError, L,stackpos);
+            ValueType v = GenericLuaGetter<ValueType>::Call(hasArgError, L,stackpos, true, offsetStack);
             if (hasArgError){
                 return;
             }
@@ -496,7 +497,7 @@ template<int N>
         typedef typename std::tuple_element<N-1, Tuple>::type ValueType;
         int argCountLua = lua_gettop(L)-offsetStack;
         if (N <= argCountLua){
-            ValueType v = GenericLuaGetter<ValueType>::Call(hasArgError, L,stackpos);
+            ValueType v = GenericLuaGetter<ValueType>::Call(hasArgError, L,stackpos, true, offsetStack);
             std::get<N-1>(tuple) = v;
             readLuaValues<N-1>::Read(hasArgError, tuple ,L,stackpos,offsetStack);
         }else{
@@ -1132,7 +1133,7 @@ class LuaFunctionCallback{
 };
 
 template<> struct GenericLuaGetter<LuaFunctionCallback*> {
-    static inline LuaFunctionCallback* Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true) {
+    static inline LuaFunctionCallback* Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
         if (!lua_isfunction(L, stackPos)) {
             hasArgError = true;
             const char* function_name = lua_tostring(L, lua_upvalueindex(1));
