@@ -28,8 +28,7 @@ class BluetoothDeviceHandler{
 
 class BleServiceHandler{
   public:
-    BleServiceHandler(NimBLEUUID u):uuid(u),queueMutex(xSemaphoreCreateMutex()),luaOnConnectCallback(nullptr){
-    }
+    BleServiceHandler(NimBLEUUID u):uuid(u),queueMutex(xSemaphoreCreateMutex()),luaOnConnectCallback(nullptr){};
     BleCharacteristicsHandler* AddCharacteristics(std::string uuid);
     void SetOnConnectCallback(LuaFunctionCallback * cb){
       luaOnConnectCallback = cb;
@@ -40,7 +39,10 @@ class BleServiceHandler{
     bool WriteToCharacteristics(std::vector<uint8_t> bytes, int clientId, std::string charName, bool reply);
     std::vector<BleCharacteristicsHandler*> getCharacteristics();
     NimBLEUUID uuid;
+
+    
   private: 
+    
     SemaphoreHandle_t queueMutex;
     std::stack<BluetoothDeviceHandler*> devicesToNotify;
     std::map<std::string, BleCharacteristicsHandler*> m_characteristics;    
@@ -48,6 +50,7 @@ class BleServiceHandler{
     std::vector<BluetoothDeviceHandler*> m_connectedDevices;
 
     LuaFunctionCallback *luaOnConnectCallback;
+    
 };
 
 

@@ -77,7 +77,7 @@ class AdvertisedDeviceCallbacks: public NimBLEScanCallbacks {
 
 class BleManager{
   public:
-    BleManager():clientCount(0), maxClients(1),lastScanClearTime(0),m_started(false),m_canScan(false),m_logDiscoveredClients(false),isScanning(false),nextId(0),m_mutex(xSemaphoreCreateMutex()){}
+    BleManager():clientCount(0), maxClients(2),lastScanClearTime(0),m_started(false),m_canScan(false),m_logDiscoveredClients(false),isScanning(false),nextId(0),m_mutex(xSemaphoreCreateMutex()){}
     bool begin();
     bool beginRadio();
     void update();
@@ -113,10 +113,9 @@ class BleManager{
 
     void setScanningMode(bool scan);
 
-    //void AddMessageToQueue(NimBLEUUID svcUUID, NimBLEUUID charUUID,NimBLEAddress addr, uint8_t* pData, size_t length, bool isNotify);
-    void AddMessageToQueue(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify);
     static BleManager* Get();
   private:
+    std::vector<std::tuple<std::string,BleServiceHandler*>> handlersAsync; //Handlers are stored by their UUID
     std::map<std::string, BleServiceHandler*> handlers; //Handlers are stored by their UUID
     std::map<std::string, BluetoothDeviceHandler*> clients; //Clients are stored by their address
 

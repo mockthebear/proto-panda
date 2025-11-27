@@ -20,36 +20,15 @@ void AdvertisedDeviceCallbacks::onResult(const NimBLEAdvertisedDevice* advertise
       Serial.printf("Address: %s\n", advertisedDevice->getAddress().toString().c_str());
       bleObj->setScanningMode(false);
       bleObj->toConnect = ConnectionRequest(advertisedDevice, it.second);
-      //toConnect = new ConnectTuple(advertisedDevice, std::get<0>(it), std::get<1>(it), std::get<2>(it));
       return;
     }
   }
 }
 
 void AdvertisedDeviceCallbacks::onScanEnd(const NimBLEScanResults& results, int reason)  {
-        Serial.printf("Scan Ended, reason: %d, device count: %d; Restarting scan\n", reason, results.getCount());
-        NimBLEDevice::getScan()->start(0, false, true);
-    }
-
-
-void notifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify){
-  if (pRemoteCharacteristic == nullptr){
-    return;
-  }
-  g_remoteControls.AddMessageToQueue(pRemoteCharacteristic, pData, length, isNotify);
-    /*
-
-    int16_t *data16 = &((int16_t*)pData)[7];
-    int id = ((uint8_t*)data16)[0];    
-    if (id >= 0 && id < MAX_BLE_CLIENTS){
-      BleManager::remoteData[id].copy(data);
-      BleManager::remoteData[id].setLastUpdate();
-    }*/
-
-
-  //}
+  Serial.printf("Scan Ended, reason: %d, device count: %d; Restarting scan\n", reason, results.getCount());
+  NimBLEDevice::getScan()->start(0, false, true);
 }
-
 
 
 bool BleManager::connectToServer(){
@@ -145,7 +124,7 @@ bool BleManager::connectToServer(){
         if (pChr->getUUID() == element->uuid){
           matched = true;
           if(pChr->canNotify()) {
-            if(!pChr->subscribe(true, notifyCB)) {
+            if(!pChr->subscribe(true, element->getLambda())) {
               Logger::Error("[BLE] Characteristics %s in service %s, failed to subscribe, dropping.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
               pClient->disconnect();
               NimBLEDevice::deleteClient(pClient);
@@ -243,47 +222,6 @@ bool BleManager::beginRadio(){
 }
 
 
-
-
-void BleManager::AddMessageToQueue(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify){
-  const NimBLERemoteService* svc = pRemoteCharacteristic->getRemoteService();
-  if (svc == nullptr){
-    Logger::Info("[BLE] noooo1");
-    return; 
-  }
-
-  static std::map<std::string,bool> warnedMap;
-
-  std::string name = svc->getUUID().toString();
-  BleServiceHandler* svcHandler = handlers[name];
-  if (svcHandler != nullptr){
-    svcHandler->AddMessage(pRemoteCharacteristic->getUUID(), pData, length, isNotify);
-  }else{
-    if (warnedMap[name] == false){
-      Logger::Error("Message arrived on service unmapped with service %s ", name.c_str());
-      warnedMap[name] = true;
-    }
-  }
-  /*NimBLEClient* client =  svc->getClient();
-  if (client == nullptr){
-    Logger::Info("[BLE] noooo 2");
-    return;
-  }*/
-
-//void BleManager::AddMessageToQueue(NimBLEUUID svcUUID, NimBLEUUID charUUID,NimBLEAddress addr, uint8_t* pData, size_t length, bool isNotify){
-  //TODO: what top do with the addr? send to lua? does it need?
-  //xSemaphoreTake(m_mutex, portMAX_DELAY);
-  //
-  //xSemaphoreGive(m_mutex);
- // if (svcHandler != nullptr){
-    //Logger::Error("Adding message to %s", svcUUID.toString().c_str());
-    //svcHandler->AddMessage(charUUID, pData, length, isNotify);
-  //}else{
-    //Logger::Error("Message arrived on service unmapped with lenght %d and i am %d ",length, (int)this);
-  //}
-}
-
-
 void BleSensorHandlerData::updateButtons(){
   for (int i=0;i<MAX_BLE_BUTTONS;i++){
     if (real_inputButtonsStatus[i] == BUTTON_JUST_PRESSED){
@@ -322,6 +260,7 @@ void BleManager::beginScanning(){
 
 void BleManager::AddAcceptedService(std::string name, BleServiceHandler* obj){
   handlers[name] = obj;
+  handlersAsync.emplace_back(std::tuple<std::string,BleServiceHandler*>(name, obj));
 }
 
 void BleManager::update(){

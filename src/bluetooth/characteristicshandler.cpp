@@ -12,6 +12,13 @@ void BleCharacteristicsHandler::AddMessage(uint8_t* pData, size_t length, bool i
     xSemaphoreGive(queueMutex);
 }
 
+void BleCharacteristicsHandler::createLambda(){
+    notificationLambda = [this](NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
+       this->AddMessage(pData, length, isNotify);
+    };
+}
+
+
 void BleCharacteristicsHandler::SendMessages(){
     while (!dataQueue.empty()){
         std::vector<uint8_t> vec;

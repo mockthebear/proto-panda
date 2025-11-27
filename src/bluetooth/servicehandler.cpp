@@ -22,7 +22,8 @@ BleCharacteristicsHandler* BleServiceHandler::AddCharacteristics(std::string uui
     return obj;
 }
 
-void BleServiceHandler::AddMessage(const NimBLEUUID &charId,uint8_t* pData, size_t length, bool isNotify){
+
+/*void BleServiceHandler::AddMessage(const NimBLEUUID &charId,uint8_t* pData, size_t length, bool isNotify){
     std::string charName = charId.toString();
     BleCharacteristicsHandler* characteristic = m_characteristics[charName];
     if (characteristic){
@@ -33,7 +34,7 @@ void BleServiceHandler::AddMessage(const NimBLEUUID &charId,uint8_t* pData, size
             warnedMap[charName] = true;
         }
     }  
-}
+}*/
 
 void BleServiceHandler::AddDevice(BluetoothDeviceHandler *dev){
     xSemaphoreTake(queueMutex, portMAX_DELAY);
@@ -58,7 +59,7 @@ bool BleServiceHandler::WriteToCharacteristics(std::vector<uint8_t> bytes, int c
         Logger::Error("device is not found");
         return false;
     }
-    
+
     if (dev->m_client == nullptr){
         Logger::Error("device dont seems to have a valid client");
         return false;
