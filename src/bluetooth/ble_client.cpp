@@ -107,12 +107,11 @@ bool BleManager::connectToServer(){
   device->m_client = pClient;
   pSvc = pClient->getService(handler->uuid);
   if (!pSvc) {
-      Serial.printf("HID service not found!\n");
+      Serial.printf("Service not found!\n");
       pClient->disconnect();
       return false;
   }
 
-  Serial.printf("Found HID service\n");
   // Look for report characteristics to subscribe to
   // Instead of using getProperties(), we'll try to subscribe and see if it works
   std::vector<BleCharacteristicsHandler*> searchList = handler->getCharacteristics();
@@ -124,15 +123,15 @@ bool BleManager::connectToServer(){
         if (pChr->getUUID() == element->uuid){
           matched = true;
           if(pChr->canNotify()) {
-            if(!pChr->subscribe(true, element->getLambda())) {
-              Logger::Error("[BLE] Characteristics %s in service %s, failed to subscribe, dropping.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
+            if(!pChr->subscribe(true, element->getLambda(device->getId()))) {
+              Logger::Error("[BLE] Characteristics %s in service %s, failed to subscribe.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
               pClient->disconnect();
               NimBLEDevice::deleteClient(pClient);
               g_remoteControls.availableIds.push(device->m_controllerId);         
               delete device;
               return false;
             }else{
-              Logger::Error("[BLE] Subscribed on characteristics %s in service %s, failed to subscribe.", element->uuid.toString().c_str(), pChr->getUUID().toString().c_str());
+              Logger::Error("[BLE] Subscribed on characteristics %s in service %s.", element->uuid.toString().c_str(), pChr->getUUID().toString().c_str());
             }
             continue;
           }

@@ -7,6 +7,9 @@ BluetoothDeviceHandler::~BluetoothDeviceHandler(){
     m_callbacks = nullptr;
 }
 
+
+int BluetoothDeviceHandler::idCounter = 0;
+
 BleCharacteristicsHandler* BleServiceHandler::AddCharacteristics(std::string uuid){
     NimBLEUUID charId(uuid);
 
@@ -23,18 +26,6 @@ BleCharacteristicsHandler* BleServiceHandler::AddCharacteristics(std::string uui
 }
 
 
-/*void BleServiceHandler::AddMessage(const NimBLEUUID &charId,uint8_t* pData, size_t length, bool isNotify){
-    std::string charName = charId.toString();
-    BleCharacteristicsHandler* characteristic = m_characteristics[charName];
-    if (characteristic){
-        characteristic->AddMessage(pData, length, isNotify);
-    }else{
-        if (warnedMap[charName] == false){
-            Logger::Error("Message arrived on unmapped characteristics %s ", charName.c_str());
-            warnedMap[charName] = true;
-        }
-    }  
-}*/
 
 void BleServiceHandler::AddDevice(BluetoothDeviceHandler *dev){
     xSemaphoreTake(queueMutex, portMAX_DELAY);
@@ -50,11 +41,16 @@ bool BleServiceHandler::WriteToCharacteristics(std::vector<uint8_t> bytes, int c
         return false;
     } 
 
-    if (clientId < 0 || clientId > m_connectedDevices.size()){
-        Logger::Error("id is not present!");
-        return false;
+    
+
+    BluetoothDeviceHandler *dev = nullptr;
+    for (auto &it : m_connectedDevices){
+        if (it->getId() == clientId){
+            dev = it;
+            break;
+        }
     }
-    BluetoothDeviceHandler *dev = m_connectedDevices[clientId-1];
+
     if (dev == nullptr){
         Logger::Error("device is not found");
         return false;
@@ -85,11 +81,10 @@ void BleServiceHandler::SendMessages(){
         xSemaphoreTake(queueMutex, portMAX_DELAY);
         BluetoothDeviceHandler *dev = devicesToNotify.top();
         m_connectedDevices.emplace_back(dev);
-        int id = m_connectedDevices.size();
         devicesToNotify.pop();
         xSemaphoreGive(queueMutex);
         if (luaOnConnectCallback != nullptr){
-            luaOnConnectCallback->callLuaFunction(id, dev->m_device->getAddress().toString(), dev->m_device->getName().c_str());
+            luaOnConnectCallback->callLuaFunction(dev->getId(), dev->m_device->getAddress().toString(), dev->m_device->getName().c_str());
         }
     }
     for (auto &it : m_characteristics){

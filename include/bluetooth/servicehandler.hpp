@@ -14,14 +14,20 @@
 
 
 class BluetoothDeviceHandler{
-    public: 
-        BluetoothDeviceHandler():m_device(nullptr),m_callbacks(nullptr),m_client(nullptr),m_controllerId(0xffff),connected(false){};
-        ~BluetoothDeviceHandler();
-        const NimBLEAdvertisedDevice* m_device;
-        ClientCallbacks * m_callbacks;
-        NimBLEClient* m_client;
-        uint32_t m_controllerId;
-        bool connected;
+  public: 
+    static int idCounter;
+    BluetoothDeviceHandler():m_device(nullptr),m_callbacks(nullptr),m_client(nullptr),m_controllerId(0xffff),connected(false){m_id = ++idCounter;};
+    ~BluetoothDeviceHandler();
+    int getId(){
+      return m_id;
+    };
+    const NimBLEAdvertisedDevice* m_device;
+    ClientCallbacks * m_callbacks;
+    NimBLEClient* m_client;
+    uint32_t m_controllerId;
+    bool connected;
+  private:
+    int m_id;
 };
 
 

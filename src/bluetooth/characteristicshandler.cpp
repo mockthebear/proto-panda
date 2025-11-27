@@ -3,31 +3,26 @@
 #include "lua/luainterface.hpp"
 #include "bluetooth/ble_client.hpp"
 
-void BleCharacteristicsHandler::AddMessage(uint8_t* pData, size_t length, bool isNotify){
+void BleCharacteristicsHandler::AddMessage(int id, uint8_t* pData, size_t length, bool isNotify){
     xSemaphoreTake(queueMutex, portTICK_PERIOD_MS * 50);
     if (dataQueue.size() > 100) {
         dataQueue.pop();
     }
-    dataQueue.emplace(pData, length);
+    dataQueue.emplace(id, pData, length);
     xSemaphoreGive(queueMutex);
 }
-
-void BleCharacteristicsHandler::createLambda(){
-    notificationLambda = [this](NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
-       this->AddMessage(pData, length, isNotify);
-    };
-}
-
 
 void BleCharacteristicsHandler::SendMessages(){
     while (!dataQueue.empty()){
         std::vector<uint8_t> vec;
+        int id = 0;
         xSemaphoreTake(queueMutex, portMAX_DELAY);
         vec = dataQueue.front().message;
+        id = dataQueue.front().m_id;
         dataQueue.pop();
         xSemaphoreGive(queueMutex);
         if (luaCallback != nullptr){
-            luaCallback->callLuaFunction(vec);
+            luaCallback->callLuaFunction(id, vec);
         }
     }
 }
