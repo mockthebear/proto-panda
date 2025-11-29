@@ -15,10 +15,8 @@ Protopanda is a open source patform (firmware and hardware), for controling prot
 5. [LED Strips](#led-strips)
 7. [Bluetooth](#bluetooth)
 7. [Hardware](#hardware)
-8. [Programming in Lua](#programming-in-lua)
-9. [Lua Functions](#lua-functions)
-10. [Lua Constants](#lua-constants)
-11. [LED Behaviors](#led-behaviors)
+8. [DIY](#DIY)
+9. [Programming in Lua](#programming-in-lua)
 
 # Features
 
@@ -273,6 +271,27 @@ Protopanda uses and abuses the two cores in the ESP32.
 By default, Core 0 is primarily designed to manage Bluetooth. When not doing so, it manages the animations, and when [Managed mode](#managed-mode) is active, it also handles the LED screen updating.
 * **Core 1**
 The second core handles non-screen-related tasks. It has the routine that checks the [power level](#powering), updates the inputs, reads sensors, and calls the Lua function onLoop.
+
+
+## DIY
+
+We know not all of us can build a PCB from scratch, so i'm providing a way you can build your own reduced version of protopanda. 
+![Diagrama](doc/diy-schematic.png "Eletronics schematic")  
+
+### Parts
+
+* [5v 3A buck converter](https://aliexpress.com/item/1005005505907937.html)
+* [PD trigger](https://aliexpress.com/item/1005007889747084.html)
+* [SD Card module](https://aliexpress.com/item/1005008723789216.html)
+* [Oled screen](https://aliexpress.com/item/1005006141235306.html)
+* [ESP32 N16R9 dev board](https://aliexpress.com/item/1005009906920237.html)
+* [Buzzer 5 or 3.3v](https://aliexpress.com/item/1005006201550296.html)
+* [Connector for the HUB75](https://aliexpress.com/item/1005007851512814.html) (Get the 16 pin one)
+For external use:
+* 2x [hub75 screen](https://aliexpress.com/item/4000002686894.html)
+* [Adderessable led strip](https://aliexpress.com/item/1005004752499978.html) (optional)
+
+
 
 
 # Programming in Lua

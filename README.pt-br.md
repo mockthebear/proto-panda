@@ -12,7 +12,8 @@ Protopanda é uma plataforma open source (firmware e hardware) para controlar pr
 5. [Tiras de LED](#tiras-de-led)  
 6. [Bluetooth](#bluetooth)  
 7. [Hardware](#hardware)   
-8. [Programação em Lua](#programação-em-lua)  
+8. [Montando o seu protopanda](#montando-o-seu-protopanda)
+9. [Programação em Lua](#programação-em-lua)  
 
 # Features  
 
@@ -231,6 +232,25 @@ O Protopanda utiliza e abusa dos dois núcleos do ESP32.
 Por padrão, o Núcleo 0 é projetado principalmente para gerenciar o Bluetooth. Quando não está fazendo isso, ele gerencia as animações e, quando o [Modo Gerenciado](#modo-gerenciado) está ativo, também cuida da atualização da tela de LED.  
 * **Núcleo 1**  
 O segundo núcleo lida com tarefas não relacionadas à tela. Ele possui a rotina que verifica o [nível de energia](#alimentação), atualiza as entradas, lê os sensores e chama a função Lua `onLoop`.  
+
+# Montando o seu protopanda
+
+Sei que fazer uma PCB do zero, usar componentes SDM é complicado. Porém, você pode usar peças que dá para comprar no aliexpresse montar uma versão reduzida do protopanda.
+
+![Diagrama](doc/diy-schematic.png "Esquema elétrico")  
+
+### Peças
+
+* [5v 3A buck converter](https://aliexpress.com/item/1005005505907937.html)
+* [PD trigger](https://aliexpress.com/item/1005007889747084.html)
+* [SD Card modulo](https://aliexpress.com/item/1005008723789216.html)
+* [Tela oled](https://aliexpress.com/item/1005006141235306.html)
+* [ESP32 N16R9 dev board](https://aliexpress.com/item/1005009906920237.html)
+* [Buzzer 5 or 3.3v](https://aliexpress.com/item/1005006201550296.html)
+* [Connector para o painel HUB75](https://aliexpress.com/item/1005007851512814.html) (Get the 16 pin one)
+For external use:
+* 2x [hub75 screen](https://aliexpress.com/item/4000002686894.html)
+* [Adderessable led strip](https://aliexpress.com/item/1005004752499978.html) (optional)
 
 
 # Programação em Lua  
