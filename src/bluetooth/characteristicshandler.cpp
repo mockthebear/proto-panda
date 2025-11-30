@@ -4,6 +4,7 @@
 #include "bluetooth/ble_client.hpp"
 
 void BleCharacteristicsHandler::AddMessage(int id, uint8_t* pData, size_t length, bool isNotify){
+    Serial.printf("Msg size: %d\n", length);
     xSemaphoreTake(queueMutex, portTICK_PERIOD_MS * 50);
     if (dataQueue.size() > 100) {
         dataQueue.pop();

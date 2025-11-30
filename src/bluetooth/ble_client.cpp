@@ -91,7 +91,9 @@ bool BleManager::connectToServer(){
       }
     }
 
-    Serial.printf("Connected to: %s RSSI: %d\n", pClient->getPeerAddress().toString().c_str(), pClient->getRssi());
+    Serial.printf("Connected to: %s RSSI: %d, MTU %d\n", pClient->getPeerAddress().toString().c_str(), pClient->getRssi(), pClient->getMTU());
+    
+    
 
     /** Now we can access the HID service characteristics */
     NimBLERemoteService* pSvc = nullptr;
