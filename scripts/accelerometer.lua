@@ -1,6 +1,7 @@
 local _M = {
 	shouldStop = false
 }
+local input = require("input")
 
 local RED = color565(255, 0, 0)
 local GREEN = color565(0, 255, 0)

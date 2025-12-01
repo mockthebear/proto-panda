@@ -5,8 +5,6 @@
 
 BleManager* BleManager::m_myself = nullptr;
 
-BleSensorHandlerData BleManager::remoteData[MAX_BLE_CLIENTS];
-
 void AdvertisedDeviceCallbacks::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
   if (bleObj->canLogDiscoveredClients()){
     Logger::Info("[BLE] Advertised Device found: %s", advertisedDevice->toString().c_str());
@@ -182,12 +180,7 @@ BleManager* BleManager::Get(){
 bool BleManager::begin(){
 
   m_myself = this;
-  
-  for (int i = 0; i<MAX_BLE_CLIENTS;i++){
-    remoteData[i] = BleSensorHandlerData();
-  }
 
-  
 
   m_started = true;
   
@@ -223,34 +216,10 @@ bool BleManager::beginRadio(){
 }
 
 
-void BleSensorHandlerData::updateButtons(){
-  for (int i=0;i<MAX_BLE_BUTTONS;i++){
-    if (real_inputButtonsStatus[i] == BUTTON_JUST_PRESSED){
-      real_inputButtonsStatus[i] = BUTTON_PRESSED;
-    }
-    if (real_inputButtonsStatus[i] == BUTTON_JUST_RELEASED){
-      real_inputButtonsStatus[i] = BUTTON_RELEASED;
-    }
-    if (buttons[i] != last_inputButtonsStatus[i]){
-      if (buttons[i] == 1){
-        real_inputButtonsStatus[i] = BUTTON_JUST_PRESSED;
-      }else{
-        real_inputButtonsStatus[i] = BUTTON_JUST_RELEASED;
-      }
-      last_inputButtonsStatus[i] = buttons[i];
-    }
-  }
-}
 
 void BleManager::sendUpdatesToLua(){
   for (auto &it : handlers){
     it.second->SendMessages();
-  }
-}
-
-void BleManager::updateButtons(){
-  for (int i = 0; i<MAX_BLE_CLIENTS;i++){
-    remoteData[i].updateButtons();
   }
 }
 

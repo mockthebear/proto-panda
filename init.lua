@@ -5,6 +5,7 @@ local menu = require("menu")
 local boop = require("boop")
 local configloader = require("configloader")
 local drivers = require("drivers")
+local input = require("input")
 
 function onSetup()
 
@@ -60,6 +61,7 @@ function onPreflight()
 end
 
 function onLoop(dt)
+    input.updateButtonStates()
     if not scripts.Handle(dt) then
         return
     end

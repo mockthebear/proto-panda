@@ -15,53 +15,6 @@
 
 class BleManager;
 
-class BleSensorData{
-  public:
-    BleSensorData():z(0),x(0),y(0),az(0),ax(0),ay(0),temp(0),controllerId(0){
-      for (int i=0;i<MAX_BLE_BUTTONS;i++){
-        buttons[i] = 0;
-      }
-    }
-    int16_t z,x,y;
-    int16_t az,ax,ay;
-    int16_t temp;
-    uint8_t buttons[MAX_BLE_BUTTONS+2];
-    uint8_t controllerId;
-};
-
-class BleSensorHandlerData : public BleSensorData{
-  public:
-    BleSensorHandlerData():BleSensorData(){}
-  
-    void copy(BleSensorData* aux){
-      this->x = aux->x;
-      this->y = aux->y;
-      this->z = aux->z;
-      this->ax = aux->ax;
-      this->ay = aux->ay;
-      this->az = aux->az;
-      this->temp = aux->temp;
-      this->controllerId = aux->buttons[0];
-      for (int i = 1; i < MAX_BLE_BUTTONS+1; ++i) {
-          this->buttons[i-1] = aux->buttons[i];
-      }
-    }
-
-    void setLastUpdate(){
-      currentUpdate = millis()-previousUpdate;
-      previousUpdate = millis();
-    }
-
-    void updateButtons();
-
-    uint32_t last_inputButtonsStatus[MAX_BLE_BUTTONS];  
-    uint32_t real_inputButtonsStatus[MAX_BLE_BUTTONS];  
-    uint32_t previousUpdate; 
-    uint32_t currentUpdate; 
-};
-
-
-
 class AdvertisedDeviceCallbacks: public NimBLEScanCallbacks {
   void onResult(const NimBLEAdvertisedDevice* advertisedDevice) override;
   void onScanEnd(const NimBLEScanResults& results, int reason) override ;
@@ -82,7 +35,6 @@ class BleManager{
     bool beginRadio();
     void update();
     void sendUpdatesToLua();
-    void updateButtons();
     void beginScanning();
 
     
@@ -104,7 +56,6 @@ class BleManager{
     }
 
 
-    static BleSensorHandlerData remoteData[MAX_BLE_CLIENTS];
     void AddAcceptedService(std::string name, BleServiceHandler* obj);
 
     std::map<std::string, BleServiceHandler*> &GetAcceptedServices(){

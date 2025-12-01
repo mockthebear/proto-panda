@@ -15,6 +15,7 @@ local _M = {
     BRICK_ROWS = 4,
     BRICK_COLS = 5,
 }
+local input = require("input")
 
 _M.brickColors = {
     color565(255, 0, 0), 
@@ -92,15 +93,15 @@ end
 function _M.updateBall(dt)
 	dt = dt/1000
 
-	if readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED then
+	if input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED then
         _M.racketX = math.min(_M.racketX + _M.RACKET_SPEED * dt, _M.GAME_WIDTH - _M.RACKET_WIDTH)
     end
 
-    if readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED then
+    if input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED then
         _M.racketX = math.max(_M.racketX - _M.RACKET_SPEED* dt, 0)
     end
 
-    if not _M.gameStarted and readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then
+    if not _M.gameStarted and input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then
         _M.gameStarted = true
         local angle = math.random() * math.pi / 2 - math.pi / 4
         _M.ballDX = _M.BALL_SPEED * math.cos(angle)
@@ -211,11 +212,11 @@ function _M.onLoop(dt)
     flipPanelBuffer()
     
     -- Exit condition (all buttons pressed)
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and 
-       readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and 
-       readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and 
-       readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and 
-       readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and 
+       input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and 
+       input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and 
+       input.readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and 
+       input.readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED then 
         _M.shouldStop = true
         return true
     end

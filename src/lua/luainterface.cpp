@@ -179,82 +179,6 @@ bool hasLidar()
   return Devices::HasLidar();
 }
 
-uint32_t readButtonStatus(uint32_t button)
-{
-  if (button >= MAX_BLE_BUTTONS*MAX_BLE_CLIENTS)
-  {
-    return 0;
-  }
-  uint32_t id = button/uint32_t(MAX_BLE_BUTTONS);
-  button -= id*MAX_BLE_BUTTONS;
-  return BleManager::remoteData[id].real_inputButtonsStatus[button];
-}
-
-uint32_t getBleDeviceUpdateDt(uint32_t device)
-{
-  if (device >= MAX_BLE_CLIENTS)
-  {
-    return 0;
-  }
-  return BleManager::remoteData[device].currentUpdate;
-}
-
-uint32_t getBleDeviceLastUpdate(uint32_t device)
-{
-  if (device >= MAX_BLE_CLIENTS)
-  {
-    return 0;
-  }
-  return BleManager::remoteData[device].previousUpdate;
-}
-
-float readAccelerometerX(int device)
-{
-  if (device >= MAX_BLE_CLIENTS){
-    return 0.0f;
-  }
-  return BleManager::remoteData[device].x * 4.0f / 32768.0f;
-}
-
-float readAccelerometerY(int device)
-{
-  if (device >= MAX_BLE_CLIENTS){
-    return 0.0f;
-  }
-  return BleManager::remoteData[device].y * 4.0f / 32768.0f;
-}
-
-float readAccelerometerZ(int device)
-{
-  if (device >= MAX_BLE_CLIENTS){
-    return 0.0f;
-  }
-  return BleManager::remoteData[device].z * 4.0f / 32768.0f;
-}
-
-int readGyroX(int device)
-{
-  if (device >= MAX_BLE_CLIENTS){
-    return 0.0f;
-  }
-  return BleManager::remoteData[device].ax;
-}
-
-int readGyroY(int device)
-{
-  if (device >= MAX_BLE_CLIENTS){
-    return 0.0f;
-  }
-  return BleManager::remoteData[device].ay;
-}
-
-int readGyroZ(int device)
-{
-  if (device >= MAX_BLE_CLIENTS){
-    return 0.0f;
-  }
-  return BleManager::remoteData[device].az;
-}
 
 
 static int dumpStackToSerial(lua_State *L)
@@ -582,16 +506,7 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("servoMove", Devices::ServoMove);
   #endif
   m_lua->FuncRegister("hasServo", Devices::HasServo);
-  //BLE
-  m_lua->FuncRegister("readButtonStatus", readButtonStatus);
-  m_lua->FuncRegisterOptional("readAccelerometerX", readAccelerometerX, 0);
-  m_lua->FuncRegisterOptional("readAccelerometerY", readAccelerometerY, 0);
-  m_lua->FuncRegisterOptional("readAccelerometerZ", readAccelerometerZ, 0);
-  m_lua->FuncRegisterOptional("readGyroX", readGyroX, 0);
-  m_lua->FuncRegisterOptional("readGyroY", readGyroY, 0);
-  m_lua->FuncRegisterOptional("readGyroZ", readGyroZ, 0);
-  m_lua->FuncRegisterOptional("getBleDeviceLastUpdate", getBleDeviceLastUpdate, 0);
-  m_lua->FuncRegisterOptional("getBleDeviceUpdateDt", getBleDeviceUpdateDt, 0);
+
   //LIDAR
   m_lua->FuncRegister("hasLidar", hasLidar);
   m_lua->FuncRegister("readLidar", readLidar);
@@ -714,11 +629,6 @@ void LuaInterface::RegisterMethods()
 void LuaInterface::RegisterConstants()
 {
 
-  m_lua->setConstant("BUTTON_RELEASED", BUTTON_RELEASED);
-  m_lua->setConstant("BUTTON_JUST_PRESSED", BUTTON_JUST_PRESSED);
-  m_lua->setConstant("BUTTON_PRESSED", BUTTON_PRESSED);
-  m_lua->setConstant("BUTTON_JUST_RELEASED", BUTTON_JUST_RELEASED);
-
   m_lua->setConstant("BEHAVIOR_NONE", (int)BEHAVIOR_NONE);
   m_lua->setConstant("BEHAVIOR_PRIDE", (int)BEHAVIOR_PRIDE);
   m_lua->setConstant("BEHAVIOR_ROTATE", (int)BEHAVIOR_ROTATE);
@@ -739,11 +649,7 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("MAX_LED_GROUPS", (int)MAX_LED_GROUPS);
 
 
-  m_lua->setConstant("BUTTON_LEFT", (int)0);
-  m_lua->setConstant("BUTTON_RIGHT", (int)2);
-  m_lua->setConstant("BUTTON_UP", (int)3);
-  m_lua->setConstant("BUTTON_CONFIRM", (int)4);
-  m_lua->setConstant("BUTTON_DOWN", (int)1);
+
 
   char bigBuffMsg[100];
   for (int i=0;i<MAX_BLE_CLIENTS;i++){

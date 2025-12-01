@@ -1,3 +1,5 @@
+local versions = require("versions")
+
 local drivers = {
     handlerPanda = nil,
     mouseHandler = nil,
@@ -10,6 +12,9 @@ local drivers = {
     panda = {},
     joystick = {},
     mouse = {},
+
+
+    eventQueue = {}
 }
 do
     for i=1,MAX_BLE_CLIENTS do   
@@ -18,15 +23,16 @@ do
             buttons[b] = 0
         end 
         drivers.panda[i] = {
-            z = 0,
-            x = 0, 
-            y = 0,
             az = 0,
-            ax = 0,
+            ax = 0, 
             ay = 0,
+            gz = 0,
+            gx = 0,
+            gy = 0,
             temp = 0,
             buttons = buttons,
-            controllerId = 0
+            controllerId = 0,
+            last_update=0,
         }
         drivers.mouse[i] = {
             x=0,
@@ -59,36 +65,27 @@ local function readInt16(data)
     end
     return value, index
 end
+
 local function parsePandaData(controllerInfo, data)
     local index = 1
-    clientInfo.z,index = readInt16(data, index)
-    clientInfo.x,index = readInt16(data, index)
-    clientInfo.y,index = readInt16(data, index)
-    clientInfo.az,index = readInt16(data, index)
-    clientInfo.ax,index = readInt16(data, index)
-    clientInfo.ay,index = readInt16(data, index)
-    clientInfo.temp,index = readInt16(data, index)
+    controllerInfo.az,index = readInt16(data, index)
+    controllerInfo.ax,index = readInt16(data, index)
+    controllerInfo.ay,index = readInt16(data, index)
+    controllerInfo.gz,index = readInt16(data, index)
+    controllerInfo.gx,index = readInt16(data, index)
+    controllerInfo.gy,index = readInt16(data, index)
+    controllerInfo.temp,index = readInt16(data, index)
 
-    clientInfo.controllerId = data[index]
+    controllerInfo.controllerId = data[index]
     index = index +1
 
-    local buttons = clientInfo.buttons
+    local buttons = controllerInfo.buttons
     for i = 1, 5 do
         buttons[i] = data[index]
         index = index + 1
     end
 
-    return {
-        z = z,
-        x = x, 
-        y = y,
-        az = az,
-        ax = ax,
-        ay = ay,
-        temp = temp,
-        buttons = buttons,
-        controllerId = controllerId
-    }
+    controllerInfo.last_update = millis()
 end
 
 
@@ -102,10 +99,17 @@ end
 
 
 function drivers.EnableProtopandaController()
+    if not versions.canRun("2.0.0") then  
+        --Legacy controller
+        setMaximumControls(2)
+        acceptBLETypes("d4d31337-c4c1-c2c3-b4b3-b2b1a4a3a2a1", "afaf", "fafb")
+        return false
+    end
     drivers.handlerPanda = BleServiceHandler("d4d31337-c4c1-c2c3-b4b3-b2b1a4a3a2a1")
     drivers.handlerPanda:SetOnConnectCallback(drivers.onConnectPanda)
     drivers.pandaListener = drivers.handlerPanda:AddCharacteristics("d4d3afaf-c4c1-c2c3-b4b3-b2b1a4a3a2a1")
     drivers.pandaListener:SetSubscribeCallback(drivers.onSubscribeMessagePanda)
+    return true
 end
 
 
@@ -254,9 +258,14 @@ end
 
 
 function drivers.EnableGenericAndroidMouse()
+    if not versions.canRun("2.0.0") then  
+        return false
+    end
+    if _M.canRun(version)
     drivers.mouseHandler = BleServiceHandler("00001812-0000-1000-8000-00805f9b34fb")
     drivers.mouseListener = drivers.mouseHandler:AddCharacteristics("2a4d")
     drivers.mouseListener:SetSubscribeCallback(drivers.onMouseCallback) 
+    return true
 end
 
 return drivers

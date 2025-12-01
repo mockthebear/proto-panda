@@ -15,7 +15,7 @@ void BleCharacteristicsHandler::AddMessage(int cliID, int id, uint8_t* pData, si
 }
 
 void BleCharacteristicsHandler::SendMessages(){
-    while (!dataQueue.empty()){
+    if (!dataQueue.empty()){
         std::vector<uint8_t> vec;
         int id = -1;
         int cliId = -1;
