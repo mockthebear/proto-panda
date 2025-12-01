@@ -9,9 +9,10 @@
 
 class BleMessage{
   public:
-    BleMessage(int id, uint8_t* pData, size_t length):message(pData, pData + length),m_id(id){}
-    std::vector<uint8_t> message;
+    BleMessage(int cliId, int  id, uint8_t* pData, size_t length):m_CliId(cliId),m_id(id),message(pData, pData + length){}
+    int m_CliId;
     int m_id;
+    std::vector<uint8_t> message;
 };
 
 typedef std::function<void(NimBLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify)> notify_callback;
@@ -25,11 +26,11 @@ class BleCharacteristicsHandler{
       luaCallback = lcb;
     };
     
-    void AddMessage(int id, uint8_t* pData, size_t length, bool isNotify);
+    void AddMessage(int cliID, int id, uint8_t* pData, size_t length, bool isNotify);
     void SendMessages();
-    notify_callback getLambda(int id){
-        return [this, id](NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
-          this->AddMessage(id, pData, length, isNotify);
+    notify_callback getLambda(int id, int cliID){
+        return [this, id, cliID](NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
+          this->AddMessage(cliID, id, pData, length, isNotify);
         };
     }
 

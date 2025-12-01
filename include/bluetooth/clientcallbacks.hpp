@@ -10,6 +10,8 @@ class BleManager;
 class ClientCallbacks : public NimBLEClientCallbacks {
     void onConnect(NimBLEClient* pClient) override;
 
+    void onMTUChange(NimBLEClient* pClient, uint16_t MTU) override;
+
     void onDisconnect(NimBLEClient* pClient, int reason) override ;
 
     /********************* Security handled here *********************/

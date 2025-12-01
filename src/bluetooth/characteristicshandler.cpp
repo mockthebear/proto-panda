@@ -3,27 +3,32 @@
 #include "lua/luainterface.hpp"
 #include "bluetooth/ble_client.hpp"
 
-void BleCharacteristicsHandler::AddMessage(int id, uint8_t* pData, size_t length, bool isNotify){
-    Serial.printf("Msg size: %d\n", length);
-    xSemaphoreTake(queueMutex, portTICK_PERIOD_MS * 50);
+void BleCharacteristicsHandler::AddMessage(int cliID, int id, uint8_t* pData, size_t length, bool isNotify){
+    if (xSemaphoreTake(queueMutex, portTICK_PERIOD_MS * 50) != pdTRUE){
+        return;
+    }
     if (dataQueue.size() > 100) {
         dataQueue.pop();
     }
-    dataQueue.emplace(id, pData, length);
+    dataQueue.emplace(cliID, id, pData, length);
     xSemaphoreGive(queueMutex);
 }
 
 void BleCharacteristicsHandler::SendMessages(){
     while (!dataQueue.empty()){
         std::vector<uint8_t> vec;
-        int id = 0;
-        xSemaphoreTake(queueMutex, portMAX_DELAY);
+        int id = -1;
+        int cliId = -1;
+        if (xSemaphoreTake(queueMutex, portTICK_PERIOD_MS * 25) != pdTRUE){
+            return;
+        }
         vec = dataQueue.front().message;
         id = dataQueue.front().m_id;
+        cliId = dataQueue.front().m_CliId;
         dataQueue.pop();
         xSemaphoreGive(queueMutex);
         if (luaCallback != nullptr){
-            luaCallback->callLuaFunction(id, vec);
+            luaCallback->callLuaFunction(id, cliId, vec);
         }
     }
 }

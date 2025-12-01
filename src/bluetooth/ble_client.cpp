@@ -125,7 +125,7 @@ bool BleManager::connectToServer(){
         if (pChr->getUUID() == element->uuid){
           matched = true;
           if(pChr->canNotify()) {
-            if(!pChr->subscribe(true, element->getLambda(device->getId()))) {
+            if(!pChr->subscribe(true, element->getLambda(device->getId(), device->m_controllerId))) {
               Logger::Error("[BLE] Characteristics %s in service %s, failed to subscribe.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
               pClient->disconnect();
               NimBLEDevice::deleteClient(pClient);

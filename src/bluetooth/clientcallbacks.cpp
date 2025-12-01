@@ -18,6 +18,9 @@ void ClientCallbacks::onConnect(NimBLEClient* pClient) {
   }*/
 }
 
+void ClientCallbacks::onMTUChange(NimBLEClient* pClient, uint16_t MTU) {
+  Serial.printf("MTU updated: %u\n", MTU);
+}
 
 void ClientCallbacks::onDisconnect(NimBLEClient* pClient, int reason){
   Devices::BuzzerToneDuration(400, 300);
