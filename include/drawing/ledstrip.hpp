@@ -68,14 +68,14 @@ class BaseLedGroup{
 class LedGroup : public BaseLedGroup{
     public:
         static LedGroup* PsramAllocateLedGroup(size_t len);
-        LedGroup():BaseLedGroup(),m_onTween(false),m_tweenCycle(0.0f),m_tweenRate(0.001f),m_tweening(),m_tweenBuffer(nullptr),m_tweenBufferSize(0){};
+        LedGroup():BaseLedGroup(),m_onTween(false),m_tweenCounter(0),m_tweenMillisecondsDuration(500),m_tweening(),m_tweenBuffer(nullptr),m_tweenBufferSize(0){};
 
         void preallocate();
         void addTween(float rate, LedBehavior bh, int parameter = 0, int parameter2 = 0, int parameter3 = 0, int parameter4 = 0);
         void Update(CRGB *leds);
         bool m_onTween;
-        float m_tweenCycle;
-        float m_tweenRate;
+        uint32_t m_tweenCounter;
+        uint32_t m_tweenMillisecondsDuration;
         BaseLedGroup m_tweening;
         CRGB *m_tweenBuffer;
         uint32_t m_tweenBufferSize;
