@@ -164,13 +164,13 @@ void LedStrip::setSegmentTweenSpeed(int id, int parameter){
     if (id < 0 || id > (MAX_LED_GROUPS-1)){
         return;
     }
-    m_groups[id].m_tweenRate = parameter;
+    m_groups[id].m_tweenMillisecondsDuration = parameter;
 }
 void LedStrip::setSegmentTweenBehavior(int id, LedBehavior bh, int parameter, int parameter2, int parameter3,  int parameter4){
     if (id < 0 || id > (MAX_LED_GROUPS-1)){
         return;
     }
-    m_groups[id].addTween(0.001f, bh, parameter, parameter2 , parameter3 , parameter4);
+    m_groups[id].addTween(m_groups[id].m_tweenMillisecondsDuration, bh, parameter, parameter2 , parameter3 , parameter4);
 }
 
 int LedStrip::StackBehavior(){
@@ -243,7 +243,7 @@ void LedGroup::preallocate(){
 }
 
 void LedGroup::addTween(float rate, LedBehavior bh, int a_parameter , int a_parameter2 , int a_parameter3 , int a_parameter4 ){
-    m_tweenCycle = 0.0f;
+    m_tweenCounter = 0;
     m_onTween = true;
 
     m_tweening.from = 0;
@@ -276,23 +276,23 @@ void LedGroup::Update(CRGB *leds){
     if (m_onTween){
         m_tweening.Update(m_tweenBuffer);
 
-        m_tweenCycle += (m_tweenRate/255.0f) * Devices::getDeltaTime();
-
+        m_tweenCounter += Devices::getDeltaTime();
         BaseLedGroup::Update(leds);
 
-        if (m_tweenCycle >= 1.0f){
-            m_tweenCycle = 0.0f;
+        if (m_tweenCounter >= m_tweenMillisecondsDuration){
+            m_tweenCounter = 0;
             m_onTween = false;
             return;
         }
 
+        float rate = m_tweenCounter/(float)m_tweenMillisecondsDuration;
         int count = 0;
+        
         for (int x=from;x<=to;x++,count++){
             
-            leds[x].r = leds[x].r * m_tweenCycle + m_tweenBuffer[count].r * (1.0f - m_tweenCycle);
-            leds[x].g = leds[x].g * m_tweenCycle + m_tweenBuffer[count].g * (1.0f - m_tweenCycle);
-            leds[x].b = leds[x].b * m_tweenCycle + m_tweenBuffer[count].b * (1.0f - m_tweenCycle);
-  
+            leds[x].r = leds[x].r * rate + m_tweenBuffer[count].r * (1.0f - rate);
+            leds[x].g = leds[x].g * rate + m_tweenBuffer[count].g * (1.0f - rate);
+            leds[x].b = leds[x].b * rate + m_tweenBuffer[count].b * (1.0f - rate);
         }
     }else{
         BaseLedGroup::Update(leds);
