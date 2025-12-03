@@ -181,13 +181,13 @@ void OledScreen::DrawBottomBar(){
 }
 
 void OledScreen::DrawAccelerometer(int id, int posX, int posY){
-  int zpos = map(BleManager::remoteData[id].z, -8192, 8192, -8,8);
+  int zpos = map(0, -8192, 8192, -8,8);
   zpos = zpos > 8 ? 8 : zpos;
   zpos = zpos < -8 ? -8 : zpos;
-  int xpos = map(BleManager::remoteData[id].x,-8192, 8192, -8,8);
+  int xpos = map(0,-8192, 8192, -8,8);
   xpos = xpos > 8 ? 8 : xpos;
   xpos = xpos < -8 ? -8 : xpos;
-  int ypos = map(BleManager::remoteData[id].y,-8192, 8192, -8,8);
+  int ypos = map(0,-8192, 8192, -8,8);
   ypos = ypos > 8 ? 8 : ypos;
   ypos = ypos < -8 ? -8 : ypos;
   display.drawLine(posX+8, posY+8, posX+8+xpos, posY+8, SSD1306_WHITE);

@@ -34,6 +34,7 @@ class Devices{
         static void Begin();
         static std::vector<int> I2CScan();
         static void CalculateMemmoryUsage();
+        static void CalculateMemmoryUsageDifference(const std::string msg = "");
         static void StartAvaliableDevices();
         static bool CheckPowerLevel();
         static bool AutoCheckPowerLevel();

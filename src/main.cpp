@@ -85,7 +85,7 @@ void setup() {
     for(;;){}
   }
   Logger::Info("DMA display initialized!");
-  Devices::CalculateMemmoryUsage(); 
+  Devices::CalculateMemmoryUsageDifference("Dma display");
   #endif 
 
   while (!Storage::Begin()){
@@ -103,13 +103,12 @@ void setup() {
     DMADisplay::Display->setBrightness8(1);
   }
   DMADisplay::Display->setBrightness8(0);
-
+  Devices::CalculateMemmoryUsageDifference("Storage");
   Logger::Begin();
   Devices::DisplayResetInfo();
-  Devices::I2CScan();
   Devices::StartAvaliableDevices();
-
-  Devices::CalculateMemmoryUsage();  
+  
+  Devices::CalculateMemmoryUsageDifference("Devices");
   if (!g_frameRepo.Begin()){
     OledScreen::CriticalFail("Frame repository has failed! If restarting does not solve, its a hardware problem.");
     for (;;){
@@ -121,7 +120,7 @@ void setup() {
       delay(1000);
     }
   }
-  Devices::CalculateMemmoryUsage(); 
+  Devices::CalculateMemmoryUsageDifference("Frame repo");
   if (!g_lua.Start()){
     OledScreen::CriticalFail("Failed to initialize Lua!");
     for(;;){
@@ -133,9 +132,8 @@ void setup() {
       delay(1000);
     }
   }
+  Devices::CalculateMemmoryUsageDifference("Lua");
 
-
-  Devices::CalculateMemmoryUsage(); 
   if (!g_lua.LoadFile("/init.lua")){
     OledScreen::CriticalFail("Failed to load init.lua");
     Devices::BuzzerTone(300);
@@ -144,7 +142,7 @@ void setup() {
     for(;;){}
   }
 
-  Devices::CalculateMemmoryUsage();
+  Devices::CalculateMemmoryUsageDifference("init.lua");
 
   OledScreen::SetConsoleMode(false);
   OledScreen::display.setCursor(0,0);
@@ -157,21 +155,22 @@ void setup() {
   Devices::BuzzerTone(150);
   delay(100);
   Devices::BuzzerNoTone();
-  Devices::CalculateMemmoryUsage();
+  Devices::CalculateMemmoryUsageDifference("onSetup");
 
   g_frameRepo.displayFFATInfo();
   Serial.printf("Running upon %d\n", xPortGetCoreID());
   
   #ifndef SINGLE_CORE_RUN
   xTaskCreatePinnedToCore(second_loop, "second loop", 10000, NULL, ( 2 | portPRIVILEGE_BIT ), &g_secondCore, 0);
+  Devices::CalculateMemmoryUsageDifference("second loop");
   #endif
-  Devices::CalculateMemmoryUsage();  
+   
   Devices::BuzzerTone(880);
   delay(100);
   g_lua.CallFunction("onPreflight");
   Devices::BuzzerNoTone();
   
-  Devices::CalculateMemmoryUsage();
+  Devices::CalculateMemmoryUsageDifference("completed setup");
 }
 
 void second_loop(void*){

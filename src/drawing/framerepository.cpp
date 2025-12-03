@@ -1,6 +1,7 @@
 #include "drawing/framerepository.hpp"
 #include "drawing/animation.hpp"
 #include "tools/logger.hpp"
+#include "tools/devices.hpp"
 
 #include "tools/oledscreen.hpp"
 
@@ -45,6 +46,7 @@ bool FrameRepository::Begin(){
             return false;
         }
     }
+    Devices::CalculateMemmoryUsageDifference("FFAT");
     m_started = true;
     displayFFATInfo();
     
@@ -52,13 +54,15 @@ bool FrameRepository::Begin(){
     if (!bulkFile) {
         composeBulkFile();
     }
+    
+    Devices::CalculateMemmoryUsageDifference("Loaded bulk file");
 
     if (!loadCachedData()){
         composeBulkFile();
     }
 
     OledScreen::DrawCircularProgress(FFat.usedBytes(), FFat.totalBytes(), "Flash usage");
-    delay(1000);
+    delay(500);
     if (FFat.usedBytes() == FFat.totalBytes()){
         OledScreen::CriticalFail("Flash is full. Run 'esptool --chip esp32s3 --port COM10 erase_flash'");
     }
@@ -97,7 +101,6 @@ void FrameRepository::extractModes(JsonVariant &element, bool &flip_left, bool &
 }
 
 bool FrameRepository::loadCachedData(){
-    
     if( SD.exists("/rebuildfile") ) {
         Logger::Error("rebuildfile is found, forcing rebuild.");
         SD.remove("/cache/cache.json");
@@ -113,6 +116,7 @@ bool FrameRepository::loadCachedData(){
 
     SpiRamAllocator allocator;
     JsonDocument  json_doc(&allocator);
+    
     auto err = deserializeJson( json_doc, file );
     file.close();
     if( err ) {
@@ -165,14 +169,14 @@ bool FrameRepository::loadCachedData(){
 
     JsonObject frame_name_obj = json_doc["frame_name"];
     for (JsonPair name : frame_name_obj) {
-        m_offsets[name.key().c_str()] = name.value().as<int>();
+        m_offsets.set(name.key().c_str(), name.value().as<int>());
     }
     
     JsonObject frame_count_obj = json_doc["frame_count"];
     for (JsonPair name : frame_count_obj) {
-        m_frameCountByAlias[name.key().c_str()] = name.value().as<int>();
+        m_frameCountByAlias.set(name.key().c_str(), name.value().as<int>());
     }
-
+    json_doc.clear();
     return true;
 }
 
@@ -287,7 +291,7 @@ void FrameRepository::composeBulkFile(){
             if ( element.containsKey("name") &&  element["name"].is<const char*>() ) {
                 const char *content = element["name"];
                 currentName = std::string(content);
-                m_offsets[content] = fileIdx-1;
+                m_offsets.set(content, fileIdx-1);
             }
             if ( element.containsKey("file") &&  element["file"].is<const char*>() ) {
                 const char *filePath = element["file"].as<const char*>();
@@ -306,7 +310,7 @@ void FrameRepository::composeBulkFile(){
                 if (!decodeFile(filePath, flip_left, flip_right, color_scheme_left)){
                     FrameBufferCriticalError(&bulkFile, "Failed to decode %s at element %d", filePath, jsonElement);
                 }
-                m_frameCountByAlias[currentName]++;
+                m_frameCountByAlias.incr(currentName);
                 fdesc.printf("%d = %s\n", fileIdx, filePath);
                 fileIdx++;
             }else if ( element.containsKey("pattern") &&  element["pattern"].is<const char*>() ) {
@@ -330,7 +334,7 @@ void FrameRepository::composeBulkFile(){
                         FrameBufferCriticalError(&bulkFile, "Failed decode %s at element %d", headerFileName, jsonElement);
                     }
                     fdesc.printf("%d = %s\n", fileIdx, headerFileName);
-                    m_frameCountByAlias[currentName]++;
+                    m_frameCountByAlias.incr(currentName);
                     fileIdx++;
                 }
             }else if (element.containsKey("files")){
@@ -349,7 +353,7 @@ void FrameRepository::composeBulkFile(){
                         FrameBufferCriticalError(&bulkFile, "Failed decode %s at element %d", filename, jsonElement);
                     }
                     fdesc.printf("%d = %s\n", fileIdx, filename);
-                    m_frameCountByAlias[currentName]++;
+                    m_frameCountByAlias.incr(currentName);
                     fileIdx++;
                 }
             }
@@ -386,14 +390,14 @@ void FrameRepository::generateCacheFile() {
 
     JsonObject frames_naming = json_doc["frame_name"].to<JsonObject>();
 
-    for (const auto& pair : m_offsets) {
-        frames_naming[pair.first.c_str()] = pair.second;
+    for (const auto& pair : m_offsets.getAll()) {
+        frames_naming[pair.first] = pair.second;
     }
 
     JsonObject frames_counting = json_doc["frame_count"].to<JsonObject>();
 
-    for (const auto& pair : m_frameCountByAlias) {
-        frames_counting[pair.first.c_str()] = pair.second;
+    for (const auto& pair : m_frameCountByAlias.getAll()) {
+        frames_counting[pair.first] = pair.second;
     }
 
     // Serialize JSON to file

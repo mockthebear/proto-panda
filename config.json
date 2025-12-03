@@ -1,4 +1,15 @@
 {
+  "boop": {
+    "enabled": true,
+    "transitionIn": "boop_intro",
+    "transitionOut": "boop_outro",
+    "boopAnimationName": "boop",
+    "transictionOnlyOnAnimation": "normal",
+    "transictionInOnlyOnSpecificFrame": 1
+  },
+  "settings": {
+    "buzzer": true
+  },
   "frames": [
     {
       "pattern": "/expressions/angry/angry%d.png",
@@ -543,13 +554,5 @@
       "name": "FFT",
       "file": "/scripts/fft.lua"
     }
-  ],
-  "boop": {
-    "enabled": true,
-    "transitionIn": "boop_intro",
-    "transitionOut": "boop_outro",
-    "boopAnimationName": "boop",
-    "transictionOnlyOnAnimation": "normal",
-    "transictionInOnlyOnSpecificFrame": 1
-  }
+  ]
 }
