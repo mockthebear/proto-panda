@@ -17,7 +17,7 @@ local drivers = {
     eventQueue = {}
 }
 do
-    for i=1,MAX_BLE_CLIENTS do   
+    for i=0,MAX_BLE_CLIENTS-1 do   
         local buttons = {}
         for b=1,MAX_BLE_BUTTONS do  
             buttons[b] = 0
@@ -55,7 +55,7 @@ do
     end
 end
 
-local function readInt16(data)
+local function readInt16(data, index)
     local low = data[index]
     local high = data[index + 1]
     index = index + 2
@@ -89,12 +89,17 @@ local function parsePandaData(controllerInfo, data)
 end
 
 
-function drivers.onSubscribeMessagePanda(controllerId, clientid, data)
-    parsePandaData(data, drivers.panda[controllerId])
+function drivers.onSubscribeMessagePanda(connectionId, clientId, data)
+    if #data ~= 20 then  
+        print("Possible corrupt package in panda controller. Expected size 22 but got "..(#data))
+        return
+    end
+    parsePandaData(drivers.panda[clientId], data)
 end
 
-function drivers.onConnectPanda(controllerId, clientid, address, name)
-    drivers.handlerPanda:WriteToCharacteristics({0,0,0,controllerId}, clientid, "d4d3fafb-c4c1-c2c3-b4b3-b2b1a4a3a2a1", true)
+function drivers.onConnectPanda(connectionId, controllerId, address, name)
+    print("Connected protopanda hand controller "..address.." "..tostring(name)..' this controller will be the '..controllerId)
+    drivers.handlerPanda:WriteToCharacteristics({0,0,0,controllerId}, connectionId, "d4d3fafb-c4c1-c2c3-b4b3-b2b1a4a3a2a1", true)
 end
 
 
@@ -118,7 +123,7 @@ end
 
 local prevPacket = nil
 local secondPrev = nil
-function drivers.onMouseCallback(controllerId, clientid, data)
+function drivers.onMouseCallback(controllerId, connectionId, data)
 
     local len = #data 
     local action = ""
@@ -258,10 +263,11 @@ end
 
 
 function drivers.EnableGenericAndroidMouse()
-    if not versions.canRun("2.0.0") then  
+    if not versions.canRun("2.0.0") then 
+        --No mouse in the legacy controller
+        print("You are running protopanda on a older version. Minimum version required is 2.0.0 to run mouse input") 
         return false
     end
-    if _M.canRun(version)
     drivers.mouseHandler = BleServiceHandler("00001812-0000-1000-8000-00805f9b34fb")
     drivers.mouseListener = drivers.mouseHandler:AddCharacteristics("2a4d")
     drivers.mouseListener:SetSubscribeCallback(drivers.onMouseCallback) 

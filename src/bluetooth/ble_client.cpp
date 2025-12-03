@@ -63,6 +63,12 @@ bool BleManager::connectToServer(){
       }
 
       pClient = NimBLEDevice::createClient();
+
+      if (!pClient){
+        Serial.printf("UNEXPECTED FAILURE, NULL CLIENT\n");
+        delete device;
+        return false;
+      }
       device->m_client = pClient;
     
       Logger::Info("[BLE] New client created\n");

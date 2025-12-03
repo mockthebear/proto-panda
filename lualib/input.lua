@@ -1,13 +1,13 @@
---local versions = require("versions")
---local drivers = require("drivers")
-MAX_BLE_CLIENTS = 4
-MAX_BLE_BUTTONS = 5
+local versions = require("versions")
+local drivers = require("drivers")
+
 local ACCELEROMETER_MULTIPLIER =  4 / 32768
 
 local input = {
     started = false,
    
     panda_buttons = {},
+    panda_buttons_state = {},
 
     legacyReadButtonStatus = readButtonStatus,
     legacyreadAccelerometerX = readAccelerometerX,
@@ -33,9 +33,10 @@ _G.BUTTON_CONFIRM = 5
 
 do
     local pdButtonId = 1
-    for i=1,MAX_BLE_CLIENTS do 
+    for i=0,MAX_BLE_CLIENTS-1 do 
         for b=1,MAX_BLE_BUTTONS do 
-            input.panda_buttons[pdButtonId] = _G.BUTTON_RELEASED
+            input.panda_buttons[pdButtonId] = 0
+            input.panda_buttons_state[pdButtonId] = _G.BUTTON_RELEASED
             pdButtonId = pdButtonId +1
         end
     end
@@ -44,20 +45,21 @@ end
 
 function input.updateButtonStates()
     local pdButtonId = 1
-    for i=1,MAX_BLE_CLIENTS do 
-        local pd = drivers.panda[id].buttons
+    for i=0,MAX_BLE_CLIENTS-1 do 
+        local pd = drivers.panda[i].buttons
         for b=1,MAX_BLE_BUTTONS do 
-            if input.panda_buttons[pdButtonId] == _G.BUTTON_JUST_PRESSED then  
-                input.panda_buttons[pdButtonId] = _G.BUTTON_PRESSED
+            if input.panda_buttons_state[pdButtonId] == _G.BUTTON_JUST_PRESSED then  
+                input.panda_buttons_state[pdButtonId] = _G.BUTTON_PRESSED
             end
-            if input.panda_buttons[pdButtonId] == _G.BUTTON_JUST_RELEASED then  
-                input.panda_buttons[pdButtonId] = _G.BUTTON_RELEASED
+            if input.panda_buttons_state[pdButtonId] == _G.BUTTON_JUST_RELEASED then  
+                input.panda_buttons_state[pdButtonId] = _G.BUTTON_RELEASED
             end
             if input.panda_buttons[pdButtonId] ~= pd[b] then 
+                input.panda_buttons[pdButtonId] = pd[b]
                 if pd[b] == 1 then 
-                    input.panda_buttons[pdButtonId] = _G.BUTTON_JUST_PRESSED
+                    input.panda_buttons_state[pdButtonId] = _G.BUTTON_JUST_PRESSED
                 else
-                    input.panda_buttons[pdButtonId] = _G.BUTTON_JUST_RELEASED
+                    input.panda_buttons_state[pdButtonId] = _G.BUTTON_JUST_RELEASED
                 end
             end
             pdButtonId = pdButtonId +1
@@ -123,7 +125,7 @@ function input.readButtonStatus(button)
     if input.legacyReadButtonStatus then  
         return input.legacyReadButtonStatus()
     end
-    return panda_buttons[button]
+    return input.panda_buttons_state[button]
 end
 
 local function checkRegisterGlobalCompat(gfname, fn)

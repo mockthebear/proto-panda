@@ -84,7 +84,7 @@ void BleServiceHandler::SendMessages(){
         devicesToNotify.pop();
         xSemaphoreGive(queueMutex);
         if (luaOnConnectCallback != nullptr){
-            luaOnConnectCallback->callLuaFunction(dev->m_controllerId, dev->getId(), dev->m_device->getAddress().toString(), dev->m_device->getName().c_str());
+            luaOnConnectCallback->callLuaFunction(dev->getId(), dev->m_controllerId, dev->m_device->getAddress().toString(), dev->m_device->getName().c_str());
         }
     }
     for (auto &it : m_characteristics){

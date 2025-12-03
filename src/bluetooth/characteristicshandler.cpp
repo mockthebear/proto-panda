@@ -15,13 +15,15 @@ void BleCharacteristicsHandler::AddMessage(int cliID, int id, uint8_t* pData, si
 }
 
 void BleCharacteristicsHandler::SendMessages(){
-    if (!dataQueue.empty()){
+    while (!dataQueue.empty()){
         std::vector<uint8_t> vec;
         int id = -1;
         int cliId = -1;
+        
         if (xSemaphoreTake(queueMutex, portTICK_PERIOD_MS * 25) != pdTRUE){
             return;
         }
+
         vec = dataQueue.front().message;
         id = dataQueue.front().m_id;
         cliId = dataQueue.front().m_CliId;
