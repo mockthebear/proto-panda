@@ -238,6 +238,12 @@ function _M.Calibrate(dt)
         _M.calibrationReading, _M.calibrationOk = _M.readLidar()
         _M.isBoopedCheck(_M.calibrationReading, _M.calibrationOk, dt)
     end
+    if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED then 
+        _M.quit = true
+        if _M.old_managed then
+           setPanelManaged(true)
+        end
+    end
 end
 
 

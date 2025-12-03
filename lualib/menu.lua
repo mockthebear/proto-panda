@@ -398,7 +398,7 @@ function _M.handleMainMenu()
 end
 
 function _M.handleBrightnessMenu(dt)
-    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED or input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED then 
         _M.enterSettingMenu()
         dictSet("panel_brightness", tostring(_M.brigthness))
         dictSave()
@@ -434,7 +434,7 @@ function _M.handleBrightnessMenu(dt)
 end
 
 function _M.handleLedBrightnessMenu(dt)
-    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED or input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED then 
         _M.enterSettingMenu()
         dictSet("led_brightness", tostring(_M.led_brightness))
         dictSave()
@@ -496,6 +496,11 @@ function _M.handleFaceQuickMenu(dt)
         end
     else 
         _M.quit_timer = 1500
+    end
+    if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED then  
+        _M.enterMainMenu()
+        toneDuration(440, 10)
+        return
     end
 end
 
@@ -573,6 +578,11 @@ function _M.handleFaceMenu(dt)
         end
     else 
         _M.quit_timer = 1500
+    end
+    if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED then  
+        _M.hasConfirmPressedToAvoidUnwantedSelection = false
+        _M.enterMainMenu()
+        return
     end
 
     if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_RELEASED then 

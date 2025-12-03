@@ -649,29 +649,6 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("MAX_LED_GROUPS", (int)MAX_LED_GROUPS);
 
 
-
-
-  char bigBuffMsg[100];
-  for (int i=0;i<MAX_BLE_CLIENTS;i++){
-    int baseCount = i * MAX_BLE_BUTTONS;
-    sprintf(bigBuffMsg, "DEVICE_%d_BUTTON_LEFT", i);
-    m_lua->setConstant(bigBuffMsg, baseCount);
-
-    sprintf(bigBuffMsg, "DEVICE_%d_BUTTON_DOWN", i);
-    m_lua->setConstant(bigBuffMsg, baseCount+1);
-
-    sprintf(bigBuffMsg, "DEVICE_%d_BUTTON_RIGHT", i);
-    m_lua->setConstant(bigBuffMsg, baseCount+2);
-
-    sprintf(bigBuffMsg, "DEVICE_%d_BUTTON_UP", i);
-    m_lua->setConstant(bigBuffMsg, baseCount+3);
-
-    sprintf(bigBuffMsg, "DEVICE_%d_BUTTON_CONFIRM", i);
-    m_lua->setConstant(bigBuffMsg, baseCount+4);
-   
-  }
-
-
   m_lua->setConstant("POWER_MODE_USB_5V", (int)POWER_MODE_USB_5V);
   m_lua->setConstant("POWER_MODE_USB_9V", (int)POWER_MODE_USB_9V);
   m_lua->setConstant("POWER_MODE_BATTERY", (int)POWER_MODE_BATTERY);
@@ -816,6 +793,7 @@ bool LuaInterface::Start()
 
   ClassRegister<BleCharacteristicsHandler>::RegisterClassType(_state,"BleCharacteristicsHandler",[](lua_State* L){ luaL_error(L, "Cannot create a empty object of this class"); return nullptr;}, &EmptyGC);
   ClassRegister<BleCharacteristicsHandler>::RegisterClassMethod(_state,"BleCharacteristicsHandler","SetSubscribeCallback",&BleCharacteristicsHandler::SetSubscribeCallback);
+  ClassRegister<BleCharacteristicsHandler>::RegisterClassMethod(_state,"BleCharacteristicsHandler","SetCallbackModeStream",&BleCharacteristicsHandler::SetCallbackModeStream);
   
   lastError = "";
 

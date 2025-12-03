@@ -8,11 +8,6 @@
 #include <cstring> 
 #include "bluetooth/servicehandler.hpp"
 
-#define BUTTON_RELEASED 0
-#define BUTTON_JUST_PRESSED 1
-#define BUTTON_PRESSED 2
-#define BUTTON_JUST_RELEASED 3
-
 class BleManager;
 
 class AdvertisedDeviceCallbacks: public NimBLEScanCallbacks {

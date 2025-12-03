@@ -23,6 +23,7 @@ void ClientCallbacks::onMTUChange(NimBLEClient* pClient, uint16_t MTU) {
 }
 
 void ClientCallbacks::onDisconnect(NimBLEClient* pClient, int reason){
+  Logger::Info("[BLE] my bois is ded");
   Devices::BuzzerToneDuration(400, 300);
   Logger::Info("[BLE] %s Device disconnected, reason=%d", pClient->getPeerAddress().toString().c_str(), reason);
   xSemaphoreTake(g_remoteControls.m_mutex, portMAX_DELAY);

@@ -17,7 +17,7 @@ function _M.onLoop(dt)
 
 	local hasPressed = false
 
-	for i=DEVICE_0_BUTTON_LEFT, DEVICE_0_BUTTON_CONFIRM do
+	for i=DEVICE_0_BUTTON_FIRST, DEVICE_0_BUTTON_LAST do
 		oledSetCursor(0, 0)
 		oledDrawText("Control 1:")
 		oledDrawRect((i-DEVICE_0_BUTTON_LEFT)*9, 10, 8, 8, 1)
@@ -38,7 +38,7 @@ function _M.onLoop(dt)
 	end
 	hasPressed = false
 
-	for i=DEVICE_1_BUTTON_LEFT, DEVICE_1_BUTTON_CONFIRM do
+	for i=DEVICE_1_BUTTON_FIRST, DEVICE_1_BUTTON_LAST do
 		oledSetCursor(0, 18)
 		oledDrawText("Control 2:")
 		oledDrawRect((i-DEVICE_1_BUTTON_LEFT)*9, 26, 8, 8, 1)
@@ -114,7 +114,7 @@ function _M.onLoop(dt)
 	oledDisplay()
 	flipPanelBuffer()
 	ledsDisplay()
-	if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED then 
+	if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED or (input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED) then 
 		_M.shouldStop = true
 		return true
 	end

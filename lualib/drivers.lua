@@ -1,5 +1,8 @@
 local versions = require("versions")
 
+if not MAX_BLE_BUTTONS then
+    _G.MAX_BLE_BUTTONS = 6
+end
 local drivers = {
     handlerPanda = nil,
     mouseHandler = nil,
@@ -14,8 +17,35 @@ local drivers = {
     mouse = {},
 
 
-    eventQueue = {}
+    eventQueue = {},
+    type_by_id = {},
+
+    JOYSTICK_HAT_NOTHING                = 0,
+    JOYSTICK_HAT_DIRECTION_RIGHT        = 1,
+    JOYSTICK_HAT_DIRECTION_DOWN_RIGHT   = 2,
+    JOYSTICK_HAT_DIRECTION_DOWN         = 3,
+    JOYSTICK_HAT_DIRECTION_DOWN_LEFT    = 4,
+    JOYSTICK_HAT_DIRECTION_LEFT         = 5,
+    JOYSTICK_HAT_DIRECTION_TOP_RIGHT    = 6,
+    JOYSTICK_HAT_DIRECTION_TOP          = 7,
+    JOYSTICK_HAT_DIRECTION_TOP_LEFT     = 8,
+
+    JOSYTICK_BUTTON_A                   = 4,
+    JOSYTICK_BUTTON_B                   = 1,
+    JOSYTICK_BUTTON_C                   = 3,
+    JOSYTICK_BUTTON_D                   = 2,
+
+
+    JOSYTICK_BUTTONS_MAP = {
+        [1] = 1, --B
+        [2] = 2, --D
+        [8] = 3, --C
+        [16] = 4, --A
+    },
 }
+
+
+
 do
     for i=0,MAX_BLE_CLIENTS-1 do   
         local buttons = {}
@@ -40,18 +70,19 @@ do
             wheel=0,
             buttons={0,0,0,0,0,0,0,0}
         }
-        drivers.joystick[i] = {
-            left_axis_x=0,
-            left_axis_y=0,
-
-            right_axis_x=0,
-            right_axis_y=0,
-
-            wheel=0,
-            left=0,
-            right=0,
-            middle=0,
+        drivers.joystick[i] = {  
+            buttons = {},   
+            left_hat = drivers.JOYSTICK_HAT_NOTHING, 
+            right_hat = drivers.JOYSTICK_HAT_NOTHING,  
+            left_analog_x = 0,
+            left_analog_y = 0,
+            right_analog_x = 0,
+            right_analog_y = 0,
         }
+        for __,b in pairs(drivers.JOSYTICK_BUTTONS_MAP) do  
+            drivers.joystick[i].buttons[b] =0
+        end
+
     end
 end
 
@@ -98,6 +129,7 @@ function drivers.onSubscribeMessagePanda(connectionId, clientId, data)
 end
 
 function drivers.onConnectPanda(connectionId, controllerId, address, name)
+    drivers.type_by_id[controllerId] = "panda"
     print("Connected protopanda hand controller "..address.." "..tostring(name)..' this controller will be the '..controllerId)
     drivers.handlerPanda:WriteToCharacteristics({0,0,0,controllerId}, connectionId, "d4d3fafb-c4c1-c2c3-b4b3-b2b1a4a3a2a1", true)
 end
@@ -114,6 +146,7 @@ function drivers.EnableProtopandaController()
     drivers.handlerPanda:SetOnConnectCallback(drivers.onConnectPanda)
     drivers.pandaListener = drivers.handlerPanda:AddCharacteristics("d4d3afaf-c4c1-c2c3-b4b3-b2b1a4a3a2a1")
     drivers.pandaListener:SetSubscribeCallback(drivers.onSubscribeMessagePanda)
+    drivers.pandaListener:SetCallbackModeStream(true)
     return true
 end
 
@@ -123,7 +156,7 @@ end
 
 local prevPacket = nil
 local secondPrev = nil
-function drivers.onMouseCallback(controllerId, connectionId, data)
+function drivers.onMouseCallback(connectionId, controllerId, data)
 
     local len = #data 
     local action = ""
@@ -157,82 +190,42 @@ function drivers.onMouseCallback(controllerId, connectionId, data)
         for i=1,8 do  
             local state = buttons & (1 << i) == 0 and 0 or 1
             if mb[i] ~= state then  
-                action = action ..('button['..i..']='..state)
+                action = action ..('button['..i..']='..state..' ')
                 mb[i] = state
             end
         end
 
-        print(action)
+        if action ~= "" then  
+            print(action)
+        end
     elseif len == 6 or len == 8 then  
-        local leftX = data[1] - 127
-        local leftY = data[2] - 127
-        local rightX = data[3] - 127
-        local rightY = data[4] - 128
+        local joystickObject = drivers.joystick[controllerId]
 
         local buttons = data[5]
-        local leftHat = data[6] or 0
-        local rightHat = data[7] or 0
-        --local extra3 = data[8] or 0
-        local buttonStates = {
-            Button1 = (buttons & 0x01) ~= 0,  -- Bit 0: Value 1
-            Button2 = (buttons & 0x02) ~= 0,  -- Bit 1: Value 2
-            Button3 = (buttons & 0x04) ~= 0,  -- Bit 2: Value 4
-            Button4 = (buttons & 0x08) ~= 0,  -- Bit 3: Value 8
-            Button5 = (buttons & 0x10) ~= 0,  -- Bit 4: Value 16
-            Button6 = (buttons & 0x20) ~= 0,  -- Bit 5: Value 32
-            Button7 = (buttons & 0x40) ~= 0,  -- Bit 6: Value 64
-            Button8 = (buttons & 0x80) ~= 0,  -- Bit 7: Value 128
-        }
-        local leftHatStates = {
-            LeftHat1 = (leftHat & 0x01) ~= 0,  -- Bit 0: Value 1
-            LeftHat12 = (leftHat & 0x02) ~= 0,  -- Bit 1: Value 2
-            LeftHat13 = (leftHat & 0x04) ~= 0,  -- Bit 2: Value 4
-            LeftHat14 = (leftHat & 0x08) ~= 0,  -- Bit 3: Value 8
-            LeftHat15 = (leftHat & 0x10) ~= 0,  -- Bit 4: Value 16
-            LeftHat16 = (leftHat & 0x20) ~= 0,  -- Bit 5: Value 32
-            LeftHat17 = (leftHat & 0x40) ~= 0,  -- Bit 6: Value 64
-            LeftHat18 = (leftHat & 0x80) ~= 0,  -- Bit 7: Value 128
-        }
-        local rightHatStates = {
-            RightHat1 = (rightHat & 0x01) ~= 0,  -- Bit 0: Value 1
-            RightHat2 = (rightHat & 0x02) ~= 0,  -- Bit 1: Value 2
-            RightHat3 = (rightHat & 0x04) ~= 0,  -- Bit 2: Value 4
-            RightHat4 = (rightHat & 0x08) ~= 0,  -- Bit 3: Value 8
-            RightHat5 = (rightHat & 0x10) ~= 0,  -- Bit 4: Value 16
-            RightHat6 = (rightHat & 0x20) ~= 0,  -- Bit 5: Value 32
-            RightHat7 = (rightHat & 0x40) ~= 0,  -- Bit 6: Value 64
-            RightHat8 = (rightHat & 0x80) ~= 0,  -- Bit 7: Value 128
-        }
+        if buttons == 0 then  
+            for a,c in pairs(drivers.JOSYTICK_BUTTONS_MAP) do
+                joystickObject.buttons[c] = 0
+            end
+        else
+            local idx = drivers.JOSYTICK_BUTTONS_MAP[buttons]
+            if idx then
+                joystickObject.buttons[idx] = 1
+            else 
+                print('Unhandled button press with id '..buttons..' TYPE '..type(buttons))
+            end
+        end
+        joystickObject.left_hat = data[6] or 0
+        joystickObject.right_hat = data[7] or 0
+       
+        joystickObject.left_analog_x = data[1] - 127
+        joystickObject.left_analog_y = data[2] - 127
 
-        for i,b in pairs(buttonStates) do  
-            if b then  
-                action = action ..('Pressed '..i..' ')
-            end
-        end
-        for i,b in pairs(leftHatStates) do  
-            if b then  
-                action = action ..('Pressed '..i..' ')
-            end
-        end
-        for i,b in pairs(rightHatStates) do  
-            if b then  
-                action = action ..('Pressed '..i..' ')
-            end
-        end
-        if leftX ~= 0 then  
-            action = action ..('leftX='..leftX..' ')
-        end
-        if leftY ~= 0 then  
-            action = action ..('leftY='..leftY..' ')
-        end
-        if rightX ~= 0 then  
-            action = action ..('rightX='..rightX..' ')
-        end
-        if rightY ~= 0 then  
-            action = action ..('rightY='..rightY..' ')
-        end
+        joystickObject.right_analog_x = data[3] - 127
+        joystickObject.right_analog_y = data[4] - 128
+    else 
+        print("packet size is unknown: "..(#data))
     end
-    print(action)
+    
 
     --[[
     if data[1] == 156 and data[2] == 64 and data[3] == 236 then  
@@ -260,6 +253,10 @@ function drivers.onMouseCallback(controllerId, connectionId, data)
 end
 
 
+function drivers.onConnectHID(connectionId, controllerId, address, name)
+    drivers.type_by_id[controllerId] = "hid"
+    print("Connected generic HID "..address.." "..tostring(name)..' this controller will be the '..controllerId)
+end
 
 
 function drivers.EnableGenericAndroidMouse()
@@ -269,8 +266,10 @@ function drivers.EnableGenericAndroidMouse()
         return false
     end
     drivers.mouseHandler = BleServiceHandler("00001812-0000-1000-8000-00805f9b34fb")
+    drivers.mouseHandler:SetOnConnectCallback(drivers.onConnectHID)
     drivers.mouseListener = drivers.mouseHandler:AddCharacteristics("2a4d")
     drivers.mouseListener:SetSubscribeCallback(drivers.onMouseCallback) 
+    drivers.mouseListener:SetCallbackModeStream(false)
     return true
 end
 

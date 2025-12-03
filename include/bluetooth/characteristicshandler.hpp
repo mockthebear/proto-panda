@@ -19,11 +19,15 @@ typedef std::function<void(NimBLERemoteCharacteristic* pBLERemoteCharacteristic,
 
 class BleCharacteristicsHandler{
   public:
-    BleCharacteristicsHandler():uuid(uint32_t(0)),required(false),notify(false),luaCallback(nullptr),queueMutex(xSemaphoreCreateMutex()){};
+    BleCharacteristicsHandler():uuid(uint32_t(0)),m_stream(true),required(false),notify(false),luaCallback(nullptr),queueMutex(xSemaphoreCreateMutex()){};
     BleCharacteristicsHandler(NimBLEUUID u, bool req=true, bool notif=true):uuid(u),required(req),notify(notif),luaCallback(nullptr),queueMutex(xSemaphoreCreateMutex()){
     }
     void SetSubscribeCallback(LuaFunctionCallback *lcb){
       luaCallback = lcb;
+    };
+    
+    void SetCallbackModeStream(bool stream){
+      m_stream = stream;
     };
     
     void AddMessage(int cliID, int id, uint8_t* pData, size_t length, bool isNotify);
@@ -35,6 +39,7 @@ class BleCharacteristicsHandler{
     }
 
     NimBLEUUID uuid;
+    bool m_stream;
     bool required;
     bool notify;
     LuaFunctionCallback *luaCallback;
@@ -42,4 +47,6 @@ class BleCharacteristicsHandler{
     SemaphoreHandle_t queueMutex;
     std::queue<BleMessage> dataQueue;
     notify_callback notificationLambda;
+
+    void processMessageAndPop();
 };

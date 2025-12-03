@@ -66,7 +66,7 @@ function _M.generateUi(title, onEnter, onQuit)
 	        return
 	    end 
 
-	    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED or input.readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED then
+	    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED or input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED or input.readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED then
 	        toneDuration(440, 100) 
 	        uiData.elements[uiData.selected].action(uiData.selected, uiData)
 	        uiData.rebuildTitles()

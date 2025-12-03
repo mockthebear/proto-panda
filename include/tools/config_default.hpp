@@ -80,7 +80,7 @@ Cache file version to invalidate cache in case of firmware update
     BLE Buttons
 */
 
-#define MAX_BLE_BUTTONS 5
+#define MAX_BLE_BUTTONS 6
 #define MAX_BLE_CLIENTS 4
 
 /*

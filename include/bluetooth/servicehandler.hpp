@@ -40,7 +40,6 @@ class BleServiceHandler{
       luaOnConnectCallback = cb;
     }
     void AddDevice(BluetoothDeviceHandler *dev);
-    void AddMessage(const NimBLEUUID &charId, uint8_t* pData, size_t length, bool isNotify);
     void SendMessages();
     bool WriteToCharacteristics(std::vector<uint8_t> bytes, int clientId, std::string charName, bool reply);
     std::vector<BleCharacteristicsHandler*> getCharacteristics();
@@ -62,14 +61,16 @@ class BleServiceHandler{
 
 class ConnectionRequest{
     public:
-        ConnectionRequest():advertisedDevice(nullptr),handler(nullptr){};
-        ConnectionRequest(const NimBLEAdvertisedDevice* device, BleServiceHandler* handlerObj):ready(false),advertisedDevice(device),handler(handlerObj){if (handler != nullptr) ready = true;};
+        ConnectionRequest():advertisedDevice(nullptr),handler(nullptr),deviceHandler(nullptr){};
+        ConnectionRequest(const NimBLEAdvertisedDevice* device, BleServiceHandler* handlerObj, BluetoothDeviceHandler *deviceH):ready(false),advertisedDevice(device),handler(handlerObj),deviceHandler(deviceH){if (handler != nullptr) ready = true;};
         void erase(){
             advertisedDevice = nullptr;
             handler = nullptr;
             ready = false;
+            deviceHandler = nullptr;
         };
         bool ready;
         const NimBLEAdvertisedDevice* advertisedDevice;
         BleServiceHandler* handler;
+        BluetoothDeviceHandler *deviceHandler;
 };

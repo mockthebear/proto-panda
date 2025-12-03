@@ -236,7 +236,6 @@ template<typename T> inline std::vector<T> GenericLuaVector(bool &hasArgError, l
         luaL_error(L, "Expected an uniform table value on parameter %d of function %s", lua_gettop(L), function_name);
         return n;
     }
-    Serial.printf("The offset is %d\n", offsetStack);
     int pos = 1+offsetStack;
     /*if ( lua_gettop(L) == 2){
         pos = 2;

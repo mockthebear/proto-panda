@@ -17,7 +17,7 @@ void AdvertisedDeviceCallbacks::onResult(const NimBLEAdvertisedDevice* advertise
       Serial.printf("Found HID Device: %s\n", advertisedDevice->getName().c_str());
       Serial.printf("Address: %s\n", advertisedDevice->getAddress().toString().c_str());
       bleObj->setScanningMode(false);
-      bleObj->toConnect = ConnectionRequest(advertisedDevice, it.second);
+      bleObj->toConnect = ConnectionRequest(advertisedDevice, it.second, new BluetoothDeviceHandler());
       return;
     }
   }
@@ -34,8 +34,9 @@ bool BleManager::connectToServer(){
   NimBLEClient* pClient = nullptr;
   const NimBLEAdvertisedDevice* advDevice = toConnect.advertisedDevice;
   BleServiceHandler *handler = toConnect.handler;
+  BluetoothDeviceHandler *device = toConnect.deviceHandler;
 
-  BluetoothDeviceHandler *device = new BluetoothDeviceHandler();
+
   device->m_callbacks = &callbacks;
   device->m_device = advDevice;
   
@@ -66,7 +67,6 @@ bool BleManager::connectToServer(){
 
       if (!pClient){
         Serial.printf("UNEXPECTED FAILURE, NULL CLIENT\n");
-        delete device;
         return false;
       }
       device->m_client = pClient;
@@ -82,7 +82,6 @@ bool BleManager::connectToServer(){
         if (!pClient->connect(advDevice)) {
             NimBLEDevice::deleteClient(pClient);
             Serial.printf("Failed to connect, deleted client 1\n");
-            delete device;
             return false;
         }
     }
@@ -90,7 +89,6 @@ bool BleManager::connectToServer(){
     if (!pClient->isConnected()) {
       if (!pClient->connect(advDevice)) {
           Serial.printf("Failed to connect 2\n");
-          delete device;
           return false;
       }
     }
@@ -134,7 +132,6 @@ bool BleManager::connectToServer(){
               pClient->disconnect();
               NimBLEDevice::deleteClient(pClient);
               g_remoteControls.availableIds.push(device->m_controllerId);         
-              delete device;
               return false;
             }else{
               Logger::Error("[BLE] Subscribed on characteristics %s in service %s.", element->uuid.toString().c_str(), pChr->getUUID().toString().c_str());
@@ -154,7 +151,6 @@ bool BleManager::connectToServer(){
       pClient->disconnect();
       NimBLEDevice::deleteClient(pClient);
       g_remoteControls.availableIds.push(device->m_controllerId);       
-      delete device;
       return false;
     }
   }
