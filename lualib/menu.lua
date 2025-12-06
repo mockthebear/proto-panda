@@ -11,6 +11,7 @@ local scripts = require("scripts")
 local ui = require("ui")
 local generic = require("generic")
 local boop = require("boop")
+local input = require("input")
 
 MAX_INTERFACE_ICONS = 4
 MENU_SPACING = 13
@@ -367,14 +368,14 @@ end
 
 
 function _M.handleMainMenu()
-    if readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
         _M.selected = _M.selected +1
         toneDuration(540, 100)
          if _M.selected > 2 then  
             _M.selected = 0
         end
     end
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
         toneDuration(440, 100)
         if _M.selected == 0 then
             _M.enterFaceMenu()
@@ -387,7 +388,7 @@ function _M.handleMainMenu()
         return
     end
 
-    if readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then 
         _M.selected = _M.selected -1
         toneDuration(340, 100)
         if _M.selected < 0 then  
@@ -397,7 +398,7 @@ function _M.handleMainMenu()
 end
 
 function _M.handleBrightnessMenu(dt)
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED or input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED then 
         _M.enterSettingMenu()
         dictSet("panel_brightness", tostring(_M.brigthness))
         dictSave()
@@ -405,7 +406,7 @@ function _M.handleBrightnessMenu(dt)
     end
     _M.timer = _M.timer - dt
 
-    if readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED then
+    if input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED then
         if (_M.timer < 0) then 
             _M.timer = 10
             toneDuration(340, 10)
@@ -418,7 +419,7 @@ function _M.handleBrightnessMenu(dt)
         end
     end
 
-    if readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED then
+    if input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED then
         if (_M.timer < 0) then 
             _M.timer = 10
             toneDuration(540, 10)
@@ -433,7 +434,7 @@ function _M.handleBrightnessMenu(dt)
 end
 
 function _M.handleLedBrightnessMenu(dt)
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED or input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED then 
         _M.enterSettingMenu()
         dictSet("led_brightness", tostring(_M.led_brightness))
         dictSave()
@@ -441,7 +442,7 @@ function _M.handleLedBrightnessMenu(dt)
     end
     _M.timer = _M.timer - dt
 
-    if readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED then
+    if input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED then
         if (_M.timer < 0) then 
             _M.timer = 10
             toneDuration(340, 10)
@@ -453,7 +454,7 @@ function _M.handleLedBrightnessMenu(dt)
         end
     end
 
-    if readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED then
+    if input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED then
         if (_M.timer < 0) then 
             _M.timer = 10
             toneDuration(540, 10)
@@ -468,7 +469,7 @@ end
 
 
 function _M.handleFaceQuickMenu(dt)
-    if readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED then
+    if input.readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED then
         local exp = expressions.Previous()
         if exp and exp.name then  
             _M.menuExpression = exp.name
@@ -477,7 +478,7 @@ function _M.handleFaceQuickMenu(dt)
         toneDuration(340, 10)
     end
 
-    if readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED then
+    if input.readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED then
         local exp = expressions.Next()
         if exp and exp.name then  
             _M.menuExpression = exp.name
@@ -486,7 +487,7 @@ function _M.handleFaceQuickMenu(dt)
         toneDuration(540, 10)
     end
 
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED then 
         _M.quit_timer = _M.quit_timer - dt 
         if (_M.quit_timer <= 0) then 
             _M.enterMainMenu()
@@ -496,13 +497,18 @@ function _M.handleFaceQuickMenu(dt)
     else 
         _M.quit_timer = 1500
     end
+    if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED then  
+        _M.enterMainMenu()
+        toneDuration(440, 10)
+        return
+    end
 end
 
 
 function _M.handleFaceMenu(dt)
 
     _M.timer = _M.timer - dt
-    if readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED then 
         toneDuration(340, 50)
         if _M.selected < MAX_INTERFACE_ICONS then
             local maxExpressions = expressions.GetExpressionCount()
@@ -516,7 +522,7 @@ function _M.handleFaceMenu(dt)
         end
     end
 
-    if readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED then 
         local maxExpressions = expressions.GetExpressionCount()
   
         toneDuration(540, 50)
@@ -531,7 +537,7 @@ function _M.handleFaceMenu(dt)
             end
         end    end
 
-    if readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then 
         toneDuration(540, 50)
         if (_M.selected%MAX_INTERFACE_ICONS == 1) then 
             _M.selected = _M.selected +(MAX_INTERFACE_ICONS-1)
@@ -546,7 +552,7 @@ function _M.handleFaceMenu(dt)
             _M.selected = MAX_INTERFACE_ICONS-1
         end
     end
-    if readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
         toneDuration(340, 50)
         if (_M.selected%MAX_INTERFACE_ICONS == 0) then 
             _M.selected = _M.selected -(MAX_INTERFACE_ICONS-1)
@@ -559,10 +565,10 @@ function _M.handleFaceMenu(dt)
             _M.selected = (lastPage*MAX_INTERFACE_ICONS)+1
         end
     end
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
         _M.hasConfirmPressedToAvoidUnwantedSelection = true
     end
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED then 
         
         _M.quit_timer = _M.quit_timer - dt 
         if (_M.quit_timer <= 0) then 
@@ -573,8 +579,13 @@ function _M.handleFaceMenu(dt)
     else 
         _M.quit_timer = 1500
     end
+    if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED then  
+        _M.hasConfirmPressedToAvoidUnwantedSelection = false
+        _M.enterMainMenu()
+        return
+    end
 
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_RELEASED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_RELEASED then 
         if not _M.hasConfirmPressedToAvoidUnwantedSelection then  
             return
         end

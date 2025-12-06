@@ -4,7 +4,7 @@
 #include "drawing/framerepository.hpp"
 #include "lua/luainterface.hpp"
 #include "drawing/animation.hpp"
-
+#include "drawing/dma_display.hpp"
 #include "SD.h"
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -633,7 +633,32 @@ void startWifiServer()
   server->on("/compose_progress", HTTP_GET, handleComposeGet);
   server->on("/manage", HTTP_GET, handleSetManaged);
   server->onNotFound(serveDirectoryListing);
+  uint32_t freeHeapBytes = ESP.getFreeHeap();  
+  uint32_t totalHeapBytes = ESP.getHeapSize(); 
+  uint32_t freePsramBytes = ESP.getFreePsram(); 
+  uint32_t totalPsramBytes = ESP.getPsramSize(); 
 
+  float percentageHeapFree = freeHeapBytes * 100.0f / (float)totalHeapBytes;
+  float percentagePsramFree = freePsramBytes* 100.0f / (float)totalPsramBytes;
 
+  Serial.printf("[Memory] %.1f%% free - %d of %d bytes free (psram: %d / %d  -> %.1f%%)", percentageHeapFree, freeHeapBytes, totalHeapBytes, totalPsramBytes, freePsramBytes, percentagePsramFree);
+  DMADisplay::Start(8, 1);
+
+  DMADisplay::Display->clearScreen();
+  DMADisplay::Display->setBrightness8(32);
+  char str[] = "u gay";
+  for (int i=0;i<strlen(str);i++){
+    DMADisplay::Display->drawChar(0 + i * 8,2, str[i], DMADisplay::Display->color333(255,255,255), 0, 1);
+  }
+  DMADisplay::Display->flipDMABuffer();
+
+  freeHeapBytes = ESP.getFreeHeap();  
+  totalHeapBytes = ESP.getHeapSize(); 
+  freePsramBytes = ESP.getFreePsram(); 
+  totalPsramBytes = ESP.getPsramSize(); 
+
+  percentageHeapFree = freeHeapBytes * 100.0f / (float)totalHeapBytes;
+  percentagePsramFree = freePsramBytes* 100.0f / (float)totalPsramBytes;
+  Serial.printf("[Memory] %.1f%% free - %d of %d bytes free (psram: %d / %d  -> %.1f%%)", percentageHeapFree, freeHeapBytes, totalHeapBytes, totalPsramBytes, freePsramBytes, percentagePsramFree);
   server->begin();
 }

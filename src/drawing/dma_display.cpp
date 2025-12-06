@@ -11,11 +11,11 @@ HUB75_I2S_CFG DMADisplay::mxconfig(
   );
 
 
-bool DMADisplay::Start(uint8_t colordepth){
+bool DMADisplay::Start(uint8_t colordepth, uint8_t chainLenght){
   if (DMADisplay::Display != nullptr){
     return false;
   }
-   
+  mxconfig.chain_length = chainLenght;
   mxconfig.double_buff = true; // Turn of double buffer
   mxconfig.clkphase = false;
 

@@ -1,6 +1,7 @@
 local _M = {
 	shouldStop = false
 }
+local input = require("input")
 
 local RED = color565(255, 0, 0)
 local GREEN = color565(0, 255, 0)
@@ -20,7 +21,7 @@ function _M.onLoop(dt)
 	drawPanelLine(32,31, 32 + readAccelerometerZ() * 16, 31 , BLUE)
 
 	flipPanelBuffer()
-	if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
+	if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED or readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
 		_M.shouldStop = true
 		return true
 	end

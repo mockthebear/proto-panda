@@ -25,3 +25,5 @@ class LuaInterface{
         void RegisterConstants();
         LuaWrapper *m_lua;
 };
+
+extern LuaInterface g_lua;

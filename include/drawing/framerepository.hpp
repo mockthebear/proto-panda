@@ -5,6 +5,11 @@
 #include <map>
 #include <FS.h>
 
+
+
+#include "tools/psrammap.hpp"
+
+
 struct SpiRamAllocator : ArduinoJson::Allocator {
   void* allocate(size_t size) override {
     return heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
@@ -19,6 +24,8 @@ struct SpiRamAllocator : ArduinoJson::Allocator {
   }
 };
 
+
+
 class FrameRepository{
     public:
         FrameRepository(){m_bulkPercentage=0.0f;m_started=false;};
@@ -30,10 +37,10 @@ class FrameRepository{
         void displayFFATInfo();
 
         int getOffsetByName(std::string str){
-            return m_offsets[str];
+            return m_offsets.get(str);
         }
         int getFrameCountByName(std::string str){
-            return m_frameCountByAlias[str];
+            return m_frameCountByAlias.get(str);
         }
         float getBulkComposingPercentage(){
           return m_bulkPercentage;
@@ -47,8 +54,8 @@ class FrameRepository{
         int m_frameCount;
         float m_bulkPercentage;
         bool m_started;
-        std::map<std::string, int> m_offsets;
-        std::map<std::string, int> m_frameCountByAlias;
+        TotallyNotAMapInPsram m_offsets;
+        TotallyNotAMapInPsram m_frameCountByAlias;
         SemaphoreHandle_t m_mutex;
         File bulkFile;
 };      
