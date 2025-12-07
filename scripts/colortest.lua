@@ -10,6 +10,7 @@ local _M = {
 	rainbowShiftTimer = 0,
 
 }
+local input = require("input")
 
 function _M.onSetup()
 	setPanelManaged(false)
@@ -39,14 +40,14 @@ function _M.onLoop(dt)
 
 
 	_M.drawText(12, 25, "0x"..string.format("%.2x%.2x%.2x", _M.red, _M.green, _M.blue), color565(_M.red, _M.green, _M.blue), 0)
-	if readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and _M.uiTimer < 0 then 
+	if input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and _M.uiTimer < 0 then 
 		_M.uiTimer = 5
 		_M[selected] = _M[selected] +1
 		if _M[selected] > 255 then 
 			_M[selected] = 255
 		end
 	end
-	if readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and _M.uiTimer < 0 then 
+	if input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and _M.uiTimer < 0 then 
 		_M.uiTimer = 5
 		_M[selected] = _M[selected] -1
 		if _M[selected] < 0 then 
@@ -54,14 +55,14 @@ function _M.onLoop(dt)
 		end
 	end
 
-	if readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
+	if input.readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
 		_M.selected = _M.selected +1
 		if _M.selected > 3 then 
 			_M.selected = 1
 		end
 	end
 
-	if readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then 
+	if input.readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then 
 		_M.selected = _M.selected -1
 		if _M.selected < 1 then 
 			_M.selected = 3
@@ -76,7 +77,7 @@ function _M.onLoop(dt)
 
 	
 	flipPanelBuffer()
-	if readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED then 
+	if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED or (input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED) then 
 		_M.shouldStop = true
 		return true
 	end

@@ -24,7 +24,7 @@ class MatrixPanel_I2S_DMA_2 : public MatrixPanel_I2S_DMA{
 
 class DMADisplay{
     public:
-        static bool Start(uint8_t colordepth=12);
+        static bool Start(uint8_t colordepth=12, uint8_t panels=PANEL_CHAIN);
         static void DrawTestScreen();
 
 
