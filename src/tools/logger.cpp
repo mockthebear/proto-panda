@@ -3,13 +3,19 @@
 #include <SD.h>
 
 std::string Logger::m_filename = "";
-char Logger::buffer[1024] = {};
+char *Logger::buffer = nullptr;
 SemaphoreHandle_t Logger::mutex;
 File Logger::logFile;
 bool Logger::writingLog;
 bool Logger::started;
 
+void Logger::Allocate(){
+  Logger::buffer = (char*)ps_malloc(sizeof(char)*1024);
+}
+
 void Logger::Begin(){
+  
+
     Logger::mutex = xSemaphoreCreateMutex();
     Logger::writingLog = false;
     int sequence = 0;

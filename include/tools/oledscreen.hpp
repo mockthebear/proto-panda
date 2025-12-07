@@ -46,7 +46,7 @@ class OledScreen{
         static Adafruit_SSD1306 display;
         static bool consoleMode;
         static std::list<std::string> lines;
-        static uint8_t DisplayFace[PANEL_WIDTH * PANEL_HEIGHT];
+        static uint8_t* DisplayFace;
 
         static std::vector<OledIcon> icons;
     private:

@@ -26,7 +26,7 @@ extern Animation g_animation;
 Adafruit_SSD1306 OledScreen::display(OLED_SCREEN_WIDTH, OLED_SCREEN_HEIGHT, &Wire, -1);
 bool OledScreen::consoleMode = false;
 std::list<std::string> OledScreen::lines;
-uint8_t OledScreen::DisplayFace[PANEL_WIDTH * PANEL_HEIGHT];
+uint8_t *OledScreen::DisplayFace = nullptr;
 
 InfoTypeShown OledScreen::infoShown = SHOW_FPS;
 uint32_t OledScreen::swapTimer = 0;
@@ -35,6 +35,8 @@ std::vector<OledIcon> OledScreen::icons;
 
 bool OledScreen::Start(){
     
+    OledScreen::DisplayFace = (uint8_t*)ps_malloc(sizeof(uint8_t) * PANEL_WIDTH * PANEL_HEIGHT);
+
     if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)){
         Serial.println(F("SSD1306 allocation failed"));
         return false;

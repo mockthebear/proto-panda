@@ -935,7 +935,12 @@ class LuaWrapper {
       LambdaRegisterClass(_state,str, obj, func);
     }
     
-
+    std::string getLuaStackTrace(lua_State* L, int level = 1) {
+        luaL_traceback(L, L, nullptr, level);
+        std::string traceback = lua_tostring(L, -1);
+        lua_pop(L, 1);
+        return traceback;
+    }
 
     template<typename... Args>
     bool callLuaFunction(const std::string& functionName, Args&&... args) {
@@ -943,7 +948,7 @@ class LuaWrapper {
 
         if (!lua_isfunction(_state, -1) || lua_isnil(_state, -1)) {
             lua_pop(_state, 1);
-            if (_errorCallback != nullptr){
+            if (_errorCallback != nullptr) {
                 _errorCallback("Called function is nil or not a function", _state);
             }
             return false;
@@ -955,9 +960,11 @@ class LuaWrapper {
 
         if (lua_pcall(_state, numParams, 0, 0) != 0) {
             const char* errorMessage = lua_tostring(_state, -1);
+            std::string fullErrorMessage = std::string(errorMessage) + "\n" + getLuaStackTrace(_state);
             lua_pop(_state, 1);
-            if (_errorCallback != nullptr){
-                _errorCallback(errorMessage, _state);
+            
+            if (_errorCallback != nullptr) {
+                _errorCallback(fullErrorMessage.c_str(), _state);
             }
             return false;
         }
