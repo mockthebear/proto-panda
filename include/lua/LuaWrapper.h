@@ -11,6 +11,9 @@
 #include "lua/lua.hpp"
 typedef std::function<int(lua_State*)> LuaCFunctionLambda;
 
+void CreateLuaClosure(lua_State *L, const std::function<int(lua_State*)>& f);
+
+
 #define isthis(type,arg,FNC) if (type == arg) {vaav = std::string(#arg); if (FNC(L,i)){ std::stringstream S; S << FNC(L,i) << ";"; vaav = vaav +" "+ S.str(); }}
 
 typedef struct PixelStruct{
@@ -629,8 +632,7 @@ template <typename ... Types,typename ... Opt> void LambdaRegisterOpt(lua_State 
         return 0;
     };
     lua_pushstring(L, str.c_str());
-    LuaCFunctionLambda** baseF = static_cast<LuaCFunctionLambda**>(lua_newuserdata(L, sizeof(LuaCFunctionLambda) ));
-    (*baseF) = new LuaCFunctionLambda(f);
+    CreateLuaClosure(L, f);
     lua_pushcclosure(L, BaseLuaClosureHandler<2>,2);
     lua_setglobal(L, str.c_str());
 };
@@ -667,8 +669,7 @@ template <typename T1,typename ... Types,typename ... Opt> void LambdaRegisterOp
         return 1;
     };
     lua_pushstring(L, str.c_str());
-    LuaCFunctionLambda** baseF = static_cast<LuaCFunctionLambda**>(lua_newuserdata(L, sizeof(LuaCFunctionLambda) ));
-    (*baseF) = new LuaCFunctionLambda(f);
+    CreateLuaClosure(L, f);
     lua_pushcclosure(L, BaseLuaClosureHandler<2>,2);
     lua_setglobal(L, str.c_str());
 };
@@ -701,8 +702,7 @@ template<typename ObjectType, typename ... Types, typename ... Opt> void LambdaR
         return 0;
     };
     lua_pushstring(L, str.c_str());
-    LuaCFunctionLambda** baseF = static_cast<LuaCFunctionLambda**>(lua_newuserdata(L, sizeof(LuaCFunctionLambda) ));
-    (*baseF) = new LuaCFunctionLambda(f);
+    CreateLuaClosure(L, f);
     lua_pushcclosure(L, BaseLuaClosureHandler<2>,2);
     lua_setglobal(L, str.c_str());
 };
@@ -737,8 +737,7 @@ template<typename T1, typename ObjectType, typename ... Types, typename ... Opt>
         return 1;
     };
     lua_pushstring(L, str.c_str());
-    LuaCFunctionLambda** baseF = static_cast<LuaCFunctionLambda**>(lua_newuserdata(L, sizeof(LuaCFunctionLambda) ));
-    (*baseF) = new LuaCFunctionLambda(f);
+    CreateLuaClosure(L, f);
     lua_pushcclosure(L, BaseLuaClosureHandler<2>,2);
     lua_setglobal(L, str.c_str());
 };
@@ -770,8 +769,7 @@ template<typename ObjectType, typename ... Types> void LambdaRegisterClass(lua_S
         return 0;
     };
     lua_pushstring(L, str.c_str());
-    LuaCFunctionLambda** baseF = static_cast<LuaCFunctionLambda**>(lua_newuserdata(L, sizeof(LuaCFunctionLambda) ));
-    (*baseF) = new LuaCFunctionLambda(f);
+    CreateLuaClosure(L, f);
     lua_pushcclosure(L, BaseLuaClosureHandler<2>,2);
     lua_setglobal(L, str.c_str());
 };
@@ -803,8 +801,7 @@ template<typename ObjectType, typename T1,typename ... Types> void LambdaRegiste
         return 1;
     };
     lua_pushstring(L, str.c_str());
-    LuaCFunctionLambda** baseF = static_cast<LuaCFunctionLambda**>(lua_newuserdata(L, sizeof(LuaCFunctionLambda) ));
-    (*baseF) = new LuaCFunctionLambda(f);
+    CreateLuaClosure(L, f);
     lua_pushcclosure(L, BaseLuaClosureHandler<2>,2);
     lua_setglobal(L, str.c_str());
 };
@@ -836,8 +833,7 @@ template<typename T1,typename ... Types> void LambdaRegister(lua_State *L,std::s
         return 1;
     };
     lua_pushstring(L, str.c_str());
-    LuaCFunctionLambda** baseF = static_cast<LuaCFunctionLambda**>(lua_newuserdata(L, sizeof(LuaCFunctionLambda) ));
-    (*baseF) = new LuaCFunctionLambda(f);
+    CreateLuaClosure(L, f);
     lua_pushcclosure(L, BaseLuaClosureHandler<2>,2);
     lua_setglobal(L, str.c_str());
 };
@@ -869,8 +865,7 @@ template<typename ... Types> void LambdaRegister(lua_State *L,std::string str, v
         return 0;
     };
     lua_pushstring(L, str.c_str());
-    LuaCFunctionLambda** baseF = static_cast<LuaCFunctionLambda**>(lua_newuserdata(L, sizeof(LuaCFunctionLambda) ));
-    (*baseF) = new LuaCFunctionLambda(f);
+    CreateLuaClosure(L, f);
     lua_pushcclosure(L, BaseLuaClosureHandler<2>,2);
     lua_setglobal(L, str.c_str());
 };

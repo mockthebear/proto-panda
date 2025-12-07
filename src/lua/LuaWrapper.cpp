@@ -2,6 +2,15 @@
 #include "esp32-hal.h"
 #include <SD.h>
 
+void CreateLuaClosure(lua_State *L, const std::function<int(lua_State*)>& f){
+    LuaCFunctionLambda** baseF = static_cast<LuaCFunctionLambda**>(lua_newuserdata(L, sizeof(LuaCFunctionLambda) ));
+    void* mem = ps_malloc(sizeof(LuaCFunctionLambda));
+    if (!mem) {
+        luaL_error(L, "Failed to allocate PSRAM for Lua function");
+        return;
+    }
+    (*baseF) = new (mem) LuaCFunctionLambda(f);
+}
 //Make sure that any lua scripts use the psram instead of the sram
 static void *psram_lua_alloc (void *ud, void *ptr, size_t osize, size_t nsize) {
   (void)ud;  (void)osize; 
@@ -158,7 +167,6 @@ LuaWrapper::LuaWrapper() {
   _state = lua_newstate(psram_lua_alloc, NULL);
   lua_setallocf(_state, psram_lua_alloc, NULL);
 
-
   lua_setfopenf_esp(_state, custom_fopen); 
   lua_setserial_esp(_state, custom_serial); 
 
@@ -203,9 +211,7 @@ end
 
   if (luaL_dostring(_state, lua_require_code) != 0) {
     lua_pop(_state, 1); 
-  }
-
-  
+  }  
 }
 
 

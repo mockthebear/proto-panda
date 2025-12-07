@@ -5,30 +5,6 @@
 #include "bluetooth/servicehandler.hpp"
 #include <Arduino.h>
 
-class Batata{
-    public:
-    Batata(){count = 0;};
-    ~Batata(){
-        Serial.printf("THE BATATA %d IS DEAD MAN\n", (int)this);
-    };
-    int SumBatata(Batata *bat){
-        return count + bat->Get();
-    };
-    Batata *CloneBatata(){
-        Serial.printf("CLONE, I AM %d\n", (int)this);
-        Batata *aux = new Batata();
-        Serial.printf("THE NEW IS %d\n", (int)aux);
-        aux->Set(Get());
-        return aux;
-    }
-    uint32_t Get(){return count;};
-    void Set(uint32_t c){ count = c;};
-    uint32_t Sum(uint32_t a, uint32_t b){ count += a+b; return count;};
-    uint32_t count;
-};
-
-
-
 
 class LuaCaller{
     public:
@@ -160,8 +136,7 @@ template<typename T1,typename ClassObj,typename ... Types> struct internal_regis
             GenericLuaReturner<T1>::Ret(rData,L2);
             return 1;
         };
-        LuaCFunctionLambda** baseF = static_cast<LuaCFunctionLambda**>(lua_newuserdata(L, sizeof(LuaCFunctionLambda) ));
-        (*baseF) = new LuaCFunctionLambda(f);
+        CreateLuaClosure(L, f);
         lua_pushcclosure(L, LuaCaller::Base<1>,1);
         lua_setfield(L, -2, str.c_str());
         lua_pop(L, 1);
@@ -200,8 +175,7 @@ template<typename ClassObj,typename ... Types> struct internal_register<void,Cla
 
             return 1;
         };
-        LuaCFunctionLambda** baseF = static_cast<LuaCFunctionLambda**>(lua_newuserdata(L, sizeof(LuaCFunctionLambda) ));
-        (*baseF) = new LuaCFunctionLambda(f);
+        CreateLuaClosure(L, f);
         lua_pushcclosure(L, LuaCaller::Base<1>,1);
         lua_setfield(L, -2,  str.c_str());
 
@@ -571,7 +545,7 @@ template<> struct GenericLuaGetter<BleCharacteristicsHandler*> {
 
            
               
-            
+         /*   
 
 template<> struct GenericLuaReturner<Batata*>{
     static void Ret(Batata* vr,lua_State *L,bool forceTable = false){
@@ -625,3 +599,5 @@ template<> struct GenericLuaGetter<Batata*> {
         return  (*sp);
     }
 };
+
+*/

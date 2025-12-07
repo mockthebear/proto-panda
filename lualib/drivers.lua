@@ -181,7 +181,7 @@ function drivers.onMouseCallback(connectionId, controllerId, data)
             action = action ..('Move_x='..deltaX..' ')
         end
         if deltaY ~= 0 then  
-            action = action ..('Move_y='..deltaX..' ')
+            action = action ..('Move_y='..deltaY..' ')
         end
         if deltaWheel ~= 0 then  
             action = action ..('Scroll='..deltaWheel..' ')

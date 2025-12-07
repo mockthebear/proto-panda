@@ -735,13 +735,11 @@ bool LuaInterface::Start()
   }
 
   m_lua->SetErrorCallback(LuaInterface::luaCallbackError);
-
   RegisterMethods();
   RegisterConstants();
-
   auto _state = m_lua->GetState();
 
-  
+  /*
   
   ClassRegister<Batata>::RegisterClassType(_state,"Batata",[](lua_State* L){
         Batata *t = new Batata();
@@ -756,7 +754,7 @@ bool LuaInterface::Start()
 
   ClassRegister<Batata>::RegisterField(_state, "count", &Batata::count);
 
-
+*/
 
   static LuaCFunctionLambda EmptyGC = [](lua_State* L) -> int{
     return 0;
