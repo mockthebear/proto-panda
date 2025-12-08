@@ -268,6 +268,14 @@ template<>
     };
 };
 
+
+template<>
+    struct GenericLuaGetter<std::vector<std::string>> {
+     static inline std::vector<std::string> Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
+        return GenericLuaVector<std::string>(hasArgError, L, stackPos, pop, offsetStack);
+    };
+};
+
 template<>
     struct GenericLuaGetter<std::vector<PixelStruct>> {
      static inline std::vector<PixelStruct> Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
@@ -398,6 +406,19 @@ template<> struct GenericLuaReturner<SizedArray*>{
         delete []vr;
    };
 };
+
+
+template<> struct GenericLuaReturner<std::vector<std::string>>{
+    static inline void Ret(std::vector<std::string> vr,lua_State *L,bool forceTable = false){
+       lua_newtable(L);
+       auto index = 1;
+       for (const auto& value : vr) {
+           lua_pushstring(L, value.c_str());  
+           lua_rawseti(L, -2, index++);
+       }
+   };
+};
+
 
 template<> struct GenericLuaReturner<std::vector<uint16_t>>{
     static inline void Ret(std::vector<uint16_t> vr,lua_State *L,bool forceTable = false){

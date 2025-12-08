@@ -41,7 +41,10 @@ class BleServiceHandler{
     }
     void AddDevice(BluetoothDeviceHandler *dev);
     void SendMessages();
+    std::vector<std::string> GetServices(int clientId);
+    std::vector<std::string> GetCharacteristics(int clientId);
     bool WriteToCharacteristics(std::vector<uint8_t> bytes, int clientId, std::string charName, bool reply);
+    std::vector<uint8_t> ReadFromCharacteristics(int clientId, std::string charName);
     std::vector<BleCharacteristicsHandler*> getCharacteristics();
     NimBLEUUID uuid;
 
