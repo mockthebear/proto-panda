@@ -1,7 +1,7 @@
 local versions = require("versions")
 
 if not MAX_BLE_BUTTONS then
-    _G.MAX_BLE_BUTTONS = 6
+    _G.MAX_BLE_BUTTONS = 8
 end
 local drivers = {
     handlerPanda = nil,
@@ -15,36 +15,12 @@ local drivers = {
     panda = {},
     joystick = {},
     mouse = {},
+    keyboard = {},
     beauty = {},
 
 
     eventQueue = {},
     type_by_id = {},
-
-
-    JOYSTICK_HAT_NOTHING                = 0,
-    JOYSTICK_HAT_DIRECTION_RIGHT        = 1,
-    JOYSTICK_HAT_DIRECTION_DOWN_RIGHT   = 2,
-    JOYSTICK_HAT_DIRECTION_DOWN         = 3,
-    JOYSTICK_HAT_DIRECTION_DOWN_LEFT    = 4,
-    JOYSTICK_HAT_DIRECTION_LEFT         = 5,
-    JOYSTICK_HAT_DIRECTION_TOP_RIGHT    = 6,
-    JOYSTICK_HAT_DIRECTION_TOP          = 7,
-    JOYSTICK_HAT_DIRECTION_TOP_LEFT     = 8,
-
-    JOSYTICK_BUTTON_A                   = 4,
-    JOSYTICK_BUTTON_B                   = 1,
-    JOSYTICK_BUTTON_C                   = 3,
-    JOSYTICK_BUTTON_D                   = 2,
-
-    BEAUTY_BUTTON_1                     = 1,
-    BEAUTY_BUTTON_2                     = 2,
-    BEAUTY_BUTTON_3                     = 3,
-    BEAUTY_BUTTON_4                     = 4,
-    BEAUTY_BUTTON_5                     = 5,
-    BEAUTY_BUTTON_6                     = 6,
-    BEAUTY_BUTTON_7                     = 7,
-    BEAUTY_BUTTON_8                     = 8,
 
 
     JOSYTICK_BUTTONS_MAP = {
@@ -53,6 +29,13 @@ local drivers = {
         [8] = 3, --C
         [16] = 4, --A
     },
+}
+
+--Given the device type, there is specific mappings that we might need to keep track
+drivers.device_attribute_map = {
+    ['panda'] = {panda=drivers.panda},
+    ['beauty-r1'] = {beauty=drivers.beauty},
+    ['hid'] = {joystick=drivers.joystick, mouse=drivers.mouse, keyboard=drivers.keyboard},
 }
 
 
@@ -87,8 +70,8 @@ do
         }
         drivers.joystick[i] = {  
             buttons = {},   
-            left_hat = drivers.JOYSTICK_HAT_NOTHING, 
-            right_hat = drivers.JOYSTICK_HAT_NOTHING,  
+            left_hat = 0, 
+            right_hat = 0,  
             left_analog_x = 0,
             left_analog_y = 0,
             right_analog_x = 0,
@@ -101,6 +84,28 @@ do
 
     end
 end
+
+JOYSTICK_HAT_NOTHING                = 0
+JOYSTICK_HAT_DIRECTION_RIGHT        = 1
+JOYSTICK_HAT_DIRECTION_DOWN_RIGHT   = 2
+JOYSTICK_HAT_DIRECTION_DOWN         = 3
+JOYSTICK_HAT_DIRECTION_DOWN_LEFT    = 4
+JOYSTICK_HAT_DIRECTION_LEFT         = 5
+JOYSTICK_HAT_DIRECTION_TOP_RIGHT    = 6
+JOYSTICK_HAT_DIRECTION_TOP          = 7
+JOYSTICK_HAT_DIRECTION_TOP_LEFT     = 8
+JOSYTICK_BUTTON_A                   = 4
+JOSYTICK_BUTTON_B                   = 1
+JOSYTICK_BUTTON_C                   = 3
+JOSYTICK_BUTTON_D                   = 2
+BEAUTY_BUTTON_1                     = 1
+BEAUTY_BUTTON_2                     = 2
+BEAUTY_BUTTON_3                     = 3
+BEAUTY_BUTTON_4                     = 4
+BEAUTY_BUTTON_5                     = 5
+BEAUTY_BUTTON_6                     = 6
+BEAUTY_BUTTON_7                     = 7
+BEAUTY_BUTTON_8                     = 8
 
 local function readInt16(data, index)
     local low = data[index]
@@ -138,20 +143,20 @@ end
 
 function drivers.onSubscribeMessagePanda(connectionId, clientId, data)
     if #data ~= 20 then  
-        print("Possible corrupt package in panda controller. Expected size 22 but got "..(#data))
+        log("Possible corrupt package in panda controller. Expected size 22 but got "..(#data))
         return
     end
     parsePandaData(drivers.panda[clientId], data)
 end
 
 function drivers.onDisconnectPanda(connectionId, controllerId, reason)
-    print("Disconnected "..connectionId.." due ".. reason)
+    log("Disconnected "..connectionId.." due ".. reason)
     drivers.type_by_id[controllerId] = nil
 end
 
 function drivers.onConnectPanda(connectionId, controllerId, address, name)
     drivers.type_by_id[controllerId] = "panda"
-    print("Connected protopanda hand controller "..address.." "..tostring(name)..' this controller will be the '..controllerId)
+    log("Connected protopanda hand controller "..address.." "..tostring(name)..' this controller will be the '..controllerId)
     drivers.handlerPanda:WriteToCharacteristics({0,0,0,controllerId}, connectionId, "d4d3fafb-c4c1-c2c3-b4b3-b2b1a4a3a2a1", true)
 end
 
@@ -215,7 +220,7 @@ function drivers.processBeautyR1Packet(connectionId, controllerId, data)
 end
 
 function drivers.onMouseCallback(connectionId, controllerId, data)
-    if drivers.type_by_id[controllerId]  == "beauty" then 
+    if drivers.type_by_id[controllerId]  == "beauty-r1" then 
         drivers.processBeautyR1Packet(connectionId, controllerId, data)
         return
     end
@@ -298,24 +303,24 @@ end
 
 
 function drivers.onDisconnectHID(connectionId, controllerId, reason)
-    print("Disconnected "..connectionId.." due ".. reason)
+    log("Disconnected "..connectionId.." due ".. reason)
     drivers.type_by_id[controllerId] = nil
 
 end
 
 function drivers.onConnectHID(connectionId, controllerId, address, name)
-    drivers.type_by_id[controllerId] = "joystick"
+    drivers.type_by_id[controllerId] = "hid"
     if name and name:lower() == "beauty-r1" then  
-        print("We go a beauty-r1 keypad")
-        drivers.type_by_id[controllerId] = "beauty"
+        drivers.type_by_id[controllerId] = "beauty-r1"
     end
+    log("Connected conId="..connectionId.." controller="..controllerId.." addr=\""..address.."\" name=["..name.."] type="..drivers.type_by_id[controllerId])
 end
 
 
 function drivers.EnableGenericAndroidMouse()
     if not versions.canRun("2.0.0") then 
         --No mouse in the legacy controller
-        print("You are running protopanda on a older version. Minimum version required is 2.0.0 to run mouse input") 
+        log("You are running protopanda on a older version. Minimum version required is 2.0.0 to run mouse input") 
         return false
     end
     drivers.mouseHandler = BleServiceHandler("00001812-0000-1000-8000-00805f9b34fb")
@@ -329,7 +334,7 @@ end
 
 function drivers.update()
     for i,b in pairs(drivers.type_by_id) do  
-        if b == "beauty" then  
+        if b == "beauty-r1" then  
             if drivers.beauty[i].timeout and drivers.beauty[i].timeout < millis() then  
                 drivers.beauty[i].timeout = nil
                 local buttons = drivers.beauty[i].buttons

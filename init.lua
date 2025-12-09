@@ -18,7 +18,6 @@ function onSetup()
     drivers.EnableProtopandaController()
     drivers.EnableGenericAndroidMouse()
 
-    input.setup()
     
     startBLERadio()
 
@@ -34,7 +33,7 @@ function onSetup()
     generic.displaySplashMessage("Starting:\nExpressions")
 
     configloader.Load("/config.json")
-
+    input.Load()
     expressions.Load() 
     scripts.Load() 
     boop.Load()
