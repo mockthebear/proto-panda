@@ -27,8 +27,7 @@ class LuaCaller{
                 lua_error (L);
                 return 0;
             }
-            (*(*v))(L);
-            return 1;
+            return (*(*v))(L);
         }
 
         
@@ -58,8 +57,7 @@ class LuaCaller{
                 return 0;
             }
 
-            (*(*v))(L);
-            return 1;
+            return (*(*v))(L);
         }
 };
 
@@ -133,8 +131,7 @@ template<typename T1,typename ClassObj,typename ... Types> struct internal_regis
             }
             T1 rData = expanderClass<sizeof...(Types),ClassObj,T1>::expand(ArgumentList,L2,func);
 
-            GenericLuaReturner<T1>::Ret(rData,L2);
-            return 1;
+            return GenericLuaReturner<T1>::Ret(rData,L2);
         };
         CreateLuaClosure(L, f);
         lua_pushcclosure(L, LuaCaller::Base<1>,1);
@@ -171,9 +168,7 @@ template<typename ClassObj,typename ... Types> struct internal_register<void,Cla
                 return 1;
             }
             expanderClass<sizeof...(Types),ClassObj,void>::expand(ArgumentList,L2,func);
-            GenericLuaReturner<void>::Ret(0,L2);
-
-            return 1;
+            return GenericLuaReturner<void>::Ret(0,L2);
         };
         CreateLuaClosure(L, f);
         lua_pushcclosure(L, LuaCaller::Base<1>,1);
@@ -219,8 +214,7 @@ template<typename T1,typename ObjT> struct FieldToLuaHandler{
         std::map<std::string,ObjT T1::*> &fieldData = FieldToLuaHandler<T1,ObjT>::getAddr();
         if (fieldData[field]){
             ObjT T1::* fieldptr = fieldData[field];
-            GenericLuaReturner<ObjT>::Ret(self->*fieldptr,L);
-            return 1;
+            return GenericLuaReturner<ObjT>::Ret(self->*fieldptr,L);
         }
         return 0;
     };
@@ -490,8 +484,9 @@ template<typename T1> struct MakeLuaObject{
 
 
 template<> struct GenericLuaReturner<BleCharacteristicsHandler*>{
-    static void Ret(BleCharacteristicsHandler* vr,lua_State *L,bool forceTable = false){
+    static int Ret(BleCharacteristicsHandler* vr,lua_State *L,bool forceTable = false){
         MakeLuaObject<BleCharacteristicsHandler>::Make(L, vr, "BleCharacteristicsHandler");
+        return 1;
     };
 };
 
@@ -548,7 +543,7 @@ template<> struct GenericLuaGetter<BleCharacteristicsHandler*> {
          /*   
 
 template<> struct GenericLuaReturner<Batata*>{
-    static void Ret(Batata* vr,lua_State *L,bool forceTable = false){
+    static int Ret(Batata* vr,lua_State *L,bool forceTable = false){
         MakeLuaObject<Batata>::Make(L, vr, "Batata");
     };
 };

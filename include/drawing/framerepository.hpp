@@ -37,10 +37,10 @@ class FrameRepository{
         void displayFFATInfo();
 
         int getOffsetByName(std::string str){
-            return m_offsets.get(str);
+            return m_offsets[PSRAMString(str.c_str())];
         }
         int getFrameCountByName(std::string str){
-            return m_frameCountByAlias.get(str);
+            return m_frameCountByAlias[PSRAMString(str.c_str())];
         }
         float getBulkComposingPercentage(){
           return m_bulkPercentage;
@@ -54,8 +54,8 @@ class FrameRepository{
         int m_frameCount;
         float m_bulkPercentage;
         bool m_started;
-        TotallyNotAMapInPsram m_offsets;
-        TotallyNotAMapInPsram m_frameCountByAlias;
+        PSRAMIntMap m_offsets;
+        PSRAMIntMap m_frameCountByAlias;
         SemaphoreHandle_t m_mutex;
         File bulkFile;
 };      

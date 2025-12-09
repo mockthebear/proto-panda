@@ -59,6 +59,8 @@ class BleManager{
 
     void setScanningMode(bool scan);
 
+    BluetoothDeviceHandler* getDeviceById(int conn);
+
     static BleManager* Get();
   private:
     std::vector<std::tuple<std::string,BleServiceHandler*>> handlersAsync; //Handlers are stored by their UUID

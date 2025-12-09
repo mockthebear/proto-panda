@@ -53,28 +53,41 @@ do
 end
 
 local keybind = {
-    [_G.BUTTON_LEFT]     = {resource = 'right_hat', match = drivers.JOYSTICK_HAT_DIRECTION_LEFT},
-    [_G.BUTTON_DOWN]     = {resource = 'right_hat', match = drivers.JOYSTICK_HAT_DIRECTION_DOWN},
-    [_G.BUTTON_RIGHT]    = {resource = 'right_hat', match = drivers.JOYSTICK_HAT_DIRECTION_RIGHT},
-    [_G.BUTTON_UP]       = {resource = 'right_hat', match = drivers.JOYSTICK_HAT_DIRECTION_TOP},
-    [_G.BUTTON_CONFIRM]  = {resource = 'buttons' , index = drivers.JOSYTICK_BUTTON_A},
-    [_G.BUTTON_BACK]     = {resource = 'buttons' , index = drivers.JOSYTICK_BUTTON_B},
+    ['joystick'] = {
+        [_G.BUTTON_LEFT]     = {resource = 'right_hat', match = drivers.JOYSTICK_HAT_DIRECTION_LEFT},
+        [_G.BUTTON_DOWN]     = {resource = 'right_hat', match = drivers.JOYSTICK_HAT_DIRECTION_DOWN},
+        [_G.BUTTON_RIGHT]    = {resource = 'right_hat', match = drivers.JOYSTICK_HAT_DIRECTION_RIGHT},
+        [_G.BUTTON_UP]       = {resource = 'right_hat', match = drivers.JOYSTICK_HAT_DIRECTION_TOP},
+        [_G.BUTTON_CONFIRM]  = {resource = 'buttons' , index = drivers.JOSYTICK_BUTTON_A},
+        [_G.BUTTON_BACK]     = {resource = 'buttons' , index = drivers.JOSYTICK_BUTTON_B},
+    },
+    ['beauty'] = {
+        [_G.BUTTON_LEFT]     = {resource = 'buttons', index = drivers.BEAUTY_BUTTON_4},
+        [_G.BUTTON_DOWN]     = {resource = 'buttons', index = drivers.BEAUTY_BUTTON_1},
+        [_G.BUTTON_RIGHT]    = {resource = 'buttons', index = drivers.BEAUTY_BUTTON_3},
+        [_G.BUTTON_UP]       = {resource = 'buttons', index = drivers.BEAUTY_BUTTON_2},
+        [_G.BUTTON_CONFIRM]  = {resource = 'buttons', index = drivers.BEAUTY_BUTTON_5},
+        [_G.BUTTON_BACK]     = {resource = 'buttons', index = drivers.BEAUTY_BUTTON_6},
+    }
 }
 
 
+function input.setup()
+    for mode, data in pairs(keybind) do  
+        if not drivers[mode] then 
+            error("Unknown keybind target name with '"..mode.."'")
+        end
+    end
+end
 
-
-function input.updatHidButtonStates(hdReading, pdButtonIdOffset)
-    for idx, bind in pairs(keybind) do  
+function input.updatHidButtonStates(hdReading, pdButtonIdOffset, mode)
+    for idx, bind in pairs(keybind[mode]) do
         local element = hdReading[bind.resource]
         local reading = 0
         if bind.match then  
             reading = element == bind.match and 1 or 0
         elseif bind.index then 
             reading = element[bind.index]
-        end
-        if reading == 1 then 
-            print("idx is "..tostring(idx)..' = '..type(idx))
         end
         input.updateButtonByreading(pdButtonIdOffset+idx-1, reading)
     end
@@ -98,7 +111,6 @@ function input.updateButtonByreading(buttonId, reading)
     if input.panda_buttons[buttonId] ~= reading then 
         input.panda_buttons[buttonId] = reading
         if reading == 1 then 
-            print()
             input.panda_buttons_state[buttonId] = _G.BUTTON_JUST_PRESSED
         else
             input.panda_buttons_state[buttonId] = _G.BUTTON_JUST_RELEASED
@@ -110,12 +122,18 @@ function input.updateButtonStates()
     local pdButtonIdOffset = 1
     for i=0,MAX_BLE_CLIENTS-1 do 
         local mode = drivers.type_by_id[i]
-        if mode == "panda" then
-            local pdReading = drivers.panda[i].buttons
-            input.updatePandaButtonStates(pdReading, pdButtonIdOffset)
-        elseif mode == "hid" then
-            local hdReading = drivers.joystick[i]
-            input.updatHidButtonStates(hdReading, pdButtonIdOffset)
+        if mode then
+            local obj = drivers[mode]
+            if obj then  
+                local reading = obj[i]
+                if mode == "panda" then
+                    input.updatePandaButtonStates(reading, pdButtonIdOffset, mode)
+                elseif mode == "beauty" then
+                    input.updatHidButtonStates(reading, pdButtonIdOffset, mode)
+                elseif mode == "hid" then
+                    input.updatHidButtonStates(reading, pdButtonIdOffset, mode)
+                end
+            end
         end
 
         pdButtonIdOffset = pdButtonIdOffset + MAX_BLE_BUTTONS

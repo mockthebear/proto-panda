@@ -11,6 +11,12 @@
 #include "bluetooth/clientcallbacks.hpp"
 
 
+class DisconnectTuple{
+  public:
+    int id;
+    int controllerId;
+    std::string reason;
+};
 
 
 class BluetoothDeviceHandler{
@@ -34,30 +40,40 @@ class BluetoothDeviceHandler{
 
 class BleServiceHandler{
   public:
-    BleServiceHandler(NimBLEUUID u):uuid(u),queueMutex(xSemaphoreCreateMutex()),luaOnConnectCallback(nullptr){};
+    BleServiceHandler(NimBLEUUID u):uuid(u),queueMutex(xSemaphoreCreateMutex()),luaOnConnectCallback(nullptr),luaOnDisconnectCallback(nullptr){};
     BleCharacteristicsHandler* AddCharacteristics(std::string uuid);
     void SetOnConnectCallback(LuaFunctionCallback * cb){
       luaOnConnectCallback = cb;
     }
+    void SetOnDisconnectCallback(LuaFunctionCallback * cb){
+      luaOnDisconnectCallback = cb;
+    }
     void AddDevice(BluetoothDeviceHandler *dev);
     void SendMessages();
-    std::vector<std::string> GetServices(int clientId);
-    std::vector<std::string> GetCharacteristics(int clientId);
+    MultiReturn<std::vector<std::string>> GetServices(int clientId, bool refresh);
+    MultiReturn<std::vector<std::string>> GetCharacteristicsFromOurService(int clientId);
     bool WriteToCharacteristics(std::vector<uint8_t> bytes, int clientId, std::string charName, bool reply);
-    std::vector<uint8_t> ReadFromCharacteristics(int clientId, std::string charName);
-    std::vector<BleCharacteristicsHandler*> getCharacteristics();
+    MultiReturn<std::vector<uint8_t>> ReadFromCharacteristics(int clientId, std::string charName);
+    std::vector<BleCharacteristicsHandler*> getRegisteredCharacteristics();
+
+
+    static MultiReturn<std::vector<std::string>> GetCharacteristicsFromService(int clientId, std::string servName, bool refresh);
     NimBLEUUID uuid;
+
+    void NotifyDisconnect(int conId, int clientId, const char* reason);
 
     
   private: 
-    
+   
     SemaphoreHandle_t queueMutex;
     std::stack<BluetoothDeviceHandler*> devicesToNotify;
+    std::stack<DisconnectTuple> devicesToDisconnectNotify;
     std::map<std::string, BleCharacteristicsHandler*> m_characteristics;    
     std::map<std::string,bool> warnedMap;
     std::vector<BluetoothDeviceHandler*> m_connectedDevices;
 
     LuaFunctionCallback *luaOnConnectCallback;
+    LuaFunctionCallback *luaOnDisconnectCallback;
     
 };
 

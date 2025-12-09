@@ -34,12 +34,11 @@ void BleServiceHandler::AddDevice(BluetoothDeviceHandler *dev){
 }
 
 
-std::vector<uint8_t> BleServiceHandler::ReadFromCharacteristics(int clientId, std::string charName){
+MultiReturn<std::vector<uint8_t>> BleServiceHandler::ReadFromCharacteristics(int clientId, std::string charName){
     NimBLEUUID charId(charName);
 
     if (charId == NimBLEUUID()){
-        Logger::Error("uuid provided '%s' is invalid.", charName.c_str());
-        return std::vector<uint8_t>();
+        return MultiReturn<std::vector<uint8_t>>("UUID is invalid");
     } 
 
     BluetoothDeviceHandler *dev = nullptr;
@@ -51,33 +50,38 @@ std::vector<uint8_t> BleServiceHandler::ReadFromCharacteristics(int clientId, st
     }
 
     if (dev == nullptr){
-        Logger::Error("device is not found");
-        return std::vector<uint8_t>();
+        return MultiReturn<std::vector<uint8_t>>("device is not found");
     }
 
     if (dev->m_client == nullptr){
-        Logger::Error("device dont seems to have a valid client");
-        return std::vector<uint8_t>();
+        return MultiReturn<std::vector<uint8_t>>("device dont seems to have a valid client");
     }
 
     NimBLERemoteService* svc = dev->m_client->getService(uuid);
     if (svc == nullptr){
-        Logger::Error("For some reason. The device lost the service?!");
-        return std::vector<uint8_t>();
+        return MultiReturn<std::vector<uint8_t>>("For some reason. The device lost the service?!");
     }
     NimBLERemoteCharacteristic* chr = svc->getCharacteristic(charId);
     if (svc == nullptr){
-        Logger::Error("Service '%s' does not have characteristics '%s'", uuid.toString().c_str(), charId.toString().c_str());
-        return std::vector<uint8_t>();
+        return MultiReturn<std::vector<uint8_t>>("Service does not have the characteristics");
     } 
     NimBLEAttValue val = chr->readValue();
     if (val.size() == 0){
-        return std::vector<uint8_t>();
+        return MultiReturn<std::vector<uint8_t>>("Not read");
     }
-    return std::vector<uint8_t>(val.data(), val.data()+val.size());
+    return MultiReturn<std::vector<uint8_t>>(true, std::vector<uint8_t>(val.data(), val.data()+val.size()));
 }
 
-std::vector<std::string> BleServiceHandler::GetCharacteristics(int clientId){
+std::vector<BleCharacteristicsHandler*> BleServiceHandler::getRegisteredCharacteristics(){
+    std::vector<BleCharacteristicsHandler*> list;
+    for (auto &it : m_characteristics){
+        list.emplace_back(it.second);
+    }  
+    return list;
+}
+
+
+MultiReturn<std::vector<std::string>> BleServiceHandler::GetCharacteristicsFromOurService(int clientId){
     BluetoothDeviceHandler *dev = nullptr;
     for (auto &it : m_connectedDevices){
         if (it->getId() == clientId){
@@ -86,32 +90,28 @@ std::vector<std::string> BleServiceHandler::GetCharacteristics(int clientId){
         }
     }
 
-
     if (dev == nullptr){
-        Logger::Error("device is not found");
-        return std::vector<std::string>();
+        return MultiReturn<std::vector<std::string>>("device is not found");
     }
 
     if (dev->m_client == nullptr){
-        Logger::Error("device dont seems to have a valid client");
-        return std::vector<std::string>();
+        return MultiReturn<std::vector<std::string>>("device dont seems to have a valid client");
     }
 
     NimBLERemoteService* svc = dev->m_client->getService(uuid);
     if (svc == nullptr){
-        Logger::Error("For some reason. The device lost the service?!");
-        return std::vector<std::string>();
+        return MultiReturn<std::vector<std::string>>("For some reason. The device lost the service?!");
     }
-    auto chr = svc->getCharacteristics();
+    auto chr = svc->getCharacteristics(false);
     std::vector<std::string> resp;
     for (auto &it : chr){
         const char *c = it->getUUID().toString().c_str();
         resp.emplace_back(c, c+strlen(c));
     }
-    return resp; //todo fix, not correctly returning string array :(
+    return MultiReturn<std::vector<std::string>>(true, resp);
 }
 
-std::vector<std::string> BleServiceHandler::GetServices(int clientId){
+MultiReturn<std::vector<std::string>> BleServiceHandler::GetServices(int clientId, bool refresh){
     
     BluetoothDeviceHandler *dev = nullptr;
     for (auto &it : m_connectedDevices){
@@ -122,22 +122,51 @@ std::vector<std::string> BleServiceHandler::GetServices(int clientId){
     }
 
     if (dev == nullptr){
-        Logger::Error("device is not found");
-        return std::vector<std::string>();
+        return MultiReturn<std::vector<std::string>>("device is not found");
     }
 
     if (dev->m_client == nullptr){
-        Logger::Error("device dont seems to have a valid client");
-        return std::vector<std::string>();
+        return MultiReturn<std::vector<std::string>>("device dont seems to have a valid client");
     }
 
-    auto chr = dev->m_client->getServices();
+    auto chr = dev->m_client->getServices(refresh);
+    std::vector<std::string> resp;
+    for (auto &it : chr){
+        NimBLEUUID copyUUID = it->getUUID();
+        std::string str = copyUUID.to128();
+        resp.emplace_back(str);
+    }
+    return MultiReturn<std::vector<std::string>>(true, resp);
+}
+
+MultiReturn<std::vector<std::string>> BleServiceHandler::GetCharacteristicsFromService(int clientId, std::string servName, bool refresh){
+     NimBLEUUID charId(servName);
+
+    if (charId == NimBLEUUID()){
+        return MultiReturn<std::vector<std::string>>("UUID provided is invalid");
+    } 
+
+    BluetoothDeviceHandler *dev = g_remoteControls.getDeviceById(clientId);
+    if (dev == nullptr){
+        return MultiReturn<std::vector<std::string>>("device is not found");
+    }
+
+    if (dev->m_client == nullptr){
+        return MultiReturn<std::vector<std::string>>("device dont seems to have a valid client");
+    }
+    NimBLERemoteService* svc = dev->m_client->getService(charId);
+    if (svc == nullptr){
+        return MultiReturn<std::vector<std::string>>("Service is not avaliable");
+    }
+
+    auto chr = svc->getCharacteristics(refresh);
     std::vector<std::string> resp;
     for (auto &it : chr){
         const char *c = it->getUUID().toString().c_str();
         resp.emplace_back(c, c+strlen(c));
     }
-    return resp;
+    return MultiReturn<std::vector<std::string>>(true, resp);
+
 }
 
 bool BleServiceHandler::WriteToCharacteristics(std::vector<uint8_t> bytes, int clientId, std::string charName, bool reply){
@@ -194,16 +223,26 @@ void BleServiceHandler::SendMessages(){
             luaOnConnectCallback->callLuaFunction(dev->getId(), dev->m_controllerId, dev->m_device->getAddress().toString(), dev->m_device->getName().c_str());
         }
     }
+    if (devicesToDisconnectNotify.size() > 0){
+        xSemaphoreTake(queueMutex, portMAX_DELAY);
+        auto msg = devicesToDisconnectNotify.top();
+        devicesToDisconnectNotify.pop();
+        xSemaphoreGive(queueMutex);
+        if (luaOnDisconnectCallback != nullptr){
+            luaOnDisconnectCallback->callLuaFunction(msg.id, msg.controllerId, msg.reason);
+        }
+    }
     for (auto &it : m_characteristics){
         it.second->SendMessages();
     }  
     
 }
 
-std::vector<BleCharacteristicsHandler*> BleServiceHandler::getCharacteristics(){
-    std::vector<BleCharacteristicsHandler*> list;
-    for (auto &it : m_characteristics){
-        list.emplace_back(it.second);
-    }  
-    return list;
+
+void BleServiceHandler::NotifyDisconnect(int conId, int clientId, const char* reason){
+    DisconnectTuple tp;
+    tp.id = conId;
+    tp.controllerId = clientId;
+    tp.reason = reason;
+    devicesToDisconnectNotify.push(tp);
 }

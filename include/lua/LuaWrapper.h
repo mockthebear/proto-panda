@@ -59,7 +59,7 @@ template <int N> static int BaseLuaClosureHandler(lua_State *L){
         luaL_error(L, "Could not call closure %d because of null or empty reference", N);
         return 1;
     }
-    return (*(*v))(L);
+    return  (*(*v))(L);;
 }
 
 template<typename T> inline T GenericLuaTonumber(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true){
@@ -231,6 +231,8 @@ template<>
 };
 
 
+
+
 template<typename T> inline std::vector<T> GenericLuaVector(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
     std::vector<T> n;
     if (!lua_istable(L,stackPos)) {
@@ -288,98 +290,113 @@ template<>
 
 
 template<typename T1> struct GenericLuaReturner{
-    static inline void Ret(T1 vr,lua_State *L,bool forceTable = false){
+    static inline int Ret(T1 vr,lua_State *L,bool forceTable = false){
         lua_pushnil(L);
+        return 1;
     };
 };
 
 template<> struct GenericLuaReturner<char>{
-     static inline void Ret(char vr,lua_State *L,bool forceTable = false){
+     static inline int Ret(char vr,lua_State *L,bool forceTable = false){
         char aux[] = ".";
         aux[0] = vr;
         lua_pushstring(L,aux);
+        return 1;
     };
 };
 
 template<> struct GenericLuaReturner<uint8_t>{
-     static inline void Ret(uint8_t vr,lua_State *L,bool forceTable = false){
-         lua_pushnumber(L,vr);
+     static inline int Ret(uint8_t vr,lua_State *L,bool forceTable = false){
+        lua_pushnumber(L,vr);
+        return 1;
     };
 };
 
 template<> struct GenericLuaReturner<unsigned long>{
-    static inline void Ret(unsigned long vr,lua_State *L,bool forceTable = false){
+    static inline int Ret(unsigned long vr,lua_State *L,bool forceTable = false){
         lua_pushnumber(L,vr);
+        return 1;
    };
 };
 
 template<> struct GenericLuaReturner<uint32_t>{
-     static inline void Ret(uint32_t vr,lua_State *L,bool forceTable = false){
-         lua_pushnumber(L,vr);
+     static inline int Ret(uint32_t vr,lua_State *L,bool forceTable = false){
+        lua_pushnumber(L,vr);
+        return 1;
     };
 };
 
 template<> struct GenericLuaReturner<uint64_t>{
-     static inline void Ret(uint64_t vr,lua_State *L,bool forceTable = false){
-         lua_pushnumber(L,vr);
+     static inline int Ret(uint64_t vr,lua_State *L,bool forceTable = false){
+        lua_pushnumber(L,vr);
+        return 1;
     };
 };
 
 template<> struct GenericLuaReturner<int>{
-     static inline void Ret(int vr,lua_State *L,bool forceTable = false){
-         lua_pushnumber(L,vr);
+     static inline int Ret(int vr,lua_State *L,bool forceTable = false){
+        lua_pushnumber(L,vr);
+        return 1;
     };
 };
 
 
 template<> struct GenericLuaReturner<float>{
-     static inline void Ret(float vr,lua_State *L,bool forceTable = false){
-         lua_pushnumber(L,vr);
+     static inline int Ret(float vr,lua_State *L,bool forceTable = false){
+        lua_pushnumber(L,vr);
+        return 1;
     };
 };
 
 
 template<> struct GenericLuaReturner<int16_t>{
-     static inline void Ret(int16_t vr,lua_State *L,bool forceTable = false){
+     static inline int Ret(int16_t vr,lua_State *L,bool forceTable = false){
         lua_pushnumber(L,vr);
+        return 1;
     };
 };
 
 template<> struct GenericLuaReturner<void>{
-     static inline void Ret(int vr,lua_State *L,bool forceTable = false){
+     static inline int Ret(int vr,lua_State *L,bool forceTable = false){
         lua_pushnil(L);
+        return 1;
     };
 };
 
 
 template<> struct GenericLuaReturner<uint16_t>{
-     static inline void Ret(uint16_t vr,lua_State *L,bool forceTable = false){
-         lua_pushnumber(L,vr);
+     static inline int Ret(uint16_t vr,lua_State *L,bool forceTable = false){
+        lua_pushnumber(L,vr);
+        return 1;
     };
 };
 
 template<> struct GenericLuaReturner<bool>{
-     static inline void Ret(bool vr,lua_State *L,bool forceTable = false){
+     static inline int Ret(bool vr,lua_State *L,bool forceTable = false){
         lua_pushboolean(L,vr);
+        return 1;
     };
 };
 
 template<> struct GenericLuaReturner<std::string>{
-     static inline void Ret(std::string vr,lua_State *L,bool forceTable = false){
+     static inline int Ret(std::string vr,lua_State *L,bool forceTable = false){
         lua_pushstring(L,vr.c_str());
+        return 1;
     };
 };
 
 
 template<> struct GenericLuaReturner<String>{
-     static inline void Ret(String vr,lua_State *L,bool forceTable = false){
+     static inline int Ret(String vr,lua_State *L,bool forceTable = false){
         lua_pushstring(L,vr.c_str());
+        return 1;
     };
 };
 
 template<> struct GenericLuaReturner<const char *>{
-     static inline void Ret(const char * vr,lua_State *L,bool forceTable = false){
+     static inline int Ret(const char * vr,lua_State *L,bool forceTable = false){
         lua_pushstring(L,vr);
+        return 1;
     };
 };
 
@@ -389,11 +406,12 @@ typedef struct SizedArrayS{
     void (*deleteAfterInsertion)(void *ptr) ;
 } SizedArray;
 
+
 template<> struct GenericLuaReturner<SizedArray*>{
-    static inline void Ret(SizedArray *vr,lua_State *L,bool forceTable = false){
+    static inline int Ret(SizedArray *vr,lua_State *L,bool forceTable = false){
         if (vr == nullptr){
             lua_pushnil(L);
-            return;
+            return 1;
         }
         lua_newtable(L);
         for (int index=0; index <vr->size; index++) {
@@ -404,52 +422,58 @@ template<> struct GenericLuaReturner<SizedArray*>{
             vr->deleteAfterInsertion(vr->data);
         }
         delete []vr;
+        return 1;
    };
 };
 
 
 template<> struct GenericLuaReturner<std::vector<std::string>>{
-    static inline void Ret(std::vector<std::string> vr,lua_State *L,bool forceTable = false){
+    static inline int Ret(std::vector<std::string> vr,lua_State *L,bool forceTable = false){
        lua_newtable(L);
        auto index = 1;
        for (const auto& value : vr) {
            lua_pushstring(L, value.c_str());  
            lua_rawseti(L, -2, index++);
        }
+       return 1;
    };
 };
 
 
 template<> struct GenericLuaReturner<std::vector<uint16_t>>{
-    static inline void Ret(std::vector<uint16_t> vr,lua_State *L,bool forceTable = false){
+    static inline int Ret(std::vector<uint16_t> vr,lua_State *L,bool forceTable = false){
        lua_newtable(L);
        auto index = 1;
        for (const auto& value : vr) {
            lua_pushinteger(L, value);  
            lua_rawseti(L, -2, index++);
        }
+       return 1;
    };
 };
 
+
 template<> struct GenericLuaReturner<std::vector<int>>{
-     static inline void Ret(std::vector<int> vr,lua_State *L,bool forceTable = false){
+     static inline int Ret(std::vector<int> vr,lua_State *L,bool forceTable = false){
         lua_newtable(L);
         auto index = 1;
         for (const auto& value : vr) {
             lua_pushinteger(L, value);  
             lua_rawseti(L, -2, index++);
         }
+        return 1;
     };
 };
 
 template<> struct GenericLuaReturner<std::vector<uint8_t>>{
-     static inline void Ret(std::vector<uint8_t> vr,lua_State *L,bool forceTable = false){
+     static inline int Ret(std::vector<uint8_t> vr,lua_State *L,bool forceTable = false){
         lua_newtable(L);
         auto index = 1;
         for (const auto& value : vr) {
             lua_pushinteger(L, value);  
             lua_rawseti(L, -2, index++);
         }
+        return 1;
     };
 };
 
@@ -686,8 +710,7 @@ template <typename T1,typename ... Types,typename ... Opt> void LambdaRegisterOp
         }
 
         T1 rData = expander<sizeof...(Types),T1>::expand(ArgumentList,L2,func);
-        GenericLuaReturner<T1>::Ret(rData,L2);
-        return 1;
+        return GenericLuaReturner<T1>::Ret(rData,L2);
     };
     lua_pushstring(L, str.c_str());
     CreateLuaClosure(L, f);
@@ -754,8 +777,7 @@ template<typename T1, typename ObjectType, typename ... Types, typename ... Opt>
             return 1;
         }
         T1 rData = expander<sizeof...(Types),T1>::expandClass(ArgumentList,L2,obj,func);
-        GenericLuaReturner<T1>::Ret(rData,L2);
-        return 1;
+        return GenericLuaReturner<T1>::Ret(rData,L2);
     };
     lua_pushstring(L, str.c_str());
     CreateLuaClosure(L, f);
@@ -818,8 +840,7 @@ template<typename ObjectType, typename T1,typename ... Types> void LambdaRegiste
             return 1;
         }
         T1 rData = expander<sizeof...(Types),T1>::expandClass(ArgumentList,L2,obj,func);
-        GenericLuaReturner<T1>::Ret(rData,L2);
-        return 1;
+        return GenericLuaReturner<T1>::Ret(rData,L2);
     };
     lua_pushstring(L, str.c_str());
     CreateLuaClosure(L, f);
@@ -850,8 +871,7 @@ template<typename T1,typename ... Types> void LambdaRegister(lua_State *L,std::s
             return 1;
         }
         T1 rData = expander<sizeof...(Types),T1>::expand(ArgumentList,L2,func);
-        GenericLuaReturner<T1>::Ret(rData,L2);
-        return 1;
+        return GenericLuaReturner<T1>::Ret(rData,L2);
     };
     lua_pushstring(L, str.c_str());
     CreateLuaClosure(L, f);
@@ -1180,5 +1200,29 @@ template<> struct GenericLuaGetter<LuaFunctionCallback*> {
         return callback;
     }
 };
+
+template<typename T>class MultiReturn{
+    public:
+        MultiReturn():success(false),errMessage("error :("){};
+        MultiReturn(std::string errmsg):success(false),errMessage(errmsg){};
+        MultiReturn(bool succ, T elem):success(succ),element(elem){};
+        bool success;
+        T element;
+        std::string errMessage;
+};
+
+
+
+template<typename T> struct GenericLuaReturner<MultiReturn<T>>{
+    static inline int Ret(MultiReturn<T> vr,lua_State *L,bool forceTable = false){
+        lua_pushboolean(L,vr.success);
+        if (!vr.success && vr.errMessage != ""){
+            lua_pushstring(L, vr.errMessage.c_str());
+            return 2;
+        }
+        return 1 + GenericLuaReturner<T>::Ret(vr.element, L);
+   };
+};
+
 
 #endif

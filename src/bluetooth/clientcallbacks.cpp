@@ -25,10 +25,18 @@ void ClientCallbacks::onMTUChange(NimBLEClient* pClient, uint16_t MTU) {
 void ClientCallbacks::onDisconnect(NimBLEClient* pClient, int reason){
   Logger::Info("[BLE] my bois is ded");
   Devices::BuzzerToneDuration(400, 300);
-  Logger::Info("[BLE] %s Device disconnected, reason=%d", pClient->getPeerAddress().toString().c_str(), reason);
+  const char *reasonStr = NimBLEUtils::returnCodeToString(reason);
+  Logger::Info("[BLE] %s Device disconnected, reason=%s", pClient->getPeerAddress().toString().c_str(), reasonStr);
+
   xSemaphoreTake(g_remoteControls.m_mutex, portMAX_DELAY);
+
+
   auto aux = g_remoteControls.clients[pClient->getPeerAddress().toString()];
   if (aux != nullptr){
+    auto svcs = g_remoteControls.GetAcceptedServices();
+    for (auto &it : svcs){
+      it.second->NotifyDisconnect(aux->getId(), aux->m_controllerId, reasonStr);
+    }
     if (aux->m_controllerId < 0xff){
       g_remoteControls.availableIds.push(aux->m_controllerId);
     }

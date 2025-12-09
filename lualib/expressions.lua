@@ -34,6 +34,7 @@ function _M.Load()
 						error("Cannot use 'frames=loop' when there is no alias defined")
 					end
 					local count = getFrameCountByName(b.frames)
+					print("["..b.name.."] has "..count)
 					if count == 0 then  
 						error("Using frame group '"..b.frames.."' returned 0 frames. Are you sure this alias has loaded frames?")
 					end 
@@ -43,10 +44,12 @@ function _M.Load()
 							idx = count-i+1
 						end
 						b.animation[i] = idx
+						print("["..b.name.."] add "..(idx))
 					end
 					if name == "pingpong" then  
 						for i=1,count do  
 							b.animation[#b.animation + 1] = count-i+1
+							print("["..b.name.."] add "..(count-i+1))
 						end
 					end
 					animation = b.animation

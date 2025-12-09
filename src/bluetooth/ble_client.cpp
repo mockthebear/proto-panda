@@ -118,7 +118,7 @@ bool BleManager::connectToServer(){
 
   // Look for report characteristics to subscribe to
   // Instead of using getProperties(), we'll try to subscribe and see if it works
-  std::vector<BleCharacteristicsHandler*> searchList = handler->getCharacteristics();
+  std::vector<BleCharacteristicsHandler*> searchList = handler->getRegisteredCharacteristics();
   std::vector<NimBLERemoteCharacteristic*> pChars = pSvc->getCharacteristics(true);
   for (auto &element : searchList){
     vTaskDelay(1);
@@ -167,6 +167,14 @@ bool BleManager::connectToServer(){
   return true;
 }
 
+BluetoothDeviceHandler* BleManager::getDeviceById(int clientId){
+  for (auto &it : clients){
+    if (it.second->getId() == clientId){   
+      return it.second;
+    }
+  }
+  return nullptr;
+}
 
 void BleManager::setScanningMode(bool mode){
   if (mode == false){

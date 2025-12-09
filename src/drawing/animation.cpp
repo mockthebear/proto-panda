@@ -385,7 +385,6 @@ void Animation::SetInterruptAnimation(int duration, std::vector<int> frames){
 }
 
 void Animation::SetAnimation(int duration, std::vector<int> frames, int repeatTimes, bool dropAll, int externalStorageId){
-    
     if (dropAll){
         xSemaphoreTake(m_mutex, portMAX_DELAY);
         while (m_animations.size() > 0){

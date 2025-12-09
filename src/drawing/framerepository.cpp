@@ -169,12 +169,13 @@ bool FrameRepository::loadCachedData(){
 
     JsonObject frame_name_obj = json_doc["frame_name"];
     for (JsonPair name : frame_name_obj) {
-        m_offsets.set(name.key().c_str(), name.value().as<int>());
+        m_offsets[PSRAMString(name.key().c_str())] = name.value().as<int>();
     }
     
     JsonObject frame_count_obj = json_doc["frame_count"];
     for (JsonPair name : frame_count_obj) {
-        m_frameCountByAlias.set(name.key().c_str(), name.value().as<int>());
+        m_frameCountByAlias[PSRAMString(name.key().c_str())] = name.value().as<int>();
+        Serial.printf("Loaded %s as %d", name.key().c_str(), name.value().as<int>());
     }
     json_doc.clear();
     return true;
@@ -284,14 +285,14 @@ void FrameRepository::composeBulkFile(){
     int fileIdx = 1;
     int jsonElement = 0;
 
-    std::string currentName;
+    PSRAMString currentName;
     
     for (JsonVariant element : framesJson) {
         if (element.is<JsonObject>()) {
             if ( element.containsKey("name") &&  element["name"].is<const char*>() ) {
                 const char *content = element["name"];
-                currentName = std::string(content);
-                m_offsets.set(content, fileIdx-1);
+                currentName = PSRAMString(content);
+                m_offsets[content] =  fileIdx-1;
             }
             if ( element.containsKey("file") &&  element["file"].is<const char*>() ) {
                 const char *filePath = element["file"].as<const char*>();
@@ -310,8 +311,8 @@ void FrameRepository::composeBulkFile(){
                 if (!decodeFile(filePath, flip_left, flip_right, color_scheme_left)){
                     FrameBufferCriticalError(&bulkFile, "Failed to decode %s at element %d", filePath, jsonElement);
                 }
-                m_frameCountByAlias.incr(currentName);
-                fdesc.printf("%d = %s\n", fileIdx, filePath);
+                m_frameCountByAlias[currentName]++;
+                fdesc.printf("%d = %s | %s\n", fileIdx, filePath, currentName.c_str());
                 fileIdx++;
             }else if ( element.containsKey("pattern") &&  element["pattern"].is<const char*>() ) {
                 const char* pattern = element["pattern"];
@@ -333,8 +334,8 @@ void FrameRepository::composeBulkFile(){
                     if (!decodeFile(headerFileName, flip_left, flip_right, color_scheme_left)){
                         FrameBufferCriticalError(&bulkFile, "Failed decode %s at element %d", headerFileName, jsonElement);
                     }
-                    fdesc.printf("%d = %s\n", fileIdx, headerFileName);
-                    m_frameCountByAlias.incr(currentName);
+                    fdesc.printf("%d = %s | %s\n", fileIdx, headerFileName, currentName.c_str());
+                    m_frameCountByAlias[currentName]++;
                     fileIdx++;
                 }
             }else if (element.containsKey("files")){
@@ -352,8 +353,8 @@ void FrameRepository::composeBulkFile(){
                     if (!decodeFile(filename, flip_left, flip_right, color_scheme_left)){
                         FrameBufferCriticalError(&bulkFile, "Failed decode %s at element %d", filename, jsonElement);
                     }
-                    fdesc.printf("%d = %s\n", fileIdx, filename);
-                    m_frameCountByAlias.incr(currentName);
+                    fdesc.printf("%d = %s | %s\n", fileIdx, filename, currentName.c_str());
+                    m_frameCountByAlias[currentName]++;
                     fileIdx++;
                 }
             }
@@ -390,13 +391,14 @@ void FrameRepository::generateCacheFile() {
 
     JsonObject frames_naming = json_doc["frame_name"].to<JsonObject>();
 
-    for (const auto& pair : m_offsets.getAll()) {
+    for (const auto& pair : m_offsets) {
         frames_naming[pair.first] = pair.second;
     }
 
     JsonObject frames_counting = json_doc["frame_count"].to<JsonObject>();
 
-    for (const auto& pair : m_frameCountByAlias.getAll()) {
+    for (const auto& pair : m_frameCountByAlias) {
+        Serial.printf("Storing %s as %d\n", pair.first.c_str(), pair.second);
         frames_counting[pair.first] = pair.second;
     }
 

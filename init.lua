@@ -17,6 +17,8 @@ function onSetup()
 
     drivers.EnableProtopandaController()
     drivers.EnableGenericAndroidMouse()
+
+    input.setup()
     
     startBLERadio()
 
@@ -61,6 +63,7 @@ function onPreflight()
 end
 
 function onLoop(dt)
+    drivers.update()
     input.updateButtonStates()
     if not scripts.Handle(dt) then
         return
