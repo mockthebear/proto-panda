@@ -27,29 +27,26 @@ function _M.Load()
 				if b.animation == "auto" then 
 					b.animation = "loop" --Compatibility
 				end
-				if b.animation == "loop" or b.animation == "auto_backwards" or b.animation == "pingpong" then 
+				if b.animation == "loop" or b.animation == "auto_backwards" or b.animation == "loop_backwards" or b.animation == "pingpong" then 
 					local name = b.animation
 					b.animation = {}
 					if not b.frames then  
 						error("Cannot use 'frames=loop' when there is no alias defined")
 					end
 					local count = getFrameCountByName(b.frames)
-					print("["..b.name.."] has "..count)
 					if count == 0 then  
 						error("Using frame group '"..b.frames.."' returned 0 frames. Are you sure this alias has loaded frames?")
 					end 
 					for i=1,count do  
 						local idx = i  
-						if name == "auto_backwards" then 
+						if name == "loop_backwards" or name == 'auto_backwards' then 
 							idx = count-i+1
 						end
 						b.animation[i] = idx
-						print("["..b.name.."] add "..(idx))
 					end
 					if name == "pingpong" then  
 						for i=1,count do  
 							b.animation[#b.animation + 1] = count-i+1
-							print("["..b.name.."] add "..(count-i+1))
 						end
 					end
 					animation = b.animation
@@ -243,7 +240,7 @@ function _M.StackExpression(id)
 		local current_id = aux.id 
 		setPanelAnimation(aux.animation, aux.duration, repeats, false, current_id)
 	else
-		print("Unknown ID: "..tostring(id))
+		log("Unknown ID: "..tostring(id))
 	end
 end
 
