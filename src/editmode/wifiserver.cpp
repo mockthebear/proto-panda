@@ -377,6 +377,7 @@ void serveDirectoryListing(AsyncWebServerRequest *request)
         cursor: pointer;
         font-weight: 500;
         transition: background-color 0.2s;
+        text-align: center; /* Ensure link text is centered */
       }
       .btn-primary {
         background-color: #4CAF50;
@@ -423,6 +424,44 @@ void serveDirectoryListing(AsyncWebServerRequest *request)
       .breadcrumb a:hover {
         text-decoration: underline;
       }
+      /* Updated style for the main header section */
+      .main-header {
+        background-color: #e9ecef;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column; /* Change to column to stack elements */
+        align-items: center; /* Center items horizontally */
+        gap: 15px;
+      }
+      .main-header p {
+        margin: 0;
+        font-size: 1.2em;
+        color: #333;
+      }
+      .header-links {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+      /* Style for the logo image */
+      .logo-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .logo-img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 5px;
+      }
+      /* Style for the bigger, centered editor button */
+      .editor-btn {
+        padding: 15px 30px; /* Increased padding for bigger button */
+        font-size: 1.2em;
+        background-color: #007bff !important; /* Make editor button stand out */
+      }
     </style>
   </head>
   <body>
@@ -459,7 +498,29 @@ void serveDirectoryListing(AsyncWebServerRequest *request)
     output += "Root Directory";
   }
 
-  output += R"(</div>
+  output += R"(</div>)";
+  
+  // --- Updated Header Section Logic for Root Path ---
+  if (path == "/")
+  {
+    // 1. Image Inclusion (centered at the top)
+    output += R"(
+    <div class="logo-container">
+      <img src="/doc/logoprotopanda.png" alt="Protopanda Logo" class="logo-img">
+    </div>)";
+    
+    // 2. Welcome Message and Buttons (centered)
+    output += R"(
+    <div class="main-header">
+      <p>Welcome to protopanda</p>
+      <div class="header-links">
+        <a href="/editor.html" class="btn btn-primary editor-btn">Go to Editor</a>
+      </div>
+    </div>)";
+  }
+  // --- End Updated Header Section Logic ---
+
+  output += R"(
     <h1>Directory Listing: )";
   output += path;
   output += R"(</h1>

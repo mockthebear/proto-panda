@@ -1,9 +1,9 @@
 package main
 
 /**
-	SUPER SLOPPY WEB SERVER TO SIMULATE PROTOPANDA WEB INTERFACE
-	just do a:
-	go run .
+    SUPER SLOPPY WEB SERVER TO SIMULATE PROTOPANDA WEB INTERFACE
+    just do a:
+    go run .
 **/
 import (
 	"fmt"
@@ -112,6 +112,7 @@ var (
         cursor: pointer;
         font-weight: 500;
         transition: background-color 0.2s;
+        text-align: center;
       }
       .btn-primary {
         background-color: #4CAF50;
@@ -158,12 +159,60 @@ var (
       .breadcrumb a:hover {
         text-decoration: underline;
       }
+      /* New/Updated Styles for Header */
+      .main-header {
+        background-color: #e9ecef;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column; /* Center content vertically */
+        align-items: center; /* Center content horizontally */
+        gap: 15px;
+      }
+      .main-header p {
+        margin: 0;
+        font-size: 1.2em;
+        color: #333;
+      }
+      .header-links {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+      .editor-btn {
+        padding: 15px 30px; /* Bigger button */
+        font-size: 1.2em;
+        background-color: #007bff !important; /* Make editor button stand out */
+      }
+      .logo-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .logo-img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 5px;
+      }
     </style>
 </head>
 <body>
     <div class="breadcrumb">{{range .Breadcrumbs}}<a href="/{{.Path}}">{{.Name}}</a> &gt; {{end}}{{.CurrentDir}}</div>
     
-    <h1>Directory Listing: {{.Path}}</h1>
+    {{if eq .Path "."}}
+        <div class="logo-container">
+            <img src="/doc/logoprotopanda.png" alt="Protopanda Logo" class="logo-img">
+        </div>
+        <div class="main-header">
+            <p>Welcome protopanda.</p>
+            <div class="header-links">
+                <a href="/editor.html" class="btn btn-primary editor-btn">Go to Editor</a>
+            </div>
+        </div>
+    {{end}}
+
+    <h1>Directory Listing: /{{.Path}}</h1>
     
     <table>
       <tr>
@@ -174,11 +223,11 @@ var (
       </tr>
       {{range .Files}}
       <tr>
-        <td><a href="{{.URL}}">{{.Name}}</a></td>
+        <td><a href="/{{.URL}}">{{.Name}}</a></td>
         <td>{{.Size}}</td>
         <td>{{.Type}}</td>
         <td>
-          {{if .Name}}<button class='btn btn-danger' onclick="deleteFile('{{.URL}}')">Delete</button>{{end}}
+          {{if .Name}}<button class='btn btn-danger' onclick="deleteFile('/{{.URL}}')">Delete</button>{{end}}
         </td>
       </tr>
       {{end}}
@@ -279,6 +328,8 @@ var (
 </body>
 </html>`))
 )
+
+// ... (Rest of the Go code remains the same)
 
 type FileInfo struct {
 	Name string
@@ -557,21 +608,27 @@ func serveDirectoryListing(w http.ResponseWriter, r *http.Request) {
 			size = "-"
 			fileType = "DIR"
 			// For directories, append a trailing slash in the URL
+			// The original code calculated relative URLs, but using full path parts here for clarity in the mock server
 			if requestedPath == "" {
-				url = file.Name() + "/"
+				url = file.Name() // e.g., 'logs'
 			} else {
-				url = file.Name() + "/"
+				url = filepath.Join(requestedPath, file.Name()) // e.g., 'parent/child'
 			}
 		} else {
 			size = formatFileSize(fileInfo.Size())
 			fileType = "FILE"
 			if requestedPath == "" {
-				url = file.Name()
+				url = file.Name() // e.g., 'file.txt'
 			} else {
-				url = file.Name()
+				url = filepath.Join(requestedPath, file.Name()) // e.g., 'parent/file.txt'
 			}
 		}
-		fmt.Printf("Added the: %s", url)
+
+		// Clean up the URL to be relative to the root for the template
+		url = strings.ReplaceAll(url, "\\", "/")
+
+		fmt.Printf("Added the: %s\n", url)
+
 		fileList = append(fileList, FileInfo{
 			Name: file.Name(),
 			Size: size,
@@ -606,6 +663,7 @@ func serveDirectoryListing(w http.ResponseWriter, r *http.Request) {
 func generateBreadcrumbs(path string) []Breadcrumb {
 	var breadcrumbs []Breadcrumb
 
+	// Root breadcrumb
 	breadcrumbs = append(breadcrumbs, Breadcrumb{Name: "/", Path: ""})
 
 	if path == "" {
@@ -735,10 +793,15 @@ func handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Remove leading slash for consistency with the rest of the Go logic
+	if strings.HasPrefix(path, "/") {
+		path = path[1:]
+	}
+
 	path = filepath.Clean(path)
 	fullPath := filepath.Join(BasePath, path)
 
-	fmt.Printf("Deleting dir: %s\n", fullPath)
+	fmt.Printf("Deleting path: %s\n", fullPath)
 
 	info, err := os.Stat(fullPath)
 	if err != nil {
@@ -759,6 +822,7 @@ func handleDelete(w http.ResponseWriter, r *http.Request) {
 
 		hasEntries := false
 		for _, entry := range entries {
+			// Check for non-hidden entries
 			if !strings.HasPrefix(entry.Name(), ".") {
 				hasEntries = true
 				break
