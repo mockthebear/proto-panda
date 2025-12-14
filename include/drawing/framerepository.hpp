@@ -46,8 +46,8 @@ class FrameRepository{
           return m_bulkPercentage;
         }
     private:
-        void extractModes(JsonVariant &element, bool &flip_left, bool &flip_right, int &scheme);
-        bool decodeFile(const char *pathName, bool flip_left, bool flip_right, int scheme);
+        void extractModes(JsonVariant &element, bool &flip_left, bool &flip_right, int &schemeLeft, int &schemeRight);
+        bool decodeFile(const char *pathName, bool flip_left, bool flip_right, int schemeLeft, int schemeRight);
         bool loadCachedData();
         int calculateMaxFrames(JsonArray &franesJson);
         void generateCacheFile();

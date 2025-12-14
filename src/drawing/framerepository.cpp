@@ -77,7 +77,7 @@ void FrameRepository::displayFFATInfo(){
     Logger::Info("FFAT Avaliable=%2.2f%%", (1.0f - (FFat.usedBytes()/(float)FFat.totalBytes()) ) * 100.0f );
 }
 
-void FrameRepository::extractModes(JsonVariant &element, bool &flip_left, bool &flip_right, int &color_scheme_left){
+void FrameRepository::extractModes(JsonVariant &element, bool &flip_left, bool &flip_right, int &color_scheme_left, int &color_scheme_right){
     
     if (element.containsKey("flip_left") && element["flip_left"].is<bool>()) {
         flip_left = element["flip_left"];
@@ -97,6 +97,18 @@ void FrameRepository::extractModes(JsonVariant &element, bool &flip_left, bool &
         else if (aux == "brg") color_scheme_left = 4;
         else if (aux == "bgr") color_scheme_left = 5;
         else OledScreen::CriticalFail("Invalid 'color_scheme_left' mode.");
+    }
+
+    if (element.containsKey("color_scheme_right") && element["color_scheme_right"].is<const char*>()) {
+        const char* schemestr = element["color_scheme_right"];
+        std::string aux(schemestr);
+        if (aux == "rgb") color_scheme_right = 0;
+        else if (aux == "rbg") color_scheme_right = 1;
+        else if (aux == "grb") color_scheme_right = 2;
+        else if (aux == "gbr") color_scheme_right = 3;
+        else if (aux == "brg") color_scheme_right = 4;
+        else if (aux == "bgr") color_scheme_right = 5;
+        else OledScreen::CriticalFail("Invalid 'color_scheme_right' mode.");
     }
 }
 
@@ -302,13 +314,14 @@ void FrameRepository::composeBulkFile(){
                 bool flip_left = true; 
                 bool flip_right = false; 
                 int color_scheme_left = 0;
-                extractModes(element, flip_left, flip_right, color_scheme_left);
+                int color_scheme_right = 0;
+                extractModes(element, flip_left, flip_right, color_scheme_left, color_scheme_right);
 
                 sprintf(miniHBuffer, "Copy frame %d\n%s", fileIdx+1, filePath);
                 OledScreen::DrawProgressBar(fileIdx+1, maxFrames+1, miniHBuffer);
 
                 m_bulkPercentage = (fileIdx+1)/float(maxFrames+1);
-                if (!decodeFile(filePath, flip_left, flip_right, color_scheme_left)){
+                if (!decodeFile(filePath, flip_left, flip_right, color_scheme_left, color_scheme_right)){
                     FrameBufferCriticalError(&bulkFile, "Failed to decode %s at element %d", filePath, jsonElement);
                 }
                 m_frameCountByAlias[currentName]++;
@@ -324,14 +337,15 @@ void FrameRepository::composeBulkFile(){
                 bool flip_left = true; 
                 bool flip_right = false; 
                 int color_scheme_left = 0;
-                extractModes(element, flip_left, flip_right, color_scheme_left);
+                int color_scheme_right = 0;
+                extractModes(element, flip_left, flip_right, color_scheme_left, color_scheme_right);
                 
                 for (int i=from;i<=to;i++){
                     sprintf(headerFileName, pattern, i);
                     sprintf(miniHBuffer, "Copy frame %d\n%s", fileIdx+1, headerFileName);
                     OledScreen::DrawProgressBar(fileIdx+1, maxFrames+1, miniHBuffer);
                     m_bulkPercentage = (fileIdx+1)/float(maxFrames+1);
-                    if (!decodeFile(headerFileName, flip_left, flip_right, color_scheme_left)){
+                    if (!decodeFile(headerFileName, flip_left, flip_right, color_scheme_left, color_scheme_right)){
                         FrameBufferCriticalError(&bulkFile, "Failed decode %s at element %d", headerFileName, jsonElement);
                     }
                     fdesc.printf("%d = %s | %s\n", fileIdx, headerFileName, currentName.c_str());
@@ -342,7 +356,8 @@ void FrameRepository::composeBulkFile(){
                 bool flip_left = true; 
                 bool flip_right = false; 
                 int color_scheme_left = 0;
-                extractModes(element, flip_left, flip_right, color_scheme_left);
+                int color_scheme_right = 0;
+                extractModes(element, flip_left, flip_right, color_scheme_left, color_scheme_right);
                 
                 JsonArray filesArray = element["files"];
                 for (JsonVariant file : filesArray) {
@@ -350,7 +365,7 @@ void FrameRepository::composeBulkFile(){
                     sprintf(miniHBuffer, "Copy frame %d\n%s", fileIdx+1, filename);
                     OledScreen::DrawProgressBar(fileIdx+1, maxFrames+1, miniHBuffer);
                     m_bulkPercentage = (fileIdx+1)/float(maxFrames+1);
-                    if (!decodeFile(filename, flip_left, flip_right, color_scheme_left)){
+                    if (!decodeFile(filename, flip_left, flip_right, color_scheme_left, color_scheme_right)){
                         FrameBufferCriticalError(&bulkFile, "Failed decode %s at element %d", filename, jsonElement);
                     }
                     fdesc.printf("%d = %s | %s\n", fileIdx, filename, currentName.c_str());
@@ -428,7 +443,7 @@ std::string PngErrorToString(int error) {
     }
 }
 
-bool FrameRepository::decodeFile(const char *pathName, bool flip_left, bool flip_right, int color_mode){
+bool FrameRepository::decodeFile(const char *pathName, bool flip_left, bool flip_right, int color_modeLeft, int color_modeRight){
     int lastRcError = 0;
     uint16_t* res = Storage::DecodePNGForBuffer(pathName, lastRcError);
     if (res) {
@@ -436,7 +451,8 @@ bool FrameRepository::decodeFile(const char *pathName, bool flip_left, bool flip
         content[0] =  PANDA_CACHE_VERSION;
         content[1] =  flip_left ? 1 : 0;
         content[2] =  flip_right ? 1 : 0;
-        content[3] =  color_mode;
+        content[3] =  color_modeLeft;
+        content[4] =  color_modeRight;
         bulkFile.write((const uint8_t*)content, sizeof(uint8_t)*FILE_HEADER_BYTES);
         //Or a uin32
         int rd = bulkFile.write((const uint8_t*)res, FILE_SIZE_BULK_SIZE);

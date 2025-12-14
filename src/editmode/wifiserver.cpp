@@ -106,18 +106,63 @@ void handleCopy(AsyncWebServerRequest *request)
     return;
   }
 
+  // Extract directory path from dstPath
+  int lastSlash = dstPath.lastIndexOf('/');
+  if (lastSlash > 0)
+  {
+    String dstDir = dstPath.substring(0, lastSlash);
+    
+    // Create directory if it doesn't exist
+    if (!SD.exists(dstDir))
+    {
+      // Create all necessary parent directories
+      String currentPath = "";
+      for (int i = 0; i < dstDir.length(); i++)
+      {
+        currentPath += dstDir[i];
+        if (dstDir[i] == '/' && i > 0) // Found a directory level
+        {
+          if (!SD.exists(currentPath.substring(0, currentPath.length() - 1)))
+          {
+            if (!SD.mkdir(currentPath.substring(0, currentPath.length() - 1)))
+            {
+              src.close();
+              request->send(500, "text/plain", "Failed to create directory: " + currentPath);
+              return;
+            }
+          }
+        }
+      }
+      
+      // Create the final directory
+      if (!SD.mkdir(dstDir))
+      {
+        src.close();
+        request->send(500, "text/plain", "Failed to create destination directory");
+        return;
+      }
+    }
+  }
+
+  // Check if destination already exists (file, not directory)
   if (SD.exists(dstPath))
   {
-    src.close();
-    request->send(409, "text/plain", "Destination already exists");
-    return;
+    File dstCheck = SD.open(dstPath);
+    if (!dstCheck.isDirectory()) // Only fail if it's a file
+    {
+      src.close();
+      dstCheck.close();
+      request->send(409, "text/plain", "Destination already exists");
+      return;
+    }
+    dstCheck.close();
   }
 
   File dst = SD.open(dstPath, FILE_WRITE);
   if (!dst)
   {
     src.close();
-    request->send(500, "text/plain", "Failed to create destination");
+    request->send(500, "text/plain", "Failed to create destination file");
     return;
   }
 
@@ -709,7 +754,7 @@ void startWifiServer()
   float percentagePsramFree = freePsramBytes* 100.0f / (float)totalPsramBytes;
 
   Serial.printf("[Memory] %.1f%% free - %d of %d bytes free (psram: %d / %d  -> %.1f%%)", percentageHeapFree, freeHeapBytes, totalHeapBytes, totalPsramBytes, freePsramBytes, percentagePsramFree);
-  DMADisplay::Start(8, 1);
+  /*DMADisplay::Start(8, 1);
 
   DMADisplay::Display->clearScreen();
   DMADisplay::Display->setBrightness8(32);
@@ -717,7 +762,7 @@ void startWifiServer()
   for (int i=0;i<strlen(str);i++){
     DMADisplay::Display->drawChar(0 + i * 8,2, str[i], DMADisplay::Display->color333(255,255,255), 0, 1);
   }
-  DMADisplay::Display->flipDMABuffer();
+  DMADisplay::Display->flipDMABuffer();*/
 
   freeHeapBytes = ESP.getFreeHeap();  
   totalHeapBytes = ESP.getHeapSize(); 
