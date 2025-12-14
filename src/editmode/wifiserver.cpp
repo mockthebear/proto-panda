@@ -81,6 +81,72 @@ void handleUpload(AsyncWebServerRequest *request, String filename, size_t index,
   }
 }
 
+void handleCopy(AsyncWebServerRequest *request)
+{
+  if (!request->hasParam("src") || !request->hasParam("dst"))
+  {
+    request->send(400, "text/plain", "Missing src or dst parameter");
+    return;
+  }
+
+  String srcPath = request->getParam("src")->value();
+  String dstPath = request->getParam("dst")->value();
+
+  if (!SD.exists(srcPath))
+  {
+    request->send(404, "text/plain", "Source file not found");
+    return;
+  }
+
+  File src = SD.open(srcPath);
+  if (src.isDirectory())
+  {
+    src.close();
+    request->send(400, "text/plain", "Source is a directory");
+    return;
+  }
+
+  if (SD.exists(dstPath))
+  {
+    src.close();
+    request->send(409, "text/plain", "Destination already exists");
+    return;
+  }
+
+  File dst = SD.open(dstPath, FILE_WRITE);
+  if (!dst)
+  {
+    src.close();
+    request->send(500, "text/plain", "Failed to create destination");
+    return;
+  }
+
+  uint8_t buffer[512];
+  size_t bytesRead;
+  bool error = false;
+  
+  while ((bytesRead = src.read(buffer, sizeof(buffer))) > 0)
+  {
+    if (dst.write(buffer, bytesRead) != bytesRead)
+    {
+      error = true;
+      break;
+    }
+  }
+
+  src.close();
+  dst.close();
+
+  if (error)
+  {
+    SD.remove(dstPath);
+    request->send(500, "text/plain", "Copy failed");
+    return;
+  }
+
+  request->send(200, "text/plain", "OK");
+}
+
 void handleRm(AsyncWebServerRequest *request)
 {
   if (!request->hasParam("path"))
@@ -628,6 +694,7 @@ void startWifiServer()
   server->on("/upload", HTTP_POST, [](AsyncWebServerRequest *request)
              { request->send(200); }, handleUpload);
   server->on("/delete", HTTP_DELETE, handleRm);
+  server->on("/copy", HTTP_PUT, handleCopy);
   server->on("/lua", HTTP_POST, handleLuaExecution);
   server->on("/compose_start", HTTP_POST, handleComposeStart);
   server->on("/compose_progress", HTTP_GET, handleComposeGet);
