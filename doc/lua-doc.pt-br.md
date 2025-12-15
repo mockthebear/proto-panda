@@ -1,6 +1,7 @@
 1. [Funções Lua](#funções-lua)  
 2. [Constantes Lua](#constantes-lua)  
 3. [Comportamentos de LED](#comportamentos-de-led)  
+4. [Interface Bluetooth](#interface-bluetooth)  
 
 # Funções Lua  
 
@@ -14,7 +15,7 @@
 - [Decodificação de Imagem](#decodificação-de-imagem)  
 - [Tela Interna](#tela-interna)  
 - [Controle Remoto](#controle-remoto)  
-- [Tiras de LED](#tiras-de-led-1)  
+- [Fitas de LED](#Fitas-de-led-1)  
 - [Núcleo Arduino](#núcleo-arduino)  
 
 ## Energia  
@@ -497,58 +498,7 @@ Desenha um ícone na posição especificada.
   - `iconId` (int): O ID do ícone a ser desenhado.  
 - **Retorna**: `nil`  
 
-## Controle Remoto  
-#### `startBLE()`  
-Inicia o rádio Bluetooth Low Energy (BLE) e a interface.  
-- **Retorna**: `bool` (`true` se bem-sucedido, caso contrário `false`).  
-
-#### `getBleDeviceUpdateDt(device)`  
-Retorna o tempo desde a última atualização para o dispositivo BLE em milissegundos.  
-- **Parâmetros**:  
-  - `device` (int): ID do dispositivo (baseado em 0).  
-- **Retorna**: `int`  
-
-#### `getBleDeviceLastUpdate(device)`  
-Retorna o timestamp da última atualização do dispositivo BLE.  
-- **Parâmetros**:  
-  - `device` (int): ID do dispositivo (baseado em 0).  
-- **Retorna**: `int`  
-
-#### `getConnectedRemoteControls()`  
-Retorna o número de controles remotos conectados.  
-- **Retorna**: `int` (O número de dispositivos conectados).  
-
-#### `isElementIdConnected(id)`  
-Verifica se um controle remoto com o ID fornecido está conectado.  
-- **Parâmetros**:  
-  - `id` (int): O ID do controle remoto.  
-- **Retorna**: `bool` (`true` se conectado, caso contrário `false`).  
-
-#### `beginBleScanning()`  
-Inicia a varredura de dispositivos BLE.  
-- **Retorna**: `nil`  
-
-#### `setScanInterval(seconds)`  
-Define o intervalo para varredura de dispositivos BLE.  
-- **Parâmetros**:  
-  - `seconds` (int): O intervalo de varredura em segundos.  
-- **Retorna**: `nil`  
-
-#### `setMaximumControls(count)`  
-Define o número máximo de controles remotos conectados.  
-- **Parâmetros**:  
-  - `count` (int): O número máximo de dispositivos.  
-- **Retorna**: `nil`  
-
-#### `acceptBLETypes(service, characteristicStream, characteristicId)`  
-Define um UUID de serviço para ser aceito com suas características para streaming e o ID remoto.  
-- **Parâmetros**:  
-  - `service` (string): UUID do serviço.  
-  - `characteristicStream` (string): UUID da característica de streaming.  
-  - `characteristicId` (string): UUID da característica de ID remoto.  
-- **Retorna**: `int` (ID atual).  
-
-## Tiras de LED  
+## Fitas de LED  
 
 #### `ledsBegin(led_count, max_brightness])`  
 Inicializa a tira de LED com o número especificado de LEDs e brilho máximo opcional.  
@@ -558,7 +508,7 @@ Inicializa a tira de LED com o número especificado de LEDs e brilho máximo opc
 - **Retorna**: `bool` (`true` se bem-sucedido, caso contrário `false`).  
 
 #### `ledsBeginDual(led_count, led_count2, max_brightness])`  
-Inicializa duas tiras de LED individuais.  
+Inicializa duas Fitas de LED individuais.  
 - **Parâmetros**:  
   - `led_count` (int): O número de LEDs na primeira tira.  
   - `led_count2` (int): O número de LEDs na segunda tira.  
@@ -981,11 +931,17 @@ Obtém o tempo limite atual para operações I2C.
 - `DEVICE_X_BUTTON_UP`: Mapeamento do botão para cima no dispositivo (0 a `MAX_BLE_CLIENTS`).  
 - `DEVICE_X_BUTTON_DOWN`: Mapeamento do botão para baixo no dispositivo (0 a `MAX_BLE_CLIENTS`).  
 - `DEVICE_X_BUTTON_CONFIRM`: Mapeamento do botão de confirmação no dispositivo (0 a `MAX_BLE_CLIENTS`).  
+- `DEVICE_X_BUTTON_AUX_A`: Mapeamento do botão de função auxiliar A no dispositivo (0 a `MAX_BLE_CLIENTS`).  
+- `DEVICE_X_BUTTON_AUX_B`: Mapeamento do botão de função auxiliar B dispositivo (0 a `MAX_BLE_CLIENTS`).  
+- `DEVICE_X_BUTTON_BACK`: Mapeamento do botão de voltar no dispositivo (0 a `MAX_BLE_CLIENTS`).  
 - `BUTTON_LEFT`: Igual a DEVICE_0_BUTTON_LEFT.  
 - `BUTTON_RIGHT`: Igual a DEVICE_0_BUTTON_RIGHT.  
 - `BUTTON_UP`: Igual a DEVICE_0_BUTTON_UP.  
 - `BUTTON_CONFIRM`: Igual a DEVICE_0_BUTTON_CONFIRM.  
 - `BUTTON_DOWN`: Igual a DEVICE_0_BUTTON_DOWN.  
+- `BUTTON_AUX_A`: Igual a DEVICE_0_BUTTON_AUX_A
+- `BUTTON_AUX_B`: Igual a DEVICE_0_BUTTON_AUX_B
+- `BUTTON_BACK`: Igual a DEVICE_0_BUTTON_BACK
 
 ## Comportamento de LED  
 
@@ -1115,3 +1071,189 @@ Obtém o tempo limite atual para operações I2C.
 * `BEHAVIOR_NONE`  
   - **Descrição**: Nenhum comportamento é aplicado. Os LEDs no segmento permanecerão desligados ou inalterados.  
   - **Parâmetros**: Nenhum.  
+
+# Interface Bluetooth
+
+
+## Radio and BLE functions
+#### `startBLE()`  
+Inicia o ambiente de Bluetooth Low Energy (BLE) mas não inicia o rádio.  
+- **Retorna**: `bool` (`true` se bem-sucedido, caso contrário `false`).  
+
+#### `startBLERadio()`  
+Inicia o rádio
+- **Retorna**: `bool` (`true` se bem-sucedido, caso contrário `false`).  
+
+#### `getConnectedRemoteControls()`  
+Retorna o número de controles remotos conectados.  
+- **Retorna**: `int` (O número de dispositivos conectados).  
+
+#### `isElementIdConnected(id)`  
+Verifica se um controle remoto com o ID fornecido está conectado.  
+- **Parâmetros**:  
+  - `id` (int): O ID do controle remoto.  
+- **Retorna**: `bool` (`true` se conectado, caso contrário `false`).  
+
+#### `beginBleScanning()`  
+Inicia a varredura de dispositivos BLE.  
+- **Retorna**: `nil`  
+
+#### `setLogDiscoveredBleDevices(bool)`  
+When true, each scanned device will be saved on the log filew
+- **Retorna**: `nil`  
+
+#### `setMaximumControls(count)`  
+Define o número máximo de controles remotos conectados.  
+- **Parâmetros**:  
+  - `count` (int): O número máximo de dispositivos.  
+- **Retorna**: `nil`  
+
+
+#### `getCharacteristicsFromService(connectionId, uuid, refresh)`
+Get all characteristics a certain service has
+- **Parameters**:
+  - `connectionId` (int): connection id.
+  - `uuid` (string): uuid.
+  - `refresh` (bool): refresh information?
+- **Returns**: `nil`
+
+## Handling BLE connections
+
+Exemplo de como aceitamos conexões de um mouse/teclado/joystick:
+```lua
+  drivers.mouseHandler = BleServiceHandler("00001812-0000-1000-8000-00805f9b34fb")
+  drivers.mouseHandler:SetOnConnectCallback(drivers.onConnectHID)
+  drivers.mouseHandler:SetOnDisconnectCallback(drivers.onDisconnectHID)
+  drivers.mouseListener = drivers.mouseHandler:AddCharacteristics("2a4d")
+  drivers.mouseListener:SetSubscribeCallback(drivers.onMouseCallback) 
+  drivers.mouseListener:SetCallbackModeStream(false)
+```
+Primeiro, criamos um manipulador de serviço e passamos um UUID. Esse UUID específico é de um Dispositivo de Interface Humana (HID) genérico. Portanto, qualquer dispositivo que tenha capacidades de mouse/teclado/joystick terá este serviço.
+No momento em que o registramos, qualquer dispositivo escaneado que esteja anunciando e tenha este UUID de serviço específico terá uma tentativa de conexão.
+
+A próxima função cria um callback quando o dispositivo é conectado. Aqui está um exemplo do callback:
+```lua
+function drivers.onConnectHID(connectionId, controllerId, address, name)
+    log("Conectado conId="..connectionId.." controller="..controllerId.." addr=\""..address.."\" name=["..name.."]")
+end
+```
+O connectionId pode ser usado para obter informações sobre o dispositivo. Ele é único para cada conexão.
+O controllerId é o ID usado pelo protopanda. O primeiro dispositivo conectado terá o id 0, e o segundo terá 1. Mas no momento em que um deles desconectar, esse ID será liberado, então a próxima conexão poderá reutilizar o mesmo ID.
+Address é apenas uma string com o endereço e name é o nome, se presente.
+
+O mesmo vale para `SetOnDisconnectCallback`, mas em vez de endereço e nome, obtemos o motivo da desconexão.
+```lua
+function drivers.onDisconnectHID(connectionId, controllerId, reason)
+    log("Desconectado "..connectionId.." devido a ".. reason)
+end
+``` 
+
+Uma vez definidos esses callbacks (opcional), podemos anexar um listener a cada uma das características que desejamos:
+```lua
+drivers.mouseListener = drivers.mouseHandler:AddCharacteristics("2a4d")
+drivers.mouseListener:SetSubscribeCallback(drivers.onMouseCallback) 
+drivers.mouseListener:SetRequired(true)
+drivers.mouseListener:SetCallbackModeStream(false)
+```
+Uma vez definida a característica, podemos configurá-la como obrigatória (se não estiver presente, a conexão é encerrada) e um callback se houver uma inscrição no serviço.
+O callback segue assim:
+```lua
+function drivers.onMouseCallback(connectionId, controllerId, data)
+-- manipulação
+end
+```
+
+Lá podemos encontrar o connectionId, o controllerId e um array contendo os dados. Os dados virão como valores de 0 a 255.
+
+## Manipulando funções BLE
+
+### `BleServiceHandler(uuid)`
+Cria um objeto manipulador. Tente manter este objeto em um ambiente global ou armazenado. Porque o coletor de lixo (GC) não excluirá a referência C++, mas excluirá a referência Lua.
+- **Parâmetros**:
+  - `uuid` (string): uuid.
+- **Retorna**: `BleServiceHandlerObject`
+
+### `BleServiceHandler::ReadFromCharacteristics(clientId, characteristicsUuid)`
+Lê dados de um determinado cliente e de uma determinada característica.
+- **Parâmetros**:
+  - `clientId` (int): connectionId.
+  - `uuid` (string): pode ser o uuid de 16 bits.
+- **Retorna**: `array de int`
+
+### `BleServiceHandler::GetServices(clientId)`
+Obtém os serviços disponíveis no cliente.
+- **Parâmetros**:
+  - `clientId` (int): connectionId.
+- **Retorna**: `array de string`
+
+### `BleServiceHandler::AddAddressRequired(address)`
+Quando definido pela primeira vez, força a conexão a ser aceita apenas se o endereço tiver sido inserido anteriormente.
+Exemplo seria:
+```lua
+Handler = BleServiceHandler("00001812-0000-1000-8000-00805f9b34fb")
+Handler:AddAddressRequired("AA:BB:CC:DD:EE")
+Handler:AddAddressRequired("FF:00:11:22:3")
+```
+Dessa forma, apenas dispositivos com o serviço específico e esses dois endereços específicos podem conectar.
+Se tanto `AddAddressRequired` quanto `AddNameRequired` estiverem definidos. A condição é um "e" (and). Precisa corresponder a qualquer um dos endereços **e** qualquer um dos nomes
+- **Parâmetros**:
+  - `address` (string): endereço.
+
+### `BleServiceHandler::AddNameRequired(name)`
+Quando definido pela primeira vez, força a conexão a ser aceita apenas se o nome tiver sido definido anteriormente
+Exemplo seria:
+```lua
+Handler = BleServiceHandler("00001812-0000-1000-8000-00805f9b34fb")
+Handler:AddNameRequired("VR-PARK")
+Handler:AddNameRequired("Beauty-r1")
+```
+Dessa forma, apenas dispositivos com o serviço específico e esses dois nomes específicos podem conectar.
+Se tanto `AddAddressRequired` quanto `AddNameRequired` estiverem definidos. A condição é um "e" (and). Precisa corresponder a qualquer um dos endereços **e** qualquer um dos nomes
+- **Parâmetros**:
+  - `name` (string): nome.
+
+### `BleServiceHandler::GetCharacteristics(clientId)`
+Obtém as características disponíveis no serviço atual.
+- **Parâmetros**:
+  - `clientId` (int): connectionId.
+- **Retorna**: `array de string`
+
+### `BleServiceHandler::WriteToCharacteristics(message, clientId, characteristics[, reply])`
+Escreve uma mensagem para a característica especificada.
+- **Parâmetros**:
+  - `message` (array de int): bytes da mensagem.
+  - `clientId` (int): connectionId.
+  - `uuid` (string): pode ser o uuid de 16 bits.
+  - `reply` (bool): aguardar resposta.
+- **Retorna**: `bool`
+
+### `BleServiceHandler::SetOnDisconnectCallback(callback)`
+Define um callback para quando um dispositivo desconectar.
+- **Parâmetros**:
+  - `callback` (função Lua): callback.
+
+### `BleServiceHandler::SetOnConnectCallback(callback)`
+Define um callback para quando um dispositivo conectar.
+- **Parâmetros**:
+  - `callback` (função Lua): callback.
+
+### `BleServiceHandler::AddCharacteristics(callback)`
+Retorna um manipulador para a característica especificada.
+- **Parâmetros**:
+  - `uuid` (string): pode ser o uuid de 16 bits.
+- **Retorna**: `BleCharacteristicsHandlerObject`
+
+### `BleCharacteristicsHandler::SetSubscribeCallback(callback)`
+Retorna um manipulador para quando uma mensagem da característica especificada chegar.
+- **Parâmetros**:
+  - `uuid` (string): pode ser o uuid de 16 bits.
+
+### `BleCharacteristicsHandler::SetCallbackModeStream(stream)`
+Quando habilitado, cada mensagem é processada em cada loop. Dessa forma, as mensagens podem se acumular, mas uma mensagem por loop. Quando falso, todas as mensagens são processadas no loop até que a fila esteja vazia.
+- **Parâmetros**:
+  - `stream` (bool): verdadeiro ou falso
+
+### `BleCharacteristicsHandler::SetRequired(req)`
+Se definido como obrigatório, quando o dispositivo se conecta e a característica especificada não está presente, uma desconexão é emitida.
+- **Parâmetros**:
+  - `req` (bool): verdadeiro ou falso

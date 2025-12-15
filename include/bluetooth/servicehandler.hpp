@@ -36,7 +36,7 @@ class BluetoothDeviceHandler{
     int m_id;
 };
 
-
+class AdvertisedDeviceCallbacks;
 
 class BleServiceHandler{
   public:
@@ -48,6 +48,12 @@ class BleServiceHandler{
     void SetOnDisconnectCallback(LuaFunctionCallback * cb){
       luaOnDisconnectCallback = cb;
     }
+    void AddAddressRequired(std::string addr){
+      addrMap[addr] = true;
+    };
+    void AddNameRequired(std::string namer){
+      nameMap[namer] = true;
+    };
     void AddDevice(BluetoothDeviceHandler *dev);
     void SendMessages();
     MultiReturn<std::vector<std::string>> GetServices(int clientId, bool refresh);
@@ -64,13 +70,15 @@ class BleServiceHandler{
 
     
   private: 
-   
+    friend AdvertisedDeviceCallbacks;
     SemaphoreHandle_t queueMutex;
     std::stack<BluetoothDeviceHandler*> devicesToNotify;
     std::stack<DisconnectTuple> devicesToDisconnectNotify;
     std::map<std::string, BleCharacteristicsHandler*> m_characteristics;    
     std::map<std::string,bool> warnedMap;
     std::vector<BluetoothDeviceHandler*> m_connectedDevices;
+    std::map<std::string, bool> addrMap;
+    std::map<std::string, bool> nameMap;
 
     LuaFunctionCallback *luaOnConnectCallback;
     LuaFunctionCallback *luaOnDisconnectCallback;

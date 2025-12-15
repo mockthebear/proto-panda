@@ -69,15 +69,10 @@ Para carregar os quadros (frames), você precisa adicioná-los ao cartão SD e e
 ```json
 {
   "frames": [
-    {"pattern": "/expressions/normal_by_maremar (%d).png", "flip_left": true, "from": 1, "to": 4, "name": "frames_normal"},
-    {"pattern": "/expressions/noise (%d).png", "flip_left": false, "from": 1, "to": 3, "name": "frames_noise"},
-    {"pattern": "/expressions/amogus (%d).png", "flip_left": true, "from": 1, "to": 2, "name": "frames_amogus"},
-    {"pattern": "/expressions/boop_cycle_%d.png", "flip_left": true, "from": 1, "to": 3, "name": "frames_boop"},
-    {"pattern": "/expressions/boop_transiction_%d.png", "flip_left": true, "from": 1, "to": 3, "name": "frames_boop_transition"}
-  ],
-  "expressions": [],
-  "scripts": [],
-  "boop": {}
+    {"pattern": "/expressions/angry/angry%d.png","flip_left": false,"flip_right": true,"from": 5,"to": 9,"name": "frames_angry"},
+    {"pattern": "/expressions/angry/angry%d transition.png","flip_left": false,"flip_right": true,"from": 1,"to": 4,"name": "frames_angry_transition"},
+    {"pattern": "/expressions/blink/blink%d.png","flip_left": false,"flip_right": true,"from": 1,"to": 8,"name": "frames_blink"},
+  ]
 }
 ```
 
@@ -96,6 +91,9 @@ Cada elemento no array `frames` pode ser tanto o caminho do arquivo quanto um ob
 * **flip_left** (bool)  
   Devido à orientação dos painéis, pode ser necessário inverter o lado esquerdo horizontalmente.
 
+* **flip_right** (bool)  
+  Devido à orientação dos painéis, pode ser necessário inverter o lado esquerdo horizontalmente.
+
 * **name** (string)  
   As animações são basicamente como:
   ```
@@ -107,6 +105,7 @@ Cada elemento no array `frames` pode ser tanto o caminho do arquivo quanto um ob
 
 * **color_scheme_left** (string)  
   Se você precisar inverter um ou mais canais de cor, use isso para fazê-lo.
+  Qualquer permutação de "rgb", "bgr", "rbg" serve.
 
 ## Expressões
 
@@ -138,7 +137,9 @@ As expressões são armazenadas em `expressions.json` na raiz do cartão SD.
 
 - **`animation`** (int[] or `"auto"`)  
   - `int[]`: O ID de cada frame a ser exibido (e.g., `[1, 2, 3]`).  
-  - `"auto"`: Quando definido como "auto", os frames serão adicionados automaticamente em sequência. (e.g., `1, 2, 3...`).  
+  - `"loop"`: Quando definido como "loop", os frames serão adicionados automaticamente em sequência. (e.g., `1, 2, 3...`).  
+  - `"pingpong"`: Quando definido como "pingpong", os frames serão adicionados automaticamente em sequência depois repetindo invertido. (e.g., `1, 2, 3... ...3, 2, 1`).  
+  - `"loop_backwards"`: Mesmo comportamdno do loop, porém de trás pra frente (e.g., `...3, 2, 1`).  
 
 - **`duration`** (int)  
   A duração de cada frame.
@@ -189,24 +190,38 @@ O Protopanda suporta o protocolo de LED endereçável WS2812B e fornece um siste
 
 # Bluetooth  
 
-O Protopanda usa BLE. Até agora, está configurado para lidar com a pata de fursuit. Todas as informações, código-fonte e hardware podem ser encontrados aqui: [https://github.com/mockthebear/ble-fursuit-paw](https://github.com/mockthebear/ble-fursuit-paw)  
-![Integração BLE](doc/integration.png)  
+Des da versão 2.0, o protopanda suporta quase qualquer dispositivo BLE (bluetooth low energy) que tenha HID. Porém, é possivel criar 'drivers' usando Lua. Por padrão, o protopanda suporta:
+* https://github.com/mockthebear/ble-fursuit-paw
+* https://pt.aliexpress.com/item/1005008459884910.html
+* https://pt.aliexpress.com/item/1005009845485445.html
 
-Consiste em um dispositivo BLE com um acelerômetro/giroscópio LSM6DS3 de 3 eixos e 5 botões. Ele continua enviando as leituras dos sensores e botões a cada 50~100 ms.  
+Porém teoricamente, um joystick que roda em low energy deve ser suportador atraves de keybinds
 
-O UUID padrão da pata de fursuit BLE é `d4d31337-c4c3-c2c3-b4b3-b2b1a4a3a2a1`, e o serviço para o acelerômetro/giroscópio/botões é `d4d3afaf-c4c3-c2c3-b4b3-b2b1a4a3a2a1`.  
+## Keybind
 
-Se você quiser mais de um controle remoto, é recomendado reprogramar o firmware de outro controlador e definir a parte `c4c3` do UUID para `c4c4` ou algo parecido.  
+Atualmente as keybinds padrão são:
+```json
+{
+  "keybinds":{
+    "joystick.right_hat=5": "BUTTON_LEFT",
+    "joystick.right_hat=3": "BUTTON_DOWN",
+    "joystick.right_hat=1": "BUTTON_RIGHT",
+    "joystick.right_hat=7": "BUTTON_UP",
+    "joystick.buttons.4": "BUTTON_CONFIRM",
+    "joystick.buttons.1": "BUTTON_BACK",
 
-Para definir ambos os dispositivos como aceitos, adicione no seu `onSetup`:  
-```lua  
-function onSetup()  
-    startBLE()  
-    acceptBLETypes("d4d31337-c4c1-c2c3-b4b3-b2b1a4a3a2a1", "afaf", "fafb")
-    beginBleScanning()  
-```  
+    "beauty.buttons.4": "BUTTON_LEFT",
+    "beauty.buttons.1": "BUTTON_DOWN",
+    "beauty.buttons.3": "BUTTON_RIGHT",
+    "beauty.buttons.2": "BUTTON_UP",
+    "beauty.buttons.5": "BUTTON_CONFIRM",
+    "beauty.buttons.6": "BUTTON_BACK"
 
-Eu sei, eu sei... é estático e não tem flexibilidade para aceitar qualquer tipo de dispositivo BLE/serviços... Talvez no futuro~
+  }
+}
+```
+
+Todas as keybinds mapeiam para input do controle do protopanda.
 
 # Hardware  
 

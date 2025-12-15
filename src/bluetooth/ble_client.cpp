@@ -10,14 +10,32 @@ void AdvertisedDeviceCallbacks::onResult(const NimBLEAdvertisedDevice* advertise
     Logger::Info("[BLE] Advertised Device found: %s", advertisedDevice->toString().c_str());
   }
   auto acceptedServices = bleObj->GetAcceptedServices();
-  
+
   for (auto &it : acceptedServices) {
 
     if(it.second != nullptr && advertisedDevice->isAdvertisingService(it.second->uuid)){
+      bool canConnect = true;
+      bool matchedTrue = true;
+      if (it.second->addrMap.size() > 0){
+        canConnect = it.second->addrMap[advertisedDevice->getAddress().toString()];
+        matchedTrue = canConnect;
+      }
+      if (it.second->nameMap.size() > 0){
+        canConnect = it.second->nameMap[advertisedDevice->getName()];
+        if (!matchedTrue){
+          Serial.printf("Expected match name and address. But address failed");
+          canConnect = false;
+        }
+      }
+
       Serial.printf("Found HID Device: %s\n", advertisedDevice->getName().c_str());
       Serial.printf("Address: %s\n", advertisedDevice->getAddress().toString().c_str());
-      bleObj->setScanningMode(false);
-      bleObj->toConnect = ConnectionRequest(advertisedDevice, it.second, new BluetoothDeviceHandler());
+      if (canConnect){
+        bleObj->setScanningMode(false);
+        bleObj->toConnect = ConnectionRequest(advertisedDevice, it.second, new BluetoothDeviceHandler());
+      }else{
+        Serial.printf("Cannot connect because its not present in the addresses");
+      }
       return;
     }
   }

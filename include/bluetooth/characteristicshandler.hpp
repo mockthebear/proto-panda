@@ -22,6 +22,9 @@ class BleCharacteristicsHandler{
     BleCharacteristicsHandler():uuid(uint32_t(0)),m_stream(true),required(false),notify(false),luaCallback(nullptr),queueMutex(xSemaphoreCreateMutex()){};
     BleCharacteristicsHandler(NimBLEUUID u, bool req=true, bool notif=true):uuid(u),required(req),notify(notif),luaCallback(nullptr),queueMutex(xSemaphoreCreateMutex()){
     }
+    void SetRequired(bool req){
+      required = req;
+    };
     void SetSubscribeCallback(LuaFunctionCallback *lcb){
       luaCallback = lcb;
     };
