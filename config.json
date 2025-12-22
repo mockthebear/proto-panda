@@ -8,23 +8,27 @@
     "transictionInOnlyOnSpecificFrame": 1
   },
 
-
-  "keybinds":{
+  "keybinds": {
+    "panda.buttons.1": "BUTTON_LEFT",
+    "panda.buttons.2": "BUTTON_DOWN",
+    "panda.buttons.3": "BUTTON_RIGHT",
+    "panda.buttons.4": "BUTTON_UP",
+    "panda.buttons.5": "BUTTON_CONFIRM",
+    "panda.buttons.6": "BUTTON_BACK",
     "joystick.right_hat=5": "BUTTON_LEFT",
     "joystick.right_hat=3": "BUTTON_DOWN",
     "joystick.right_hat=1": "BUTTON_RIGHT",
     "joystick.right_hat=7": "BUTTON_UP",
     "joystick.buttons.4": "BUTTON_CONFIRM",
     "joystick.buttons.1": "BUTTON_BACK",
-
     "beauty.buttons.4": "BUTTON_LEFT",
     "beauty.buttons.1": "BUTTON_DOWN",
     "beauty.buttons.3": "BUTTON_RIGHT",
     "beauty.buttons.2": "BUTTON_UP",
     "beauty.buttons.5": "BUTTON_CONFIRM",
     "beauty.buttons.6": "BUTTON_BACK"
-
   },
+  
   "frames": [
     {
       "pattern": "/expressions/angry/angry%d.png",

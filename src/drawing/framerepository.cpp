@@ -187,7 +187,6 @@ bool FrameRepository::loadCachedData(){
     JsonObject frame_count_obj = json_doc["frame_count"];
     for (JsonPair name : frame_count_obj) {
         m_frameCountByAlias[PSRAMString(name.key().c_str())] = name.value().as<int>();
-        Serial.printf("Loaded %s as %d", name.key().c_str(), name.value().as<int>());
     }
     json_doc.clear();
     return true;

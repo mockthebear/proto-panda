@@ -19,7 +19,7 @@ function onSetup()
     drivers.EnableGenericAndroidMouse()
 
     
-    startBLERadio()
+    startBLERadio(ESP_PWR_LVL_P9)
 
     local seed = tonumber(dictGet("random_seed")) or millis()
     seed = seed + millis()

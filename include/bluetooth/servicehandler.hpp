@@ -54,8 +54,10 @@ class BleServiceHandler{
     void AddNameRequired(std::string namer){
       nameMap[namer] = true;
     };
+    int GetClientIdFromControllerId(uint32_t id);
     void AddDevice(BluetoothDeviceHandler *dev);
     void SendMessages();
+    MultiReturn<int> GetRSSI(int clientId);
     MultiReturn<std::vector<std::string>> GetServices(int clientId, bool refresh);
     MultiReturn<std::vector<std::string>> GetCharacteristicsFromOurService(int clientId);
     bool WriteToCharacteristics(std::vector<uint8_t> bytes, int clientId, std::string charName, bool reply);

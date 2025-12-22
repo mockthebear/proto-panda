@@ -185,6 +185,25 @@ bool BleManager::connectToServer(){
   return true;
 }
 
+
+int BleManager::GetClientIdFromControllerId(uint32_t id){
+  for (auto &it : clients){
+      if (it.second->m_controllerId == id){
+        return it.second->getId();
+      }   
+  }
+  return -1;
+}
+
+int BleManager::GetRSSI(int clientId){
+  for (auto &it : clients){
+    if (it.second->getId() == clientId){   
+      return it.second->m_client->getRssi();
+    }
+  }
+  return -1;
+}
+
 BluetoothDeviceHandler* BleManager::getDeviceById(int clientId){
   for (auto &it : clients){
     if (it.second->getId() == clientId){   
@@ -215,7 +234,7 @@ bool BleManager::begin(){
   return true;
 }
 
-bool BleManager::beginRadio(){
+bool BleManager::beginRadio(int powerLevel){
   NimBLEDevice::init("Protopanda");
   NimBLEDevice::setSecurityAuth(true, true, true);
   NimBLEDevice::setPower(ESP_PWR_LVL_P9); /** +9db */
@@ -238,7 +257,7 @@ bool BleManager::beginRadio(){
   pScan->setWindow(15);
 
   pScan->setActiveScan(true);
-  pScan->start(0);
+  //pScan->start(0);
 
   return true;
 }

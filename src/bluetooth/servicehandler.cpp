@@ -72,6 +72,35 @@ MultiReturn<std::vector<uint8_t>> BleServiceHandler::ReadFromCharacteristics(int
     return MultiReturn<std::vector<uint8_t>>(true, std::vector<uint8_t>(val.data(), val.data()+val.size()));
 }
 
+int BleServiceHandler::GetClientIdFromControllerId(uint32_t id){
+    for (auto &it : m_connectedDevices){
+        if (id == it->m_controllerId){
+            return it->getId();
+        }
+    }
+    return -1;
+}
+
+MultiReturn<int> BleServiceHandler::GetRSSI(int clientId){
+    BluetoothDeviceHandler *dev = nullptr;
+    for (auto &it : m_connectedDevices){
+        if (it->getId() == clientId){
+            dev = it;
+            break;
+        }
+    }
+
+    if (dev == nullptr){
+        return MultiReturn<int>("device is not found");
+    }
+
+    if (dev->m_client == nullptr){
+        return MultiReturn<int>("device dont seems to have a valid client");
+    }
+
+    return MultiReturn<int>(true, dev->m_client->getRssi());
+}
+
 std::vector<BleCharacteristicsHandler*> BleServiceHandler::getRegisteredCharacteristics(){
     std::vector<BleCharacteristicsHandler*> list;
     for (auto &it : m_characteristics){

@@ -305,11 +305,21 @@ bool startBLE()
   return true;
 }
 
-bool beginRadio()
+bool beginRadio(int powerLevel)
 {
-  g_remoteControls.beginRadio();
+  g_remoteControls.beginRadio(powerLevel);
   Devices::CalculateMemmoryUsage();
   return true;
+}
+
+int getClientIdFromControllerId(uint32_t id)
+{
+  return g_remoteControls.GetClientIdFromControllerId(id);
+}
+
+int getRRSI(uint32_t clientid)
+{
+  return g_remoteControls.GetRSSI(clientid);
 }
 
 void setLogDiscoveredBle(bool log)
@@ -317,7 +327,7 @@ void setLogDiscoveredBle(bool log)
   g_remoteControls.setLogDiscoveredClients(log);
 }
 
-int isElementIdConnected(int id)
+bool isElementIdConnected(int id)
 {
   return g_remoteControls.isElementIdConnected(id);
 }
@@ -394,9 +404,20 @@ void DrawPixelScreen(int16_t x, int16_t y,uint16_t color)
   
 }
 
-void DrawLineScreen(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
+void DrawLineScreen(int16_t x, int16_t y, int16_t x2, int16_t y2, uint16_t color)
 {
-  OledScreen::display.drawLine(x, y, w, h, color);
+  OledScreen::display.drawLine(x, y, x2, y2, color);
+  return;
+}
+
+void DrawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color)
+{
+  OledScreen::display.drawFastHLine(x, y, w, color);
+  return;
+}
+void DrawFastVLine(int16_t x, int16_t y, int16_t w, uint16_t color)
+{
+  OledScreen::display.drawFastVLine(x, y, w, color);
   return;
 }
 void DrawCircleScreen(int16_t x, int16_t y, int16_t r, uint16_t color)
@@ -465,7 +486,6 @@ void LuaInterface::RegisterMethods()
   #endif
   m_lua->FuncRegister("oledCreateIcon", OledScreen::CreateIcon);
   m_lua->FuncRegister("oledDrawIcon", OledScreen::DrawIcon);
-  m_lua->FuncRegister("oledDrawBottomBar", OledScreen::DrawBottomBar);
   m_lua->FuncRegister("oledClearScreen", OledScreen::Clear);
   m_lua->FuncRegister("oledDisplay", DrawDisplayScreen);
   m_lua->FuncRegister("oledSetCursor", DrawSetCursor);
@@ -476,6 +496,8 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("oledDrawFilledRect", DrawRectFilledScreen);
   m_lua->FuncRegister("oledDrawPixel", DrawPixelScreen);
   m_lua->FuncRegister("oledDrawLine", DrawLineScreen);
+  m_lua->FuncRegister("oledDrawFastHLine", DrawFastHLine);
+  m_lua->FuncRegister("oledDrawFastVLine", DrawFastVLine);
   m_lua->FuncRegister("oledDrawCircle", DrawCircleScreen);
   m_lua->FuncRegister("oledDrawFilledCircle", DrawFilledCircleScreen);
   //BLE
@@ -486,6 +508,10 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("beginBleScanning", beginScanning);
   m_lua->FuncRegister("setMaximumControls", setMaximumControls);
   m_lua->FuncRegister("setLogDiscoveredBleDevices", setLogDiscoveredBle);
+  m_lua->FuncRegister("getClientIdFromControllerId", getClientIdFromControllerId);
+  m_lua->FuncRegister("getRRSI", getRRSI);
+
+
   //System
   m_lua->FuncRegister("panelPowerOn", powerOn);
   m_lua->FuncRegister("panelPowerOff", powerOff);
@@ -499,6 +525,7 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("setHaltOnError", setHaltOnError);
   m_lua->FuncRegister("getFps", Devices::getFps); 
   m_lua->FuncRegister("getFreePsram", Devices::getFreePsram); 
+  m_lua->FuncRegister("getLuaFps", Devices::getAutoFps); 
   m_lua->FuncRegister("getFreeHeap", Devices::getFreeHeap); 
   #ifdef USE_SERVO
   m_lua->FuncRegister("servoPause", Devices::ServoPause);
@@ -723,6 +750,23 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("COLOR_MODE_BGR", (int)COLOR_MODE_BGR);
   #endif
 
+  m_lua->setConstant("ESP_PWR_LVL_N24", (int)ESP_PWR_LVL_N24);
+  m_lua->setConstant("ESP_PWR_LVL_N21", (int)ESP_PWR_LVL_N21);
+  m_lua->setConstant("ESP_PWR_LVL_N18", (int)ESP_PWR_LVL_N18);
+  m_lua->setConstant("ESP_PWR_LVL_N15", (int)ESP_PWR_LVL_N15);
+  m_lua->setConstant("ESP_PWR_LVL_N12", (int)ESP_PWR_LVL_N12);
+  m_lua->setConstant("ESP_PWR_LVL_N9", (int)ESP_PWR_LVL_N9 );
+  m_lua->setConstant("ESP_PWR_LVL_N6", (int)ESP_PWR_LVL_N6 );
+  m_lua->setConstant("ESP_PWR_LVL_N3", (int)ESP_PWR_LVL_N3 );
+  m_lua->setConstant("ESP_PWR_LVL_N0", (int)ESP_PWR_LVL_N0 );
+  m_lua->setConstant("ESP_PWR_LVL_P3", (int)ESP_PWR_LVL_P3 );
+  m_lua->setConstant("ESP_PWR_LVL_P6", (int)ESP_PWR_LVL_P6 );
+  m_lua->setConstant("ESP_PWR_LVL_P9", (int)ESP_PWR_LVL_P9 );
+  m_lua->setConstant("ESP_PWR_LVL_P12", (int)ESP_PWR_LVL_P12);
+  m_lua->setConstant("ESP_PWR_LVL_P15", (int)ESP_PWR_LVL_P15);
+  m_lua->setConstant("ESP_PWR_LVL_P18", (int)ESP_PWR_LVL_P18);
+  m_lua->setConstant("ESP_PWR_LVL_P21", (int)ESP_PWR_LVL_P21);
+ 
 }
 
 bool LuaInterface::Start()
@@ -793,6 +837,8 @@ bool LuaInterface::Start()
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","AddNameRequired",&BleServiceHandler::AddNameRequired);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","GetServices",&BleServiceHandler::GetServices);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","ReadFromCharacteristics",&BleServiceHandler::ReadFromCharacteristics);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","GetRSSI",&BleServiceHandler::GetRSSI);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","GetClientIdFromControllerId",&BleServiceHandler::GetClientIdFromControllerId);
 
 
   ClassRegister<BleCharacteristicsHandler>::RegisterClassType(_state,"BleCharacteristicsHandler",[](lua_State* L){ luaL_error(L, "Cannot create a empty object of this class"); return nullptr;}, &EmptyGC);

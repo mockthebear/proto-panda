@@ -181,13 +181,6 @@ function input.updatGenericButtonStates(mode, clientId, pdButtonIdOffset)
     end
 end
 
-function input.updatePandaButtonStates(pdReading, pdButtonIdOffset)
-    for b=1,MAX_BLE_BUTTONS do 
-        input.updateButtonByreading(pdButtonIdOffset, pdReading[b])
-        pdButtonIdOffset = pdButtonIdOffset +1
-    end
-end
-
 function input.updateButtonByreading(buttonId, reading)
     if input.panda_buttons_state[buttonId] == _G.BUTTON_JUST_PRESSED then  
         input.panda_buttons_state[buttonId] = _G.BUTTON_PRESSED
@@ -210,9 +203,7 @@ function input.updateButtonStates()
     local pdButtonIdOffset = 1
     for i=0,MAX_BLE_CLIENTS-1 do 
         local mode = drivers.type_by_id[i]
-        if mode == "panda" then
-            input.updatePandaButtonStates(drivers['panda'], pdButtonIdOffset, mode)
-        elseif mode ~= nil then
+        if mode ~= nil then
             input.updatGenericButtonStates(mode, i, pdButtonIdOffset)
         end
         pdButtonIdOffset = pdButtonIdOffset + MAX_BLE_BUTTONS

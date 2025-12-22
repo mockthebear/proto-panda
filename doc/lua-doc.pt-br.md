@@ -1080,10 +1080,18 @@ Obtém o tempo limite atual para operações I2C.
 Inicia o ambiente de Bluetooth Low Energy (BLE) mas não inicia o rádio.  
 - **Retorna**: `bool` (`true` se bem-sucedido, caso contrário `false`).  
 
-#### `startBLERadio()`  
+#### `startBLERadio(powerLevel)`
 Inicia o rádio
-- **Retorna**: `bool` (`true` se bem-sucedido, caso contrário `false`).  
+- **Returns**: `bool` (`true` se bem-sucedido, caso contrário `false`).  
 
+#### `getRRSI(connId)`
+Retorna o rssi de uma conexção
+- **Returns**: `int` 
+
+#### `getClientIdFromControllerId(id)`
+Dado um ID de controle, retorna o seu respective connectionId
+
+- **Returns**: `int` 
 #### `getConnectedRemoteControls()`  
 Retorna o número de controles remotos conectados.  
 - **Retorna**: `int` (O número de dispositivos conectados).  

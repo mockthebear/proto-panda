@@ -1147,9 +1147,17 @@ Gets the current I2C operation timeout.
 Starts the envoriment for, but dont start the radio yet. Bluetooth Low Energy (BLE).
 - **Returns**: `bool` (`true` if successful, otherwise `false`).
 
-#### `startBLERadio()`
+#### `startBLERadio(powerLevel)`
 Starts the radio.
 - **Returns**: `bool` (`true` if successful, otherwise `false`).
+
+#### `getRRSI(connId)`
+Return the RSSI from a given connection
+- **Returns**: `int` 
+
+#### `getClientIdFromControllerId(id)`
+Given the client ID, return the id of its connection
+- **Returns**: `int` 
 
 #### `getConnectedRemoteControls()`
 Returns the number of connected remote controls.

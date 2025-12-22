@@ -27,7 +27,7 @@ class BleManager{
   public:
     BleManager():clientCount(0), maxClients(2),lastScanClearTime(0),m_started(false),m_canScan(false),m_logDiscoveredClients(false),isScanning(false),nextId(0),m_mutex(xSemaphoreCreateMutex()){}
     bool begin();
-    bool beginRadio();
+    bool beginRadio(int powerLevel=ESP_PWR_LVL_P9);
     void update();
     void sendUpdatesToLua();
     void beginScanning();
@@ -36,7 +36,7 @@ class BleManager{
     void setMaximumControls(int n){maxClients = n;};
 
     int getConnectedClientsCount(){
-      return 0; handlers.size();
+      return handlers.size();
     }
 
     bool isElementIdConnected(int id);
@@ -60,6 +60,9 @@ class BleManager{
     void setScanningMode(bool scan);
 
     BluetoothDeviceHandler* getDeviceById(int conn);
+
+    int GetClientIdFromControllerId(uint32_t id);
+    int GetRSSI(int clientId);
 
     static BleManager* Get();
   private:
