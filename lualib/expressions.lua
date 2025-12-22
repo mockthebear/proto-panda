@@ -27,7 +27,7 @@ function _M.Load()
 				if b.animation == "auto" then 
 					b.animation = "loop" --Compatibility
 				end
-				if b.animation == "loop" or b.animation == "auto_backwards" or b.animation == "pingpong" then 
+				if b.animation == "loop" or b.animation == "auto_backwards" or b.animation == "loop_backwards" or b.animation == "pingpong" then 
 					local name = b.animation
 					b.animation = {}
 					if not b.frames then  
@@ -39,7 +39,7 @@ function _M.Load()
 					end 
 					for i=1,count do  
 						local idx = i  
-						if name == "auto_backwards" then 
+						if name == "loop_backwards" or name == 'auto_backwards' then 
 							idx = count-i+1
 						end
 						b.animation[i] = idx
@@ -240,7 +240,7 @@ function _M.StackExpression(id)
 		local current_id = aux.id 
 		setPanelAnimation(aux.animation, aux.duration, repeats, false, current_id)
 	else
-		print("Unknown ID: "..tostring(id))
+		log("Unknown ID: "..tostring(id))
 	end
 end
 

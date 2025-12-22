@@ -9,6 +9,7 @@
 
 class Logger{
     public:
+        static void Allocate();
         static void Begin();
         static void log(std::string c);
         static void log(const char *c);
@@ -27,7 +28,7 @@ class Logger{
         static bool started;
         static std::string m_filename;
         static SemaphoreHandle_t mutex;
-        static char buffer[1024];
+        static char *buffer;
 };
 
 template<typename... arg> void Logger::Info(const char *c, const arg&... a )

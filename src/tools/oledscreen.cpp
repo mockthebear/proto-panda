@@ -2,39 +2,26 @@
 #include "tools/logger.hpp"
 #include "tools/sensors.hpp"
 #include "tools/devices.hpp"
-#include "ble_client.hpp"
+#include "bluetooth/ble_client.hpp"
 #include "drawing/animation.hpp"
 
 #include "drawing/icons/icons.hpp"
 
-static const unsigned char PROGMEM logo_handy[] =
-{ 0xff, 0xf0, 0x80, 0x10, 0x80, 0x10, 0x8a, 0x90, 0x8a, 0x90, 0xaf, 0xd0, 0xbf, 0xd0, 0x9f, 0xd0, 
-	0x9f, 0x90, 0x8f, 0x90, 0x8f, 0x90, 0xff, 0xf0
-};
-
-static const unsigned char PROGMEM logo_no_handy[] =
-{ 0xff, 0xf0, 0xc0, 0x30, 0xa0, 0x50, 0x90, 0x90, 0x89, 0x10, 0x86, 0x10, 0x86, 0x10, 0x89, 0x10, 
-	0x90, 0x90, 0xa0, 0x50, 0xc0, 0x30, 0xff, 0xf0
-};
-
-static const unsigned char PROGMEM logo_battery[] =
-{ 0x00, 0x00, 0x0f, 0x00, 0x3f, 0xc0, 0x20, 0x40, 0x20, 0x40, 0x3f, 0xc0, 0x20, 0x40, 0x20, 0x40, 
-0x3f, 0xc0, 0x20, 0x40, 0x20, 0x40, 0x3f, 0xc0
-};
 
 extern Animation g_animation;
 Adafruit_SSD1306 OledScreen::display(OLED_SCREEN_WIDTH, OLED_SCREEN_HEIGHT, &Wire, -1);
 bool OledScreen::consoleMode = false;
 std::list<std::string> OledScreen::lines;
-uint8_t OledScreen::DisplayFace[PANEL_WIDTH * PANEL_HEIGHT];
+uint8_t *OledScreen::DisplayFace = nullptr;
 
-InfoTypeShown OledScreen::infoShown = SHOW_FPS;
 uint32_t OledScreen::swapTimer = 0;
 
 std::vector<OledIcon> OledScreen::icons;
 
 bool OledScreen::Start(){
     
+    OledScreen::DisplayFace = (uint8_t*)ps_malloc(sizeof(uint8_t) * PANEL_WIDTH * PANEL_HEIGHT);
+
     if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)){
         Serial.println(F("SSD1306 allocation failed"));
         return false;
@@ -120,79 +107,6 @@ void OledScreen::Clear(){
     display.setTextColor(WHITE);
     display.setTextSize(1);
     display.setCursor(0, 0);
-}
-
-void OledScreen::DrawBottomBar(){
-    if (OledScreen::consoleMode){
-        return;
-    }
-    const int posY = OLED_SCREEN_HEIGHT-18;
-    display.drawRect(0,posY, OLED_SCREEN_WIDTH, 17, 0);
-    display.drawFastHLine(0,posY,OLED_SCREEN_WIDTH,1);
-    display.drawFastHLine(0,posY+17,OLED_SCREEN_WIDTH,1);
-
-    int startX = 0;
-    display.drawFastVLine(startX,posY,posY+17,1);
-    DrawAccelerometer(0, startX, posY);
-    display.drawFastVLine(startX+16,posY,posY+17,1);
-    DrawAccelerometer(1, startX+17, posY);
-    display.drawFastVLine(startX+33,posY,posY+17,1);
-
-    display.setCursor(startX+35, posY+4);
-    switch (infoShown)
-    {
-        case SHOW_FPS:
-            display.printf("Lua FPS: %d", (int)Devices::getFps());
-            break;
-        case SHOW_FREE_RAM:
-            display.printf("F.Ram: %2.2f%%", (Devices::getFreePsram()));
-            break;
-        case SHOW_PANEL_FPS:
-            display.printf("P.FPS: %d", (int)Devices::getAutoFps());
-            break;
-        case SHOW_FREE_HEAP:
-            display.printf("F.Heap: %d", (int)Devices::getFreeHeap());
-            break;
-        default:
-            break;
-    }
-
-    if (swapTimer < millis()){
-        swapTimer = millis() + 5 * 1000;
-        infoShown = InfoTypeShown(int(infoShown)+1);
-        if (infoShown == SHOW_RESET){
-            infoShown = SHOW_FIRST;
-        }
-    }
-
-    if (g_remoteControls.isElementIdConnected(0)){
-        display.drawBitmap(OLED_SCREEN_WIDTH-12, posY+2, logo_handy, 12,12, SSD1306_WHITE);
-    }else{
-        display.drawBitmap(OLED_SCREEN_WIDTH-12, posY+2, logo_no_handy, 12,12, SSD1306_WHITE);
-    }
-    if (g_remoteControls.isElementIdConnected(1)){
-        display.drawBitmap(OLED_SCREEN_WIDTH-24, posY+2, logo_handy, 12,12, SSD1306_WHITE);
-    }else{
-        display.drawBitmap(OLED_SCREEN_WIDTH-24, posY+2, logo_no_handy, 12,12, SSD1306_WHITE);
-    }
-
-
-    display.setCursor(0,0);
-}
-
-void OledScreen::DrawAccelerometer(int id, int posX, int posY){
-  int zpos = map(BleManager::remoteData[id].z, -8192, 8192, -8,8);
-  zpos = zpos > 8 ? 8 : zpos;
-  zpos = zpos < -8 ? -8 : zpos;
-  int xpos = map(BleManager::remoteData[id].x,-8192, 8192, -8,8);
-  xpos = xpos > 8 ? 8 : xpos;
-  xpos = xpos < -8 ? -8 : xpos;
-  int ypos = map(BleManager::remoteData[id].y,-8192, 8192, -8,8);
-  ypos = ypos > 8 ? 8 : ypos;
-  ypos = ypos < -8 ? -8 : ypos;
-  display.drawLine(posX+8, posY+8, posX+8+xpos, posY+8, SSD1306_WHITE);
-  display.drawLine(posX+8, posY+8, posX+8,  posY+8+ypos, SSD1306_WHITE);
-  display.drawLine(posX+8, posY+8, posX+8+zpos,  posY+8+zpos, SSD1306_WHITE);
 }
 
 void OledScreen::CriticalFail(const char *str){

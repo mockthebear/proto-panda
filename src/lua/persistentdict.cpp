@@ -69,7 +69,6 @@ void PersistentDictionary::Load() {
 
         if (store.find(key_content) == store.end()) {
             store[key_content] = value_content;
-            Logger::Info("Loaded: [%s]=[%s]", key_content.c_str(), value_content.c_str());
         }
     }
 

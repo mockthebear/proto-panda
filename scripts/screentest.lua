@@ -6,6 +6,7 @@ local _M = {
 
 	cycle=0,
 }
+local input = require("input")
 
 local function hslToRgb(h, s, l)
     h = h / 360
@@ -157,7 +158,7 @@ function _M.onLoop(dt)
 
 	_M.cycle = _M.cycle + 360 * (dt/1000)
 
-	if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED or readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED or readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED or readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED or readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
+	if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED or input.readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED or input.readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED or input.readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED or input.readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
 		if _M.stepTimer < 0 then
 			_M.step = _M.step +1
 			_M.stepTimer = 150
@@ -165,7 +166,7 @@ function _M.onLoop(dt)
 	end
 
 	flipPanelBuffer()
-	if readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED then 
+	if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED or (input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED) then 
 		_M.shouldStop = true
 		return true
 	end

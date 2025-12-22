@@ -4,7 +4,7 @@
 #include "drawing/framerepository.hpp"
 #include "lua/luainterface.hpp"
 #include "drawing/animation.hpp"
-
+#include "drawing/dma_display.hpp"
 #include "SD.h"
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -79,6 +79,117 @@ void handleUpload(AsyncWebServerRequest *request, String filename, size_t index,
     uploadFile.close();
     request->send(200, "text/plain", "{\"success\": true}");
   }
+}
+
+void handleCopy(AsyncWebServerRequest *request)
+{
+  if (!request->hasParam("src") || !request->hasParam("dst"))
+  {
+    request->send(400, "text/plain", "Missing src or dst parameter");
+    return;
+  }
+
+  String srcPath = request->getParam("src")->value();
+  String dstPath = request->getParam("dst")->value();
+
+  if (!SD.exists(srcPath))
+  {
+    request->send(404, "text/plain", "Source file not found");
+    return;
+  }
+
+  File src = SD.open(srcPath);
+  if (src.isDirectory())
+  {
+    src.close();
+    request->send(400, "text/plain", "Source is a directory");
+    return;
+  }
+
+  // Extract directory path from dstPath
+  int lastSlash = dstPath.lastIndexOf('/');
+  if (lastSlash > 0)
+  {
+    String dstDir = dstPath.substring(0, lastSlash);
+    
+    // Create directory if it doesn't exist
+    if (!SD.exists(dstDir))
+    {
+      // Create all necessary parent directories
+      String currentPath = "";
+      for (int i = 0; i < dstDir.length(); i++)
+      {
+        currentPath += dstDir[i];
+        if (dstDir[i] == '/' && i > 0) // Found a directory level
+        {
+          if (!SD.exists(currentPath.substring(0, currentPath.length() - 1)))
+          {
+            if (!SD.mkdir(currentPath.substring(0, currentPath.length() - 1)))
+            {
+              src.close();
+              request->send(500, "text/plain", "Failed to create directory: " + currentPath);
+              return;
+            }
+          }
+        }
+      }
+      
+      // Create the final directory
+      if (!SD.mkdir(dstDir))
+      {
+        src.close();
+        request->send(500, "text/plain", "Failed to create destination directory");
+        return;
+      }
+    }
+  }
+
+  // Check if destination already exists (file, not directory)
+  if (SD.exists(dstPath))
+  {
+    File dstCheck = SD.open(dstPath);
+    if (!dstCheck.isDirectory()) // Only fail if it's a file
+    {
+      src.close();
+      dstCheck.close();
+      request->send(409, "text/plain", "Destination already exists");
+      return;
+    }
+    dstCheck.close();
+  }
+
+  File dst = SD.open(dstPath, FILE_WRITE);
+  if (!dst)
+  {
+    src.close();
+    request->send(500, "text/plain", "Failed to create destination file");
+    return;
+  }
+
+  uint8_t buffer[512];
+  size_t bytesRead;
+  bool error = false;
+  
+  while ((bytesRead = src.read(buffer, sizeof(buffer))) > 0)
+  {
+    if (dst.write(buffer, bytesRead) != bytesRead)
+    {
+      error = true;
+      break;
+    }
+  }
+
+  src.close();
+  dst.close();
+
+  if (error)
+  {
+    SD.remove(dstPath);
+    request->send(500, "text/plain", "Copy failed");
+    return;
+  }
+
+  request->send(200, "text/plain", "OK");
 }
 
 void handleRm(AsyncWebServerRequest *request)
@@ -266,6 +377,7 @@ void serveDirectoryListing(AsyncWebServerRequest *request)
         cursor: pointer;
         font-weight: 500;
         transition: background-color 0.2s;
+        text-align: center; /* Ensure link text is centered */
       }
       .btn-primary {
         background-color: #4CAF50;
@@ -312,6 +424,44 @@ void serveDirectoryListing(AsyncWebServerRequest *request)
       .breadcrumb a:hover {
         text-decoration: underline;
       }
+      /* Updated style for the main header section */
+      .main-header {
+        background-color: #e9ecef;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column; /* Change to column to stack elements */
+        align-items: center; /* Center items horizontally */
+        gap: 15px;
+      }
+      .main-header p {
+        margin: 0;
+        font-size: 1.2em;
+        color: #333;
+      }
+      .header-links {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+      /* Style for the logo image */
+      .logo-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .logo-img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 5px;
+      }
+      /* Style for the bigger, centered editor button */
+      .editor-btn {
+        padding: 15px 30px; /* Increased padding for bigger button */
+        font-size: 1.2em;
+        background-color: #007bff !important; /* Make editor button stand out */
+      }
     </style>
   </head>
   <body>
@@ -348,7 +498,29 @@ void serveDirectoryListing(AsyncWebServerRequest *request)
     output += "Root Directory";
   }
 
-  output += R"(</div>
+  output += R"(</div>)";
+  
+  // --- Updated Header Section Logic for Root Path ---
+  if (path == "/")
+  {
+    // 1. Image Inclusion (centered at the top)
+    output += R"(
+    <div class="logo-container">
+      <img src="/doc/logoprotopanda.png" alt="Protopanda Logo" class="logo-img">
+    </div>)";
+    
+    // 2. Welcome Message and Buttons (centered)
+    output += R"(
+    <div class="main-header">
+      <p>Welcome to protopanda</p>
+      <div class="header-links">
+        <a href="/editor.html" class="btn btn-primary editor-btn">Go to Editor</a>
+      </div>
+    </div>)";
+  }
+  // --- End Updated Header Section Logic ---
+
+  output += R"(
     <h1>Directory Listing: )";
   output += path;
   output += R"(</h1>
@@ -628,12 +800,38 @@ void startWifiServer()
   server->on("/upload", HTTP_POST, [](AsyncWebServerRequest *request)
              { request->send(200); }, handleUpload);
   server->on("/delete", HTTP_DELETE, handleRm);
+  server->on("/copy", HTTP_PUT, handleCopy);
   server->on("/lua", HTTP_POST, handleLuaExecution);
   server->on("/compose_start", HTTP_POST, handleComposeStart);
   server->on("/compose_progress", HTTP_GET, handleComposeGet);
   server->on("/manage", HTTP_GET, handleSetManaged);
   server->onNotFound(serveDirectoryListing);
+  uint32_t freeHeapBytes = ESP.getFreeHeap();  
+  uint32_t totalHeapBytes = ESP.getHeapSize(); 
+  uint32_t freePsramBytes = ESP.getFreePsram(); 
+  uint32_t totalPsramBytes = ESP.getPsramSize(); 
 
+  float percentageHeapFree = freeHeapBytes * 100.0f / (float)totalHeapBytes;
+  float percentagePsramFree = freePsramBytes* 100.0f / (float)totalPsramBytes;
 
+  Serial.printf("[Memory] %.1f%% free - %d of %d bytes free (psram: %d / %d  -> %.1f%%)", percentageHeapFree, freeHeapBytes, totalHeapBytes, totalPsramBytes, freePsramBytes, percentagePsramFree);
+  /*DMADisplay::Start(8, 1);
+
+  DMADisplay::Display->clearScreen();
+  DMADisplay::Display->setBrightness8(32);
+  char str[] = "u gay";
+  for (int i=0;i<strlen(str);i++){
+    DMADisplay::Display->drawChar(0 + i * 8,2, str[i], DMADisplay::Display->color333(255,255,255), 0, 1);
+  }
+  DMADisplay::Display->flipDMABuffer();*/
+
+  freeHeapBytes = ESP.getFreeHeap();  
+  totalHeapBytes = ESP.getHeapSize(); 
+  freePsramBytes = ESP.getFreePsram(); 
+  totalPsramBytes = ESP.getPsramSize(); 
+
+  percentageHeapFree = freeHeapBytes * 100.0f / (float)totalHeapBytes;
+  percentagePsramFree = freePsramBytes* 100.0f / (float)totalPsramBytes;
+  Serial.printf("[Memory] %.1f%% free - %d of %d bytes free (psram: %d / %d  -> %.1f%%)", percentageHeapFree, freeHeapBytes, totalHeapBytes, totalPsramBytes, freePsramBytes, percentagePsramFree);
   server->begin();
 }

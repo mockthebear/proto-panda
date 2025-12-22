@@ -5,6 +5,11 @@
 #include <map>
 #include <FS.h>
 
+
+
+#include "tools/psrammap.hpp"
+
+
 struct SpiRamAllocator : ArduinoJson::Allocator {
   void* allocate(size_t size) override {
     return heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
@@ -19,6 +24,8 @@ struct SpiRamAllocator : ArduinoJson::Allocator {
   }
 };
 
+
+
 class FrameRepository{
     public:
         FrameRepository(){m_bulkPercentage=0.0f;m_started=false;};
@@ -30,25 +37,25 @@ class FrameRepository{
         void displayFFATInfo();
 
         int getOffsetByName(std::string str){
-            return m_offsets[str];
+            return m_offsets[PSRAMString(str.c_str())];
         }
         int getFrameCountByName(std::string str){
-            return m_frameCountByAlias[str];
+            return m_frameCountByAlias[PSRAMString(str.c_str())];
         }
         float getBulkComposingPercentage(){
           return m_bulkPercentage;
         }
     private:
-        void extractModes(JsonVariant &element, bool &flip_left, bool &flip_right, int &scheme);
-        bool decodeFile(const char *pathName, bool flip_left, bool flip_right, int scheme);
+        void extractModes(JsonVariant &element, bool &flip_left, bool &flip_right, int &schemeLeft, int &schemeRight);
+        bool decodeFile(const char *pathName, bool flip_left, bool flip_right, int schemeLeft, int schemeRight);
         bool loadCachedData();
         int calculateMaxFrames(JsonArray &franesJson);
         void generateCacheFile();
         int m_frameCount;
         float m_bulkPercentage;
         bool m_started;
-        std::map<std::string, int> m_offsets;
-        std::map<std::string, int> m_frameCountByAlias;
+        PSRAMIntMap m_offsets;
+        PSRAMIntMap m_frameCountByAlias;
         SemaphoreHandle_t m_mutex;
         File bulkFile;
 };      

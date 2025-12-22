@@ -7,7 +7,7 @@
 #include "tools/storage.hpp"
 #include "drawing/animation.hpp"
 #include "drawing/ledstrip.hpp"
-#include "ble_client.hpp"
+#include "bluetooth/ble_client.hpp"
 #include "drawing/dma_display.hpp"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc.h"
@@ -179,82 +179,6 @@ bool hasLidar()
   return Devices::HasLidar();
 }
 
-uint32_t readButtonStatus(uint32_t button)
-{
-  if (button >= MAX_BLE_BUTTONS*MAX_BLE_CLIENTS)
-  {
-    return 0;
-  }
-  uint32_t id = button/uint32_t(MAX_BLE_BUTTONS);
-  button -= id*MAX_BLE_BUTTONS;
-  return BleManager::remoteData[id].real_inputButtonsStatus[button];
-}
-
-uint32_t getBleDeviceUpdateDt(uint32_t device)
-{
-  if (device >= MAX_BLE_CLIENTS)
-  {
-    return 0;
-  }
-  return BleManager::remoteData[device].currentUpdate;
-}
-
-uint32_t getBleDeviceLastUpdate(uint32_t device)
-{
-  if (device >= MAX_BLE_CLIENTS)
-  {
-    return 0;
-  }
-  return BleManager::remoteData[device].previousUpdate;
-}
-
-float readAccelerometerX(int device)
-{
-  if (device >= MAX_BLE_CLIENTS){
-    return 0.0f;
-  }
-  return BleManager::remoteData[device].x * 4.0f / 32768.0f;
-}
-
-float readAccelerometerY(int device)
-{
-  if (device >= MAX_BLE_CLIENTS){
-    return 0.0f;
-  }
-  return BleManager::remoteData[device].y * 4.0f / 32768.0f;
-}
-
-float readAccelerometerZ(int device)
-{
-  if (device >= MAX_BLE_CLIENTS){
-    return 0.0f;
-  }
-  return BleManager::remoteData[device].z * 4.0f / 32768.0f;
-}
-
-int readGyroX(int device)
-{
-  if (device >= MAX_BLE_CLIENTS){
-    return 0.0f;
-  }
-  return BleManager::remoteData[device].ax;
-}
-
-int readGyroY(int device)
-{
-  if (device >= MAX_BLE_CLIENTS){
-    return 0.0f;
-  }
-  return BleManager::remoteData[device].ay;
-}
-
-int readGyroZ(int device)
-{
-  if (device >= MAX_BLE_CLIENTS){
-    return 0.0f;
-  }
-  return BleManager::remoteData[device].az;
-}
 
 
 static int dumpStackToSerial(lua_State *L)
@@ -364,7 +288,7 @@ void LuaInterface::luaCallbackError(const char *errMsg, lua_State *L)
 
 int getConnectedRemoteControls()
 {
-  return g_remoteControls.getConnectedClients();
+  return g_remoteControls.getConnectedClientsCount();
 }
 
 bool startBLE()
@@ -380,12 +304,30 @@ bool startBLE()
   Devices::CalculateMemmoryUsage();
   return true;
 }
+
+bool beginRadio(int powerLevel)
+{
+  g_remoteControls.beginRadio(powerLevel);
+  Devices::CalculateMemmoryUsage();
+  return true;
+}
+
+int getClientIdFromControllerId(uint32_t id)
+{
+  return g_remoteControls.GetClientIdFromControllerId(id);
+}
+
+int getRRSI(uint32_t clientid)
+{
+  return g_remoteControls.GetRSSI(clientid);
+}
+
 void setLogDiscoveredBle(bool log)
 {
   g_remoteControls.setLogDiscoveredClients(log);
 }
 
-int isElementIdConnected(int id)
+bool isElementIdConnected(int id)
 {
   return g_remoteControls.isElementIdConnected(id);
 }
@@ -398,10 +340,6 @@ void setMaximumControls(int id)
   g_remoteControls.setMaximumControls(id);
 }
 
-int acceptTypes(std::string service, std::string charactestisticStream, std::string characteristicId)
-{
-  return g_remoteControls.acceptTypes(service, charactestisticStream, characteristicId);
-}
 
 SizedArray *decodePng(std::string filename)
 {
@@ -466,9 +404,20 @@ void DrawPixelScreen(int16_t x, int16_t y,uint16_t color)
   
 }
 
-void DrawLineScreen(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
+void DrawLineScreen(int16_t x, int16_t y, int16_t x2, int16_t y2, uint16_t color)
 {
-  OledScreen::display.drawLine(x, y, w, h, color);
+  OledScreen::display.drawLine(x, y, x2, y2, color);
+  return;
+}
+
+void DrawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color)
+{
+  OledScreen::display.drawFastHLine(x, y, w, color);
+  return;
+}
+void DrawFastVLine(int16_t x, int16_t y, int16_t w, uint16_t color)
+{
+  OledScreen::display.drawFastVLine(x, y, w, color);
   return;
 }
 void DrawCircleScreen(int16_t x, int16_t y, int16_t r, uint16_t color)
@@ -537,7 +486,6 @@ void LuaInterface::RegisterMethods()
   #endif
   m_lua->FuncRegister("oledCreateIcon", OledScreen::CreateIcon);
   m_lua->FuncRegister("oledDrawIcon", OledScreen::DrawIcon);
-  m_lua->FuncRegister("oledDrawBottomBar", OledScreen::DrawBottomBar);
   m_lua->FuncRegister("oledClearScreen", OledScreen::Clear);
   m_lua->FuncRegister("oledDisplay", DrawDisplayScreen);
   m_lua->FuncRegister("oledSetCursor", DrawSetCursor);
@@ -548,16 +496,22 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("oledDrawFilledRect", DrawRectFilledScreen);
   m_lua->FuncRegister("oledDrawPixel", DrawPixelScreen);
   m_lua->FuncRegister("oledDrawLine", DrawLineScreen);
+  m_lua->FuncRegister("oledDrawFastHLine", DrawFastHLine);
+  m_lua->FuncRegister("oledDrawFastVLine", DrawFastVLine);
   m_lua->FuncRegister("oledDrawCircle", DrawCircleScreen);
   m_lua->FuncRegister("oledDrawFilledCircle", DrawFilledCircleScreen);
   //BLE
   m_lua->FuncRegister("startBLE", startBLE);
+  m_lua->FuncRegister("startBLERadio", beginRadio);
   m_lua->FuncRegister("getConnectedRemoteControls", getConnectedRemoteControls);
   m_lua->FuncRegister("isElementIdConnected", isElementIdConnected);
   m_lua->FuncRegister("beginBleScanning", beginScanning);
   m_lua->FuncRegister("setMaximumControls", setMaximumControls);
-  m_lua->FuncRegister("acceptBLETypes", acceptTypes);
   m_lua->FuncRegister("setLogDiscoveredBleDevices", setLogDiscoveredBle);
+  m_lua->FuncRegister("getClientIdFromControllerId", getClientIdFromControllerId);
+  m_lua->FuncRegister("getRRSI", getRRSI);
+
+
   //System
   m_lua->FuncRegister("panelPowerOn", powerOn);
   m_lua->FuncRegister("panelPowerOff", powerOff);
@@ -571,6 +525,7 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("setHaltOnError", setHaltOnError);
   m_lua->FuncRegister("getFps", Devices::getFps); 
   m_lua->FuncRegister("getFreePsram", Devices::getFreePsram); 
+  m_lua->FuncRegister("getLuaFps", Devices::getAutoFps); 
   m_lua->FuncRegister("getFreeHeap", Devices::getFreeHeap); 
   #ifdef USE_SERVO
   m_lua->FuncRegister("servoPause", Devices::ServoPause);
@@ -578,16 +533,7 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("servoMove", Devices::ServoMove);
   #endif
   m_lua->FuncRegister("hasServo", Devices::HasServo);
-  //BLE
-  m_lua->FuncRegister("readButtonStatus", readButtonStatus);
-  m_lua->FuncRegisterOptional("readAccelerometerX", readAccelerometerX, 0);
-  m_lua->FuncRegisterOptional("readAccelerometerY", readAccelerometerY, 0);
-  m_lua->FuncRegisterOptional("readAccelerometerZ", readAccelerometerZ, 0);
-  m_lua->FuncRegisterOptional("readGyroX", readGyroX, 0);
-  m_lua->FuncRegisterOptional("readGyroY", readGyroY, 0);
-  m_lua->FuncRegisterOptional("readGyroZ", readGyroZ, 0);
-  m_lua->FuncRegisterOptional("getBleDeviceLastUpdate", getBleDeviceLastUpdate, 0);
-  m_lua->FuncRegisterOptional("getBleDeviceUpdateDt", getBleDeviceUpdateDt, 0);
+
   //LIDAR
   m_lua->FuncRegister("hasLidar", hasLidar);
   m_lua->FuncRegister("readLidar", readLidar);
@@ -710,11 +656,6 @@ void LuaInterface::RegisterMethods()
 void LuaInterface::RegisterConstants()
 {
 
-  m_lua->setConstant("BUTTON_RELEASED", BUTTON_RELEASED);
-  m_lua->setConstant("BUTTON_JUST_PRESSED", BUTTON_JUST_PRESSED);
-  m_lua->setConstant("BUTTON_PRESSED", BUTTON_PRESSED);
-  m_lua->setConstant("BUTTON_JUST_RELEASED", BUTTON_JUST_RELEASED);
-
   m_lua->setConstant("BEHAVIOR_NONE", (int)BEHAVIOR_NONE);
   m_lua->setConstant("BEHAVIOR_PRIDE", (int)BEHAVIOR_PRIDE);
   m_lua->setConstant("BEHAVIOR_ROTATE", (int)BEHAVIOR_ROTATE);
@@ -733,33 +674,6 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("BEHAVIOR_FADE_IN", (int)BEHAVIOR_FADE_IN);
   m_lua->setConstant("BEHAVIOR_NOISE", (int)BEHAVIOR_NOISE);
   m_lua->setConstant("MAX_LED_GROUPS", (int)MAX_LED_GROUPS);
-
-
-  m_lua->setConstant("BUTTON_LEFT", (int)0);
-  m_lua->setConstant("BUTTON_RIGHT", (int)2);
-  m_lua->setConstant("BUTTON_UP", (int)3);
-  m_lua->setConstant("BUTTON_CONFIRM", (int)4);
-  m_lua->setConstant("BUTTON_DOWN", (int)1);
-
-  char bigBuffMsg[100];
-  for (int i=0;i<MAX_BLE_CLIENTS;i++){
-    int baseCount = i * MAX_BLE_BUTTONS;
-    sprintf(bigBuffMsg, "DEVICE_%d_BUTTON_LEFT", i);
-    m_lua->setConstant(bigBuffMsg, baseCount);
-
-    sprintf(bigBuffMsg, "DEVICE_%d_BUTTON_DOWN", i);
-    m_lua->setConstant(bigBuffMsg, baseCount+1);
-
-    sprintf(bigBuffMsg, "DEVICE_%d_BUTTON_RIGHT", i);
-    m_lua->setConstant(bigBuffMsg, baseCount+2);
-
-    sprintf(bigBuffMsg, "DEVICE_%d_BUTTON_UP", i);
-    m_lua->setConstant(bigBuffMsg, baseCount+3);
-
-    sprintf(bigBuffMsg, "DEVICE_%d_BUTTON_CONFIRM", i);
-    m_lua->setConstant(bigBuffMsg, baseCount+4);
-   
-  }
 
 
   m_lua->setConstant("POWER_MODE_USB_5V", (int)POWER_MODE_USB_5V);
@@ -836,6 +750,23 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("COLOR_MODE_BGR", (int)COLOR_MODE_BGR);
   #endif
 
+  m_lua->setConstant("ESP_PWR_LVL_N24", (int)ESP_PWR_LVL_N24);
+  m_lua->setConstant("ESP_PWR_LVL_N21", (int)ESP_PWR_LVL_N21);
+  m_lua->setConstant("ESP_PWR_LVL_N18", (int)ESP_PWR_LVL_N18);
+  m_lua->setConstant("ESP_PWR_LVL_N15", (int)ESP_PWR_LVL_N15);
+  m_lua->setConstant("ESP_PWR_LVL_N12", (int)ESP_PWR_LVL_N12);
+  m_lua->setConstant("ESP_PWR_LVL_N9", (int)ESP_PWR_LVL_N9 );
+  m_lua->setConstant("ESP_PWR_LVL_N6", (int)ESP_PWR_LVL_N6 );
+  m_lua->setConstant("ESP_PWR_LVL_N3", (int)ESP_PWR_LVL_N3 );
+  m_lua->setConstant("ESP_PWR_LVL_N0", (int)ESP_PWR_LVL_N0 );
+  m_lua->setConstant("ESP_PWR_LVL_P3", (int)ESP_PWR_LVL_P3 );
+  m_lua->setConstant("ESP_PWR_LVL_P6", (int)ESP_PWR_LVL_P6 );
+  m_lua->setConstant("ESP_PWR_LVL_P9", (int)ESP_PWR_LVL_P9 );
+  m_lua->setConstant("ESP_PWR_LVL_P12", (int)ESP_PWR_LVL_P12);
+  m_lua->setConstant("ESP_PWR_LVL_P15", (int)ESP_PWR_LVL_P15);
+  m_lua->setConstant("ESP_PWR_LVL_P18", (int)ESP_PWR_LVL_P18);
+  m_lua->setConstant("ESP_PWR_LVL_P21", (int)ESP_PWR_LVL_P21);
+ 
 }
 
 bool LuaInterface::Start()
@@ -848,9 +779,75 @@ bool LuaInterface::Start()
   }
 
   m_lua->SetErrorCallback(LuaInterface::luaCallbackError);
-
   RegisterMethods();
   RegisterConstants();
+  auto _state = m_lua->GetState();
+
+  /*
+  
+  ClassRegister<Batata>::RegisterClassType(_state,"Batata",[](lua_State* L){
+        Batata *t = new Batata();
+        return t;
+  });
+    
+  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","Get",&Batata::Get);
+  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","Sum",&Batata::Sum, 0);
+  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","Set",&Batata::Set);
+  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","SumBatata",&Batata::SumBatata);
+  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","CloneBatata",&Batata::CloneBatata);
+
+  ClassRegister<Batata>::RegisterField(_state, "count", &Batata::count);
+
+*/
+
+  static LuaCFunctionLambda EmptyGC = [](lua_State* L) -> int{
+    return 0;
+  };
+  
+  ClassRegister<BleServiceHandler>::RegisterClassType(_state,"BleServiceHandler",[](lua_State* L) -> BleServiceHandler*{
+    if (lua_gettop(L) == 2){ 
+      bool hasErr;
+      std::string service = GenericLuaGetter<std::string>::Call(hasErr, L);
+      if (service.length() != 36 ) {
+        luaL_error(L, "Malformed service UUID");
+        return nullptr;
+      }
+      NimBLEUUID uuid(service);
+
+      if (uuid == NimBLEUUID()){
+        luaL_error(L, "Malformed service UUID");
+        return nullptr;
+    } 
+
+      BleServiceHandler *obj = new BleServiceHandler(uuid.to16());
+      g_remoteControls.AddAcceptedService(uuid.to16().toString().c_str(), obj);
+      Logger::Info("Accepting service: %s", uuid.to16().toString().c_str());
+      return obj;
+    }else{
+      luaL_error(L, "Missing UUID parameter");
+      return nullptr;
+    }
+  }, &EmptyGC);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","AddCharacteristics",&BleServiceHandler::AddCharacteristics);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","SetOnConnectCallback",&BleServiceHandler::SetOnConnectCallback);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","SetOnDisconnectCallback",&BleServiceHandler::SetOnDisconnectCallback);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","WriteToCharacteristics",&BleServiceHandler::WriteToCharacteristics, true);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","GetCharacteristics",&BleServiceHandler::GetCharacteristicsFromOurService);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","AddAddressRequired",&BleServiceHandler::AddAddressRequired);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","AddNameRequired",&BleServiceHandler::AddNameRequired);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","GetServices",&BleServiceHandler::GetServices);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","ReadFromCharacteristics",&BleServiceHandler::ReadFromCharacteristics);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","GetRSSI",&BleServiceHandler::GetRSSI);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","GetClientIdFromControllerId",&BleServiceHandler::GetClientIdFromControllerId);
+
+
+  ClassRegister<BleCharacteristicsHandler>::RegisterClassType(_state,"BleCharacteristicsHandler",[](lua_State* L){ luaL_error(L, "Cannot create a empty object of this class"); return nullptr;}, &EmptyGC);
+  ClassRegister<BleCharacteristicsHandler>::RegisterClassMethod(_state,"BleCharacteristicsHandler","SetSubscribeCallback",&BleCharacteristicsHandler::SetSubscribeCallback);
+  ClassRegister<BleCharacteristicsHandler>::RegisterClassMethod(_state,"BleCharacteristicsHandler","SetCallbackModeStream",&BleCharacteristicsHandler::SetCallbackModeStream);
+  ClassRegister<BleCharacteristicsHandler>::RegisterClassMethod(_state,"BleCharacteristicsHandler","SetRequired",&BleCharacteristicsHandler::SetRequired);
+
+  m_lua->FuncRegister("getCharacteristicsFromService", BleServiceHandler::GetCharacteristicsFromService);
+  
   lastError = "";
 
   return true;

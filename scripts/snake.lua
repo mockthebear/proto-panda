@@ -3,6 +3,7 @@ local _M = {
 	shouldStop = false,
 	snake = {}
 }
+local input = require("input")
 
 local RED = color565(255, 0, 0)
 local GREEN = color565(0, 255, 0)
@@ -100,22 +101,22 @@ function _M.onLoop(dt)
 
 	local snake = _M.snake
 
-	if readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED then 
+	if input.readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED then 
 		if snake.direction ~= RIGHT then
 			snake.direction = LEFT
 		end
 	end
-	if readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED then 
+	if input.readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED then 
 		if snake.direction ~= LEFT then
 			snake.direction = RIGHT
 		end
 	end
-	if readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then 
+	if input.readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then 
 		if snake.direction ~= DOWN then
 			snake.direction = UP
 		end
 	end
-	if readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
+	if input.readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
 		if snake.direction ~= UP then
 			snake.direction = DOWN
 		end
@@ -184,7 +185,7 @@ function _M.onLoop(dt)
 	end
 
 	flipPanelBuffer()
-	if readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED then 
+	if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED or (input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED) then 
 		_M.shouldStop = true
 		return true
 	end

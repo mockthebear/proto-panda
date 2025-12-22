@@ -5,6 +5,8 @@ local _M = {
     TETRIS_X = 10,
     inputDelayAmount = 50,
 }
+local input = require("input")
+
 
 _M.t_line = {
     {
@@ -517,34 +519,34 @@ function _M.Draw(ox, oy)
 end
 
 function _M.ManageInput()
-    if readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then
+    if input.readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then
         _M.Drop(_M.pad)
     end
 
-    if readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and (readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED or _M.inputDelay <= 0) then
+    if input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and (input.readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED or _M.inputDelay <= 0) then
         _M.Move(_M.pad, 1, 0)
-        if readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED then
+        if input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED then
             _M.inputDelay = _M.inputDelayAmount * 2
         else
             _M.inputDelay = _M.inputDelayAmount
         end
     end
 
-    if readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and (readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED or _M.inputDelay <= 0) then
+    if input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and (input.readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED or _M.inputDelay <= 0) then
         _M.Move(_M.pad, -1, 0)
-        if readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED then
+        if input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED then
             _M.inputDelay = _M.inputDelayAmount * 2
         else
             _M.inputDelay = _M.inputDelayAmount
         end
     end
 
-    if readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED and (readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED or _M.inputDelay <= 0) then
+    if input.readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED and (input.readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED or _M.inputDelay <= 0) then
         _M.Move(_M.pad, 0, 1)
         _M.inputDelay = _M.inputDelayAmount
     end
 
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then
         _M.Rotate(_M.pad)
     end
 end
@@ -573,7 +575,7 @@ function _M.onLoop(dt)
     _M.Draw(16, 3)
 
     flipPanelBuffer()
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED then 
+    if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED or (input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED) then 
         _M.shouldStop = true
         return true
     end

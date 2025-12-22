@@ -8,6 +8,9 @@ __[Versão em portugues: 🇧🇷](README.pt-br.md)__
 
 Protopanda is a open source patform (firmware and hardware), for controling protogens. The idea is to be simple enough so all you need is just a bit of tech savy to make it work. But at the same time, flexible enough so an person with the minimum knowledge of lua can make amazing things.
 
+**Telegram channel:** https://t.me/mockdiodes
+**Telegram chat:** https://t.me/protopandachat
+
 1. [Features](#features)
 2. [Powering](#powering)
 3. [Panels](#panels)
@@ -41,7 +44,7 @@ __TLDR: At least a power bank of 20W with PD and usb-c.__
 There are two modes, one powering 5V directly from USB, and other that has some power management (buck converter), that needs from 6.5v up to 12v. This second mode is enabled only via hardware changes on the PCB.
 Each hub75 panel can consume up to 2A when maximum brightness, so powering directly from USB at 5v can be problematic, so this version with the regulator triggers the PD on the usb, requesting 9V 3A, and this is plenty of power to light up both panels, sadly this version consumes way more power.
 
-Since on most cases you wont be running them at full brightness and neither all leds on white, its reccomended the 5V version.
+Since on most cases you wont be running them at full brightness and neither all leds on white, it would be reccomended the 5v version. But some power banks cant handle the power spike upon startup. So choosing a version with PD is reccomended.
 
 
 # Panels
@@ -73,15 +76,10 @@ To load frames, add them to the SD card and specify their locations in the `conf
 ```json
 {
   "frames": [
-    {"pattern": "/expressions/normal_by_maremar (%d).png", "flip_left": true, "from": 1, "to": 4, "name": "frames_normal"},
-    {"pattern": "/expressions/noise (%d).png", "flip_left": false, "from": 1, "to": 3, "name": "frames_noise"},
-    {"pattern": "/expressions/amogus (%d).png", "flip_left": true, "from": 1, "to": 2, "name": "frames_amogus"},
-    {"pattern": "/expressions/boop_cycle_%d.png", "flip_left": true, "from": 1, "to": 3, "name": "frames_boop"},
-    {"pattern": "/expressions/boop_transition_%d.png", "flip_left": true, "from": 1, "to": 3, "name": "frames_boop_transition"}
-  ],
-  "expressions": [],
-  "scripts": [],
-  "boop": {}
+    {"pattern": "/expressions/angry/angry%d.png","flip_left": false,"flip_right": true,"from": 5,"to": 9,"name": "frames_angry"},
+    {"pattern": "/expressions/angry/angry%d transition.png","flip_left": false,"flip_right": true,"from": 1,"to": 4,"name": "frames_angry_transition"},
+    {"pattern": "/expressions/blink/blink%d.png","flip_left": false,"flip_right": true,"from": 1,"to": 8,"name": "frames_blink"},
+  ]
 }
 ```
 
@@ -103,6 +101,9 @@ Each entry in the `frames` array can be either:
 
 - **`flip_left`** (boolean)  
   Flips the left-side frame horizontally (useful for panel orientation).  
+- **`flip_right`** (boolean)  
+
+  Flips the right-side frame horizontally (useful for panel orientation).  
 
 - **`name`** (string)  
   Assigns an identifier to a frame or group. The name refers to the first frame in the `pattern`.  
@@ -110,6 +111,7 @@ Each entry in the `frames` array can be either:
 
 - **`color_scheme_left`** (string)  
   Flips specific color channels if needed.  
+  Use any permutation of "rgb", "bgr", "rbg"
 
 ---
 
@@ -135,7 +137,7 @@ After loading frames, [Lua scripts](#programming-in-lua) manage expressions. The
     {
       "name": "noise",
       "frames": "frames_noise",
-      "animation": "auto",
+      "animation": "loop",
       "duration": 5,
       "onEnter": "ledsStackCurrentBehavior(); ledsSegmentBehavior(0, BEHAVIOR_NOISE); ledsSegmentBehavior(1, BEHAVIOR_NOISE)",
       "onLeave": "ledsPopBehavior()"
@@ -175,7 +177,9 @@ After loading frames, [Lua scripts](#programming-in-lua) manage expressions. The
 
 - **`animation`** (int[] or `"auto"`)  
   - `int[]`: Explicit frame order (e.g., `[1, 2, 3]`).  
-  - `"auto"`: Sequential frames (e.g., `1, 2, 3...`).  
+  - `"loop"`: Sequential frames (e.g., `1, 2, 3...`).  
+  - `"pingpong"`: Sequential frames then reversed (e.g., `1, 2, 3...   ...3, 2, 1`).  
+  - `"loop_backwards"`: Backwards Sequential frames (e.g., `...3, 2, 1`).  
 
 - **`duration`** (int)  
   Frame display time (in milliseconds).  
@@ -225,26 +229,39 @@ Protopanda suport the WS2812B adderessable led protocol and it provies a simple 
 ![alt text](doc/ewm.drawio.png)
 
 
-# Bluetooth
+# Bluetooth  
 
-Protopanda uses BLE. So far, its configured to handle the fursuit paw. Its info and all source code and hardware are found here https://github.com/mockthebear/ble-fursuit-paw
-![alt text](doc/integration.png)
+Since version 2.0, its supported almost any kind of BLE device that have HID. All you need to do is adapt the driver if needed or write a new one. Currently the devices supported are:
+* https://github.com/mockthebear/ble-fursuit-paw
+* https://pt.aliexpress.com/item/1005008459884910.html
+* https://pt.aliexpress.com/item/1005009845485445.html
 
-Is consists of a BLE device with an LSM6DS3 3 axis accelerometer/gyro and 5 buttons. It keeps sending the sensor readings and buttons every 50~100ms.
+What would do best is a BLE joystick.
 
-The default UUID of the ble fursuit paw is `d4d31337-c4c3-c2c3-b4b3-b2b1a4a3a2a1` and the service for the accelerometer/gyro/buttons is `d4d3afaf-c4c3-c2c3-b4b3-b2b1a4a3a2a1`
-If you want more than one remote control, is reccomended to reflash the firmware of another controller and set the `c4c3` part of the uuid to `c4c4` or somethig else.
+## Keybind
 
-To set both devices to be accepted, add in your `onSetup`:
-```lua
-function onSetup()
-    startBLE()
-    acceptBLETypes("d4d31337-c4c1-c2c3-b4b3-b2b1a4a3a2a1", "afaf", "fafb")
-    beginBleScanning()
+Currently the default keybinds are
+```json
+{
+  "keybinds":{
+    "joystick.right_hat=5": "BUTTON_LEFT",
+    "joystick.right_hat=3": "BUTTON_DOWN",
+    "joystick.right_hat=1": "BUTTON_RIGHT",
+    "joystick.right_hat=7": "BUTTON_UP",
+    "joystick.buttons.4": "BUTTON_CONFIRM",
+    "joystick.buttons.1": "BUTTON_BACK",
+
+    "beauty.buttons.4": "BUTTON_LEFT",
+    "beauty.buttons.1": "BUTTON_DOWN",
+    "beauty.buttons.3": "BUTTON_RIGHT",
+    "beauty.buttons.2": "BUTTON_UP",
+    "beauty.buttons.5": "BUTTON_CONFIRM",
+    "beauty.buttons.6": "BUTTON_BACK"
+
+  }
+}
 ```
-
-I know, I know... its static and have no flexibility to accept any kind of BLE devices / services... Its a planned feature
-
+They all map by default for the BLE fursuit paw
 
 # Hardware
 

@@ -23,7 +23,7 @@
 
 #include "editmode/editmode.hpp"
 
-#include "ble_client.hpp"
+#include "bluetooth/ble_client.hpp"
 
 
 LedStrip g_leds;
@@ -52,6 +52,8 @@ void setup() {
   Serial.begin(115200);
   Serial.printf("Starting proto panda v%s!\n", PANDA_VERSION);
 
+  Logger::Allocate();
+
 
   Devices::BuzzerTone(2220);
   delay(200);
@@ -75,21 +77,40 @@ void setup() {
     return;
   }
 
+  #ifdef ENABLE_HUB75_PANEL
+  Devices::CalculateMemmoryUsage(); 
+  if (!DMADisplay::Start()){
+    OledScreen::CriticalFail("Failed to initialize DMA display!");
+    Devices::BuzzerTone(300);
+    delay(1500);
+    Devices::BuzzerNoTone();
+    for(;;){}
+  }
+  Logger::Info("DMA display initialized!");
+  Devices::CalculateMemmoryUsageDifference("Dma display");
+  #endif 
+
   while (!Storage::Begin()){
+    DMADisplay::Display->clearScreen();
+    DMADisplay::Display->setBrightness8(8);
+    DMADisplay::Display->drawRGBBitmap(0,0, icon_panel_nosd, 64, 32);
+    DMADisplay::Display->drawRGBBitmap(63,0, icon_panel_nosd, 64, 32);
+    DMADisplay::Display->flipDMABuffer();
     OledScreen::display.clearDisplay();
     OledScreen::display.drawBitmap(0,0, icon_sd, 128, 64, 1);
     OledScreen::display.display();
     delay(500);
     OledScreen::display.clearDisplay();
     OledScreen::display.display();
+    DMADisplay::Display->setBrightness8(1);
   }
-
+  DMADisplay::Display->setBrightness8(0);
+  Devices::CalculateMemmoryUsageDifference("Storage");
   Logger::Begin();
   Devices::DisplayResetInfo();
-  Devices::I2CScan();
   Devices::StartAvaliableDevices();
-
-  Devices::CalculateMemmoryUsage();  
+  
+  Devices::CalculateMemmoryUsageDifference("Devices");
   if (!g_frameRepo.Begin()){
     OledScreen::CriticalFail("Frame repository has failed! If restarting does not solve, its a hardware problem.");
     for (;;){
@@ -101,7 +122,7 @@ void setup() {
       delay(1000);
     }
   }
-  Devices::CalculateMemmoryUsage(); 
+  Devices::CalculateMemmoryUsageDifference("Frame repo");
   if (!g_lua.Start()){
     OledScreen::CriticalFail("Failed to initialize Lua!");
     for(;;){
@@ -113,19 +134,8 @@ void setup() {
       delay(1000);
     }
   }
-  #ifdef ENABLE_HUB75_PANEL
-  Devices::CalculateMemmoryUsage(); 
-  if (!DMADisplay::Start()){
-    OledScreen::CriticalFail("Failed to initialize DMA display!");
-    Devices::BuzzerTone(300);
-    delay(1500);
-    Devices::BuzzerNoTone();
-    for(;;){}
-  }
-  Logger::Info("DMA display initialized!");
-  #endif 
+  Devices::CalculateMemmoryUsageDifference("Lua");
 
-  Devices::CalculateMemmoryUsage(); 
   if (!g_lua.LoadFile("/init.lua")){
     OledScreen::CriticalFail("Failed to load init.lua");
     Devices::BuzzerTone(300);
@@ -134,7 +144,7 @@ void setup() {
     for(;;){}
   }
 
-  Devices::CalculateMemmoryUsage();
+  Devices::CalculateMemmoryUsageDifference("init.lua");
 
   OledScreen::SetConsoleMode(false);
   OledScreen::display.setCursor(0,0);
@@ -147,22 +157,22 @@ void setup() {
   Devices::BuzzerTone(150);
   delay(100);
   Devices::BuzzerNoTone();
-  Devices::CalculateMemmoryUsage();
-
+  Devices::CalculateMemmoryUsageDifference("onSetup");
 
   g_frameRepo.displayFFATInfo();
   Serial.printf("Running upon %d\n", xPortGetCoreID());
   
   #ifndef SINGLE_CORE_RUN
   xTaskCreatePinnedToCore(second_loop, "second loop", 10000, NULL, ( 2 | portPRIVILEGE_BIT ), &g_secondCore, 0);
+  Devices::CalculateMemmoryUsageDifference("second loop");
   #endif
-  Devices::CalculateMemmoryUsage();  
+   
   Devices::BuzzerTone(880);
   delay(100);
   g_lua.CallFunction("onPreflight");
   Devices::BuzzerNoTone();
   
-  Devices::CalculateMemmoryUsage();
+  Devices::CalculateMemmoryUsageDifference("completed setup");
 }
 
 void second_loop(void*){
@@ -197,7 +207,6 @@ void loop() {
     return;
   }
   
-
   if (Devices::AutoCheckPowerLevel() && !Devices::CheckPowerLevel()){
     Devices::WaitForPower(0);
     return;
@@ -206,7 +215,11 @@ void loop() {
   Devices::BeginFrame();
   Devices::ReadSensors();
   g_remoteControls.update();
-  g_remoteControls.updateButtons();
+  //g_remoteControls.updateButtons();
+
+  g_remoteControls.sendUpdatesToLua();
+
+
   g_lua.CallFunctionT("onLoop", Devices::getDeltaTime());
   #ifdef SINGLE_CORE_RUN
   g_animation.Update(g_frameRepo.takeFile());

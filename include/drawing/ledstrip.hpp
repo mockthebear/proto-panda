@@ -84,7 +84,7 @@ class LedGroup : public BaseLedGroup{
 
 class LedStrip { 
     public:
-        LedStrip():m_ledAmount(0),m_maxBrightness(0),m_targetBrigthness(0),m_turnOnRate(0),m_currentTargetBrigtness(0),m_leds(nullptr),m_enabled(false),m_managed(false),m_gentlyTurnOn(false),m_mutex(xSemaphoreCreateMutex()){};
+        LedStrip():m_groups(nullptr),m_ledAmount(0),m_maxBrightness(0),m_targetBrigthness(0),m_turnOnRate(0),m_currentTargetBrigtness(0),m_leds(nullptr),m_enabled(false),m_managed(false),m_gentlyTurnOn(false),m_mutex(xSemaphoreCreateMutex()){};
         bool Begin(uint16_t ledCount, uint16_t maxbrightness){
             return BeginDual(ledCount, 0, maxbrightness);
         }
@@ -148,7 +148,7 @@ class LedStrip {
         int* getSegmentParameter2(int id);
         int* getSegmentParameter3(int id);
     private:
-        LedGroup m_groups[MAX_LED_GROUPS];
+        LedGroup *m_groups;
     
         int m_ledAmount;
         uint8_t m_maxBrightness, m_targetBrigthness, m_turnOnRate;

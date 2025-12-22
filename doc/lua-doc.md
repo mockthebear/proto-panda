@@ -3,6 +3,7 @@
 1. [Lua Functions](#lua-functions)
 2. [Lua Constants](#lua-constants)
 3. [LED Behaviors](#led-behaviors)
+4. [Bluetooth Interface](#bluetooth-interface)  
 
 # Lua functions
 
@@ -503,56 +504,6 @@ Draws an icon at the specified position.
   - `iconId` (int): The ID of the icon to draw.
 - **Returns**: `nil`
 
-## Remote control
-#### `startBLE()`
-Starts the Bluetooth Low Energy (BLE) radio and interface.
-- **Returns**: `bool` (`true` if successful, otherwise `false`).
-
-#### `getBleDeviceUpdateDt(device)`
-Returns time since last update for BLE device in milliseconds.
-- **Parameters**:
-  - `device` (int): Device ID (0-based)
-- **Returns**: `int`
-
-#### `getBleDeviceLastUpdate(device)`
-Returns timestamp of last BLE device update.
-- **Parameters**:
-  - `device` (int): Device ID (0-based)
-- **Returns**: `int`
-
-#### `getConnectedRemoteControls()`
-Returns the number of connected remote controls.
-- **Returns**: `int` (The number of connected devices).
-
-#### `isElementIdConnected(id)`
-Checks if a remote control with the given ID is connected.
-- **Parameters**:
-  - `id` (int): The ID of the remote control.
-- **Returns**: `bool` (`true` if connected, otherwise `false`).
-
-#### `beginBleScanning()`
-Starts scanning for BLE devices.
-- **Returns**: `nil`
-
-#### `setScanInterval(seconds)`
-Sets the interval for scanning for BLE devices.
-- **Parameters**:
-  - `seconds` (int): The scan interval in seconds.
-- **Returns**: `nil`
-
-#### `setMaximumControls(count)`
-Sets the maximum number of connected remote controls.
-- **Parameters**:
-  - `count` (int): The maximum number of devices.
-- **Returns**: `nil`
-
-#### `acceptBLETypes(service, characteristicStream, characteristicId)`
-Set an service uuid to be accepted with its cgaracteristics for streaming and the remote id
-- **Parameters**:
-  - `service` (string): Service UUID
-  - `characteristicStream` (string): Stream characteristic UUID
-  - `characteristicId` (string): Remote ID characteristic UUID
-- **Returns**: `int` Current id
 ## Led strips
 
 #### `ledsBegin(led_count, max_brightness])`
@@ -1043,11 +994,18 @@ Gets the current I2C operation timeout.
 - `DEVICE_X_BUTTON_UP`: Button mapping for up button on device (0 to `MAX_BLE_CLIENTS`).
 - `DEVICE_X_BUTTON_DOWN`: Button mapping for down button on device (0 to `MAX_BLE_CLIENTS`).
 - `DEVICE_X_BUTTON_CONFIRM`: Button mapping for confirm button on device (0 to `MAX_BLE_CLIENTS`).
+- `DEVICE_X_BUTTON_AUX_A`: Button mapping for auxiliar function A button on device (0 to `MAX_BLE_CLIENTS`).
+- `DEVICE_X_BUTTON_AUX_B`: Button mapping for auxiliar function B button on device (0 to `MAX_BLE_CLIENTS`).
+- `DEVICE_X_BUTTON_BACK`: Button mapping for back button on device (0 to `MAX_BLE_CLIENTS`).
 - `BUTTON_LEFT`: Same as DEVICE_0_BUTTON_LEFT
 - `BUTTON_RIGHT`: Same as DEVICE_0_BUTTON_RIGHT
 - `BUTTON_UP`: Same as DEVICE_0_BUTTON_UP
 - `BUTTON_CONFIRM`: Same as DEVICE_0_BUTTON_CONFIRM
 - `BUTTON_DOWN`: Same as DEVICE_0_BUTTON_DOWN
+- `BUTTON_AUX_A`: Same as DEVICE_0_BUTTON_AUX_A
+- `BUTTON_AUX_B`: Same as DEVICE_0_BUTTON_AUX_B
+- `BUTTON_BACK`: Same as DEVICE_0_BUTTON_BACK
+
 
 
 ## Led Behavior
@@ -1179,3 +1137,200 @@ Gets the current I2C operation timeout.
   - **Description**: No behavior is applied. The LEDs in the segment will remain off or unchanged.
   - **Parameters**: None.
 
+
+# Bluetooth Interface
+
+
+## Radio and BLE functions
+
+#### `startBLE()`
+Starts the envoriment for, but dont start the radio yet. Bluetooth Low Energy (BLE).
+- **Returns**: `bool` (`true` if successful, otherwise `false`).
+
+#### `startBLERadio(powerLevel)`
+Starts the radio.
+- **Returns**: `bool` (`true` if successful, otherwise `false`).
+
+#### `getRRSI(connId)`
+Return the RSSI from a given connection
+- **Returns**: `int` 
+
+#### `getClientIdFromControllerId(id)`
+Given the client ID, return the id of its connection
+- **Returns**: `int` 
+
+#### `getConnectedRemoteControls()`
+Returns the number of connected remote controls.
+- **Returns**: `int` (The number of connected devices).
+
+#### `isElementIdConnected(id)`
+Checks if a remote control with the given ID is connected.
+- **Parameters**:
+  - `id` (int): The ID of the remote control.
+- **Returns**: `bool` (`true` if connected, otherwise `false`).
+
+#### `beginBleScanning()`
+Starts scanning for BLE devices.
+- **Returns**: `nil`
+
+#### `setLogDiscoveredBleDevices(bool)`  
+When true, each scanned device will be saved on the log filew
+- **Retorna**: `nil`  
+
+#### `setMaximumControls(count)`
+Sets the maximum number of connected remote controls.
+- **Parameters**:
+  - `count` (int): The maximum number of devices.
+- **Returns**: `nil`
+
+#### `getCharacteristicsFromService(connectionId, uuid, refresh)`
+Get all characteristics a certain service has
+- **Parameters**:
+  - `connectionId` (int): connection id.
+  - `uuid` (string): uuid.
+  - `refresh` (bool): refresh information?
+- **Returns**: `nil`
+
+
+
+## Handling BLE connections
+
+Here's an example of how we accept connections from a mouse/keyboard/joystick:
+```lua
+  drivers.mouseHandler = BleServiceHandler("00001812-0000-1000-8000-00805f9b34fb")
+  drivers.mouseHandler:SetOnConnectCallback(drivers.onConnectHID)
+  drivers.mouseHandler:SetOnDisconnectCallback(drivers.onDisconnectHID)
+  drivers.mouseListener = drivers.mouseHandler:AddCharacteristics("2a4d")
+  drivers.mouseListener:SetSubscribeCallback(drivers.onMouseCallback) 
+  drivers.mouseListener:SetCallbackModeStream(false)
+```
+First we create a service handler and we pass a UUID. That specific uuid is from a Human Interface Device generic. So any device that has mouse/keyboard/josystick capabilities will have thi service on them.
+The moment we register it, any scanned device that is advertising and have this specific service UUID will be attempted to connect.
+
+The next function we create a callback when the device is connected. Here's an example of the callback:
+```lua
+function drivers.onConnectHID(connectionId, controllerId, address, name)
+    log("Connected conId="..connectionId.." controller="..controllerId.." addr=\""..address.."\" name=["..name.."]")
+end
+```
+The connectionId can be used to get information about the device. It is unique for each connection. 
+ControllerId is the ID used by the protopanda. The first device connected will have id 0, and the second one is 1. But the moment one of them disconnect, that ID will be free'd, so next connection will be able to reuse the same ID.
+Address is just a string with the address and name is the name if present.
+
+Same goes to `SetOnDisconnectCallback`, but instead of address and name, we get the reason of it beeing disconnected.
+```lua
+function drivers.onDisconnectHID(connectionId, controllerId, reason)
+    log("Disconnected "..connectionId.." due ".. reason)
+end
+``` 
+
+Once we defined those callbacks (opitional), we can attach a listener to each of the characteristics we want:
+```lua
+drivers.mouseListener = drivers.mouseHandler:AddCharacteristics("2a4d")
+drivers.mouseListener:SetSubscribeCallback(drivers.onMouseCallback) 
+drivers.mouseListener:SetRequired(true)
+drivers.mouseListener:SetCallbackModeStream(false)
+```
+Once the charcteristics is defined, we can set it as  a required (if not present, the connection is dropped) and a callback if there is a subscribe in the service.
+The callback goes as follow:
+```lua
+function drivers.onMouseCallback(connectionId, controllerId, data)
+--handling
+end
+```
+
+There we can find the connectionId, the controllerId and a array containing the data. The data will come as valeus from 0 to 255
+
+## Handling BLE functions
+
+### `BleServiceHandler(uuid)`
+Create a handler object. Try to keep this object in to a global or stored envoriment. Because GC wont delete the cpp reference but it will do the lua reference.
+- **Parameters**:
+  - `uuid` (string): uuid.
+- **Returns**: `BleServiceHandlerObject`
+
+### `BleServiceHandler::ReadFromCharacteristics(clientId, characteristicsUuid)`
+Reads data from a certain client and certain characteristics.
+- **Parameters**:
+  - `clientId` (int): connectionId.
+  - `uuid` (string): can be the 16bit uuid.
+- **Returns**: `int array`
+
+### `BleServiceHandler::GetServices(clientId)`
+Get avaliable services in client
+- **Parameters**:
+  - `clientId` (int): connectionId.
+- **Returns**: `string array`
+
+### `BleServiceHandler::AddAddressRequired(address)`
+When set for the first time, it enforces the connection to accept only if the address was previously inserted.
+Example would be:
+```lua
+Handler = BleServiceHandler("00001812-0000-1000-8000-00805f9b34fb")
+Handler:AddAddressRequired("AA:BB:CC:DD:EE")
+Handler:AddAddressRequired("FF:00:11:22:3")
+```
+That way, only devices with the specific service and those two specific addresses can connect.
+If both `AddAddressRequired` and `AddNameRequired` defined. The condition is an "and". Need to match any of the address and any of the name
+- **Parameters**:
+  - `address` (string): address.
+
+### `BleServiceHandler::AddNameRequired(name)`
+When set for the first time, it enforces the connection to accept only if the name was previously defined
+Example would be:
+```lua
+Handler = BleServiceHandler("00001812-0000-1000-8000-00805f9b34fb")
+Handler:AddNameRequired("VR-PARK")
+Handler:AddNameRequired("Beauty-r1")
+```
+That way, only devices with the specific service and those two specific names can connect.
+If both `AddAddressRequired` and `AddNameRequired` defined. The condition is an "and". Need to match any of the address and any of the name
+- **Parameters**:
+  - `name` (string): address.
+
+
+### `BleServiceHandler::GetCharacteristics(clientId)`
+Get avaliable characteristics in current service
+- **Parameters**:
+  - `clientId` (int): connectionId.
+- **Returns**: `string array`
+
+### `BleServiceHandler::WriteToCharacteristics(message, clientId, characteristics[, reply])`
+Write a message to the characteristics specified
+- **Parameters**:
+  - `message` (int array): messaage bytes.
+  - `clientId` (int): connectionId.
+  - `uuid` (string): can be the 16bit uuid.
+  - `reply` (bool): wait for reply.
+- **Returns**: `bool`
+
+### `BleServiceHandler::SetOnDisconnectCallback(callback)`
+Define a callback to when a device disconnects
+- **Parameters**:
+  - `callback` (lua function): callback.
+
+### `BleServiceHandler::SetOnConnectCallback(callback)`
+Define a callback to when a device connects
+- **Parameters**:
+  - `callback` (lua function): callback.
+
+### `BleServiceHandler::AddCharacteristics(callback)`
+Returns a handler for the specified characteristics
+- **Parameters**:
+  - `uuid` (string): can be the 16bit uuid.
+- **Returns**: `BleCharacteristicsHandlerObject`
+
+### `BleCharacteristicsHandler::SetSubscribeCallback(callback)`
+Returns a handler for when a message oif the specified characterists arrive
+- **Parameters**:
+  - `uuid` (string): can be the 16bit uuid.
+
+### `BleCharacteristicsHandler::SetCallbackModeStream(stream)`
+When this is enabled, each message is handled on each loop. This way, messages can pile up, but one message per loop. When false, all messages are processed on the loop until the queue is empty.
+- **Parameters**:
+  - `stream` (bool): true or false
+
+### `BleCharacteristicsHandler::SetRequired(req)`
+If set as required, when the device connects and there is not the characteristics specificed present, a disconnect is issued.
+- **Parameters**:
+  - `req` (bool): true or false

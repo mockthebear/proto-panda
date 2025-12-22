@@ -374,7 +374,7 @@ void Animation::SetInterruptAnimation(int duration, std::vector<int> frames){
 
     AnimationSequence newSeq;
     newSeq.m_duration = max(duration,1);
-    newSeq.m_frames = frames;
+    newSeq.m_frames = PSRAMVector<int>(frames.begin(), frames.end());
     newSeq.m_counter = millis()+duration;
     newSeq.m_frame = 0;
     newSeq.m_repeat = -1;
@@ -385,7 +385,6 @@ void Animation::SetInterruptAnimation(int duration, std::vector<int> frames){
 }
 
 void Animation::SetAnimation(int duration, std::vector<int> frames, int repeatTimes, bool dropAll, int externalStorageId){
-    
     if (dropAll){
         xSemaphoreTake(m_mutex, portMAX_DELAY);
         while (m_animations.size() > 0){
@@ -396,7 +395,7 @@ void Animation::SetAnimation(int duration, std::vector<int> frames, int repeatTi
 
     AnimationSequence newSeq;
     newSeq.m_duration = max(duration,1);
-    newSeq.m_frames = frames;
+    newSeq.m_frames = PSRAMVector<int>(frames.begin(), frames.end());
     newSeq.m_counter = 0;
     newSeq.m_frame = 0;
     newSeq.m_isNew = true;

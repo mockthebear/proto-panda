@@ -2,11 +2,11 @@
 /*
     Avoid changing this vile, change the config.hpp instead if you need custom configuration
 */
-#define PANDA_VERSION "1.1.9"
+#define PANDA_VERSION "2.0.0"
 /*
 Cache file version to invalidate cache in case of firmware update
 */
-#define PANDA_CACHE_VERSION 12
+#define PANDA_CACHE_VERSION 13
 /*
     Pin to enable the buck converter.
     With this pin on HIGH the buck converter will start regulating the USB/Battery input
@@ -80,8 +80,8 @@ Cache file version to invalidate cache in case of firmware update
     BLE Buttons
 */
 
-#define MAX_BLE_BUTTONS 5
-#define MAX_BLE_CLIENTS 4
+#define MAX_BLE_BUTTONS 8
+#define MAX_BLE_CLIENTS 2
 
 /*
     Led strip
@@ -128,7 +128,7 @@ Servos
 #define PANEL_CHAIN 2      // Total number of panels chained one to another
 
 #define FILE_SIZE_BULK_SIZE ( PANEL_WIDTH * PANEL_HEIGHT * sizeof(uint16_t) )
-#define FILE_HEADER_BYTES 4
+#define FILE_HEADER_BYTES 8
 #define FILE_HEADER_SIZE (sizeof(uint8_t) * FILE_HEADER_BYTES )
 //File + header size
 #define FILE_SIZE (( FILE_SIZE_BULK_SIZE  +  FILE_HEADER_SIZE )) 

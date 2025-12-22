@@ -4,15 +4,23 @@ local generic = require("generic")
 local menu = require("menu")
 local boop = require("boop")
 local configloader = require("configloader")
+local drivers = require("drivers")
+local input = require("input")
 
 function onSetup()
 
     dictLoad()
-    setMaximumControls(2)
-    acceptBLETypes("d4d31337-c4c1-c2c3-b4b3-b2b1a4a3a2a1", "afaf", "fafb")
+
     setLogDiscoveredBleDevices(false)
     generic.displaySplashMessage("Starting:\nBLE")
     startBLE()
+
+    drivers.EnableProtopandaController()
+    drivers.EnableGenericAndroidMouse()
+
+    
+    startBLERadio(ESP_PWR_LVL_P9)
+
     local seed = tonumber(dictGet("random_seed")) or millis()
     seed = seed + millis()
     math.randomseed(seed)
@@ -25,7 +33,7 @@ function onSetup()
     generic.displaySplashMessage("Starting:\nExpressions")
 
     configloader.Load("/config.json")
-
+    input.Load()
     expressions.Load() 
     scripts.Load() 
     boop.Load()
@@ -54,6 +62,8 @@ function onPreflight()
 end
 
 function onLoop(dt)
+    drivers.update()
+    input.updateButtonStates()
     if not scripts.Handle(dt) then
         return
     end

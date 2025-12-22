@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <FS.h>
 #include "config.hpp"
+#include "tools/psrammap.hpp"
 
 
 enum ColorMode{
@@ -28,7 +29,7 @@ enum AnimationFrameAction{
 class AnimationSequence{
     public:
         AnimationSequence():m_duration(2500),m_frame(0),m_counter(0),m_repeat(-1),m_updateMode(0),m_storageId(-1),m_isNew(true){}
-        std::vector<int> m_frames;
+        PSRAMVector<int> m_frames;
         AnimationFrameAction Update(int m_interruptPin);
         inline int GetFrameId();
         int m_duration;

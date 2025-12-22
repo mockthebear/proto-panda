@@ -11,6 +11,8 @@ local scripts = require("scripts")
 local ui = require("ui")
 local generic = require("generic")
 local boop = require("boop")
+local input = require("input")
+local drivers = require("drivers")
 
 MAX_INTERFACE_ICONS = 4
 MENU_SPACING = 13
@@ -23,7 +25,10 @@ local _M = {
     displayTime = 2000,
     settings={},
     maxTextShowSize = 20,
-    shader = false
+    shader = false,
+    infoShown=1,
+    swapTimer = millis()+5*1000,
+    rssi = {},
 }
 
 function _M.setup(expressions)
@@ -36,6 +41,8 @@ function _M.setup(expressions)
     _M.reapplyButtons()
     _M.settings_icon = oledCreateIcon({0x00, 0x00, 0x16, 0x80, 0x3f, 0xc0, 0x7f, 0xe0, 0x39, 0xc0, 0x70, 0xe0, 0x70, 0xe0, 0x39, 0xc0, 0x7f, 0xe0, 0x3f, 0xc0, 0x16, 0x80, 0x00, 0x00}, 12, 12)
     _M.face_icon = oledCreateIcon({0x00, 0x00, 0x00, 0x00, 0x01, 0xc0, 0x21, 0xc0, 0x60, 0x00, 0x00, 0x00, 0x00, 0x20, 0x15, 0x40, 0x2a, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, 12, 12)
+    _M.logo_no_handy = oledCreateIcon({ 0xff, 0xf0, 0xc0, 0x30, 0xa0, 0x50, 0x90, 0x90, 0x89, 0x10, 0x86, 0x10, 0x86, 0x10, 0x89, 0x10, 0x90, 0x90, 0xa0, 0x50, 0xc0, 0x30, 0xff, 0xf0}, 12, 12)
+
     _M.enterMainMenu()
     _M.face_selection_style = dictGet("face_selection_style") == "GRID" and "GRID" or "QUICK"
 
@@ -188,27 +195,29 @@ function _M.draw()
 
     if _M.mode == MODE_MAIN_MENU then
         if _M.selected == 0 then
-            oledDrawRect(67, 0, 60, 15, 1)
+            oledDrawRect(67, 0, 60, 14, 1)
         elseif _M.selected == 1 then
-            oledDrawRect(67, 15, 60, 15, 1)
+            oledDrawRect(67, 14, 60, 14, 1)
         else 
-            oledDrawRect(67, 31, 60, 15, 1)
+            oledDrawRect(67, 28, 60, 14, 1)
         end
-        oledSetCursor(68, 3)
+        oledSetCursor(69, 3)
         oledDrawText("Faces")
-        oledSetCursor(68, 16)
+        oledSetCursor(69, 16)
         oledDrawText("Setting")
-        oledSetCursor(68, 32)
+        oledSetCursor(69, 31)
         oledDrawText("Scripts")
-        oledDrawRect(111, 1, 13, 13, 1)
-        oledDrawRect(111, 16, 13, 13, 1)
-        oledDrawRect(111, 33, 13, 13, 1)
 
-        oledDrawIcon(112, 16, _M.settings_icon)
-        oledDrawIcon(112, 32, _M.settings_icon)
-        oledDrawIcon(112, 2, _M.face_icon)
+        oledDrawRect(113, 1, 12, 12, 1)
+        oledDrawRect(113, 15, 12, 12, 1)
+        oledDrawRect(113, 29, 12, 12, 1)
+
+        oledDrawIcon(113, 15, _M.settings_icon)
+        oledDrawIcon(113, 29, _M.settings_icon)
+        oledDrawIcon(113, 2, _M.face_icon)
+
         oledFaceToScreen(0, 0) 
-        oledDrawBottomBar()
+        _M.DrawBottomBar()
         oledDisplay()
     elseif _M.mode == MODE_FACE_QUICK then
         local id = expressions.GetCurrentExpressionId()
@@ -224,7 +233,7 @@ function _M.draw()
             oledDrawText("Custom?")
         end
         oledFaceToScreen(32, 14)
-        oledDrawBottomBar()
+        _M.DrawBottomBar()
         if (_M.quit_timer < 1000) then 
             local rad =  - ((_M.quit_timer-1000) / 1000 ) * 128
             oledDrawFilledCircle(64,32 , rad, 0)
@@ -327,6 +336,96 @@ function _M.draw()
     end
 end
 
+function drawSignalStrength(x, y, rssi)
+    -- Read RSSI value (example range: -100 to -30, where -30 is strongest)
+    local rssi = rssi or -100
+
+    local numBars = 1
+    if rssi >= -30 then
+        numBars = 5
+    elseif rssi >= -50 then
+        numBars = 4
+    elseif rssi >= -70 then
+        numBars = 3
+    elseif rssi >= -85 then
+        numBars = 2
+    end
+
+    -- Draw signal bars (upside down - weakest at top, strongest at bottom)
+    for i = 0, numBars do
+        oledDrawLine(x + i*2, y+11, x+i*2, y+11-i*2+1, 1)
+    end
+end
+
+function _M.DrawBottomBar()
+    local posY = OLED_SCREEN_HEIGHT-18;
+
+    oledDrawFastVLine(0,posY+1,16,1);
+    oledDrawFastHLine(1,posY,OLED_SCREEN_WIDTH-2,1);
+    oledDrawFastHLine(1,posY+17,OLED_SCREEN_WIDTH-2,1);
+    oledDrawFastVLine(OLED_SCREEN_WIDTH-1,posY+1,16,1);
+
+    local startX = 0
+    --oledDrawFastVLine(startX,posY,17,1);
+    --DrawAccelerometer(0, startX, posY);
+    
+    --DrawAccelerometer(1, startX+17, posY);
+    for i=0,MAX_BLE_CLIENTS-1 do
+        if isElementIdConnected(i) then
+            oledDrawRect(startX+2, posY+2, 13, 13, 1)
+            drawSignalStrength(startX+2,posY+2,_M.rssi[i])
+        else
+            oledDrawIcon(startX+2, posY+2, _M.logo_no_handy)
+        end
+        startX = startX + 15
+    end
+
+
+    --oledDrawFastVLine(startX+33,posY,17,1);
+
+    oledSetCursor(startX + 8, posY+4);
+    if (_M.infoShown == 1) then
+        local f = getFps()
+        if f > 200 then
+            oledDrawText("FPS: >200")
+        else 
+            oledDrawText(string.format("FPS: %2.2f", f))
+        end
+    elseif (_M.infoShown == 2) then
+            oledDrawText(string.format("Ram: %2.2f%%", getFreePsram()))
+    elseif (_M.infoShown == 3) then
+        if getLuaFps then
+            local c = getLuaFps()
+            if c > 200 then
+                oledDrawText("L.FPS: >99")
+            else
+                oledDrawText(string.format("L.FPS: %2.2f", c))
+            end
+        else
+            oledDrawText(string.format("FPS: %2.2f%%", getFps()))
+        end
+    elseif (_M.infoShown == 4) then
+        oledDrawText(string.format("Heap: %2.2f%%", getFreeHeap()))
+    end
+
+    if _M.swapTimer < millis() then
+        _M.swapTimer = millis() + 5 * 1000
+        _M.infoShown = _M.infoShown+1
+        if _M.infoShown > 4 then
+            _M.infoShown = 1
+        end
+        for i=0,MAX_BLE_CLIENTS-1 do  
+            if isElementIdConnected(i) then  
+                local connId = getClientIdFromControllerId(i)
+                if connId >= 0 then  
+                    _M.rssi[i] = getRRSI(connId)
+                end
+            end
+        end
+    end
+
+    oledSetCursor(0,0);
+end
 
 function _M.handleMenu(dt)
 
@@ -367,14 +466,14 @@ end
 
 
 function _M.handleMainMenu()
-    if readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
         _M.selected = _M.selected +1
         toneDuration(540, 100)
          if _M.selected > 2 then  
             _M.selected = 0
         end
     end
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
         toneDuration(440, 100)
         if _M.selected == 0 then
             _M.enterFaceMenu()
@@ -387,7 +486,7 @@ function _M.handleMainMenu()
         return
     end
 
-    if readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then 
         _M.selected = _M.selected -1
         toneDuration(340, 100)
         if _M.selected < 0 then  
@@ -397,7 +496,7 @@ function _M.handleMainMenu()
 end
 
 function _M.handleBrightnessMenu(dt)
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED or input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED then 
         _M.enterSettingMenu()
         dictSet("panel_brightness", tostring(_M.brigthness))
         dictSave()
@@ -405,7 +504,7 @@ function _M.handleBrightnessMenu(dt)
     end
     _M.timer = _M.timer - dt
 
-    if readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED then
+    if input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED then
         if (_M.timer < 0) then 
             _M.timer = 10
             toneDuration(340, 10)
@@ -418,7 +517,7 @@ function _M.handleBrightnessMenu(dt)
         end
     end
 
-    if readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED then
+    if input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED then
         if (_M.timer < 0) then 
             _M.timer = 10
             toneDuration(540, 10)
@@ -433,7 +532,7 @@ function _M.handleBrightnessMenu(dt)
 end
 
 function _M.handleLedBrightnessMenu(dt)
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED or input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED then 
         _M.enterSettingMenu()
         dictSet("led_brightness", tostring(_M.led_brightness))
         dictSave()
@@ -441,7 +540,7 @@ function _M.handleLedBrightnessMenu(dt)
     end
     _M.timer = _M.timer - dt
 
-    if readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED then
+    if input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED then
         if (_M.timer < 0) then 
             _M.timer = 10
             toneDuration(340, 10)
@@ -453,7 +552,7 @@ function _M.handleLedBrightnessMenu(dt)
         end
     end
 
-    if readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED then
+    if input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED then
         if (_M.timer < 0) then 
             _M.timer = 10
             toneDuration(540, 10)
@@ -468,7 +567,7 @@ end
 
 
 function _M.handleFaceQuickMenu(dt)
-    if readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED then
+    if input.readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED then
         local exp = expressions.Previous()
         if exp and exp.name then  
             _M.menuExpression = exp.name
@@ -477,7 +576,7 @@ function _M.handleFaceQuickMenu(dt)
         toneDuration(340, 10)
     end
 
-    if readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED then
+    if input.readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED then
         local exp = expressions.Next()
         if exp and exp.name then  
             _M.menuExpression = exp.name
@@ -486,7 +585,7 @@ function _M.handleFaceQuickMenu(dt)
         toneDuration(540, 10)
     end
 
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED then 
         _M.quit_timer = _M.quit_timer - dt 
         if (_M.quit_timer <= 0) then 
             _M.enterMainMenu()
@@ -496,13 +595,18 @@ function _M.handleFaceQuickMenu(dt)
     else 
         _M.quit_timer = 1500
     end
+    if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED then  
+        _M.enterMainMenu()
+        toneDuration(440, 10)
+        return
+    end
 end
 
 
 function _M.handleFaceMenu(dt)
 
     _M.timer = _M.timer - dt
-    if readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED then 
         toneDuration(340, 50)
         if _M.selected < MAX_INTERFACE_ICONS then
             local maxExpressions = expressions.GetExpressionCount()
@@ -516,7 +620,7 @@ function _M.handleFaceMenu(dt)
         end
     end
 
-    if readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_RIGHT) == BUTTON_JUST_PRESSED then 
         local maxExpressions = expressions.GetExpressionCount()
   
         toneDuration(540, 50)
@@ -531,7 +635,7 @@ function _M.handleFaceMenu(dt)
             end
         end    end
 
-    if readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then 
         toneDuration(540, 50)
         if (_M.selected%MAX_INTERFACE_ICONS == 1) then 
             _M.selected = _M.selected +(MAX_INTERFACE_ICONS-1)
@@ -546,7 +650,7 @@ function _M.handleFaceMenu(dt)
             _M.selected = MAX_INTERFACE_ICONS-1
         end
     end
-    if readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
         toneDuration(340, 50)
         if (_M.selected%MAX_INTERFACE_ICONS == 0) then 
             _M.selected = _M.selected -(MAX_INTERFACE_ICONS-1)
@@ -559,10 +663,10 @@ function _M.handleFaceMenu(dt)
             _M.selected = (lastPage*MAX_INTERFACE_ICONS)+1
         end
     end
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
         _M.hasConfirmPressedToAvoidUnwantedSelection = true
     end
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED then 
         
         _M.quit_timer = _M.quit_timer - dt 
         if (_M.quit_timer <= 0) then 
@@ -573,8 +677,13 @@ function _M.handleFaceMenu(dt)
     else 
         _M.quit_timer = 1500
     end
+    if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED then  
+        _M.hasConfirmPressedToAvoidUnwantedSelection = false
+        _M.enterMainMenu()
+        return
+    end
 
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_RELEASED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_RELEASED then 
         if not _M.hasConfirmPressedToAvoidUnwantedSelection then  
             return
         end

@@ -1,6 +1,8 @@
 local expressions = require("expressions")
 local generic = require("generic")
 local configloader = require("configloader")
+local input = require("input")
+
 local DrawText = generic.DrawText
 local DrawSprite = generic.DrawSprite
 local Map = generic.map
@@ -148,7 +150,7 @@ end
 
 
 function _M.Calibrate(dt)
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
         if _M.calibration_stage == 1 then
             toneDuration(440, 500)
             _M.calibration_stage = 2
@@ -187,13 +189,13 @@ function _M.Calibrate(dt)
             end
         end
     end
-    if readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED then 
+    if input.readButtonStatus(BUTTON_LEFT) == BUTTON_JUST_PRESSED then 
         if _M.calibration_stage == 5 then
             toneDuration(640, 500)
             _M.calibration_stage = 4
         end
     end
-    if readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED  then 
+    if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED  then 
         local reading = readLidar() 
         if reading < 8190 then
             _M.avg =  _M.avg + reading
@@ -217,7 +219,7 @@ function _M.Calibrate(dt)
     end
 
     if _M.calibration_stage == 7 then 
-        if readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then 
+        if input.readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED then 
             if _M.boopTimerDuration == 1 then 
                 _M.boopTimerDuration = 0
             end
@@ -225,7 +227,7 @@ function _M.Calibrate(dt)
             toneDuration(340, 50)
             _M.boopTimer = 0
         end
-        if readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
+        if input.readButtonStatus(BUTTON_DOWN) == BUTTON_JUST_PRESSED then 
             _M.boopTimerDuration = _M.boopTimerDuration - 50
             toneDuration(640, 50)
             _M.boopTimer = 0
@@ -235,6 +237,12 @@ function _M.Calibrate(dt)
         end
         _M.calibrationReading, _M.calibrationOk = _M.readLidar()
         _M.isBoopedCheck(_M.calibrationReading, _M.calibrationOk, dt)
+    end
+    if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED then 
+        _M.quit = true
+        if _M.old_managed then
+           setPanelManaged(true)
+        end
     end
 end
 

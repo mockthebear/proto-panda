@@ -109,13 +109,12 @@ std::vector<int> Devices::I2CScan(){
         foundDevicesAddr.emplace_back(address);
         
         Devices::foundDevices[address] = true;
-        Logger::Print("I2C device found at address %d", address);
+        Logger::Info("I2C device found at address %d\n", address);
         nDevices++;
     }
     else if (error==4)
     {
-      Logger::Print("Unknown error at address ");
-      Logger::Println("%d", address);
+      Logger::Info("Unknown error at address %d", address);
     }    
   }
   if (nDevices >= 126){
@@ -293,6 +292,13 @@ float Devices::getFreePsram(){
   return Devices::percentagePsramFree;
 }
   
+void Devices::CalculateMemmoryUsageDifference(const std::string msg){
+  int32_t diffHeap = ESP.getFreeHeap()-(int32_t)Devices::freeHeapBytes;
+  int32_t diffPsram = ESP.getFreePsram()-(int32_t)Devices::freePsramBytes;
+
+  Logger::Info("[Memory] memmory_difference msg=\"%s\" heap=%d psram=%d", msg.c_str(), diffHeap, diffPsram);
+  Devices::CalculateMemmoryUsage();
+}
 
 void Devices::CalculateMemmoryUsage(){
 

@@ -2,6 +2,7 @@ local _M = {
 	VERSION_REQUIRED="1.0.0",
 	shouldStop = false,
 }
+local input = require("input")
 
 function _M.onSetup()
 	setPanelManaged(false)
@@ -82,7 +83,7 @@ function _M.onLoop(dt)
 	end
 	dt = dt/1000;
 
-	if readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED and _M.grounded then 
+	if input.readButtonStatus(BUTTON_UP) == BUTTON_JUST_PRESSED and _M.grounded then 
 		_M.vy = -40
 		toneDuration(1440, 200)
 		_M.grounded = false
@@ -143,7 +144,7 @@ function _M.onLoop(dt)
 
 
 	flipPanelBuffer()
-	if readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED then 
+	if input.readButtonStatus(BUTTON_BACK) == BUTTON_JUST_PRESSED or (input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_LEFT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_RIGHT) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_UP) == BUTTON_PRESSED and input.readButtonStatus(BUTTON_DOWN) == BUTTON_PRESSED) then 
 		_M.shouldStop = true
 		return true
 	end

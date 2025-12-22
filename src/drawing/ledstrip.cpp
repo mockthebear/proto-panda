@@ -5,6 +5,9 @@
 #include <Arduino.h>
 
 bool LedStrip::BeginDual(uint16_t ledCount, uint16_t secondLedCount, uint8_t maxbrightness){
+    if (m_groups == nullptr){
+        m_groups = (LedGroup*)ps_malloc(sizeof(LedGroup) *MAX_LED_GROUPS);
+    }
     if (ledCount > 0){
         Logger::Info("Starting total of %d leds", ledCount+secondLedCount);
         m_ledAmount = ledCount+secondLedCount;
