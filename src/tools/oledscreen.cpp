@@ -30,7 +30,7 @@ bool OledScreen::Start(){
     display.setRotation(OLED_SCREEN_ROTATION);
     display.clearDisplay();
     display.setTextSize(1);
-    display.setTextColor(WHITE);
+    display.setTextColor(1);
     display.setCursor(0, 0);
     display.clearDisplay();
     display.printf(":)\n");
@@ -104,7 +104,7 @@ void OledScreen::Clear(){
         return;
     }
     display.clearDisplay();
-    display.setTextColor(WHITE);
+    display.setTextColor(1);
     display.setTextSize(1);
     display.setCursor(0, 0);
 }
@@ -128,7 +128,7 @@ void OledScreen::CriticalFail(const char *str){
 
 void OledScreen::DrawCircularProgress(int val, int max, const char *title) {
     display.clearDisplay();
-    display.setTextColor(WHITE);
+    display.setTextColor(1);
     display.setTextSize(1);
 
     display.setCursor(0, 0);
@@ -156,7 +156,7 @@ void OledScreen::DrawCircularProgress(int val, int max, const char *title) {
     const int centerY = OLED_SCREEN_HEIGHT/2-4; 
     
 
-    display.drawCircle(centerX, centerY, radius, WHITE);
+    display.drawCircle(centerX, centerY, radius, 1);
     if (percent > 0) {
         float angle = 360 * percent;
         
@@ -164,7 +164,7 @@ void OledScreen::DrawCircularProgress(int val, int max, const char *title) {
             float rad = (i - 90.0f) * PI / 180.0f; 
             int x = centerX + radius * cos(rad);
             int y = centerY + radius * sin(rad);
-            display.drawLine(centerX, centerY, x, y, WHITE);
+            display.drawLine(centerX, centerY, x, y, 1);
         }
     }
     display.display();
@@ -172,7 +172,7 @@ void OledScreen::DrawCircularProgress(int val, int max, const char *title) {
 
 void OledScreen::DrawProgressBar(int val, int max, const char *title){
     display.clearDisplay();
-    display.setTextColor(WHITE);
+    display.setTextColor(1);
     display.setTextSize(1);
     display.setCursor(0, 0);
     display.printf("%s", title);
@@ -198,7 +198,7 @@ void OledScreen::SetConsoleMode(bool enable){
     display.setRotation(OLED_SCREEN_ROTATION);
     display.clearDisplay();
     display.setTextSize(1);
-    display.setTextColor(WHITE);
+    display.setTextColor(1);
     display.setCursor(0, 0);
     display.clearDisplay();
     lines.clear();
@@ -216,7 +216,7 @@ void OledScreen::PrintConsole(const char *str){
     display.setRotation(OLED_SCREEN_ROTATION);
     display.clearDisplay();
     display.setTextSize(1);
-    display.setTextColor(WHITE);
+    display.setTextColor(1);
     display.setCursor(0, 0);
 
     lines.push_back(str);
@@ -233,7 +233,7 @@ void OledScreen::PrintError(const char *str){
     display.setRotation(OLED_SCREEN_ROTATION);
     display.clearDisplay();
     display.setTextSize(1);
-    display.setTextColor(WHITE);
+    display.setTextColor(1);
     display.setCursor(0, 0);
     display.println("     [ERROR]");
     display.println(str);

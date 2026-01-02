@@ -490,7 +490,7 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("oledDisplay", DrawDisplayScreen);
   m_lua->FuncRegister("oledSetCursor", DrawSetCursor);
   m_lua->FuncRegister("oledSetFontSize", DrawSetFontSize);
-  m_lua->FuncRegisterOptional("oledSetTextColor", DrawSetTextColor, BLACK);
+  m_lua->FuncRegisterOptional("oledSetTextColor", DrawSetTextColor, 1);
   m_lua->FuncRegister("oledDrawText", DrawTextScreen);
   m_lua->FuncRegister("oledDrawRect", DrawRectScreen);
   m_lua->FuncRegister("oledDrawFilledRect", DrawRectFilledScreen);
@@ -681,8 +681,8 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("POWER_MODE_BATTERY", (int)POWER_MODE_BATTERY);
   m_lua->setConstant("POWER_MODE_REGULATOR_PD", (int)POWER_MODE_REGULATOR_PD);
 
-  m_lua->setConstant("BLACK", (int)BLACK);
-  m_lua->setConstant("WHITE", (int)WHITE);
+  m_lua->setConstant("BLACK", (int)1);
+  m_lua->setConstant("WHITE", (int)0);
 
   m_lua->setConstant("D1", 1);
   m_lua->setConstant("D2", 2);
