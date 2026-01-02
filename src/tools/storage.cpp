@@ -141,10 +141,11 @@ int32_t mySeek(PNGFILE *handle, int32_t position) {
 }
 
 // Function to draw pixels to the display
-void PNGDraw(PNGDRAW *pDraw) {
+int PNGDraw(PNGDRAW *pDraw) {
   static uint16_t raw[128];
   png.getLineAsRGB565(pDraw, raw, PNG_RGB565_LITTLE_ENDIAN, 0xffffffff);
   memcpy(Storage::tmpBuffer + (pDraw->y *pDraw->iWidth), raw, pDraw->iWidth * sizeof(uint16_t));
+  return 1;
 }
 
 
