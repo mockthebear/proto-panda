@@ -192,10 +192,10 @@ void second_loop(void*){
     vTaskDelay(1);
     Devices::EndAutoFrame();
     st = millis()-st;
-    if (st > 80){
-      Logger::Info("Animation cycle took too long %d and %d ms", st2, st);
+    if (st2 > 20){
+      Logger::Info("FPS is %f, %d", 1000.0f/(float)st2, st2);
     }
-    vTaskDelay(3);
+    vTaskDelay(1);
   }
   #endif
 }

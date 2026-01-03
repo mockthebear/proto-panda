@@ -6,6 +6,7 @@
 #include <FS.h>
 #include "config.hpp"
 #include "tools/psrammap.hpp"
+#include "drawing/renderer.hpp"
 
 
 enum ColorMode{
@@ -107,7 +108,7 @@ class Animation{
         uint32_t getLoadDuration() { return m_frameLoadDuration;};
     private:
         std::stack<AnimationSequence> m_animations;
-
+        RenderEngine rend;
         bool internalUpdate(File *file, AnimationSequence &seq);
         int m_shader;
         int m_lastFace;
