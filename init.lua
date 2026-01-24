@@ -15,8 +15,7 @@ function onSetup()
     generic.displaySplashMessage("Starting:\nBLE")
     startBLE()
 
-    drivers.EnableProtopandaController()
-    drivers.EnableGenericAndroidMouse()
+    drivers.EnableDrivers({"panda", "BLE-M3", "beauty-r1"})
 
     
     startBLERadio(ESP_PWR_LVL_P9)

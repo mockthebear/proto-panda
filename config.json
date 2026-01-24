@@ -21,12 +21,12 @@
     "joystick.right_hat=7": "BUTTON_UP",
     "joystick.buttons.4": "BUTTON_CONFIRM",
     "joystick.buttons.1": "BUTTON_BACK",
-    "beauty.buttons.4": "BUTTON_LEFT",
-    "beauty.buttons.1": "BUTTON_DOWN",
-    "beauty.buttons.3": "BUTTON_RIGHT",
-    "beauty.buttons.2": "BUTTON_UP",
-    "beauty.buttons.5": "BUTTON_CONFIRM",
-    "beauty.buttons.6": "BUTTON_BACK"
+    "generic.buttons.4": "BUTTON_LEFT",
+    "generic.buttons.1": "BUTTON_DOWN",
+    "generic.buttons.3": "BUTTON_RIGHT",
+    "generic.buttons.2": "BUTTON_UP",
+    "generic.buttons.5": "BUTTON_CONFIRM",
+    "generic.buttons.6": "BUTTON_BACK"
   },
   
   "frames": [

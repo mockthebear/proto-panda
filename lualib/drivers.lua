@@ -3,11 +3,9 @@ local versions = require("versions")
 if not MAX_BLE_BUTTONS then
     _G.MAX_BLE_BUTTONS = 8
 end
-local drivers = {
-    handlerPanda = nil,
-    mouseHandler = nil,
 
-    pandaListener = nil,
+local drivers = {
+    mouseHandler = nil,
     mouseListener = nil,
 
     maxButtons = MAX_BLE_BUTTONS,
@@ -16,11 +14,22 @@ local drivers = {
     joystick = {},
     mouse = {},
     keyboard = {},
-    beauty = {},
+    generic = {},
+
+    validEntries = {
+        ['joystick'] = true,
+        ['mouse'] = true,
+        ['keyboard'] = true,
+        ['generic'] = true,
+
+    },
 
 
     eventQueue = {},
     type_by_id = {},
+
+    loaded = {},
+    core = {},
 
 
     JOSYTICK_BUTTONS_MAP = {
@@ -31,37 +40,17 @@ local drivers = {
     },
 }
 
---Given the device type, there is specific mappings that we might need to keep track
 drivers.device_attribute_map = {
-    ['panda'] = {panda=drivers.panda},
-    ['beauty-r1'] = {beauty=drivers.beauty},
-    ['hid'] = {joystick=drivers.joystick, mouse=drivers.mouse, keyboard=drivers.keyboard},
+    ['hid'] = {'joystick', 'mouse', 'keyboard'},
 }
-
-
 
 do
     for i=0,MAX_BLE_CLIENTS-1 do   
-        local buttons = {}
-        for b=1,MAX_BLE_BUTTONS do  
-            buttons[b] = 0
-        end 
-        drivers.beauty[i] = {
+        drivers.generic[i] = {
             timeout=0,
             buttons={0,0,0,0,0,0,0,0}
         }
-        drivers.panda[i] = {
-            az = 0,
-            ax = 0, 
-            ay = 0,
-            gz = 0,
-            gx = 0,
-            gy = 0,
-            temp = 0,
-            buttons = buttons,
-            controllerId = 0,
-            last_update=0,
-        }
+        
         drivers.mouse[i] = {
             x=0,
             y=0,
@@ -77,153 +66,97 @@ do
             right_analog_x = 0,
             right_analog_y = 0,
         }
-        
         for __,b in pairs(drivers.JOSYTICK_BUTTONS_MAP) do  
             drivers.joystick[i].buttons[b] =0
         end
-
     end
 end
 
-JOYSTICK_HAT_NOTHING                = 0
-JOYSTICK_HAT_DIRECTION_RIGHT        = 1
-JOYSTICK_HAT_DIRECTION_DOWN_RIGHT   = 2
-JOYSTICK_HAT_DIRECTION_DOWN         = 3
-JOYSTICK_HAT_DIRECTION_DOWN_LEFT    = 4
-JOYSTICK_HAT_DIRECTION_LEFT         = 5
-JOYSTICK_HAT_DIRECTION_TOP_RIGHT    = 6
-JOYSTICK_HAT_DIRECTION_TOP          = 7
-JOYSTICK_HAT_DIRECTION_TOP_LEFT     = 8
-JOSYTICK_BUTTON_A                   = 4
-JOSYTICK_BUTTON_B                   = 1
-JOSYTICK_BUTTON_C                   = 3
-JOSYTICK_BUTTON_D                   = 2
-BEAUTY_BUTTON_1                     = 1
-BEAUTY_BUTTON_2                     = 2
-BEAUTY_BUTTON_3                     = 3
-BEAUTY_BUTTON_4                     = 4
-BEAUTY_BUTTON_5                     = 5
-BEAUTY_BUTTON_6                     = 6
-BEAUTY_BUTTON_7                     = 7
-BEAUTY_BUTTON_8                     = 8
 
-local function readInt16(data, index)
-    local low = data[index]
-    local high = data[index + 1]
-    index = index + 2
-    local value = high * 256 + low
-    if value >= 0x8000 then
-        value = value - 0x10000
-    end
-    return value, index
-end
-
-local function parsePandaData(controllerInfo, data)
-    local index = 1
-    controllerInfo.az,index = readInt16(data, index)
-    controllerInfo.ax,index = readInt16(data, index)
-    controllerInfo.ay,index = readInt16(data, index)
-    controllerInfo.gz,index = readInt16(data, index)
-    controllerInfo.gx,index = readInt16(data, index)
-    controllerInfo.gy,index = readInt16(data, index)
-    controllerInfo.temp,index = readInt16(data, index)
-
-    controllerInfo.controllerId = data[index]
-    index = index +1
-
-    local buttons = controllerInfo.buttons
-    for i = 1, 5 do
-        buttons[i] = data[index]
-        index = index + 1
+function drivers.EnableDrivers(driversToLoad)
+    for i,driverName in pairs(driversToLoad) do  
+        local success, content = pcall(dofile,"/lualib/drivers/"..driverName..'.lua')
+        if success and content then  
+            if content.type == "hid" then
+                if content.mode then  
+                    for i, mode in pairs(content.mode) do 
+                        if not drivers.validEntries[mode] then  
+                            error("Invalid mode '"..mode.."' in driver "..driverName)
+                        end
+                    end
+                    drivers.device_attribute_map[driverName] = content.mode
+                else 
+                    error("No mode set for "..driverName)
+                end
+                if drivers.loaded[driverName] then  
+                    error("Duplicated driver declared: "..driverName)
+                end
+                content.attribute_map = drivers.device_attribute_map[driverName]
+                drivers.loaded[driverName] = content
+                print("Loaded hid driver "..driverName)
+            elseif content.type == "core" then
+                drivers.validEntries[driverName] = true
+                drivers[driverName] = content.getDriverModules()
+                drivers.core[driverName] = content
+                print("Loaded core driver "..driverName)
+            else 
+                error("Undefined driver type "..tostring(content.type))
+            end
+        else 
+            log("Failed to load driver '"..driverName.."' due "..tostring(content))
+        end
     end
 
-    controllerInfo.last_update = millis()
-end
-
-
-function drivers.onSubscribeMessagePanda(connectionId, clientId, data)
-    if #data ~= 20 then  
-        log("Possible corrupt package in panda controller. Expected size 22 but got "..(#data))
-        return
+    drivers.EnableGenericAndroidMouse()
+    for i,b in pairs(drivers.core) do  
+        if not b.onEnable() then  
+            log("Failed to enable core driver "..tostring(i))
+        end
     end
-    parsePandaData(drivers.panda[clientId], data)
 end
 
-function drivers.onDisconnectPanda(connectionId, controllerId, reason)
+function drivers.FindDriver(connectionId, controllerId, address, name)
+    for driverName , loadedData in pairs(drivers.loaded) do  
+        print("Seach in "..driverName)
+        if loadedData.match then  
+            local match = loadedData.match
+            if match.byname then  
+                if name and name:lower() == match.byname:lower() then  
+                    return loadedData, driverName
+                end
+            elseif match.byaddress then  
+                if address and address:lower() == match.byaddress then  
+                    return loadedData, driverName
+                end
+            end
+        end
+    end
+    return nil, nil
+end
+
+function drivers.onDisconnectHID(connectionId, controllerId, reason)
     log("Disconnected "..connectionId.." due ".. reason)
     drivers.type_by_id[controllerId] = nil
 end
 
-function drivers.onConnectPanda(connectionId, controllerId, address, name)
-    drivers.type_by_id[controllerId] = "panda"
-    log("Connected protopanda hand controller "..address.." "..tostring(name)..' this controller will be the '..controllerId)
-    drivers.handlerPanda:WriteToCharacteristics({0,0,0,controllerId}, connectionId, "d4d3fafb-c4c1-c2c3-b4b3-b2b1a4a3a2a1", true)
-end
-
-
-function drivers.EnableProtopandaController()
-    if not versions.canRun("2.0.0") then  
-        --Legacy controller
-        setMaximumControls(2)
-        acceptBLETypes("d4d31337-c4c1-c2c3-b4b3-b2b1a4a3a2a1", "afaf", "fafb")
-        return false
-    end
-    drivers.handlerPanda = BleServiceHandler("d4d31337-c4c1-c2c3-b4b3-b2b1a4a3a2a1")
-    drivers.handlerPanda:SetOnConnectCallback(drivers.onConnectPanda)
-    drivers.handlerPanda:SetOnDisconnectCallback(drivers.onDisconnectPanda)
-    drivers.pandaListener = drivers.handlerPanda:AddCharacteristics("d4d3afaf-c4c1-c2c3-b4b3-b2b1a4a3a2a1")
-    drivers.pandaListener:SetSubscribeCallback(drivers.onSubscribeMessagePanda)
-    drivers.pandaListener:SetCallbackModeStream(true)
-    return true
-end
-
-
-
-
-
-local prevPacket = nil
-local secondPrev = nil
-function drivers.processBeautyR1Packet(connectionId, controllerId, data)
-    if data[1] == 156 and data[2] == 64 and data[3] == 236 then  
-        local beauty = drivers.beauty[controllerId]
-        beauty.timeout = millis()+250
-        beauty.buttons[1] = 1
-    elseif data[1] == 2 and data[2] == 48 and data[3] == 0 then  
-        local beauty = drivers.beauty[controllerId]
-        beauty.timeout = millis()+250
-        beauty.buttons[2] = 1
-    elseif data[1] == 255 and data[2] == 23 and data[3] == 128 then  
-        local beauty = drivers.beauty[controllerId]
-        beauty.timeout = millis()+250
-        beauty.buttons[3] = 1
-    elseif data[1] == 56 and data[2] == 128 and data[3] == 17 then  
-        local beauty = drivers.beauty[controllerId]
-        beauty.timeout = millis()+250
-        beauty.buttons[4] = 1
-    elseif data[1] == 1 and data[2] == 0 and data[3] == 0 then
-        if prevPacket and prevPacket[1] == 0 and prevPacket[2] == 0 and prevPacket[3] == 0 then
-            if secondPrev and secondPrev[1] == 0 and secondPrev[2] == 0 and secondPrev[3] == 0 then
-                local beauty = drivers.beauty[controllerId]
-                beauty.timeout = millis()+250
-                beauty.buttons[5] = 1
-            end
-        end
-    elseif (data[1] == 234 or data[1] == 233) and data[2] == 0 and data[3] == nil then
-        local beauty = drivers.beauty[controllerId]
-        beauty.timeout = millis()+250
-        beauty.buttons[6] = 1
+function drivers.onConnectHID(connectionId, controllerId, address, name)
+    drivers.type_by_id[controllerId] = {mode=drivers.device_attribute_map["hid"]}
+    local matchedDriver, matchName = drivers.FindDriver(connectionId, controllerId, address, name)
+    matchName = matchName or "hid"
+    if matchedDriver then  
+        drivers.type_by_id[controllerId] = matchedDriver
     end
 
-
-    secondPrev = prevPacket
-    prevPacket = data
+    log("Connected conId="..connectionId.." controller="..controllerId.." addr=\""..address.."\" name=["..name.."] type="..matchName)
 end
 
-function drivers.onMouseCallback(connectionId, controllerId, data)
-    if drivers.type_by_id[controllerId]  == "beauty-r1" then 
-        drivers.processBeautyR1Packet(connectionId, controllerId, data)
+function drivers.onHidCallback(connectionId, controllerId, data)
+    local controlling = drivers.type_by_id[controllerId]
+    if controlling.processPackets then  
+        controlling.processPackets(connectionId, controllerId, data)
         return
     end
+
     local len = #data 
     local action = ""
     if len == 2 then  
@@ -272,6 +205,13 @@ function drivers.onMouseCallback(connectionId, controllerId, data)
         if empty then  
             print("Mouse all zeros.")
         end
+        
+    elseif len == 5 then  
+        local str = ""
+        for i,b in pairs(data) do  
+            str = str .. b..', '
+        end
+        print(str)
     elseif len == 6 or len == 8 then  
         local joystickObject = drivers.joystick[controllerId]
 
@@ -301,22 +241,6 @@ function drivers.onMouseCallback(connectionId, controllerId, data)
     end
 end
 
-
-function drivers.onDisconnectHID(connectionId, controllerId, reason)
-    log("Disconnected "..connectionId.." due ".. reason)
-    drivers.type_by_id[controllerId] = nil
-
-end
-
-function drivers.onConnectHID(connectionId, controllerId, address, name)
-    drivers.type_by_id[controllerId] = "hid"
-    if name and name:lower() == "beauty-r1" then  
-        drivers.type_by_id[controllerId] = "beauty-r1"
-    end
-    log("Connected conId="..connectionId.." controller="..controllerId.." addr=\""..address.."\" name=["..name.."] type="..drivers.type_by_id[controllerId])
-end
-
-
 function drivers.EnableGenericAndroidMouse()
     if not versions.canRun("2.0.0") then 
         --No mouse in the legacy controller
@@ -327,21 +251,15 @@ function drivers.EnableGenericAndroidMouse()
     drivers.mouseHandler:SetOnConnectCallback(drivers.onConnectHID)
     drivers.mouseHandler:SetOnDisconnectCallback(drivers.onDisconnectHID)
     drivers.mouseListener = drivers.mouseHandler:AddCharacteristics("2a4d")
-    drivers.mouseListener:SetSubscribeCallback(drivers.onMouseCallback) 
+    drivers.mouseListener:SetSubscribeCallback(drivers.onHidCallback) 
     drivers.mouseListener:SetCallbackModeStream(false)
     return true
 end
 
 function drivers.update()
     for i,b in pairs(drivers.type_by_id) do  
-        if b == "beauty-r1" then  
-            if drivers.beauty[i].timeout and drivers.beauty[i].timeout < millis() then  
-                drivers.beauty[i].timeout = nil
-                local buttons = drivers.beauty[i].buttons
-                for a,c in pairs(buttons) do
-                    buttons[a] = 0
-                end
-            end
+        if b.onUpdate then  
+            b.onUpdate(drivers, i)
         end
     end
 end

@@ -142,18 +142,15 @@ function input.Load()
     end
 end
 
-function input.updatGenericButtonStates(mode, clientId, pdButtonIdOffset)
+function input.updatGenericButtonStates(inputModes, clientId, pdButtonIdOffset)
     local keybind = input.keybind
-    local controllers = drivers.device_attribute_map[mode]
-    if not controllers then  
-        error("Invalid unmapped device_attribute_map for mode '"..mode.."'")
-    end
     local actions = {}
     for b=1,MAX_BLE_BUTTONS do
         actions[b] = 0
     end
 
-    for name, controller in pairs(controllers) do
+    for _, name in pairs(inputModes) do
+        local controller = drivers[name]
         --Search for inputs on each type.. joystick, panda, mouse, keyboard etc
         if keybind[name] then
             for __, bind in pairs(keybind[name]) do
@@ -202,9 +199,9 @@ end
 function input.updateButtonStates()
     local pdButtonIdOffset = 1
     for i=0,MAX_BLE_CLIENTS-1 do 
-        local mode = drivers.type_by_id[i]
-        if mode ~= nil then
-            input.updatGenericButtonStates(mode, i, pdButtonIdOffset)
+        local controllerList = drivers.type_by_id[i]
+        if controllerList ~= nil then
+            input.updatGenericButtonStates(controllerList.mode, i, pdButtonIdOffset)
         end
         pdButtonIdOffset = pdButtonIdOffset + MAX_BLE_BUTTONS
     end
