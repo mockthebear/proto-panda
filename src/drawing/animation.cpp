@@ -2,6 +2,8 @@
 #include "drawing/dma_display.hpp"
 #include "tools/oledscreen.hpp"
 #include "tools/devices.hpp"
+#include "tools/compression.hpp"
+#include "drawing/framerepository.hpp"
 
 #include "tools/storage.hpp"
 
@@ -11,8 +13,8 @@
 
 unsigned char Animation::buffer[FILE_SIZE];
 
-#ifdef ENABLE_HUB75_PANEL
 
+#ifdef ENABLE_HUB75_PANEL
 
 
 
@@ -175,6 +177,40 @@ void reorder_rgb(ColorMode mode, uint8_t *r, uint8_t *g, uint8_t *b){
 }
 
 
+void Animation::drawPixelAt(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r, uint8_t &g, uint8_t &b, uint8_t &flip_left, uint8_t &flip_right, int &byteIdOled){
+    if ((color & 0x8610) != 0) { 
+        OledScreen::DisplayFace[byteIdOled] = 1;
+    }else{
+        OledScreen::DisplayFace[byteIdOled] = 0;
+    }
+    byteIdOled++;
+
+    if (flip_left&1){
+        DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH-1)-x, y, r, g, b);
+    }else{
+        DMADisplay::Display->updateMatrixDMABuffer_2(x, y, r, g, b);
+    }
+
+    if (flip_right&1){
+        DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH+PANEL_WIDTH-1)-x, y, r, g, b);
+    }else{
+        DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH)+x, y, r, g, b);
+    }
+}
+
+void Animation::adjustColor(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r, uint8_t &g, uint8_t &b, ColorMode &currentMode, int16_t &frameId){
+    DMADisplay::Display->color565to888(color, r, g, b);
+    //1100011100011000    = 0xC718
+    //We know each color has 5 6 and 5 bits. So to check if the color is strong enough, we're using this mask that discards
+    //each of 3 initial bits of each color
+    //If any of the remaining bits are 1, the whole condition will give != 0 and therefore color!
+    if (m_shader == 1 || (r == 57 && g == 121 && b == 181)){
+        float gray = (r+g+b)/3.0f;
+        hsv_to_rgb(  (((frameId+x)%64) / 64.0f) * 255, 255, gray, r, g, b);
+    }
+    reorder_rgb(currentMode, &r, &g, &b);
+}
+
 void Animation::DrawFrame(File *file, int i){
     if (i == 0){
         return;
@@ -187,20 +223,24 @@ void Animation::DrawFrame(File *file, int i){
     frameId++;    
 
     i--;
+
     
-    uint32_t startPosition = i * FILE_SIZE;
-
-
-
-    file->seek(startPosition);
-
-    size_t rd = file->readBytes((char*)buffer, FILE_SIZE);
-
-    if (rd != FILE_SIZE){
-        Serial.printf("Failed to read %d at pos %d on file with size %d. Read just %d bytes\n", i , startPosition, file->size(), rd);
+    uint32_t startPosition;
+    uint32_t flashFileLenght;
+    
+    g_frameRepo.getBulkOffsetByFrameId(i, startPosition, flashFileLenght);
+    if (startPosition < 0){
+        Serial.printf("Failed to find frame id %d, returned position %d\n", i, startPosition);
         return;
     }
 
+    file->seek(startPosition);
+    size_t rd = file->readBytes((char*)buffer, flashFileLenght);
+
+    if (rd != flashFileLenght){
+        Serial.printf("Failed to read %d at pos %d on file with size %d. Read just %d bytes\n", i , startPosition, flashFileLenght, rd);
+        return;
+    }
 
     m_frameLoadDuration = micros()-ld;
     ld = micros();
@@ -214,63 +254,84 @@ void Animation::DrawFrame(File *file, int i){
         Serial.printf("Mismatched cached frame version. Current version is %d but in cache got %d. Clear the cache or rebuild bulk: %d", PANDA_CACHE_VERSION, version, buffer[1]);
         return;
     }
+
     uint8_t flip_left = buffer[1];
     uint8_t flip_right = buffer[2];
     if (m_colorMode == 0){
         m_colorMode = (ColorMode)buffer[3];
     }
-    //Need to divide by 2 (size of uint16_t) because the buffer is converted to a uin16_t pixels.
-    //And the header must be a multiple of 2 to avoid byte skipping
-    int byteId = FILE_HEADER_BYTES / sizeof(uint16_t);
+
+
     int byteIdOled = 0;
+    int compressionMode = buffer[5];
+    uint16_t fileLenght = *((uint16_t*)(&buffer[6])); 
+    int16_t x=0;
+    int16_t y=0;
 
-    uint16_t *readBuffer = (uint16_t *)(buffer);
-    
     DMADisplay::Display->startWrite();
-    for (int16_t y=0;y<PANEL_HEIGHT;y++){
-      for (int16_t x=0;x<PANEL_WIDTH;x++){
-        uint16_t color = readBuffer[byteId];
-        //1100011100011000    = 0xC718
-        //We know each color has 5 6 and 5 bits. So to check if the color is strong enough, we're using this mask that discards
-        //each of 3 initial bits of each color
-        //If any of the remaining bits are 1, the whole condition will give != 0 and therefore color!
-        if ((color & 0x8610) != 0) { 
-            OledScreen::DisplayFace[byteIdOled] = 1;
-        }else{
-            OledScreen::DisplayFace[byteIdOled] = 0;
-        }
-        byteIdOled++;
-        byteId++;
-        
-        
+    if (compressionMode == 1){
+        int compressionReadPos = 0;
+        uint8_t *readBuffer = (buffer+FILE_HEADER_BYTES);
 
-        DMADisplay::Display->color565to888(color, r, g, b);
+        do{
+            int lenght = readBuffer[compressionReadPos++];
+            int iter = 1;
+            
+            if (lenght == 253){
+                iter = readBuffer[compressionReadPos++];
+                lenght = 1;
+            }
 
-        if (m_shader == 1 || (r == 57 && g == 121 && b == 181)){
-            float gray = (r+g+b)/3.0f;
-            hsv_to_rgb(  (((frameId+x)%64) / 64.0f) * 255, 255, gray, r, g, b);
-        }
+            while(iter > 0){
+                uint16_t color = readBuffer[compressionReadPos++]; 
+                iter--;
+                color |= (readBuffer[compressionReadPos++] << 8); 
 
-        reorder_rgb(currentMode, &r, &g, &b);
+                adjustColor(x, y, color, r, g, b, currentMode, frameId);
+                
+                for (int iddx=0;iddx<lenght;iddx++){
+                    drawPixelAt(x, y, color, r, g, b, flip_left, flip_right, byteIdOled);
+                    x++;
+                    if (x >= PANEL_WIDTH){
+                        x = 0;
+                        y++;
+                        
+                        if (y >= PANEL_HEIGHT){
+                            goto finished;
+                        }
+                    }
+                }
+                if (compressionReadPos >= fileLenght){
+                    goto finished;
+                }
+                
+            }
+        } while(compressionReadPos <= fileLenght);
+       
+    }else{
+        //Need to divide by 2 (size of uint16_t) because the buffer is converted to a uin16_t pixels.
+        //And the header must be a multiple of 2 to avoid byte skipping
+        uint16_t *readBuffer = (uint16_t *)(buffer);
+        const int begin = FILE_HEADER_BYTES / sizeof(uint16_t);
+        const int finish = begin+FILE_PIXEL_COUNT;
 
-        if (flip_left&1){
-            DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH-1)-x, y, r, g, b);
-        }else{
-            DMADisplay::Display->updateMatrixDMABuffer_2(x, y, r, g, b);
+        for (int16_t idx=begin;idx<finish;idx++){
+            uint16_t color = readBuffer[idx];
+            adjustColor(x, y, color, r, g, b, currentMode, frameId);
+            drawPixelAt(x, y, color, r, g, b, flip_left, flip_right, byteIdOled);
+            x++;
+            if (x >= PANEL_WIDTH){
+                x = 0;
+                y++;
+            }
         }
-        if (flip_right&1){
-            DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH+PANEL_WIDTH-1)-x, y, r, g, b);
-        }else{
-            DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH)+x, y, r, g, b);
-        }
-        
-      }
     }
-
+    finished:
     DMADisplay::Display->endWrite();
     m_needFlip = true;
     m_frameDrawDuration = micros()-ld;
     m_cycleDuration =  micros()-begin;
+
 }
 
 bool Animation::PopAnimation(){

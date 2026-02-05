@@ -2,6 +2,7 @@
 #include "drawing/animation.hpp"
 #include "tools/logger.hpp"
 #include "tools/devices.hpp"
+#include "tools/compression.hpp"
 
 #include "tools/oledscreen.hpp"
 
@@ -137,17 +138,29 @@ bool FrameRepository::loadCachedData(){
         return false;
     }
 
-    if ( !json_doc.containsKey("total_frame_count") || !json_doc["total_frame_count"].is<int>() ) {
+    if ( !json_doc.containsKey("version") ){
+        json_doc.clear();   
+        Logger::Error("Cache structure is corrupted");
+        return false;
+    }
+
+    std::string currentVersion = PANDA_VERSION;
+    std::string cacheVersion = json_doc["version"].as<const char*>();
+
+    if (cacheVersion != currentVersion){
+        json_doc.clear();   
+        Logger::Error("Version mismatched.");
+        return false;
+    }
+
+    if ( !json_doc.containsKey("total_frame_count") || !json_doc["total_frame_count"].is<int>() || !json_doc["bulk_size"] ) {
         json_doc.clear();   
         Logger::Error("Cache structure is corrupted");
         return false;
     }
     int frame_count = json_doc["total_frame_count"];
-    if ( (bulkFile.size() % FILE_SIZE) != 0 || (bulkFile.size() / FILE_SIZE) != frame_count){
-        json_doc.clear();   
-        Logger::Error("Mismatched file bulk size and expected frame count: %d %d %d", (bulkFile.size() % FILE_SIZE), (bulkFile.size() / FILE_SIZE), frame_count);
-        return false;
-    }
+    int bulk_size = json_doc["bulk_size"];
+
     File conf = SD.open( "/config.json" );
     if( !conf ) {
         OledScreen::CriticalFail("Can't open config.json");
@@ -174,8 +187,8 @@ bool FrameRepository::loadCachedData(){
         return false;
     }
 
-    if ((bulkFile.size() / FILE_SIZE) != actualFrameCount){
-        Logger::Info("Mismatched stored frames and config frames, need rebuld. Stored: %d expected: %d", (bulkFile.size() / FILE_SIZE), actualFrameCount);
+    if ((bulkFile.size()) != bulk_size){
+        Logger::Info("Mismatched stored frames and config frames, need rebuld. Stored: %d expected: %d", bulk_size, actualFrameCount);
         return false;
     }
 
@@ -188,6 +201,21 @@ bool FrameRepository::loadCachedData(){
     for (JsonPair name : frame_count_obj) {
         m_frameCountByAlias[PSRAMString(name.key().c_str())] = name.value().as<int>();
     }
+
+    JsonArray frame_flash_offset_arr = json_doc["frame_flash_offset"];
+    if (m_bulkFileOffset != nullptr){
+        m_bulkFileOffset = nullptr;
+        heap_caps_free(m_bulkFileOffset);
+    }
+    m_bulkFileOffset = (int*)heap_caps_malloc(sizeof(int) * (frame_count+2), MALLOC_CAP_SPIRAM);
+    memset(m_bulkFileOffset, 0, sizeof(int) * (frame_count+1));
+    int pos = 0;
+    for(JsonVariant v : frame_flash_offset_arr) {
+        m_bulkFileOffset[pos] = v.as<int>();
+        pos++;
+    }
+    m_frameCount = frame_count;
+    
     json_doc.clear();
     return true;
 }
@@ -293,17 +321,23 @@ void FrameRepository::composeBulkFile(){
         OledScreen::CriticalFail("Maybe you forgot to add frames?!");
     }
 
-    int fileIdx = 1;
+    int fileIdx = 0;
     int jsonElement = 0;
-
+    int currentOffset = 0;
+    if (m_bulkFileOffset != nullptr){
+        heap_caps_free(m_bulkFileOffset);
+        m_bulkFileOffset = nullptr;
+    }
+    m_bulkFileOffset = (int*)heap_caps_malloc(sizeof(int) * maxFrames, MALLOC_CAP_SPIRAM);
     PSRAMString currentName;
-    
+    m_compressionBuffer = (uint16_t*)heap_caps_malloc(sizeof(uint16_t) * FILE_SIZE_BULK_SIZE * 2, MALLOC_CAP_SPIRAM);
+    OledScreen::SetConsoleMode(false);
     for (JsonVariant element : framesJson) {
         if (element.is<JsonObject>()) {
             if ( element.containsKey("name") &&  element["name"].is<const char*>() ) {
                 const char *content = element["name"];
                 currentName = PSRAMString(content);
-                m_offsets[content] =  fileIdx-1;
+                m_offsets[content] =  fileIdx;
             }
             if ( element.containsKey("file") &&  element["file"].is<const char*>() ) {
                 const char *filePath = element["file"].as<const char*>();
@@ -316,16 +350,16 @@ void FrameRepository::composeBulkFile(){
                 int color_scheme_right = 0;
                 extractModes(element, flip_left, flip_right, color_scheme_left, color_scheme_right);
 
-                sprintf(miniHBuffer, "Copy frame %d\n%s", fileIdx+1, filePath);
-                OledScreen::DrawProgressBar(fileIdx+1, maxFrames+1, miniHBuffer);
+                sprintf(miniHBuffer, "Copy frame %d\n%s", fileIdx, filePath);
+                OledScreen::DrawProgressBar(fileIdx, maxFrames, miniHBuffer);
 
-                m_bulkPercentage = (fileIdx+1)/float(maxFrames+1);
-                if (!decodeFile(filePath, flip_left, flip_right, color_scheme_left, color_scheme_right)){
+                m_bulkPercentage = (fileIdx)/float(maxFrames);
+
+                if (!decodeFileAndWrite(filePath, flip_left, flip_right, color_scheme_left, color_scheme_right, currentOffset, fileIdx)){
                     FrameBufferCriticalError(&bulkFile, "Failed to decode %s at element %d", filePath, jsonElement);
                 }
                 m_frameCountByAlias[currentName]++;
                 fdesc.printf("%d = %s | %s\n", fileIdx, filePath, currentName.c_str());
-                fileIdx++;
             }else if ( element.containsKey("pattern") &&  element["pattern"].is<const char*>() ) {
                 const char* pattern = element["pattern"];
                 if (strlen(pattern) >= 800){
@@ -341,15 +375,14 @@ void FrameRepository::composeBulkFile(){
                 
                 for (int i=from;i<=to;i++){
                     sprintf(headerFileName, pattern, i);
-                    sprintf(miniHBuffer, "Copy frame %d\n%s", fileIdx+1, headerFileName);
-                    OledScreen::DrawProgressBar(fileIdx+1, maxFrames+1, miniHBuffer);
-                    m_bulkPercentage = (fileIdx+1)/float(maxFrames+1);
-                    if (!decodeFile(headerFileName, flip_left, flip_right, color_scheme_left, color_scheme_right)){
+                    sprintf(miniHBuffer, "Copy frame %d\n%s", fileIdx, headerFileName);
+                    OledScreen::DrawProgressBar(fileIdx, maxFrames, miniHBuffer);
+                    m_bulkPercentage = (fileIdx)/float(maxFrames);
+                    if (!decodeFileAndWrite(headerFileName, flip_left, flip_right, color_scheme_left, color_scheme_right, currentOffset, fileIdx)){
                         FrameBufferCriticalError(&bulkFile, "Failed decode %s at element %d", headerFileName, jsonElement);
                     }
                     fdesc.printf("%d = %s | %s\n", fileIdx, headerFileName, currentName.c_str());
                     m_frameCountByAlias[currentName]++;
-                    fileIdx++;
                 }
             }else if (element.containsKey("files")){
                 bool flip_left = true; 
@@ -361,15 +394,14 @@ void FrameRepository::composeBulkFile(){
                 JsonArray filesArray = element["files"];
                 for (JsonVariant file : filesArray) {
                     const char *filename = file;
-                    sprintf(miniHBuffer, "Copy frame %d\n%s", fileIdx+1, filename);
-                    OledScreen::DrawProgressBar(fileIdx+1, maxFrames+1, miniHBuffer);
-                    m_bulkPercentage = (fileIdx+1)/float(maxFrames+1);
-                    if (!decodeFile(filename, flip_left, flip_right, color_scheme_left, color_scheme_right)){
+                    sprintf(miniHBuffer, "Copy frame %d\n%s", fileIdx, filename);
+                    OledScreen::DrawProgressBar(fileIdx, maxFrames, miniHBuffer);
+                    m_bulkPercentage = (fileIdx)/float(maxFrames);
+                    if (!decodeFileAndWrite(filename, flip_left, flip_right, color_scheme_left, color_scheme_right, currentOffset, fileIdx)){
                         FrameBufferCriticalError(&bulkFile, "Failed decode %s at element %d", filename, jsonElement);
                     }
                     fdesc.printf("%d = %s | %s\n", fileIdx, filename, currentName.c_str());
                     m_frameCountByAlias[currentName]++;
-                    fileIdx++;
                 }
             }
         }else{
@@ -377,20 +409,21 @@ void FrameRepository::composeBulkFile(){
         }
         jsonElement++;
     }
-    m_frameCount = fileIdx-1;
+    m_bulkFileOffset[fileIdx] = currentOffset; //last "frame", jsut to store the size of the file as next offset
+    m_frameCount = fileIdx;
     m_bulkPercentage = 1.0f;
     json_doc.clear();
     fdesc.close();
     bulkFile.close();
+    heap_caps_free(m_compressionBuffer);
     bulkFile = FFat.open("/frames.bulk", FILE_READ);
-    generateCacheFile();
+    generateCacheFile(currentOffset);
+    OledScreen::SetConsoleMode(true);
     Logger::Info("Finished writing data to internal storage. in %d uS", micros()-start);
-
-
     xSemaphoreGive(m_mutex);    
 }
 
-void FrameRepository::generateCacheFile() {
+void FrameRepository::generateCacheFile(int bulkSize) {
     SD.mkdir("/cache");
     File cache = SD.open( "/cache/cache.json", "w" );
     if( !cache ) {
@@ -416,10 +449,20 @@ void FrameRepository::generateCacheFile() {
         frames_counting[pair.first] = pair.second;
     }
 
+    JsonArray frame_flash_offset = json_doc["frame_flash_offset"].to<JsonArray>();
+
+    for (int i = 0; i < m_frameCount+1; i++){
+        frame_flash_offset.add(m_bulkFileOffset[i]);
+    }
+
+    json_doc["bulk_size"] = bulkSize;
+    json_doc["version"] = PANDA_VERSION;
+
     // Serialize JSON to file
     if (serializeJson(json_doc, cache) == 0) {
         Serial.println("Failed to write to file.");
     }
+    
 
     json_doc.clear();
 
@@ -442,22 +485,45 @@ std::string PngErrorToString(int error) {
     }
 }
 
-bool FrameRepository::decodeFile(const char *pathName, bool flip_left, bool flip_right, int color_modeLeft, int color_modeRight){
+bool FrameRepository::decodeFileAndWrite(const char *pathName, bool flip_left, bool flip_right, int color_modeLeft, int color_modeRight,int &currentOffset, int &fileIdx){
     int lastRcError = 0;
     uint16_t* res = Storage::DecodePNGForBuffer(pathName, lastRcError);
     if (res) {
+        m_bulkFileOffset[fileIdx] = currentOffset;
         uint8_t content[FILE_HEADER_BYTES];
         content[0] =  PANDA_CACHE_VERSION;
         content[1] =  flip_left ? 1 : 0;
         content[2] =  flip_right ? 1 : 0;
         content[3] =  color_modeLeft;
         content[4] =  color_modeRight;
-        bulkFile.write((const uint8_t*)content, sizeof(uint8_t)*FILE_HEADER_BYTES);
-        //Or a uin32
-        int rd = bulkFile.write((const uint8_t*)res, FILE_SIZE_BULK_SIZE);
-        if (rd != FILE_SIZE_BULK_SIZE){
-            Logger::Info("Error writing data in the FFAT: exptected %d got %d\n",FILE_SIZE, rd);
+        //Compression mode
+        
+        uint16_t* dataToWrite = m_compressionBuffer;
+        uint16_t *wroteSize = (uint16_t*)&content[6];
+        int compressedSize =  Compression::Compress(m_compressionBuffer, res, FILE_SIZE_BULK_SIZE);
+        
+        if (compressedSize >= FILE_SIZE_BULK_SIZE){
+            Logger::Info("Frame %d was stored as raw, compressed file was bigger with %d bytes more %f", fileIdx, compressedSize-FILE_SIZE_BULK_SIZE);
+            //Compression was ineffective. Lets just use raw
+            content[5] = 0;
+            compressedSize = FILE_SIZE_BULK_SIZE;
+            dataToWrite = res;
+            *wroteSize = FILE_SIZE_BULK_SIZE;
+        }else{
+            Logger::Info("Frame %d was compressed to just %d bytes with ratio %2.2f%% (reduction of %d bytes)", fileIdx, compressedSize,  (1.0f-compressedSize/(float)FILE_SIZE_BULK_SIZE)*100.0f, FILE_SIZE_BULK_SIZE-compressedSize);
+            content[5] = 1;
+            *wroteSize = compressedSize;
         }
+        bulkFile.write((const uint8_t*)content, sizeof(uint8_t)*FILE_HEADER_BYTES);
+
+        currentOffset += sizeof(uint8_t)*FILE_HEADER_BYTES;
+
+        size_t rd = bulkFile.write((const uint8_t*)dataToWrite, compressedSize);
+        if (rd != compressedSize){
+            Logger::Info("Error writing data in the FFAT: exptected %d got %d",FILE_SIZE, rd);
+        }
+        currentOffset += rd;
+        fileIdx++;
         Storage::FreeBuffer(res);
         return true;
     } else {
