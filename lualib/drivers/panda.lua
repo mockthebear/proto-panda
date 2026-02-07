@@ -57,8 +57,8 @@ local function parsePandaData(controllerInfo, data)
     index = index +1
 
     local buttons = controllerInfo.buttons
-    for i = 1, 5 do
-        buttons[i] = data[index]
+    for i = 1, 8 do
+        buttons[i] = data[index] or 0
         index = index + 1
     end
 
@@ -68,8 +68,8 @@ end
 
 
 function panda.onSubscribeMessagePanda(connectionId, clientId, data)
-    if #data ~= 20 then  
-        log("Possible corrupt package in panda controller. Expected size 22 but got "..(#data))
+    if #data < 20 then  
+        log("Possible corrupt package in panda controller. Expected size at least 20 but got "..(#data))
         return
     end
     parsePandaData(drivers.panda[clientId], data)
