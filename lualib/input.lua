@@ -23,6 +23,7 @@ local input = {
 
     infrared={},
     keybind = {},
+    forced_buttons = {},
 }
 
 _G.BUTTON_RELEASED = 0
@@ -46,6 +47,7 @@ do
         for b=1,MAX_BLE_BUTTONS do 
             input.panda_buttons[pdButtonIdOffset] = 0
             input.panda_buttons_state[pdButtonIdOffset] = _G.BUTTON_RELEASED
+            input.forced_buttons[pdButtonIdOffset] = 0
             pdButtonIdOffset = pdButtonIdOffset +1
         end
         _G['DEVICE_'..i..'_BUTTON_LEFT']    = _G.BUTTON_LEFT        + i * MAX_BLE_BUTTONS
@@ -258,6 +260,18 @@ function input.updatGenericButtonStates(inputModes, clientId, pdButtonIdOffset)
             end
         end
     end
+    if input.button_timeout then 
+        if input.button_timeout < millis() then  
+            for idx=1,MAX_BLE_BUTTONS do
+                input.forced_buttons[idx] = nil
+            end
+            input.button_timeout = 0
+        else 
+            for btn,state in pairs(input.forced_buttons) do  
+                actions[btn] = state
+            end
+        end
+    end
     for idx=1,MAX_BLE_BUTTONS do
         input.updateButtonByreading(pdButtonIdOffset+idx-1, actions[idx])
     end
@@ -282,8 +296,7 @@ function input.updateButtonByreading(buttonId, reading)
 end
 
 function press(key)
-    print("PRESSED "..key)
-    drivers.generic[0].buttons[key] = 1
+    input.forced_buttons[key] = _G.BUTTON_JUST_PRESSED
     input.button_timeout = millis() + 250
 end
 
@@ -292,20 +305,13 @@ _G.press = press
 function input.update()
     if input.mode == "infrared" then  
 
-        if input.button_timeout and input.button_timeout < millis() then  
-            print("OUT")
-            input.button_timeout = nil
-            local buttons = drivers.generic[0].buttons
-            for a,c in pairs(buttons) do
-                buttons[a] = 0
-            end
-        end
-
         local usercode, opcode = getLastIRCommand()
         if usercode ~= 0 then  
             local binds = input.infrared[usercode]
             if binds then  
                 input.runBindCommand(binds, opcode)
+            else 
+                log(string.format("Unmapped IR command with usercode %02X and opcode %02X", usercode, opcode))
             end
         end
     end

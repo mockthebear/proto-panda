@@ -31,7 +31,6 @@ IrCommand InfraRedManager::getLastCommand(){
     }
     IrCommand aux = m_commands.top();
     m_commands.pop();
-    Logger::Info("[IR] 0x%04X, Command: 0x%02X ", aux.address, aux.command);
     return aux;
 }
 
