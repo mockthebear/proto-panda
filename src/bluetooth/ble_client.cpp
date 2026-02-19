@@ -1,6 +1,7 @@
 #include "bluetooth/ble_client.hpp"
 #include "tools/logger.hpp"
 #include "tools/devices.hpp"
+#include "tools/ir.hpp"
 #include <Arduino.h>
 
 BleManager* BleManager::m_myself = nullptr;
@@ -225,16 +226,18 @@ BleManager* BleManager::Get(){
 };
 
 bool BleManager::begin(){
-
+  if (g_InfraRed.IsStarted()){
+    return false;
+  }
   m_myself = this;
-
-
   m_started = true;
-  
   return true;
 }
 
 bool BleManager::beginRadio(int powerLevel){
+  if (!m_started){
+    return false;
+  }
   NimBLEDevice::init("Protopanda");
   NimBLEDevice::setSecurityAuth(true, true, true);
   NimBLEDevice::setPower(ESP_PWR_LVL_P9); /** +9db */

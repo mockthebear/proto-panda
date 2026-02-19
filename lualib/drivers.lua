@@ -247,6 +247,9 @@ function drivers.EnableGenericAndroidMouse()
         log("You are running protopanda on a older version. Minimum version required is 2.0.0 to run mouse input") 
         return false
     end
+    if not hasBLEStarted() then 
+        return false
+    end
     drivers.mouseHandler = BleServiceHandler("00001812-0000-1000-8000-00805f9b34fb")
     drivers.mouseHandler:SetOnConnectCallback(drivers.onConnectHID)
     drivers.mouseHandler:SetOnDisconnectCallback(drivers.onDisconnectHID)

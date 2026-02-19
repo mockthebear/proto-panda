@@ -63,6 +63,9 @@ class BleManager{
 
     int GetClientIdFromControllerId(uint32_t id);
     int GetRSSI(int clientId);
+    bool IsStarted(){
+      return m_started;
+    };
 
     static BleManager* Get();
   private:

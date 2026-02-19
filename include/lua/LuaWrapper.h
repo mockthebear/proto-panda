@@ -9,6 +9,7 @@
 
 #define LUA_USE_C89
 #include "lua/lua.hpp"
+#include "tools/ir.hpp"
 typedef std::function<int(lua_State*)> LuaCFunctionLambda;
 
 void CreateLuaClosure(lua_State *L, const std::function<int(lua_State*)>& f);
@@ -423,6 +424,13 @@ template<> struct GenericLuaReturner<SizedArray*>{
         }
         delete []vr;
         return 1;
+   };
+};
+template<> struct GenericLuaReturner<IrCommand>{
+    static inline int Ret(IrCommand ir,lua_State *L,bool forceTable = false){
+        lua_pushnumber(L, ir.address);
+        lua_pushnumber(L, ir.command);
+        return 2;
    };
 };
 

@@ -1,13 +1,26 @@
 {
-  "boop": {
-    "enabled": true,
-    "transitionIn": "boop_intro",
-    "transitionOut": "boop_outro",
-    "boopAnimationName": "boop",
-    "transictionOnlyOnAnimation": "normal",
-    "transictionInOnlyOnSpecificFrame": 1
+  "input": {
+    "mode": "infrared",
+    "drivers": ["panda", "BLE-M3", "beauty-r1"]
   },
-
+  "infrared": [
+    {
+      "usercode": "FF00",
+      "bind": {
+        "B9": "press(BUTTON_UP)",
+        "EA": "press(BUTTON_DOWN)",
+        "BB": "press(BUTTON_LEFT)",
+        "BC": "press(BUTTON_RIGHT)",
+        "BF": "press(BUTTON_CONFIRM)",
+        "E6": "press(BUTTON_BACK)",
+        "BA": "press(BUTTON_AUX_A)",
+        "F3": "setRainbowShader(true)",
+        "E7": "setRainbowShader(false)",
+        "F7": "expressions.Next()",
+        "E3": "expressions.Previous()"
+      }
+    }
+  ],
   "keybinds": {
     "panda.buttons.1": "BUTTON_LEFT",
     "panda.buttons.2": "BUTTON_DOWN",
@@ -28,7 +41,7 @@
     "generic.buttons.5": "BUTTON_CONFIRM",
     "generic.buttons.6": "BUTTON_BACK"
   },
-  
+
   "frames": [
     {
       "pattern": "/expressions/angry/angry%d.png",
@@ -526,6 +539,15 @@
 
 
   ],
+    
+  "boop": {
+    "enabled": true,
+    "transitionIn": "boop_intro",
+    "transitionOut": "boop_outro",
+    "boopAnimationName": "boop",
+    "transictionOnlyOnAnimation": "normal",
+    "transictionInOnlyOnSpecificFrame": 1
+  },
   "scripts": [
     {
       "name": "lidar test",

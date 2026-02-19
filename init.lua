@@ -11,14 +11,9 @@ function onSetup()
 
     dictLoad()
 
-    setLogDiscoveredBleDevices(false)
-    generic.displaySplashMessage("Starting:\nBLE")
-    startBLE()
-
-    drivers.EnableDrivers({"panda", "BLE-M3", "beauty-r1"})
 
     
-    startBLERadio(ESP_PWR_LVL_P9)
+    --
 
     local seed = tonumber(dictGet("random_seed")) or millis()
     seed = seed + millis()
@@ -29,10 +24,11 @@ function onSetup()
         menu.setDictDefaultValues()
     end
     dictSave()
-    generic.displaySplashMessage("Starting:\nExpressions")
+    
 
     configloader.Load("/config.json")
     input.Load()
+    generic.displaySplashMessage("Starting:\nExpressions")
     expressions.Load() 
     scripts.Load() 
     boop.Load()
@@ -53,16 +49,17 @@ function onPreflight()
     ledsSetManaged(true)
     setPanelManaged(true)
     expressions.Next()
+    input.Start()
     generic.setAutoPowerMode(tonumber(dictGet("panel_brightness")) or 64)
-    beginBleScanning()
     ledsGentlySeBrightness(tonumber(dictGet("led_brightness") ) or 64)
     gentlySetPanelBrightness(tonumber(dictGet("panel_brightness")) or 64)
-    
+    setIRInterruptPin(2)
+    enableIRInterrupt()
 end
 
 function onLoop(dt)
     drivers.update()
-    input.updateButtonStates()
+    input.update()
     if not scripts.Handle(dt) then
         return
     end

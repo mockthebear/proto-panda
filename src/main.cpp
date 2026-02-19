@@ -11,6 +11,7 @@
 #include "tools/oledscreen.hpp"
 #include "tools/storage.hpp"
 #include "tools/logger.hpp"
+#include "tools/ir.hpp"
 #include "lua/luainterface.hpp"
 
 
@@ -33,6 +34,7 @@ Animation g_animation;
 LuaInterface g_lua;
 TaskHandle_t g_secondCore;
 EditMode g_editMode;
+InfraRedManager g_InfraRed;
 
 void second_loop(void*);
 
@@ -173,6 +175,7 @@ void setup() {
   Devices::BuzzerNoTone();
   
   Devices::CalculateMemmoryUsageDifference("completed setup");
+  pinMode(2, INPUT);
 }
 
 void second_loop(void*){
@@ -195,10 +198,10 @@ void second_loop(void*){
     if (st > 80){
       Logger::Info("Animation cycle took too long %d and %d ms", st2, st);
     }
-    vTaskDelay(3);
   }
   #endif
 }
+
 
 
 void loop() {
@@ -216,7 +219,7 @@ void loop() {
   Devices::ReadSensors();
   g_remoteControls.update();
   //g_remoteControls.updateButtons();
-
+  g_InfraRed.update();
   g_remoteControls.sendUpdatesToLua();
 
 
