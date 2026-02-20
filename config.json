@@ -1,10 +1,12 @@
 {
   "input": {
+    "//comment": "The current avaliable input modes are 'infrared' and 'ble'",
     "mode": "infrared",
     "drivers": ["panda", "BLE-M3", "beauty-r1"]
   },
   "infrared": [
     {
+      "//comment": "Generic controller",
       "usercode": "FF00",
       "bind": {
         "B9": "press(BUTTON_UP)",
@@ -17,7 +19,8 @@
         "F3": "setRainbowShader(true)",
         "E7": "setRainbowShader(false)",
         "F7": "expressions.Next()",
-        "E3": "expressions.Previous()"
+        "E3": "expressions.Previous()",
+        "A5": "press(BUTTON_BACK, 1)"
       }
     }
   ],
@@ -42,7 +45,28 @@
     "generic.buttons.6": "BUTTON_BACK"
   },
 
+  "boop": {
+    "//comment": "The trigger_mode can accept either 'gpio' or 'lidar'",
+    "trigger_mode": "lidar", 
+    "gpio": 39,
+    "gpio_state": 0,
+    "enabled": true,
+    "transitionIn": "boop_intro",
+    "transitionOut": "boop_outro",
+    "boopAnimationName": "boop",
+    "transictionOnlyOnAnimation": "normal",
+    "transictionInOnlyOnSpecificFrame": 1
+  },  
+  
   "frames": [
+    {
+      "pattern": "/expressions/blink/blink%d.png",
+      "flip_left": false,
+      "flip_right": true,
+      "from": 1,
+      "to": 8,
+      "name": "frames_blink"
+    },
     {
       "pattern": "/expressions/angry/angry%d.png",
       "flip_left": false,
@@ -59,14 +83,7 @@
       "to": 4,
       "name": "frames_angry_transition"
     },
-    {
-      "pattern": "/expressions/blink/blink%d.png",
-      "flip_left": false,
-      "flip_right": true,
-      "from": 1,
-      "to": 8,
-      "name": "frames_blink"
-    },
+   
     {
       "pattern": "/expressions/boop/boop%d.png",
       "flip_left": false,
@@ -266,8 +283,6 @@
       ],
       "duration": 75
     },
-
-
     {
       "name": "angry_intro",
       "frames": "frames_angry_transition",
@@ -539,15 +554,6 @@
 
 
   ],
-    
-  "boop": {
-    "enabled": true,
-    "transitionIn": "boop_intro",
-    "transitionOut": "boop_outro",
-    "boopAnimationName": "boop",
-    "transictionOnlyOnAnimation": "normal",
-    "transictionInOnlyOnSpecificFrame": 1
-  },
   "scripts": [
     {
       "name": "lidar test",

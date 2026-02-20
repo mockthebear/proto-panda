@@ -15,6 +15,7 @@ local _M = {
     config = {
     },   
     avgRead = 0,
+    mode = "lidar",
     
     calibration_stage = 1,
     measurementsMax = 50,
@@ -33,28 +34,30 @@ local _M = {
 }
 
 
-function _M.Load(filename)
+function _M.Load()
     _M.gear_sprite = decodePng("/lualib/gear.png")
     _M.config = configloader.Get().boop
 
-    if dictGet("boop_configured") ~= "1" then  
-        print("Boop is not configured yet.")
-        _M.configured = false
-        return
+
+
+    if not _M.config["trigger_mode"] then
+        _M.config["trigger_mode"] = "lidar"
     end
-    _M.configured = true
 
-    _M.minimumLidar = tonumber(dictGet("boop_min") ) or 0
-    _M.triggerPosition = tonumber(dictGet("boop_trigg"))  or 0
-    _M.boopTimerDuration = tonumber(dictGet("boop_duration")) or 0
 
-    print("Boop configuration loaded min=".._M.minimumLidar.." trigger=".._M.triggerPosition.." timer=".._M.boopTimerDuration)
-
-    if _M.triggerPosition == 0 then 
-        print("Boop is not configured yet!")
-        _M.configured = false
-        return
+    _M.mode = _M.config["trigger_mode"]
+    if _M.mode == "gpio" then  
+        if type(_M.config["gpio"]) ~= 'number' then  
+            error("Boop mode gpio is enabled. The field 'gpio' is not present or is not a number")
+        end
+        if type(_M.config["gpio_state"]) ~= 'number' then  
+            error("Boop mode gpio is enabled. The field 'gpio' is not present or is not a number")
+        end
+        pinMode(_M.config["gpio"], INPUT)
+        _M.gpio = _M.config["gpio"]
+        _M.gpio_state = _M.config["gpio_state"]
     end
+    print("Mode is ".._M.mode)
 
     if _M.config["transitionIn"] then
         if type(_M.config["transitionIn"]) ~= "string" then 
@@ -118,13 +121,29 @@ function _M.Load(filename)
             error("Field 'transictionOutOnlyOnSpecificFrame' should be an number")
         end
     end
+
+    if dictGet("boop_configured") ~= "1" then  
+        print("Boop is not configured yet.")
+        _M.configured = false
+        return
+    end
+    _M.configured = true
+
+    _M.minimumLidar = tonumber(dictGet("boop_min") ) or 0
+    _M.triggerPosition = tonumber(dictGet("boop_trigg"))  or 0
+    _M.boopTimerDuration = tonumber(dictGet("boop_duration")) or 500
+
+    print("Boop configuration loaded min=".._M.minimumLidar.." trigger=".._M.triggerPosition.." timer=".._M.boopTimerDuration)
+
+    if _M.triggerPosition == 0 then 
+        print("Boop is not configured yet!")
+        _M.configured = false
+        return
+    end
 end
 
 
 function _M.onEnter()
-    if not hasLidar() then  
-        return false
-    end
     _M.old_managed = isPanelManaged()
     setPanelManaged(false)
     delay(500)
@@ -132,6 +151,23 @@ function _M.onEnter()
     _M.calibration_stage = 1
     _M.triggerPosition=0
     _M.quit = false
+    if _M.mode ~= "lidar" then  
+        if _M.calibration_stage < 6 then  
+            _M.calibration_stage = 6
+            if _M.triggerPosition == 0 then 
+                _M.triggerPosition = 100
+            end
+            if _M.minimumLidar == 0 then 
+                _M.minimumLidar = 50
+            end
+        end
+    else
+        if not hasLidar() then  
+            log("Attempted to calibrate boop, but lidar is not present")
+            generic.displayWarning("No lidar", "No lidar present", 2000)
+            return false
+        end
+    end
     return true
 end
 
@@ -150,6 +186,7 @@ end
 
 
 function _M.Calibrate(dt)
+    
     if input.readButtonStatus(BUTTON_CONFIRM) == BUTTON_JUST_PRESSED then 
         if _M.calibration_stage == 1 then
             toneDuration(440, 500)
@@ -450,25 +487,58 @@ function _M.readLidar()
     return _M.avgRead, ok, readingRaw
 end
 
-function _M.isBoopedCheck(reading, ok, dt)
-    if ok then 
-        if reading > _M.minimumLidar and reading < _M.triggerPosition then
-            _M.boopTimer = _M.boopTimer+dt  
+function _M.isBoopedCheck(dt)
+    if _M.mode == "lidar" then 
+        if hasLidar() then
+
+            local reading, ok = _M.readLidar()
+
+            if ok then 
+                if reading > _M.minimumLidar and reading < _M.triggerPosition then
+                    _M.boopTimer = _M.boopTimer+dt  
+                else 
+                    _M.boopTimer = 0
+                end
+                if _M.boopTimer >= _M.boopTimerDuration then 
+                    _M.boopTimer = _M.boopTimerDuration
+                    _M.isBooped = true
+                    return true
+                end
+            else 
+                if _M.isBooped then 
+                    return true
+                end
+                _M.boopTimer = 0
+            end
+            _M.isBooped = false
+        end
+        return false
+    elseif _M.mode == "gpio" then 
+        if not _M.isBooped then
+            if digitalRead(_M.gpio) == _M.gpio_state then  
+                _M.boopTimer = _M.boopTimer+dt  
+            else
+                _M.boopTimer = 0
+            end
+            if _M.boopTimer >= _M.boopTimerDuration then 
+                _M.boopTimer = 0
+                _M.isBooped = true
+                return true
+            end
         else 
-            _M.boopTimer = 0
-        end
-        if _M.boopTimer >= _M.boopTimerDuration then 
-            _M.boopTimer = _M.boopTimerDuration
-            _M.isBooped = true
+            if digitalRead(_M.gpio) ~= _M.gpio_state then  
+                _M.boopTimer = _M.boopTimer+dt  
+            else
+                _M.boopTimer = 0
+            end
+            if _M.boopTimer >= _M.boopTimerDuration then 
+                _M.boopTimer = 0
+                _M.isBooped = false
+                return false
+            end
             return true
         end
-    else 
-        if _M.isBooped then 
-            return true
-        end
-        _M.boopTimer = 0
     end
-    _M.isBooped = false
     return false
 end
 
@@ -477,57 +547,54 @@ function _M.reset()
 end
 
 function _M.manageBoop(dt)
-    if hasLidar() then 
-        local config = _M.config
-        if not _M.configured and not config.enabled  then
-            return
-        end
 
-        _M.calibrationReading, _M.calibrationOk = _M.readLidar()
-        local isBooped = _M.isBoopedCheck(_M.calibrationReading, _M.calibrationOk, dt)
+    local config = _M.config
+    if not _M.configured and not config.enabled  then
+        return
+    end
+    local isBooped = _M.isBoopedCheck(dt)
 
-        if isBooped then 
-            if not _M.boopIsOn then
-                local isOnCorrectFrame = true
-                if config.transictionOnlyOnAnimation then  
-                    if not IsFrameFromAnimation(getPanelCurrentFace(), config.transictionOnlyOnAnimation) then  
-                        isOnCorrectFrame = false
-                    end
-                end
-                if config.transictionInOnlyOnSpecificFrame then 
-                    if config.transictionInOnlyOnSpecificFrame ~= GetCurrentFrame() then  
-                        isOnCorrectFrame = false
-                    end
-                end
-
-                if isOnCorrectFrame then
-                    _M.boopIsOn = true
-                    if config.transitionOut then
-                        StackExpression(config.transitionOut)
-                    end
-                    StackExpression(config.boopAnimationName)
-                    if config.transitionIn then
-                        StackExpression(config.transitionIn)
-                    end
+    if isBooped then 
+        if not _M.boopIsOn then
+            local isOnCorrectFrame = true
+            if config.transictionOnlyOnAnimation then  
+                if not IsFrameFromAnimation(getPanelCurrentFace(), config.transictionOnlyOnAnimation) then  
+                    isOnCorrectFrame = false
                 end
             end
-        else
-            if IsFrameFromAnimation(getPanelCurrentFace(), config.boopAnimationName)  then  
-                if config.transictionOutOnlyOnSpecificFrame then 
-                    if config.transictionOutOnlyOnSpecificFrame ~= GetCurrentFrame() then  
-                        return
-                    end
+            if config.transictionInOnlyOnSpecificFrame then 
+                if config.transictionInOnlyOnSpecificFrame ~= GetCurrentFrame() then  
+                    isOnCorrectFrame = false
                 end
-                local menu = require("menu")
-                if menu.menuExpression == config.boopAnimationName then
-                    --Avoid dropping the animation if it was a user selected one
+            end
+            if isOnCorrectFrame then
+                _M.boopIsOn = true
+                if config.transitionOut then
+                    StackExpression(config.transitionOut)
+                end
+                StackExpression(config.boopAnimationName)
+                if config.transitionIn then
+                    StackExpression(config.transitionIn)
+                end
+            end
+        end
+    else
+        if IsFrameFromAnimation(getPanelCurrentFace(), config.boopAnimationName)  then  
+            if config.transictionOutOnlyOnSpecificFrame then 
+                if config.transictionOutOnlyOnSpecificFrame ~= GetCurrentFrame() then  
                     return
                 end
-                _M.boopIsOn = false   
-                popPanelAnimation()       
             end
+            local menu = require("menu")
+            if menu.menuExpression == config.boopAnimationName then
+                --Avoid dropping the animation if it was a user selected one
+                return
+            end
+            _M.boopIsOn = false   
+            popPanelAnimation()       
         end
     end
+    
 end
 
 return _M
