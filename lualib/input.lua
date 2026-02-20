@@ -19,8 +19,11 @@ local input = {
     legacyreadGyroZ = readGyroZ,
     legacygetBleDeviceLastUpdate = getBleDeviceLastUpdate,
 
+    mode = "NONE",
 
+    infrared={},
     keybind = {},
+    forced_buttons = {},
 }
 
 _G.BUTTON_RELEASED = 0
@@ -44,6 +47,7 @@ do
         for b=1,MAX_BLE_BUTTONS do 
             input.panda_buttons[pdButtonIdOffset] = 0
             input.panda_buttons_state[pdButtonIdOffset] = _G.BUTTON_RELEASED
+            input.forced_buttons[pdButtonIdOffset] = 0
             pdButtonIdOffset = pdButtonIdOffset +1
         end
         _G['DEVICE_'..i..'_BUTTON_LEFT']    = _G.BUTTON_LEFT        + i * MAX_BLE_BUTTONS
@@ -77,6 +81,10 @@ function input.parseInputLocation(str)
         elseif idx == 2 then  
             local handler = drivers[controllerType][0]
             local toMatch = nil
+
+            if not handler then  
+                error("Unavalible resource '"..controllerType.."'")
+            end
             
             if element:match(".-=.+") then 
                 element, toMatch = element:match("(.-)=(.+)")
@@ -122,8 +130,87 @@ function input.parseInputLocation(str)
     return parsed,controllerType, mappedLogString
 end
 
+function input.runBindCommand(binds, opcode)
+    local f = binds[opcode]
+    if f then 
+        local success, err = pcall(f)
+        if not success then  
+            log(string.format("Error executing opcode %02X due: %s", opcode, err))
+        end
+    else
+        log(string.format("Unmapped opcode %02X", opcode))
+    end
+end
+
+function input.Start()
+    if input.mode == "BLE" then  
+        beginBleScanning()
+    end
+end
+
 function input.Load()
-    local keybinds = configloader.Get().keybinds
+    local confs = configloader.Get()
+
+    if not confs.input then  
+        error("config.json missing 'input'")
+    end
+
+    local mode = confs.input.mode or "BLE"
+    input.mode = confs.input.mode
+
+    if not confs.input.drivers or #confs.input.drivers == 0 then  
+        confs.input.drivers = {"generic"}
+    end
+
+    if mode:upper() == "BLE" then
+        setLogDiscoveredBleDevices(false)
+        generic.displaySplashMessage("Starting:\nBLE")
+        startBLE()
+        startBLERadio(ESP_PWR_LVL_P9)
+    elseif mode == "infrared" then
+        generic.displaySplashMessage("Starting:\nIR")
+        startIR()
+        if not confs.infrared then  
+            error("config.json missing 'infrared' which is required when infrared is enabled")
+        end
+        for i, mode in pairs(confs.infrared) do 
+            if not mode.usercode or type(mode.bind) ~= 'table' then  
+                error("config.json error at element "..i..', \'usercode\' or \'bind\' is missing')
+            end
+            local code = tonumber(mode.usercode, 16)
+            if not code then  
+                error("config.json error at element "..i..', \'usercode\' should be a HEX number')
+            end
+            local keymap = {}
+            log("Loaded usercode "..mode.usercode)
+            for opcodeS, func in pairs(mode.bind) do  
+                local opcode = tonumber(opcodeS, 16)
+                if not opcode then 
+                    error("config.json error at element "..i..".bind. Opcode "..opcodeS.." is not a valid HEX")
+                end
+
+                local f, err = load(func)
+                if not f then  
+                    error("config.json error at element "..i..'.bind['..opcodeS..']: '..err)
+                end
+                keymap[opcode] = f
+            end
+            input.infrared[code] = keymap
+        end
+        drivers.type_by_id[0] = {mode={"generic"}, type="hid"}
+    elseif mode == "NONE" then
+        --We just accept
+    else
+        error("Invalid input mode: "..tostring(mode))
+    end
+    
+    drivers.EnableDrivers(confs.input.drivers)
+
+
+    input.SetKeybinds(confs.keybinds) 
+end
+
+function input.SetKeybinds(keybinds) 
     for location, target in pairs(keybinds) do  
         local binding, controllerType, logMsg = input.parseInputLocation(location)
         local toInsert = input.keybind[controllerType]
@@ -173,8 +260,20 @@ function input.updatGenericButtonStates(inputModes, clientId, pdButtonIdOffset)
             end
         end
     end
+    if input.button_timeout then 
+        if input.button_timeout < millis() then  
+            for idx=1,MAX_BLE_BUTTONS do
+                input.forced_buttons[idx-pdButtonIdOffset] = nil
+            end
+            input.button_timeout = 0
+        else 
+            for btn,state in pairs(input.forced_buttons) do  
+                actions[btn-pdButtonIdOffset] = state
+            end
+        end
+    end
     for idx=1,MAX_BLE_BUTTONS do
-        input.updateButtonByreading(pdButtonIdOffset+idx-1, actions[idx])
+        input.updateButtonByreading(pdButtonIdOffset+idx, actions[idx])
     end
 end
 
@@ -196,8 +295,29 @@ function input.updateButtonByreading(buttonId, reading)
     end
 end
 
-function input.updateButtonStates()
-    local pdButtonIdOffset = 1
+function press(key, controller)
+    controller = controller or 1
+    input.forced_buttons[key + (controller-1) * MAX_BLE_BUTTONS] = _G.BUTTON_JUST_PRESSED
+    input.button_timeout = millis() + 250
+end
+
+_G.press = press
+
+function input.update()
+    if input.mode == "infrared" then  
+
+        local usercode, opcode = getLastIRCommand()
+        if usercode ~= 0 then  
+            local binds = input.infrared[usercode]
+            if binds then  
+                input.runBindCommand(binds, opcode)
+            else 
+                log(string.format("Unmapped IR command with usercode %02X and opcode %02X", usercode, opcode))
+            end
+        end
+    end
+
+    local pdButtonIdOffset = 0
     for i=0,MAX_BLE_CLIENTS-1 do 
         local controllerList = drivers.type_by_id[i]
         if controllerList ~= nil then

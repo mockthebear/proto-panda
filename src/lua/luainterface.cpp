@@ -5,6 +5,7 @@
 #include "tools/sensors.hpp"
 #include "tools/oledscreen.hpp"
 #include "tools/storage.hpp"
+#include "tools/ir.hpp"
 #include "drawing/animation.hpp"
 #include "drawing/ledstrip.hpp"
 #include "bluetooth/ble_client.hpp"
@@ -291,6 +292,10 @@ int getConnectedRemoteControls()
   return g_remoteControls.getConnectedClientsCount();
 }
 
+bool hasBLEStarted(){
+  return g_remoteControls.IsStarted();
+}
+
 bool startBLE()
 {
   Logger::Info("Starting BLE");
@@ -311,6 +316,32 @@ bool beginRadio(int powerLevel)
   Devices::CalculateMemmoryUsage();
   return true;
 }
+
+bool startIR(){
+  return g_InfraRed.begin();
+}
+bool hasIRStarted(){
+  return g_InfraRed.IsStarted();
+}
+void setIRInterruptPin(uint16_t p){
+  g_InfraRed.setInterruptPin(p);
+}
+void enableIRInterrupt(int mode){
+  g_InfraRed.enableInterrupt(mode);
+}
+void disableIRInterrupt(){
+  g_InfraRed.disableInterrupt();
+}
+
+bool hasIRCommand(){
+  return g_InfraRed.hasCommand();
+}
+
+IrCommand getLastIRCommand(){
+  return g_InfraRed.getLastCommand();
+}
+
+
 
 int getClientIdFromControllerId(uint32_t id)
 {
@@ -502,6 +533,7 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("oledDrawFilledCircle", DrawFilledCircleScreen);
   //BLE
   m_lua->FuncRegister("startBLE", startBLE);
+  m_lua->FuncRegister("hasBLEStarted", hasBLEStarted);
   m_lua->FuncRegister("startBLERadio", beginRadio);
   m_lua->FuncRegister("getConnectedRemoteControls", getConnectedRemoteControls);
   m_lua->FuncRegister("isElementIdConnected", isElementIdConnected);
@@ -510,6 +542,15 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("setLogDiscoveredBleDevices", setLogDiscoveredBle);
   m_lua->FuncRegister("getClientIdFromControllerId", getClientIdFromControllerId);
   m_lua->FuncRegister("getRRSI", getRRSI);
+
+
+  m_lua->FuncRegister("startIR", startIR);
+  m_lua->FuncRegister("hasIRStarted", hasIRStarted);
+  m_lua->FuncRegister("setIRInterruptPin", setIRInterruptPin);
+  m_lua->FuncRegisterOptional("enableIRInterrupt", enableIRInterrupt, CHANGE);
+  m_lua->FuncRegister("disableIRInterrupt", disableIRInterrupt);
+  m_lua->FuncRegister("hasIRCommand", hasIRCommand);
+  m_lua->FuncRegister("getLastIRCommand", getLastIRCommand);
 
 
   //System
@@ -766,6 +807,16 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("ESP_PWR_LVL_P15", (int)ESP_PWR_LVL_P15);
   m_lua->setConstant("ESP_PWR_LVL_P18", (int)ESP_PWR_LVL_P18);
   m_lua->setConstant("ESP_PWR_LVL_P21", (int)ESP_PWR_LVL_P21);
+
+
+  m_lua->setConstant("RISING"   , (int)RISING   );
+  m_lua->setConstant("FALLING"  , (int)FALLING  );
+  m_lua->setConstant("CHANGE"   , (int)CHANGE   );
+  m_lua->setConstant("ONLOW"    , (int)ONLOW    );
+  m_lua->setConstant("ONHIGH"   , (int)ONHIGH   );
+  m_lua->setConstant("ONLOW_WE" , (int)ONLOW_WE );
+  m_lua->setConstant("ONHIGH_WE", (int)ONHIGH_WE);
+
  
 }
 
