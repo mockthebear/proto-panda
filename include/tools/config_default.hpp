@@ -2,7 +2,7 @@
 /*
     Avoid changing this vile, change the config.hpp instead if you need custom configuration
 */
-#define PANDA_VERSION "2.0.3"
+#define PANDA_VERSION "2.0.4"
 /*
 Cache file version to invalidate cache in case of firmware update
 */

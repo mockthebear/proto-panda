@@ -145,6 +145,8 @@ end
 function input.Start()
     if input.mode == "BLE" then  
         beginBleScanning()
+    elseif input.mode == "INFRARED" then  
+        enableIRInterrupt()
     end
 end
 
@@ -156,23 +158,35 @@ function input.Load()
     end
 
     local mode = confs.input.mode or "BLE"
-    input.mode = confs.input.mode
+    mode = mode:upper()
+    input.mode = mode
 
     if not confs.input.drivers or #confs.input.drivers == 0 then  
         confs.input.drivers = {"generic"}
     end
 
-    if mode:upper() == "BLE" then
+    if mode == "BLE" then
         setLogDiscoveredBleDevices(false)
         generic.displaySplashMessage("Starting:\nBLE")
         startBLE()
         startBLERadio(ESP_PWR_LVL_P9)
-    elseif mode == "infrared" then
+    elseif mode == "INFRARED" then
         generic.displaySplashMessage("Starting:\nIR")
         startIR()
         if not confs.infrared then  
             error("config.json missing 'infrared' which is required when infrared is enabled")
         end
+
+        if not confs.input.infrared_gpio then  
+            error("config.json missing 'infrared_gpio' in input segment")
+        end
+
+        if type(confs.input.infrared_gpio) ~= "number" then  
+            error("config.json missing 'infrared_gpio' in input segment")
+        end
+
+        setIRInterruptPin(confs.input.infrared_gpio)
+
         for i, mode in pairs(confs.infrared) do 
             if not mode.usercode or type(mode.bind) ~= 'table' then  
                 error("config.json error at element "..i..', \'usercode\' or \'bind\' is missing')
@@ -205,7 +219,6 @@ function input.Load()
     end
     
     drivers.EnableDrivers(confs.input.drivers)
-
 
     input.SetKeybinds(confs.keybinds) 
 end
@@ -304,7 +317,7 @@ end
 _G.press = press
 
 function input.update()
-    if input.mode == "infrared" then  
+    if input.mode == "INFRARED" then  
 
         local usercode, opcode = getLastIRCommand()
         if usercode ~= 0 then  

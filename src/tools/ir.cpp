@@ -122,7 +122,7 @@ void InfraRedManager::setInterruptPin(uint16_t p){
     if (m_interruptPin != 0){
         disableInterrupt();
     }
-    pinMode(p, PULLDOWN);
+    pinMode(p, INPUT);
     delay(1);
     m_interruptPin = digitalPinToInterrupt(p);
 }
