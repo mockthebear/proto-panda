@@ -175,7 +175,6 @@ void setup() {
   Devices::BuzzerNoTone();
   
   Devices::CalculateMemmoryUsageDifference("completed setup");
-  pinMode(2, INPUT);
 }
 
 void second_loop(void*){
@@ -218,7 +217,6 @@ void loop() {
   Devices::BeginFrame();
   Devices::ReadSensors();
   g_remoteControls.update();
-  //g_remoteControls.updateButtons();
   g_InfraRed.update();
   g_remoteControls.sendUpdatesToLua();
 

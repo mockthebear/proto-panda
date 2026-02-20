@@ -1,7 +1,7 @@
 {
   "input": {
     "//comment": "The current avaliable input modes are 'infrared' and 'ble'",
-    "mode": "infrared",
+    "mode": "BLE",
     "drivers": ["panda", "BLE-M3", "beauty-r1"]
   },
   "infrared": [

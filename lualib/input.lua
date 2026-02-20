@@ -162,7 +162,7 @@ function input.Load()
         confs.input.drivers = {"generic"}
     end
 
-    if mode == "BLE" then
+    if mode:upper() == "BLE" then
         setLogDiscoveredBleDevices(false)
         generic.displaySplashMessage("Starting:\nBLE")
         startBLE()
@@ -263,17 +263,17 @@ function input.updatGenericButtonStates(inputModes, clientId, pdButtonIdOffset)
     if input.button_timeout then 
         if input.button_timeout < millis() then  
             for idx=1,MAX_BLE_BUTTONS do
-                input.forced_buttons[idx] = nil
+                input.forced_buttons[idx-pdButtonIdOffset] = nil
             end
             input.button_timeout = 0
         else 
             for btn,state in pairs(input.forced_buttons) do  
-                actions[btn] = state
+                actions[btn-pdButtonIdOffset] = state
             end
         end
     end
     for idx=1,MAX_BLE_BUTTONS do
-        input.updateButtonByreading(pdButtonIdOffset+idx-1, actions[idx])
+        input.updateButtonByreading(pdButtonIdOffset+idx, actions[idx])
     end
 end
 
@@ -295,8 +295,9 @@ function input.updateButtonByreading(buttonId, reading)
     end
 end
 
-function press(key)
-    input.forced_buttons[key] = _G.BUTTON_JUST_PRESSED
+function press(key, controller)
+    controller = controller or 1
+    input.forced_buttons[key + (controller-1) * MAX_BLE_BUTTONS] = _G.BUTTON_JUST_PRESSED
     input.button_timeout = millis() + 250
 end
 
@@ -316,7 +317,7 @@ function input.update()
         end
     end
 
-    local pdButtonIdOffset = 1
+    local pdButtonIdOffset = 0
     for i=0,MAX_BLE_CLIENTS-1 do 
         local controllerList = drivers.type_by_id[i]
         if controllerList ~= nil then
