@@ -18,7 +18,7 @@ Bellow you can click on each of those images. Each session has a printing guide,
 |   Led holder                                        | Clips                                       | Ears                                |
 |-----------------------------------------------------|---------------------------------------------|-------------------------------------|
 | [![Led holder](./guide-ledholder.png)](#led-holder) | [![Clips](./guide-clips.png)](#led-holder)  | [![Ears](./guide-ears.png)](#ears)  |
-| [Materials](#led-holder-materials)                  | [Materials](#clip-materials)                | [Materials](#materials-ears)        |
+| [Materials](#led-holder-materials)                  | [Materials](#clip-materials)                | [Materials](#ears-materials)        |
 | [Printing](#printing-led-holder)                    | [Printing](#printing-clips)                 | [Materials](#printing-ears)         |
 | [Assembly](#assembly-led-holder)                    | [Assembly](#assembling-clips)               | [Assembly](#assembly-ears)          |
 
@@ -43,12 +43,15 @@ Bellow you can click on each of those images. Each session has a printing guide,
 * Two component glue
 * 10x M3 heat insert (5~7mm in height)
 * 18x M3 heat insert 3mm height
-* ASA filaament or PLA filament
+* 8x to 16x M4 heat insert (5~7mm in height)
+* 8x to 16x 10~15mm M4 flat head screws
+* 4x M3 flat head 10mm screws
+* 12x to 18x M3 6mm screws
 * 2x 10mmX2mm neodimium magnet
-* 12 to 18 M3 6mm screws
-* PLA / PETG / ASA / TPU
+* PETG, ASA and TPU
 * Transparent PLA
-* 2.7mm~5mm ws2812b led strip
+* Black PLA
+* 2.7mm~5mm ws2812b led strip (or a 5x5 led matrix)
 * Super glue
 * 3 pin PH 2.0MM connector with wires (or some other 3 pin connector)
 
@@ -213,7 +216,7 @@ Once you finished, this part is complete!
 
 ## Back head Printing guide
 
-### Back of the heat itself
+### Back of the head itself
 
 Due the way 3d printers work, we need support in certain places so the material don't just fall. Luckly you're dealing with a model that MOSTLY avoid this need!
 It was designed so the minimum amount of support is needed and it has holes to improve hearing, airflow and saving up on material!
@@ -260,6 +263,13 @@ Once finished, it should be like this.
 
 ## Extender
 
+
+* Material: ASA or PLA.
+* Layer height: whatever
+* Supports: no need
+* Brim: Good idea but not required
+
+
 Same process as the back head. Load the model, make it lay flat, disable all supports.
 
 ![Front frame](./guide-front-extender.png) 
@@ -282,9 +292,9 @@ melting the plastic and going trough the plastic. Try to do this slowly without 
 
 ![Front frame](./heatset-head.gif)  
 
-Once all 6 are installed, you finished it!
+Once all 6 are installed, you finished it! Now if you going to need the extender, lets do the same for it.
 
-<todo>
+![Front frame](./guide-front-extender-part1.png) 
 
 
 # Led holder
@@ -488,6 +498,9 @@ Altough the results aren't that good in person. You can clearly see the individu
 
 ![Led holder](./guide-led-holder-assembly-part11.png)
 
+Once you decide which one you using, you can use just a bit of super glue. But **DONT DO IT NOW**!! You will need to align it once you finish assembling all parts.
+Dont use too much because they already fit snug in to the fin hole. And if you ever need to replace the led strip, you can easily open it
+
 # Clips
 [Back to top](#print-guide-and-assembly-guide)
 
@@ -533,6 +546,62 @@ For assembly guide, check the [Assembling all parts together ](#assembling-all-p
 # Ears
 [Back to top](#print-guide-and-assembly-guide)
 
+## Ears materials
+
+The model support 2 and 4 ears. You can choose to print just two of them or all four of them. Or completely skip this section and make your own ears later.
+The ears will be printed in TPU. You can print them in PLA or PETG but they might end up too heavy or breaking easily since you wont be able to bend them.
+
+![ears](./tpu-ears-all.gif)
+
+
+### Tools
+* 3D printer
+* Orca slicer (or some slicer with similar features)
+* Soldering iron with a heatset tip
+* Screwdriver
+* Set of straight cutting pliers
+
+### Consumables 
+* TPU spool
+* 8x to 16x M4 heat insert (5~7mm in height)
+* 8x to 16x 10~15mm M4 screws
+* Super glue
+
+## Printing ears
+
+> Disclaimer: Printing with TPU is annoying and some printers can't handle it well. In this guide I tried to guide each step with as much detail as possible. But printing with TPU has some hard parts. So i'd say, get used to printing in TPU before attempting this section.
+
+* Material: TPU
+* Layer height: Whatever
+* Supports: None
+* Brim: None
+* Infill: **10% Gyroid**
+* Top shell layers: 0
+* Walls: 0
+
+They're printed using TPU so its flexible and ultra durable
+
+![ears](./tpu-ears.gif)
+
+You will see the ears are split in to parts. Thats because they're too big and dont fit on the printer.
+
+![ears](./guide-ear-print-part1.png)
+
+The requirement is is changing the infill to 10%, removing walls and top shell layers.
+And add a few modifier cylinders on those holes. They should have 3 walls, those are the places where the heatsets will stay.
+
+![ears](./guide-ear-print-part2.png)
+
+When sliced, it should look like like this.
+
+![ears](./guide-ear-print-part3.png)
+
+You can fit two ears at the same time **(REMEBER TO FLIP THEM)**. When you finish, abuse the super glue to put the two parts together.
+
+once they're printed, heat your soldering iron on about 300~350ºC with a m4 tip and put all four of the heatsets. They will go on the back of the head with the m4 scews. 
+
+![ears](./guide-ear-print-part4.png)
+
 # Joining all parts
 [Back to top](#print-guide-and-assembly-guide)
 
@@ -554,5 +623,96 @@ For assembly guide, check the [Assembling all parts together ](#assembling-all-p
 * 2x [Led holder](#led-holder)
 * 2x~4x [Ears](#ears) (optional)
 * 12 to 18 M3 6mm screws
+* 8x to 16x M4 flat head 15mm screws
 
 ## Assembling all parts together
+
+### Back of the head and ears
+
+First position four M4 crews in the holes, push or screw them in the holes until they start poking on the other side 
+
+![ealls](./assembly-all-part0.png)
+
+![all](./assembly-all-part2.png)
+
+Then position the left ear with the topmost screw, start rotating the screw so it gets closer. Then align the ear with the bottom one. Do this for all screws
+
+![eallars](./assembly-all-part1.png)
+
+Do this for all four ears.
+
+### Back of the head and headphones
+
+**BUT MOCK, I DONT WANNA USE SCREWS, CAN I USE THE OLD FASHION WAY AND GLUE?**
+
+yeah.
+
+But I'll show with screws!
+The idea is you use the clips to attach the back with the headphones. I'll show how to do it with the extender, if you end up not needing it, use the smaller clips instead.
+Get 6 clips and 6 M3 6mm screws. Screw the clips in place with just enough pressure so they stay in place but can be rotated if you push them.
+
+![all](./assembly-all-part3.png)
+
+Now slide in the extender (if not using the extender, use the small clips and do the headphones now.), you'll notice the alignment might be a little tricky. Thats why there is a aligment hole.
+
+![all](./assembly-all-part4.png)
+
+The idea there is you use a piece of filament or some other thing to keep the parts in place. If the hole end up beeing too small due, you can drill it with a 1.7mm drill.
+
+![all](./assembly-all-part5.png)
+
+Here I'm using piece of PLA filament to align.
+
+![all](./assembly-all-part6.png)
+
+Now place all the screws in the extender and tighten all screws. Dont tight too hard though.
+
+![all](./assembly-all-part7.png)
+
+Now just slide in the headphones. With the alinment holes it will be in place, ready to screw.
+
+![all](./assembly-all-part8.png)
+
+Once everrything is secured with screws, you can put a pinch of glue on the filament strand at the back of the head and then cut it with a straight cutting plier.
+
+![all](./assembly-all-part9.png)
+
+### Headphones and side leds
+
+Check which side each of the side led holders goes. 
+
+![all](./assembly-all-part10.png)![all](./assembly-all-part11.png)
+
+Then simply push it until it latches. You can use a m3 screw to keep it in place for now. The front frame will hold it there.
+
+![all](./assembly-all-part12.png)
+
+Now take your time to align the cover. If you're not going to sand anything else or apply paint, you can glue it now. Otherwise, save the gluing to be the last step before calling it finished.
+
+![all](./assembly-all-part13.png)
+
+### Headphones and front frame
+
+We're almost there!
+
+First, you will need to position the two parts, and then slide the front frame, either by the bottom or the top by gently bending the back of the front frame.
+
+![all](./assembly-all-part14.png)
+
+![all](./assembly-all-part15.png)
+
+Now you'll have to align those two holes
+
+![all](./assembly-all-part16png.png)
+
+Use the M3 10mm screws to fix it in place
+
+![all](./assembly-all-part17.png)
+
+Screw it tight, but not too much to dont damage any parts.
+
+![all](./assembly-all-part18.png)
+
+AND THERE YOU HAVE IT! Done!
+
+![all](./proot.gif)
