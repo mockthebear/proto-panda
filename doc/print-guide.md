@@ -11,9 +11,9 @@ Bellow you can click on each of those images. Each session has a printing guide,
 | Front frame                                     | Headphones                                           | Back head                                                          |
 |-------------------------------------------------|------------------------------------------------------|--------------------------------------------------------------------|
 | ![Front frame](./guide-front-frame.png)         |  [![Headphones](./guide-front-headphones.png)](#headphones) |  [![Back head](./guide-front-headbackpng.png)](#back-head)  |
-| Materials                                       |  [Materials](#headphones-materials)                         |  [Materials](#back-head-materials)                          | 
-| Printing                                        |  [Printing](#headphones-printing-guide)                     |  [Printing](#back-head-printing-guide)                      |
-| Assembly                                        |  [Assembly](#headphones-assembly-guide)                     |  [Assembly](#back-head-assembly-guide)                     |
+| [Materials](#front-frame-materials)             |  [Materials](#headphones-materials)                         |  [Materials](#back-head-materials)                          | 
+| [Printing](#front-frame-printing-guide)         |  [Printing](#headphones-printing-guide)                     |  [Printing](#back-head-printing-guide)                      |
+| [Assembly](#front-frame-assembly-guide)         |  [Assembly](#headphones-assembly-guide)                     |  [Assembly](#back-head-assembly-guide)                     |
 
 |   Led holder                                        | Clips                                       | Ears                                |
 |-----------------------------------------------------|---------------------------------------------|-------------------------------------|
@@ -55,8 +55,6 @@ Bellow you can click on each of those images. Each session has a printing guide,
 * Super glue
 * 3 pin PH 2.0MM connector with wires (or some other 3 pin connector)
 
-# Front frame
-[Back to top](#print-guide-and-assembly-guide)
 
 # Headpones
 [Back to top](#print-guide-and-assembly-guide)
@@ -296,6 +294,54 @@ Once all 6 are installed, you finished it! Now if you going to need the extender
 
 ![Front frame](./guide-front-extender-part1.png) 
 
+
+# Front frame
+[Back to top](#print-guide-and-assembly-guide)
+
+The front frame is where all the electronics usually go.  At this point, i dont have spare parts to record a footage of the whole assemble process. So I'll show just the printing process for now.
+
+## Front frame materials
+
+### Tools
+* 3D printer
+* Orca slicer (or some slicer with similar features)
+
+### Consumables 
+* Black PETG
+
+## Front frame printing guide
+
+* Material: Black PETG
+* Layer height: 0.12mm~0.24mm
+* Supports: Tree
+* Brim: none
+Dont attempt printing in PLA. It will crack at some point. PETG or ASA is mandatory.
+
+Load the model and place it flat on the print bed
+
+![Led holder](./place_flat.png)
+
+Upon clicking "Slice" you'll notice that some supports appear
+
+![front frame](./guide-front-frame-print-part1.png)
+
+Most of those supports aren't necessary, so we're gonna right click and add a cube support blocker.
+
+![front frame](./guide-front-frame-print-part2.png)
+
+Scale it and move to be it like this, covering the whole front frame except the back of it.
+
+![front frame](./guide-front-frame-print-part3.png)
+
+Now slice and you will notice only two supports appear
+
+![front frame](./guide-front-frame-print-part4.png)
+
+Thats it. Print it like that.
+
+## Front frame assembly guide
+
+The front frame is where all the electronics usually go.  At this point, i dont have spare parts to record a footage of the whole assemble process. So I'll show just the printing process for now.
 
 # Led holder
 [Back to top](#print-guide-and-assembly-guide)
