@@ -2,9 +2,19 @@
 
 Printing protopanda is easier than the original MK16 model. It requires less support and has some features like to reduce the amount of material used.
 
+It also adds a bit of complexity in other parts, so it may look nicer, or have more features.
+Any of those parts are interchangeable with the [original MK16](https://www.thingiverse.com/thing:4894173) model.
+
+# 3D Models
+
+You can download the models [here](https://www.thingiverse.com/thing:7188042)
+
+# Parts
+
 **The basic requirement is a 3d printer with 25x25cm bed.** Generally speaking, the whole set can be printed entirely in PLA. But that is not reccomended for some parts due strenght issues.
 Be aware that PLA under directly sunlight can bend and warp, also it can easily become maleable on temperatures over 50ºC. 
-Some parts of the guide will reccoment using ASA or ABS, but they're toxic while printing. Weight your decisions and needs.
+
+> Some parts of the guide will reccomend using ASA or ABS, but they're toxic while printing. Weight your decisions and needs.
 
 Bellow you can click on each of those images. Each session has a printing guide, reccomended settings for each part, tools and accessories necessary and assembly guide.
 
@@ -31,7 +41,7 @@ Bellow you can click on each of those images. Each session has a printing guide,
 ## All tools required
 
 * 3D printer  with 25x25cm bed (multi color is ideal).
-* Smooth PEI sheet for the side leds
+* Smooth PEI sheet for the side leds (Those with the stars make a really nice effect)
 * Orca slicer (or some slicer with similar features)
 * Soldering iron with a heatset tip
 * 4x M4 10mm screws (temporary)
@@ -40,6 +50,7 @@ Bellow you can click on each of those images. Each session has a printing guide,
 * C clamp (optional)
 
 ### All consumables required
+> Almost all parts that require screws can be glued instead. The original MK16 does that. With exception of the front frame.
 * Two component glue
 * 10x M3 heat insert (5~7mm in height)
 * 18x M3 heat insert 3mm height
