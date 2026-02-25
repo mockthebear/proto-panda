@@ -19,7 +19,8 @@ Protopanda is a open source patform (firmware and hardware), for controling prot
 7. [Bluetooth](#bluetooth)
 7. [Hardware](#hardware)
 8. [DIY](#DIY)
-9. [Programming in Lua](#programming-in-lua)
+9. [Printing and assembling guide](./doc/print-guide.md)
+10. [Programming in Lua](#programming-in-lua)
 
 # Features
 
@@ -309,7 +310,8 @@ For external use:
 * [Adderessable led strip](https://aliexpress.com/item/1005004752499978.html) (optional)
 
 
-
+# Printing and assembly guide
+[Guide here](./doc/print-guide.md)
 
 # Programming in Lua
 
