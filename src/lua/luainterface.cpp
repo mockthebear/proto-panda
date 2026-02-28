@@ -770,11 +770,6 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("PANEL_HEIGHT", PANEL_HEIGHT);
   m_lua->setConstant("MAX_LED_GROUPS", MAX_LED_GROUPS);
   m_lua->setConstant("EDIT_MODE_PIN", EDIT_MODE_PIN);
-  m_lua->setConstant("WIFI_AP_NAME", WIFI_AP_NAME);
-  m_lua->setConstant("WIFI_AP_PASSWORD", WIFI_AP_PASSWORD);
-  m_lua->setConstant("EDIT_MODE_FTP_USER", EDIT_MODE_FTP_USER);
-  m_lua->setConstant("EDIT_MODE_FTP_PASSWORD", EDIT_MODE_FTP_PASSWORD);
-  m_lua->setConstant("EDIT_MODE_FTP_PORT", EDIT_MODE_FTP_PORT);
   m_lua->setConstant("PANEL_CHAIN", PANEL_CHAIN);
 
   #ifdef ENABLE_HUB75_PANEL

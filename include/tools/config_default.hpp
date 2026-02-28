@@ -97,13 +97,7 @@ Cache file version to invalidate cache in case of firmware update
 */
 
 #define EDIT_MODE_PIN 39
-#define WIFI_AP_NAME "protopanda"
-#define WIFI_AP_PASSWORD "pandawah"
-#define EDIT_MODE_FTP_USER "wah"
-#define EDIT_MODE_FTP_PASSWORD "wah"
-#define EDIT_MODE_FTP_PORT 21
-#define EDIT_MODE_LUA_PORT 7171
-#define EDIT_MODE_HTTP_PORT 80
+
 
 /* 
 Servos

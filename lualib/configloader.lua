@@ -31,6 +31,7 @@ function _M.Load()
 
 	_M.LoadAndMerge("/keybinds.json")
 	_M.LoadAndMerge("/misc.json")
+	_M.LoadAndMerge("/wifi.json")
 
 	if not _M.config.scripts or #_M.config.scripts == 0 then  
 		error("Config is missing 'scripts'")
