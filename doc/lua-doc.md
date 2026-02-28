@@ -22,9 +22,6 @@
 - [Arduino Core](#arduino-core)
 
 ## Power
-#### `waitForPower()`
-Forces the process to wait until the battery or USB voltage is above a threshold.
-- **Returns**: `nil`
 
 #### `panelPowerOn()`
 Turns on the regulator, powering the panel and the 5V output.
@@ -976,6 +973,7 @@ Gets the current I2C operation timeout.
 - `OLED_SCREEN_HEIGHT`: The height of the internal OLED screen in pixels.
 - `PANEL_WIDTH`: The width of the HUB75 panel in pixels.
 - `PANEL_HEIGHT`: The height of the HUB75 panel in pixels.
+- `POWER_MODE_NONE`: Power mode for USB 5V input.
 - `POWER_MODE_USB_5V`: Power mode for USB 5V input.
 - `POWER_MODE_USB_9V`: Power mode for USB 9V input.
 - `POWER_MODE_BATTERY`: Power mode for battery input.

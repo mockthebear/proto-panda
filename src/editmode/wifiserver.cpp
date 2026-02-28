@@ -4,7 +4,6 @@
 #include "drawing/framerepository.hpp"
 #include "lua/luainterface.hpp"
 #include "drawing/animation.hpp"
-#include "drawing/dma_display.hpp"
 #include "SD.h"
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>

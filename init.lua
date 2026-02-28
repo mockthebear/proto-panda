@@ -11,10 +11,6 @@ function onSetup()
 
     dictLoad()
 
-
-    
-    --
-
     local seed = tonumber(dictGet("random_seed")) or millis()
     seed = seed + millis()
     math.randomseed(seed)
@@ -26,7 +22,7 @@ function onSetup()
     dictSave()
     
 
-    configloader.Load("/config.json")
+    configloader.Load()
     input.Load()
     generic.displaySplashMessage("Starting:\nExpressions")
     expressions.Load() 
@@ -50,7 +46,7 @@ function onPreflight()
     setPanelManaged(true)
     expressions.Next()
     input.Start()
-    generic.setAutoPowerMode(tonumber(dictGet("panel_brightness")) or 64)
+    setPoweringMode(BUILT_IN_POWER_MODE)
     ledsGentlySeBrightness(tonumber(dictGet("led_brightness") ) or 64)
     gentlySetPanelBrightness(tonumber(dictGet("panel_brightness")) or 64)
 end

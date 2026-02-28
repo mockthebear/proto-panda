@@ -76,12 +76,6 @@ Cache file version to invalidate cache in case of firmware update
 #define USE_LIDAR
 #define LIDAR_ADDR 0x29
 
-/*
-    BLE Buttons
-*/
-
-#define MAX_BLE_BUTTONS 8
-#define MAX_BLE_CLIENTS 2
 
 /*
     Led strip
@@ -115,14 +109,12 @@ Cache file version to invalidate cache in case of firmware update
 Servos
 */
 
-// #define USE_SERVO
-#define SERVO_COUNT 4
-
+#define USE_SERVO
 
 /*
     DMA display, or actual display
 */
-#define ENABLE_HUB75_PANEL 1
+#define ENABLE_HUB75_PANEL
 #define PANEL_WIDTH 64      // Number of pixels wide of each INDIVIDUAL panel module. 
 #define PANEL_HEIGHT 32     // Number of pixels tall of each INDIVIDUAL panel module.
 #define PANEL_CHAIN 2      // Total number of panels chained one to another

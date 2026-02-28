@@ -1,0 +1,24 @@
+{
+    "hub75": {
+        "enabled": true,
+        "colordepth": 12,
+        "dma_r1": 12,
+        "dma_r2": 20,
+        "dma_g1": 10,
+        "dma_g2": 18,
+        "dma_b1": 11,
+        "dma_b2": 19,
+        "dma_a": 17,
+        "dma_b": 16,
+        "dma_c": 15,
+        "dma_d": 7,
+        "dma_lat": 5,
+        "dma_oe": 3,
+        "dma_clk": 6
+    },
+    "servos": {
+        "enabled": false,
+        "pins": [1,2]
+    }
+}
+

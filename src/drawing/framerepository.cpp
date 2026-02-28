@@ -173,7 +173,7 @@ bool FrameRepository::loadCachedData(){
     conf.close();
     if( err2 ) {
        char miniHBuffer[1000];
-       sprintf(miniHBuffer, "config.json:\n%s", err.c_str());
+       sprintf(miniHBuffer, "config.json:\n%s", err2.c_str());
        OledScreen::CriticalFail(miniHBuffer);
        for(;;){}
        return false;

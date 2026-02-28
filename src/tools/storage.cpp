@@ -1,6 +1,5 @@
 #include "tools/storage.hpp"
 #include "tools/logger.hpp"
-#include "drawing/dma_display.hpp"
 #include <SD.h>
 #include <PNGdec.h>
 #include "SPI.h"

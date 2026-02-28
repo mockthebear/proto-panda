@@ -2,7 +2,7 @@
 #include "tools/logger.hpp"
 #include "tools/sensors.hpp"
 #include "tools/oledscreen.hpp"
-#include "drawing/dma_display.hpp"
+
 #include "drawing/animation.hpp"
 
 #include <SPI.h>
@@ -27,6 +27,7 @@
 #endif
 
 
+
 uint64_t Devices::s_frameStart = 0;
 uint64_t Devices::s_frameDuration = 0;
 uint64_t Devices::s_frameAutoStart = 0;
@@ -35,6 +36,7 @@ uint32_t Devices::freeHeapBytes = 0;
 uint32_t Devices::totalHeapBytes = 1;
 uint32_t Devices::freePsramBytes = 0;
 uint32_t Devices::totalPsramBytes = 1;
+uint16_t Devices::servoCount = 0;
 float Devices::percentagePsramFree = 1;
 float Devices::percentageHeapFree = 1;
 uint8_t Devices::maxBrightness = 0;
@@ -70,8 +72,10 @@ uint32_t Devices::m_toneDuration = 0;
 #endif
 
 #ifdef USE_SERVO
-s3servo *Devices::servos[SERVO_COUNT];
+s3servo *Devices::servos;
 #endif
+
+MatrixPanel_I2S_DMA_2 *Devices::Display = nullptr;
 
 #ifdef USE_INTERNAL_ACCELEROMETER
 LSM6DS3 *Devices::lsm6 = nullptr;
@@ -147,39 +151,15 @@ void Devices::SetPowerMode(PowerMode mode){
   }
 }
 
-bool Devices::AutoCheckPowerLevel(){
-  return s_autoCheckPower;
-}
 
-bool Devices::CheckPowerLevel(){
-  #ifdef ENABLE_HUB75_PANEL
-  if (Sensors::GetAvgBatteryVoltage() < VoltageStopThreshold){
-    DMADisplay::Display->clearScreen();
-    DMADisplay::Display->flipDMABuffer();
-    DMADisplay::Display->clearScreen();
-    DMADisplay::Display->flipDMABuffer();
-    return false;
-  }
-  #endif
-  return true;
-}
-
-void Devices::SetMaxBrightness(uint8_t b){
-  maxBrightness = b;
-  #ifdef ENABLE_HUB75_PANEL
-  DMADisplay::Display->setBrightness(b); 
-  #endif
-}
-
-
-bool Devices::WaitForPower(uint8_t brightness){
-  if (brightness == 0){
-    brightness = maxBrightness;
-  }
+void Devices::WaitForPower(){
+  int brightness = maxBrightness;
   BuzzerNoTone();
+
   #ifdef PIN_ENABLE_REGULATOR
   digitalWrite(PIN_ENABLE_REGULATOR, LOW);
   #endif
+
   int tries = 0;
   bool oldState = g_animation.isManaged();
   retry:
@@ -189,19 +169,25 @@ bool Devices::WaitForPower(uint8_t brightness){
     OledScreen::CriticalFail("Battery is too low.");
     for (;;){}
   }
+
   g_animation.setManaged(false);
   //Turn off the regulator.
+
   #ifdef PIN_ENABLE_REGULATOR
   digitalWrite(PIN_ENABLE_REGULATOR, LOW);
   #endif
+
   while (Sensors::GetAvgBatteryVoltage() <= VoltageStartThreshold){
       #ifdef ENABLE_HUB75_PANEL
-      DMADisplay::Display->clearScreen();
-      DMADisplay::Display->flipDMABuffer();
+      if (Devices::Display){
+        Devices::Display->clearScreen();
+        Devices::Display->flipDMABuffer();
+      }
       #endif
       OledScreen::DrawWaitForPower(Sensors::GetAvgBatteryVoltage());
       Sensors::MeasureVoltage();
   }
+
   //Turn on the regulator.
   #ifdef PIN_ENABLE_REGULATOR
   digitalWrite(PIN_ENABLE_REGULATOR, HIGH);
@@ -227,13 +213,36 @@ bool Devices::WaitForPower(uint8_t brightness){
       goto retry;
     }
     #ifdef ENABLE_HUB75_PANEL
-    DMADisplay::Display->setBrightness(a); 
-    DMADisplay::DrawTestScreen();
+    Devices::Display->setBrightness(a); 
     #endif
   }
   SetMaxBrightness(brightness);
   g_animation.setManaged(oldState);
+}
+
+
+bool Devices::AutoCheckPowerLevel(){
+  return s_autoCheckPower;
+}
+
+bool Devices::CheckPowerLevel(){
+  if (Sensors::GetAvgBatteryVoltage() < VoltageStopThreshold){
+    if (Devices::Display){
+      Devices::Display->clearScreen();
+      Devices::Display->flipDMABuffer();
+      Devices::Display->clearScreen();
+      Devices::Display->flipDMABuffer();
+    }
+    return false;
+  }
   return true;
+}
+
+void Devices::SetMaxBrightness(uint8_t b){
+  maxBrightness = b;
+  #ifdef ENABLE_HUB75_PANEL
+  Devices::Display->setBrightness(b); 
+  #endif
 }
 
 void Devices::BeginFrame(){
@@ -360,14 +369,23 @@ void Devices::StartAvaliableDevices(){
     Logger::Info("internal accelerometer initialized");
   }
 #endif
-#ifdef USE_SERVO
-  int pins[SERVO_COUNT] = SERVO_PINS;
-  for (int i=0;i<SERVO_COUNT;i++){
-    servos[i] = new s3servo();
-    servos[i]->attach(pins[i], i);
+  s_hasServo = false;
+}
+
+bool Devices::StartServos(std::vector<int> pins){
+  if (servos != nullptr){
+    return false;
   }
-  s_hasServo = true;
-#endif 
+  #ifdef USE_SERVO
+    servos = new s3servo[pins.size()];
+    for (int i=0;i<pins.size();i++){
+      servos[i].attach(pins[i], i);
+    }
+    s_hasServo = true;
+    return true;
+  #else
+    return false;
+  #endif
 }
 
 uint16_t Devices::ReadLidar(){
@@ -440,11 +458,11 @@ bool Devices::ServoPause(int servoId){
   if (!HasServo()){
       return false;
   }
-  if (servoId < 0 || servoId > SERVO_COUNT){
+  if (servoId < 0 || servoId > servoCount){
     return false;
   }
   #ifdef USE_SERVO
-  servos[servoId]->detach(); 
+  servos[servoId].detach(); 
   return true;
   #else
   return false;
@@ -454,11 +472,11 @@ bool Devices::ServoResume(int servoId){
   if (!HasServo()){
       return false;
   }
-  if (servoId < 0 || servoId > SERVO_COUNT){
+  if (servoId < 0 || servoId > servoCount){
     return false;
   }
   #ifdef USE_SERVO
-  servos[servoId]->reattach(); 
+  servos[servoId].reattach(); 
   return true;
   #else
   return false;
@@ -469,11 +487,11 @@ bool Devices::ServoMove(int servoId, float angle){
     if (!HasServo()){
         return false;
     }
-    if (servoId < 0 || servoId > SERVO_COUNT){
+    if (servoId < 0 || servoId > servoCount){
       return false;
     }
     #ifdef USE_SERVO
-    servos[servoId]->write(angle); 
+    servos[servoId].write(angle); 
     return true;
     #else
     return false;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config.hpp"
+#include "config.hpp"
 #include <Arduino.h>
 #ifdef USE_LIDAR
     #include <VL53L0X.h>
@@ -10,7 +11,7 @@
 #endif
 
 #include "tools/s3servo.hpp"
-
+#include "tools/dma_display.hpp"
 
 
 #include <vector>
@@ -23,10 +24,11 @@
 
 enum PowerMode
 {
-    POWER_MODE_USB_5V=0,
-    POWER_MODE_USB_9V=1,
-    POWER_MODE_BATTERY=2,
-    POWER_MODE_REGULATOR_PD=3,
+    POWER_MODE_NONE=0,
+    POWER_MODE_USB_5V=1,
+    POWER_MODE_USB_9V=2,
+    POWER_MODE_BATTERY=3,
+    POWER_MODE_REGULATOR_PD=4,
 };
 
 class Devices{
@@ -38,17 +40,17 @@ class Devices{
         static void StartAvaliableDevices();
         static bool CheckPowerLevel();
         static bool AutoCheckPowerLevel();
+        static void WaitForPower();
         static void SetPowerMode(PowerMode mode);
         static void SetAutoCheckPowerLevel(bool b){
             s_autoCheckPower = b;
         };
-        static bool WaitForPower(uint8_t brightness);
-        static void UpdateFrameSpeed(uint32_t mils);
         static void DisplayResetInfo();
 
         static bool HasLidar(){
             return s_hasLidar;
         }
+        static bool StartServos(std::vector<int> pins);
         static bool HasServo(){
             return s_hasServo;
         }
@@ -133,6 +135,8 @@ class Devices{
         static float getInternalGyroscopeZ(){
             return internalGZ;
         };
+
+        static MatrixPanel_I2S_DMA_2 *Display ;
         
     private:
         static uint8_t maxBrightness;
@@ -175,7 +179,8 @@ class Devices{
 #endif
 
 #ifdef USE_SERVO
-        static s3servo *servos[SERVO_COUNT];
+        static uint16_t servoCount;
+        static s3servo *servos;
 #endif
 
 

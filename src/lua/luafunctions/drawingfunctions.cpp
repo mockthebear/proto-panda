@@ -1,5 +1,4 @@
 #include "lua/luafunctions/drawingfunctions.hpp"
-#include "drawing/dma_display.hpp"
 #include "drawing/framerepository.hpp"
 #include "drawing/animation.hpp"
 #include "tools/oledscreen.hpp"
@@ -13,89 +12,80 @@ extern Animation g_animation;
 
 void DrawPixels(std::vector<Pixel> pixels)
 {
-  DMADisplay::Display->startWrite();
+  Devices::Display->startWrite();
   for (auto &it : pixels ){
-    DMADisplay::Display->updateMatrixDMABuffer_2(it.x, it.y, it.r, it.g, it.b);
+    Devices::Display->updateMatrixDMABuffer_2(it.x, it.y, it.r, it.g, it.b);
   }
-  DMADisplay::Display->endWrite();
+  Devices::Display->endWrite();
 }
 
 
 void DrawPixel(int16_t x, int16_t y, uint16_t color)
 {
-  DMADisplay::Display->drawPixel(x, y, color);
+  Devices::Display->drawPixel(x, y, color);
 }
 
 void DrawChar(int16_t x, int16_t y, uint8_t c, uint16_t color, uint16_t bg, uint8_t size)
 {
-  DMADisplay::Display->drawChar(x, y, c, color, bg, size);
+  Devices::Display->drawChar(x, y, c, color, bg, size);
 }
 
 
 void DrawFillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 {
-  DMADisplay::Display->fillRect(x, y, w, h, color);
+  Devices::Display->fillRect(x, y, w, h, color);
 }
 
 void DrawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 {
-  DMADisplay::Display->drawRect(x, y, w, h, color);
+  Devices::Display->drawRect(x, y, w, h, color);
 }
 
 int DrawLine(int16_t x, int16_t y, int16_t x1, int16_t x2, uint16_t color)
 {
-  DMADisplay::Display->drawLine(x, y, x1, x2, color);
+  Devices::Display->drawLine(x, y, x1, x2, color);
   return 0;
 }
 
 int DrawCircle(int16_t x, int16_t y, int16_t r, uint16_t color)
 {
-  DMADisplay::Display->drawCircle(x, y, r, color);
+  Devices::Display->drawCircle(x, y, r, color);
   return 0;
 }
 
 int DrawFillCircle(int16_t x, int16_t y, int16_t r, uint16_t color)
 {
-  DMADisplay::Display->fillCircle(x, y, r, color);
+  Devices::Display->fillCircle(x, y, r, color);
   return 0;
 }
 
 uint16_t color444(uint8_t r, uint8_t g, uint8_t b)
 {
-  return DMADisplay::Display->color444(r, g, b);
+  return Devices::Display->color444(r, g, b);
 }
 
 uint16_t color565(uint8_t r, uint8_t g, uint8_t b)
 {
-  return DMADisplay::Display->color565(r,g,b);
+  return Devices::Display->color565(r,g,b);
 }
 
 void setPanelBrightness(uint8_t bright)
 {
-  DMADisplay::Display->setBrightness(bright);
-  DMADisplay::Display->setBrightnessExt(bright);
+  Devices::Display->setBrightness(bright);
+  Devices::Display->setBrightnessExt(bright);
   return;
 }
 
 uint8_t getPanelBrightness()
 {
-  return DMADisplay::Display->getBrightnessExt();
+  return Devices::Display->getBrightnessExt();
 }
-
-
-bool StartPanels()
-{
-  return g_frameRepo.Begin() && DMADisplay::Start(4);
-}
-
 
 int ClearScreen()
 {
-  DMADisplay::Display->clearScreen();
+  Devices::Display->clearScreen();
   return 0;
 }
-
-
 
 int GetOffsetByName(std::string aliasName)
 {

@@ -1,5 +1,4 @@
 #include "drawing/animation.hpp"
-#include "drawing/dma_display.hpp"
 #include "tools/oledscreen.hpp"
 #include "tools/devices.hpp"
 #include "tools/compression.hpp"
@@ -186,20 +185,20 @@ void Animation::drawPixelAt(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r,
     byteIdOled++;
 
     if (flip_left&1){
-        DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH-1)-x, y, r, g, b);
+        Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH-1)-x, y, r, g, b);
     }else{
-        DMADisplay::Display->updateMatrixDMABuffer_2(x, y, r, g, b);
+        Devices::Display->updateMatrixDMABuffer_2(x, y, r, g, b);
     }
 
     if (flip_right&1){
-        DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH+PANEL_WIDTH-1)-x, y, r, g, b);
+        Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH+PANEL_WIDTH-1)-x, y, r, g, b);
     }else{
-        DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH)+x, y, r, g, b);
+        Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH)+x, y, r, g, b);
     }
 }
 
 void Animation::adjustColor(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r, uint8_t &g, uint8_t &b, ColorMode &currentMode, int16_t &frameId){
-    DMADisplay::Display->color565to888(color, r, g, b);
+    Devices::Display->color565to888(color, r, g, b);
     //1100011100011000    = 0xC718
     //We know each color has 5 6 and 5 bits. So to check if the color is strong enough, we're using this mask that discards
     //each of 3 initial bits of each color
@@ -268,7 +267,7 @@ void Animation::DrawFrame(File *file, int i){
     int16_t x=0;
     int16_t y=0;
 
-    DMADisplay::Display->startWrite();
+    Devices::Display->startWrite();
     if (compressionMode == 1){
         int compressionReadPos = 0;
         uint8_t *readBuffer = (buffer+FILE_HEADER_BYTES);
@@ -327,7 +326,7 @@ void Animation::DrawFrame(File *file, int i){
         }
     }
     finished:
-    DMADisplay::Display->endWrite();
+    Devices::Display->endWrite();
     m_needFlip = true;
     m_frameDrawDuration = micros()-ld;
     m_cycleDuration =  micros()-begin;
@@ -347,7 +346,7 @@ bool Animation::PopAnimation(){
     
 }
 void Animation::MakeFlip(){
-    DMADisplay::Display->flipDMABuffer();
+    Devices::Display->flipDMABuffer();
     m_needFlip = false;
 }
 
@@ -367,12 +366,12 @@ void Animation::Update(File *file){
         }
     }else{
         if (!m_onBlankScreen){
-            DMADisplay::Display->clearScreen();
-            DMADisplay::Display->drawLine(0          , 0            , PANEL_WIDTH    , PANEL_HEIGHT  , DMADisplay::Display->color565(255,255,255));
-            DMADisplay::Display->drawLine(0          ,  PANEL_HEIGHT, PANEL_WIDTH    , 0             , DMADisplay::Display->color565(255,255,255));
+            Devices::Display->clearScreen();
+            Devices::Display->drawLine(0          , 0            , PANEL_WIDTH    , PANEL_HEIGHT  , Devices::Display->color565(255,255,255));
+            Devices::Display->drawLine(0          ,  PANEL_HEIGHT, PANEL_WIDTH    , 0             , Devices::Display->color565(255,255,255));
 
-            DMADisplay::Display->drawLine(PANEL_WIDTH, 0            , PANEL_WIDTH*2  , PANEL_HEIGHT  , DMADisplay::Display->color565(255,255,255));
-            DMADisplay::Display->drawLine(PANEL_WIDTH, PANEL_HEIGHT , PANEL_WIDTH*2  , 0             , DMADisplay::Display->color565(255,255,255));
+            Devices::Display->drawLine(PANEL_WIDTH, 0            , PANEL_WIDTH*2  , PANEL_HEIGHT  , Devices::Display->color565(255,255,255));
+            Devices::Display->drawLine(PANEL_WIDTH, PANEL_HEIGHT , PANEL_WIDTH*2  , 0             , Devices::Display->color565(255,255,255));
             m_needFlip = true;
         }
         xSemaphoreGive(m_mutex);

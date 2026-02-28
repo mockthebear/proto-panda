@@ -19,9 +19,6 @@
 - [Núcleo Arduino](#núcleo-arduino)  
 
 ## Energia  
-#### `waitForPower()`  
-Força o processo a esperar até que a tensão da bateria ou USB esteja acima de um limite.  
-- **Retorna**: `nil`  
 
 #### `panelPowerOn()`  
 Liga o regulador, alimentando o painel e a saída de 5V.  
@@ -56,7 +53,7 @@ Define o limite de tensão no qual o sistema ligará automaticamente após ser d
 - **Retorna**: `nil`  
 
 #### `setPoweringMode(mode)`  
-Define o modo de alimentação do sistema. O modo pode ser `POWER_MODE_USB_5V`, `POWER_MODE_USB_9V` ou `POWER_MODE_BATTERY`.  
+Define o modo de alimentação do sistema. O modo pode ser `POWER_MODE_NONE`, `POWER_MODE_USB_5V`, `POWER_MODE_USB_9V` ou `POWER_MODE_BATTERY`.  
 - **Parâmetros**:  
   - `mode` (int): O modo de alimentação a ser definido.  
 - **Retorna**: `nil`  

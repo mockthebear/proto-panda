@@ -1,63 +1,4 @@
 {
-  "input": {
-    "//comment": "The current avaliable input modes are 'infrared' and 'ble'",
-    "mode": "BLE",
-    "drivers": ["panda", "BLE-M3", "beauty-r1"]
-  },
-  "infrared": [
-    {
-      "//comment": "Generic controller",
-      "usercode": "FF00",
-      "bind": {
-        "B9": "press(BUTTON_UP)",
-        "EA": "press(BUTTON_DOWN)",
-        "BB": "press(BUTTON_LEFT)",
-        "BC": "press(BUTTON_RIGHT)",
-        "BF": "press(BUTTON_CONFIRM)",
-        "E6": "press(BUTTON_BACK)",
-        "BA": "press(BUTTON_AUX_A)",
-        "F3": "setRainbowShader(true)",
-        "E7": "setRainbowShader(false)",
-        "F7": "expressions.Next()",
-        "E3": "expressions.Previous()",
-        "A5": "press(BUTTON_BACK, 1)"
-      }
-    }
-  ],
-  "keybinds": {
-    "panda.buttons.1": "BUTTON_LEFT",
-    "panda.buttons.2": "BUTTON_DOWN",
-    "panda.buttons.3": "BUTTON_RIGHT",
-    "panda.buttons.4": "BUTTON_UP",
-    "panda.buttons.5": "BUTTON_CONFIRM",
-    "panda.buttons.6": "BUTTON_BACK",
-    "joystick.right_hat=5": "BUTTON_LEFT",
-    "joystick.right_hat=3": "BUTTON_DOWN",
-    "joystick.right_hat=1": "BUTTON_RIGHT",
-    "joystick.right_hat=7": "BUTTON_UP",
-    "joystick.buttons.4": "BUTTON_CONFIRM",
-    "joystick.buttons.1": "BUTTON_BACK",
-    "generic.buttons.4": "BUTTON_LEFT",
-    "generic.buttons.1": "BUTTON_DOWN",
-    "generic.buttons.3": "BUTTON_RIGHT",
-    "generic.buttons.2": "BUTTON_UP",
-    "generic.buttons.5": "BUTTON_CONFIRM",
-    "generic.buttons.6": "BUTTON_BACK"
-  },
-
-  "boop": {
-    "//comment": "The trigger_mode can accept either 'gpio' or 'lidar'",
-    "trigger_mode": "lidar", 
-    "gpio": 39,
-    "gpio_state": 0,
-    "enabled": true,
-    "transitionIn": "boop_intro",
-    "transitionOut": "boop_outro",
-    "boopAnimationName": "boop",
-    "transictionOnlyOnAnimation": "normal",
-    "transictionInOnlyOnSpecificFrame": 1
-  },  
-  
   "frames": [
     {
       "pattern": "/expressions/blink/blink%d.png",
@@ -549,55 +490,6 @@
       "duration": 5,
       "onEnter": "ledsStackCurrentBehavior()  ledsSegmentBehavior(0, BEHAVIOR_NOISE) ledsSegmentBehavior(1, BEHAVIOR_NOISE)",
       "onLeave": "ledsPopBehavior()"
-    }
-
-
-
-  ],
-  "scripts": [
-    {
-      "name": "lidar test",
-      "file": "/scripts/lidartest.lua"
-    },
-    {
-      "name": "color test",
-      "file": "/scripts/colortest.lua"
-    },
-    {
-      "name": "screen test",
-      "file": "/scripts/screentest.lua"
-    },
-    {
-      "name": "controls test",
-      "file": "/scripts/controls.lua"
-    },
-    {
-      "name": "snake",
-      "file": "/scripts/snake.lua"
-    },
-    {
-      "name": "jumping wah",
-      "file": "/scripts/wah.lua"
-    },
-    {
-      "name": "tetris",
-      "file": "/scripts/tetris.lua"
-    },
-    {
-      "name": "proximity game",
-      "file": "/scripts/proximitygame.lua"
-    },
-    {
-      "name": "breakout",
-      "file": "/scripts/breakout.lua"
-    },
-    {
-      "name": "color shift",
-      "file": "/scripts/colorshift.lua"
-    },
-    {
-      "name": "FFT",
-      "file": "/scripts/fft.lua"
     }
   ]
 }
