@@ -719,7 +719,7 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("POWER_MODE_USB_5V", (int)POWER_MODE_USB_5V);
   m_lua->setConstant("POWER_MODE_USB_9V", (int)POWER_MODE_USB_9V);
   m_lua->setConstant("POWER_MODE_BATTERY", (int)POWER_MODE_BATTERY);
-  m_lua->setConstant("POWER_MODE_REGULATOR_PD", (int)POWER_MODE_REGULATOR_PD);
+  m_lua->setConstant("POWER_MODE_NONE", (int)POWER_MODE_NONE);
 
   m_lua->setConstant("BLACK", (int)1);
   m_lua->setConstant("WHITE", (int)0);
@@ -758,7 +758,11 @@ void LuaInterface::RegisterConstants()
   #else
   m_lua->setConstant("PIN_ENABLE_REGULATOR", -1);
   #endif
-  m_lua->setConstant("PIN_USB_BATTERY_IN", (int)PIN_USB_BATTERY_IN);
+  #ifdef USE_PIN_BATTERY_IN
+    m_lua->setConstant("PIN_USB_BATTERY_IN", (int)PIN_USB_BATTERY_IN);
+  #else 
+    m_lua->setConstant("PIN_USB_BATTERY_IN", -1);
+  #endif
   m_lua->setConstant("RESISTOR_DIVIDER_R8", (float)RESISTOR_DIVIDER_R8);
   m_lua->setConstant("RESISTOR_DIVIDER_R9", (float)RESISTOR_DIVIDER_R9);
   m_lua->setConstant("V_REF", (float)V_REF);

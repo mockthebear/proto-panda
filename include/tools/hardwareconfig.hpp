@@ -14,6 +14,8 @@ class HardwareConfig{
         static void loadHub75AndStart(JsonObject doc);
         static void loadServosAndStart(JsonObject doc);
         static void loadDefaults();
+        static int checkInvalidPin(int pin);
+
 };
 
 

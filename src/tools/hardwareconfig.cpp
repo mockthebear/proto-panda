@@ -4,6 +4,25 @@
 #include "tools/devices.hpp"
 #include "tools/psrammap.hpp"
 
+const uint8_t invalidPins[] = {
+    I2C_SDA,
+    I2C_SLC,
+    SPI_CS,
+    SPI_MOSI,
+    SPI_MISO,
+    SPI_SCK,
+    EDIT_MODE_PIN,
+    #ifdef PIN_ENABLE_REGULATOR
+        PIN_ENABLE_REGULATOR,
+    #endif
+    #ifdef USE_BUZZER
+        BUZZER_PIN,
+    #endif
+    #ifdef USE_PIN_BATTERY_IN
+        PIN_USB_BATTERY_IN,
+    #endif
+};
+
 HUB75_I2S_CFG HardwareConfig::panelConfig(
     PANEL_WIDTH,  
     PANEL_HEIGHT,   
@@ -31,6 +50,16 @@ void HardwareConfig::loadDefaults(){
     panelConfig.i2sspeed = HUB75_I2S_CFG::HZ_20M;
 }
 
+int HardwareConfig::checkInvalidPin(int pin){
+    for (int i=0;i<sizeof(invalidPins);i++){
+        if (invalidPins[i] == pin){
+            char errMsg[100];
+            sprintf(errMsg, "Allocated pin %d but its restricted", pin);
+            OledScreen::CriticalFail(errMsg);
+        }
+    }
+    return pin;
+}
 
 void HardwareConfig::loadServosAndStart(JsonObject servos){
     if (!servos["enabled"]) {
@@ -50,7 +79,7 @@ void HardwareConfig::loadServosAndStart(JsonObject servos){
     std::vector<int> pins;
     for (JsonVariant pin : pinsArray) {
         if (pin.is<int>()) {
-            pins.push_back(pin.as<int>());
+            pins.push_back(checkInvalidPin(pin.as<int>()));
         }
     }
     
@@ -64,19 +93,19 @@ void HardwareConfig::loadHub75AndStart(JsonObject hub75){
         return;
     }
 
-    if (hub75.containsKey("dma_r1")) panelConfig.gpio.r1 = hub75["dma_r1"];
-    if (hub75.containsKey("dma_g1")) panelConfig.gpio.g1 = hub75["dma_g1"];
-    if (hub75.containsKey("dma_b1")) panelConfig.gpio.b1 = hub75["dma_b1"];
-    if (hub75.containsKey("dma_r2")) panelConfig.gpio.r2 = hub75["dma_r2"];
-    if (hub75.containsKey("dma_g2")) panelConfig.gpio.g2 = hub75["dma_g2"];
-    if (hub75.containsKey("dma_b2")) panelConfig.gpio.b2 = hub75["dma_b2"];
-    if (hub75.containsKey("dma_a")) panelConfig.gpio.a = hub75["dma_a"];
-    if (hub75.containsKey("dma_b")) panelConfig.gpio.b = hub75["dma_b"];
-    if (hub75.containsKey("dma_c")) panelConfig.gpio.c = hub75["dma_c"];
-    if (hub75.containsKey("dma_d")) panelConfig.gpio.d = hub75["dma_d"];
-    if (hub75.containsKey("dma_lat")) panelConfig.gpio.lat = hub75["dma_lat"];
-    if (hub75.containsKey("dma_oe")) panelConfig.gpio.oe = hub75["dma_oe"];
-    if (hub75.containsKey("dma_clk")) panelConfig.gpio.clk = hub75["dma_clk"];
+    if (hub75.containsKey("dma_r1")) panelConfig.gpio.r1 = checkInvalidPin(hub75["dma_r1"]);
+    if (hub75.containsKey("dma_g1")) panelConfig.gpio.g1 = checkInvalidPin(hub75["dma_g1"]);
+    if (hub75.containsKey("dma_b1")) panelConfig.gpio.b1 = checkInvalidPin(hub75["dma_b1"]);
+    if (hub75.containsKey("dma_r2")) panelConfig.gpio.r2 = checkInvalidPin(hub75["dma_r2"]);
+    if (hub75.containsKey("dma_g2")) panelConfig.gpio.g2 = checkInvalidPin(hub75["dma_g2"]);
+    if (hub75.containsKey("dma_b2")) panelConfig.gpio.b2 = checkInvalidPin(hub75["dma_b2"]);
+    if (hub75.containsKey("dma_a")) panelConfig.gpio.a = checkInvalidPin(hub75["dma_a"]);
+    if (hub75.containsKey("dma_b")) panelConfig.gpio.b = checkInvalidPin(hub75["dma_b"]);
+    if (hub75.containsKey("dma_c")) panelConfig.gpio.c = checkInvalidPin(hub75["dma_c"]);
+    if (hub75.containsKey("dma_d")) panelConfig.gpio.d = checkInvalidPin(hub75["dma_d"]);
+    if (hub75.containsKey("dma_lat")) panelConfig.gpio.lat = checkInvalidPin(hub75["dma_lat"]);
+    if (hub75.containsKey("dma_oe")) panelConfig.gpio.oe = checkInvalidPin(hub75["dma_oe"]);
+    if (hub75.containsKey("dma_clk")) panelConfig.gpio.clk = checkInvalidPin(hub75["dma_clk"]);
         
     if (hub75.containsKey("colordepth")) {
         panelConfig.setPixelColorDepthBits(hub75["colordepth"]);
@@ -120,10 +149,7 @@ bool HardwareConfig::LoadConfigs(){
         Devices::Display = new MockDisplay(panelConfig);
     }
 
-
-
     hardwareConfigJson.clear();
-
     return true;
 }
 

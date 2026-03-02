@@ -132,27 +132,38 @@ std::vector<int> Devices::I2CScan(){
 
 void Devices::SetPowerMode(PowerMode mode){
   s_powerMode = mode;
-  if (s_powerMode == POWER_MODE_USB_5V){
+  switch (s_powerMode){
+    case POWER_MODE_NONE:
+    case POWER_MODE_USB_5V:
+      s_autoCheckPower = false;
+      VoltageStopThreshold = 0;
+      VoltageStartThreshold = 0;
+      break;
+    case POWER_MODE_USB_9V:
+      s_autoCheckPower = true;
+      VoltageStopThreshold = 7.5;
+      VoltageStartThreshold = 8.6;
+      break;
+    case POWER_MODE_5V_PD:
+      s_autoCheckPower = false;
+      VoltageStopThreshold = 4.2;
+      VoltageStartThreshold = 4.9;
+      break;
+    case POWER_MODE_BATTERY:
+      s_autoCheckPower = false;
+      VoltageStopThreshold = 6.5;
+      VoltageStartThreshold = 7.5;
+      break;
+  
+  default:
     s_autoCheckPower = false;
-    VoltageStopThreshold = 0;
-    VoltageStartThreshold = 0;
-  }else if (s_powerMode == POWER_MODE_USB_9V){
-    s_autoCheckPower = true;
-    VoltageStopThreshold = 6.5;
-    VoltageStartThreshold = 8.9;
-  }else if (s_powerMode == POWER_MODE_REGULATOR_PD){
-    s_autoCheckPower = false;
-    VoltageStopThreshold = 4.2;
-    VoltageStartThreshold = 4.9;
-  }else{
-    s_autoCheckPower = true;
-    VoltageStopThreshold = 6.5;
-    VoltageStartThreshold = 8.9;
+    break;
   }
 }
 
 
 void Devices::WaitForPower(){
+  #ifdef USE_PIN_BATTERY_IN
   int brightness = maxBrightness;
   BuzzerNoTone();
 
@@ -218,6 +229,9 @@ void Devices::WaitForPower(){
   }
   SetMaxBrightness(brightness);
   g_animation.setManaged(oldState);
+  #else 
+  return;
+  #endif
 }
 
 
@@ -226,6 +240,7 @@ bool Devices::AutoCheckPowerLevel(){
 }
 
 bool Devices::CheckPowerLevel(){
+  #ifdef USE_PIN_BATTERY_IN
   if (Sensors::GetAvgBatteryVoltage() < VoltageStopThreshold){
     if (Devices::Display){
       Devices::Display->clearScreen();
@@ -235,6 +250,7 @@ bool Devices::CheckPowerLevel(){
     }
     return false;
   }
+  #endif
   return true;
 }
 

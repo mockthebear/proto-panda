@@ -42,13 +42,15 @@ void setup() {
   /*
     Startup regulator pins and shoot it low asap.
   */
-  #ifdef PIN_ENABLE_REGULATOR
+  #ifdef USE_ENABLE_PIN
   digitalWrite(PIN_ENABLE_REGULATOR, LOW);
   pinMode(PIN_ENABLE_REGULATOR, OUTPUT);
   digitalWrite(PIN_ENABLE_REGULATOR, LOW);
   #endif
   pinMode(EDIT_MODE_PIN, INPUT_PULLDOWN);
+  #ifdef USE_PIN_BATTERY_IN
   pinMode(PIN_USB_BATTERY_IN, INPUT);
+  #endif
 
   Devices::Begin();
   Serial.begin(115200);

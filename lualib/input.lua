@@ -147,6 +147,8 @@ function input.Start()
         beginBleScanning()
     elseif input.mode == "INFRARED" then  
         enableIRInterrupt()
+    else then  
+        error("Invalid input mode '"..input.mode.."'")
     end
 end
 
@@ -154,7 +156,7 @@ function input.Load()
     local confs = configloader.Get()
 
     if not confs.input then  
-        error("config.json missing 'input'")
+        error("keybinds.json missing 'input'")
     end
 
     local mode = confs.input.mode or "BLE"
@@ -174,38 +176,38 @@ function input.Load()
         generic.displaySplashMessage("Starting:\nIR")
         startIR()
         if not confs.infrared then  
-            error("config.json missing 'infrared' which is required when infrared is enabled")
+            error("keybinds.json missing 'infrared' which is required when infrared is enabled")
         end
 
         if not confs.input.infrared_gpio then  
-            error("config.json missing 'infrared_gpio' in input segment")
+            error("keybinds.json missing 'infrared_gpio' in input segment")
         end
 
         if type(confs.input.infrared_gpio) ~= "number" then  
-            error("config.json missing 'infrared_gpio' in input segment")
+            error("keybinds.json missing 'infrared_gpio' in input segment")
         end
 
         setIRInterruptPin(confs.input.infrared_gpio)
 
         for i, mode in pairs(confs.infrared) do 
             if not mode.usercode or type(mode.bind) ~= 'table' then  
-                error("config.json error at element "..i..', \'usercode\' or \'bind\' is missing')
+                error("keybinds.json error at element "..i..', \'usercode\' or \'bind\' is missing')
             end
             local code = tonumber(mode.usercode, 16)
             if not code then  
-                error("config.json error at element "..i..', \'usercode\' should be a HEX number')
+                error("keybinds.json error at element "..i..', \'usercode\' should be a HEX number')
             end
             local keymap = {}
             log("Loaded usercode "..mode.usercode)
             for opcodeS, func in pairs(mode.bind) do  
                 local opcode = tonumber(opcodeS, 16)
                 if not opcode then 
-                    error("config.json error at element "..i..".bind. Opcode "..opcodeS.." is not a valid HEX")
+                    error("keybinds.json error at element "..i..".bind. Opcode "..opcodeS.." is not a valid HEX")
                 end
 
                 local f, err = load(func)
                 if not f then  
-                    error("config.json error at element "..i..'.bind['..opcodeS..']: '..err)
+                    error("keybinds.json error at element "..i..'.bind['..opcodeS..']: '..err)
                 end
                 keymap[opcode] = f
             end

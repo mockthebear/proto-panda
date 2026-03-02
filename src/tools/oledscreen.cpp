@@ -41,14 +41,9 @@ bool OledScreen::Start(){
     display.clearDisplay();
     display.drawBitmap(0,0, icon_protopanda, 128, 64, 1);
     
+    display.setCursor((OLED_SCREEN_WIDTH/2)-8, OLED_SCREEN_HEIGHT-8);
+    display.printf("v%s", PANDA_VERSION);
     
-    if (BUILT_IN_POWER_MODE == POWER_MODE_USB_5V){
-        display.setCursor((OLED_SCREEN_WIDTH/2), OLED_SCREEN_HEIGHT-8);
-        display.printf("v%s", PANDA_VERSION);
-    }else{
-        display.setCursor((OLED_SCREEN_WIDTH/2)-8, OLED_SCREEN_HEIGHT-8);
-        display.printf("v%s +9v", PANDA_VERSION);
-    }
     display.display();
     delay(1500);
   

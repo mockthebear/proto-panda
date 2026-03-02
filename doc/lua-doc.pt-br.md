@@ -53,7 +53,7 @@ Define o limite de tensão no qual o sistema ligará automaticamente após ser d
 - **Retorna**: `nil`  
 
 #### `setPoweringMode(mode)`  
-Define o modo de alimentação do sistema. O modo pode ser `POWER_MODE_NONE`, `POWER_MODE_USB_5V`, `POWER_MODE_USB_9V` ou `POWER_MODE_BATTERY`.  
+Define o modo de alimentação do sistema. O modo pode ser `POWER_MODE_NONE`, `POWER_MODE_5V_PD`, `POWER_MODE_USB_9V` ou `POWER_MODE_BATTERY`.  
 - **Parâmetros**:  
   - `mode` (int): O modo de alimentação a ser definido.  
 - **Retorna**: `nil`  
@@ -910,11 +910,11 @@ Obtém o tempo limite atual para operações I2C.
 - `OLED_SCREEN_HEIGHT`: A altura da tela OLED interna em pixels.  
 - `PANEL_WIDTH`: A largura do painel HUB75 em pixels.  
 - `PANEL_HEIGHT`: A altura do painel HUB75 em pixels.  
-- `POWER_MODE_USB_5V`: Modo de alimentação para entrada USB 5V.  
-- `POWER_MODE_USB_9V`: Modo de alimentação para entrada USB 9V.  
+- `POWER_MODE_USB_5V`: Modo de alimentação USB 5V.  
+- `POWER_MODE_USB_9V`: Modo de alimentação USB 9V PD.  
 - `POWER_MODE_BATTERY`: Modo de alimentação para entrada de bateria.  
-- `MAX_BLE_BUTTONS`: Número de botões por dispositivo BLE.  
-- `MAX_BLE_CLIENTS`: Número máximo de dispositivos BLE conectados.  
+- `POWER_MODE_5V_PD`: Modo de alimentação 5V 3A 
+- `POWER_MODE_NONE`: Ignorar modo de alimentação 
 - `SERVO_COUNT`: O número de servos.  
 
 ## Entrada  

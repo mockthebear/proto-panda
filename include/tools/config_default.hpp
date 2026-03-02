@@ -12,8 +12,9 @@ Cache file version to invalidate cache in case of firmware update
     With this pin on HIGH the buck converter will start regulating the USB/Battery input
     to the desired 5v out for the panels.
 */
+#define USE_ENABLE_PIN 
 #define PIN_ENABLE_REGULATOR 13
-#define BUILT_IN_POWER_MODE POWER_MODE_REGULATOR_PD
+#define BUILT_IN_POWER_MODE POWER_MODE_NONE
 /*
     Run all tasks on a single core. This can help leave the BLE to have a dedicated core and this will avoid crashes related to BLE on crowded areas.
 */
@@ -23,6 +24,7 @@ Cache file version to invalidate cache in case of firmware update
     The resistors are R9 and R8 (3k and 10k)
 
 */
+#define USE_PIN_BATTERY_IN
 #define PIN_USB_BATTERY_IN 3
 /*
     R8 is 10k
@@ -97,7 +99,6 @@ Cache file version to invalidate cache in case of firmware update
 */
 
 #define EDIT_MODE_PIN 39
-
 
 /* 
 Servos
