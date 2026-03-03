@@ -194,6 +194,7 @@ void second_loop(void*){
 
 
 void loop() {
+  Devices::BeginFrame();
   if (g_editMode.IsOnEditMode()){
     g_editMode.LoopEditMode();
     return;
@@ -204,7 +205,7 @@ void loop() {
     return;
   }
   
-  Devices::BeginFrame();
+  
   Devices::ReadSensors();
   g_remoteControls.update();
   g_InfraRed.update();

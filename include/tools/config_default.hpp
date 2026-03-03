@@ -29,7 +29,7 @@ Cache file version to invalidate cache in case of firmware update
 /*
     R8 is 10k
 */
-#define RESISTOR_DIVIDER_R8 11560.373
+#define RESISTOR_DIVIDER_R8 10000.00
 /*
     R9 is 3k
 */
