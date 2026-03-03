@@ -10,8 +10,8 @@
     "ftp": {
         "user": "wah",
         "password": "wah",
-        "port": 80
+        "port": 21
     },
-    "editedit_mode_portmode_port": 80,
+    "edit_mode_port": 80,
     "lua_console_port": 7171
 }

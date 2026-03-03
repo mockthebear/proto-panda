@@ -13,7 +13,6 @@ PNG *png = nullptr;
 bool Storage::Begin(){
   SPI.setFrequency(SPI_MAX_CLOCK);
     if(!SD.begin(SPI_CS, SPI, SPI_MAX_CLOCK, "/sd", 10)){
-        Serial.printf("aw baka\n");
         return false;
     }   
     return AllocatePngDecoder(true);

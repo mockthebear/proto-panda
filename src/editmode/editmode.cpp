@@ -92,12 +92,15 @@ void EditMode::CheckBeginEditMode(){
 
 void EditMode::DoBegin(bool connectToWifi)
 {
-  if (!Storage::Begin()){
+  while (!Storage::Begin()){
     OledScreen::display.clearDisplay();
     OledScreen::display.drawBitmap(0,0, icon_sd, 128, 64, 1);
     OledScreen::display.display();
-    for (;;){}
+    delay(500);
+    OledScreen::display.clearDisplay();
+    OledScreen::display.display();
   }
+
   Logger::Begin();
 
   if (!g_frameRepo.Begin()){
@@ -141,40 +144,40 @@ void EditMode::DoBegin(bool connectToWifi)
   }
   auto ftp_conf = json_doc["ftp"];
 
-  if (!ftp_conf.containsKey("user") || !json_doc["user"].is<const char *>()){
-    OledScreen::CriticalFail("wifi.json\\nmissing\\nfield\n'ftp.user'");
+  if (!ftp_conf.containsKey("user") || !ftp_conf["user"].is<const char *>()){
+    OledScreen::CriticalFail("wifi.json\nmissing\nfield\n'ftp.user'");
   }
-  if (!ftp_conf.containsKey("password") || !json_doc["password"].is<const char *>()){
-    OledScreen::CriticalFail("wifi.json\\nmissing\\nfield\n'ftp.password'");
+  if (!ftp_conf.containsKey("password") || !ftp_conf["password"].is<const char *>()){
+    OledScreen::CriticalFail("wifi.json\nmissing\\nfield\n'ftp.password'");
   }
-  if (!ftp_conf.containsKey("port") || !json_doc["port"].is<int>()){
-    OledScreen::CriticalFail("wifi.json\\nmissing\\nfield\n'ftp.port'");
+  if (!ftp_conf.containsKey("port") || !ftp_conf["port"].is<int>()){
+    OledScreen::CriticalFail("wifi.json\nmissing\nfield\n'ftp.port'");
   }
 
   if (!json_doc.containsKey("wifi_ssid")){
-    OledScreen::CriticalFail("wifi.json\\nmissing\\nfield\n'wifi_ssid'");
+    OledScreen::CriticalFail("wifi.json\nmissing\nfield\n'wifi_ssid'");
     for (;;){}
   }
   auto wifi_ssid = json_doc["wifi_ssid"];
   if (!wifi_ssid.containsKey("name") || !wifi_ssid["name"].is<const char *>()){
-    OledScreen::CriticalFail("wifi.json\\nmissing\\nfield\n'name'");
+    OledScreen::CriticalFail("wifi.json\\nmissing\nfield\n'name'");
     for (;;){}
   }
   if (!wifi_ssid.containsKey("password") || !wifi_ssid["password"].is<const char *>()){
-    OledScreen::CriticalFail("wifi.json\\nmissing\\nfield\n'password'");
+    OledScreen::CriticalFail("wifi.json\nmissing\\nfield\n'password'");
     for (;;){}
   }
   if (!json_doc.containsKey("access_point")){
-    OledScreen::CriticalFail("wifi.json\\nmissing\\nfield\n'access_point'");
+    OledScreen::CriticalFail("wifi.json\nmissing\nfield\n'access_point'");
     for (;;){}
   }
   auto access_point = json_doc["access_point"];
   if (!access_point.containsKey("name") || !access_point["name"].is<const char *>()){
-    OledScreen::CriticalFail("wifi.json\\nmissing\\nfield\n'name'");
+    OledScreen::CriticalFail("wifi.json\nmissing\nfield\n'name'");
     for (;;){}
   }
   if (!access_point.containsKey("password") || !access_point["password"].is<const char *>()){
-    OledScreen::CriticalFail("wifi.json\\nmissing\\nfield\n'password'");
+    OledScreen::CriticalFail("wifi.json\nmissing\nfield\n'password'");
     for (;;){}
   }
 
