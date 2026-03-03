@@ -366,10 +366,7 @@ function _M.DrawBottomBar()
     oledDrawFastVLine(OLED_SCREEN_WIDTH-1,posY+1,16,1);
 
     local startX = 0
-    --oledDrawFastVLine(startX,posY,17,1);
-    --DrawAccelerometer(0, startX, posY);
-    
-    --DrawAccelerometer(1, startX+17, posY);
+
     for i=0,MAX_BLE_CLIENTS-1 do
         if isElementIdConnected(i) then
             oledDrawRect(startX+2, posY+2, 13, 13, 1)
@@ -379,9 +376,6 @@ function _M.DrawBottomBar()
         end
         startX = startX + 15
     end
-
-
-    --oledDrawFastVLine(startX+33,posY,17,1);
 
     oledSetCursor(startX + 8, posY+4);
     if (_M.infoShown == 1) then
