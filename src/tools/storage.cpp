@@ -8,14 +8,33 @@
 File Storage::pngDecFile;
 uint16_t* Storage::tmpBuffer;
 
-
+PNG *png = nullptr;
 
 bool Storage::Begin(){
   SPI.setFrequency(SPI_MAX_CLOCK);
     if(!SD.begin(SPI_CS, SPI, SPI_MAX_CLOCK, "/sd", 10)){
+        Serial.printf("aw baka\n");
         return false;
     }   
+    //AllocatePngDecoder();
     return true;
+}
+
+bool Storage::AllocatePngDecoder(){
+  if (png != nullptr){
+    return false;
+  }
+  png = new PNG;
+  return png != nullptr;
+}
+
+bool Storage::DeallocatePngDecoder(){
+  if (png == nullptr){
+    return false;
+  }
+  delete png;
+  png = nullptr;
+  return true;
 }
 
 File Storage::getFile(const char *name){
@@ -120,7 +139,7 @@ uint16_t* Storage::DecodeBMP(const char *name){
   return pixels;
 }
 
-PNG png;
+
 
 void * myOpen(const char *filename, int32_t *size) {
   Storage::pngDecFile = SD.open(filename);
@@ -142,13 +161,17 @@ int32_t mySeek(PNGFILE *handle, int32_t position) {
 // Function to draw pixels to the display
 int PNGDraw(PNGDRAW *pDraw) {
   static uint16_t raw[128];
-  png.getLineAsRGB565(pDraw, raw, PNG_RGB565_LITTLE_ENDIAN, 0xffffffff);
+  png->getLineAsRGB565(pDraw, raw, PNG_RGB565_LITTLE_ENDIAN, 0xffffffff);
   memcpy(Storage::tmpBuffer + (pDraw->y *pDraw->iWidth), raw, pDraw->iWidth * sizeof(uint16_t));
   return 1;
 }
 
 
 uint16_t *Storage::DecodePNGForBuffer(const char *name, int& rcError){
+  if (png == nullptr){
+    Logger::Error("Cannot decode PNG because decoder driver is not allocated");
+    return nullptr;
+  }
   auto fp = Storage::getFile(name);
   if (!fp){
     rcError = 998;
@@ -156,23 +179,27 @@ uint16_t *Storage::DecodePNGForBuffer(const char *name, int& rcError){
   }
   fp.close();
 
-  rcError = png.open(name, myOpen, myClose, myRead, mySeek, PNGDraw);
+  rcError = png->open(name, myOpen, myClose, myRead, mySeek, PNGDraw);
   if (rcError != PNG_SUCCESS) {
     return nullptr;
   }
-  if (png.getWidth() != PANEL_WIDTH && png.getHeight() != PANEL_HEIGHT){
-    Logger::Error("Mismatched image size, expected %d %d but got %d %d", PANEL_WIDTH, PANEL_HEIGHT, png.getWidth(), png.getHeight());
-    png.close();
+  if (png->getWidth() != PANEL_WIDTH && png->getHeight() != PANEL_HEIGHT){
+    Logger::Error("Mismatched image size, expected %d %d but got %d %d", PANEL_WIDTH, PANEL_HEIGHT, png->getWidth(), png->getHeight());
+    png->close();
     rcError = 999;
     return nullptr;
   }
   Storage::tmpBuffer = (uint16_t*)ps_malloc(FILE_SIZE_BULK_SIZE );
-  png.decode(NULL, 0);
-  png.close();
+  png->decode(NULL, 0);
+  png->close();
   return Storage::tmpBuffer;
 }
 
 uint16_t *Storage::DecodePNG(const char *name, int &rcError, size_t &x, size_t &y){
+  if (png == nullptr){
+    Logger::Error("Cannot decode PNG because decoder driver is not allocated");
+    return nullptr;
+  }
   auto fp = Storage::getFile(name);
   if (!fp){
     rcError = 998;
@@ -180,15 +207,15 @@ uint16_t *Storage::DecodePNG(const char *name, int &rcError, size_t &x, size_t &
   }
   fp.close();
 
-  rcError = png.open(name, myOpen, myClose, myRead, mySeek, PNGDraw);
+  rcError = png->open(name, myOpen, myClose, myRead, mySeek, PNGDraw);
   if (rcError != PNG_SUCCESS) {
     return nullptr;
   }
-  x = png.getWidth();
-  y = png.getHeight();
+  x = png->getWidth();
+  y = png->getHeight();
 
   Storage::tmpBuffer = (uint16_t*)ps_malloc((x) * y * sizeof(uint16_t));
-  png.decode(NULL, 0);
-  png.close();
+  png->decode(NULL, 0);
+  png->close();
   return Storage::tmpBuffer;
 }

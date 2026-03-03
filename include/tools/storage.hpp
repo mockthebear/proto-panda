@@ -12,6 +12,8 @@ class Storage{
   public:
   
     static bool Begin();
+    static bool AllocatePngDecoder();
+    static bool DeallocatePngDecoder();
     static File getFile(const char *name);  
     static String GetFileText(const char *name);  
     static unsigned char* GetFileBinayContent(const char *name, size_t *size);  
@@ -22,4 +24,5 @@ class Storage{
     static std::vector<std::string> listFolder(const char *name);
     static File pngDecFile;
     static uint16_t *tmpBuffer;
+
 };      
