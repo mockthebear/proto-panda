@@ -13,7 +13,7 @@
         "dma_c": 15,
         "dma_d": 7,
         "dma_lat": 5,
-        "dma_oe": 3,
+        "dma_oe": 4,
         "dma_clk": 6
     },
     "servos": {

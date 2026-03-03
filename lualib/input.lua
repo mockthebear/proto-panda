@@ -147,7 +147,7 @@ function input.Start()
         beginBleScanning()
     elseif input.mode == "INFRARED" then  
         enableIRInterrupt()
-    else then  
+    else
         error("Invalid input mode '"..input.mode.."'")
     end
 end

@@ -16,13 +16,16 @@ bool Storage::Begin(){
         Serial.printf("aw baka\n");
         return false;
     }   
-    //AllocatePngDecoder();
-    return true;
+    return AllocatePngDecoder(true);
 }
 
-bool Storage::AllocatePngDecoder(){
+bool Storage::AllocatePngDecoder(bool allocateOnPsram){
   if (png != nullptr){
     return false;
+  }
+  if (allocateOnPsram){
+    png = (PNG*)ps_malloc(sizeof(PNG));
+    return png != nullptr;
   }
   png = new PNG;
   return png != nullptr;

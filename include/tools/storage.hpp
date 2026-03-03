@@ -12,7 +12,7 @@ class Storage{
   public:
   
     static bool Begin();
-    static bool AllocatePngDecoder();
+    static bool AllocatePngDecoder(bool allocateOnPsram);
     static bool DeallocatePngDecoder();
     static File getFile(const char *name);  
     static String GetFileText(const char *name);  

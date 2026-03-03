@@ -154,9 +154,6 @@ void setup() {
   g_frameRepo.displayFFATInfo();
   Serial.printf("Running upon %d\n", xPortGetCoreID());
 
-  Storage::DeallocatePngDecoder();
-  Devices::CalculateMemmoryUsageDifference("deallocate png");
-  
   #ifndef SINGLE_CORE_RUN
   xTaskCreatePinnedToCore(second_loop, "second loop", 10000, NULL, ( 2 | portPRIVILEGE_BIT ), &g_secondCore, 0);
   Devices::CalculateMemmoryUsageDifference("second loop");
