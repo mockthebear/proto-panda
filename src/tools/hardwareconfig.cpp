@@ -90,6 +90,7 @@ void HardwareConfig::loadServosAndStart(JsonObject servos){
 
 void HardwareConfig::loadHub75AndStart(JsonObject hub75){
     if (!hub75["enabled"]) {
+        Devices::Display = new MockDisplay(panelConfig);
         return;
     }
 
@@ -145,10 +146,6 @@ bool HardwareConfig::LoadConfigs(){
         loadServosAndStart(hardwareConfigJson["servos"]);
     }
 
-    if (Devices::Display == nullptr){
-        Devices::Display = new MockDisplay(panelConfig);
-    }
-
     hardwareConfigJson.clear();
     return true;
 }
@@ -169,9 +166,9 @@ bool HardwareConfig::StartDmaDisplay(){
     Devices::Display->begin();
     Devices::Display->setBrightness8(1);
     Devices::Display->clearScreen();
-    Devices::Display->flipDMABuffer();
+    Devices::Display->flipDma();
     Devices::Display->clearScreen();
-    Devices::Display->flipDMABuffer();
+    Devices::Display->flipDma();
     Logger::Info("DMA display initialized!");
     Devices::CalculateMemmoryUsageDifference("Dma display");
 

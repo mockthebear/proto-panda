@@ -346,7 +346,7 @@ bool Animation::PopAnimation(){
     
 }
 void Animation::MakeFlip(){
-    Devices::Display->flipDMABuffer();
+    Devices::Display->flipDma();
     m_needFlip = false;
 }
 

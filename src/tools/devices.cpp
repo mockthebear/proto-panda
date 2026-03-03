@@ -192,7 +192,7 @@ void Devices::WaitForPower(){
       #ifdef ENABLE_HUB75_PANEL
       if (Devices::Display){
         Devices::Display->clearScreen();
-        Devices::Display->flipDMABuffer();
+        Devices::Display->flipDma();
       }
       #endif
       OledScreen::DrawWaitForPower(Sensors::GetAvgBatteryVoltage());
@@ -244,9 +244,9 @@ bool Devices::CheckPowerLevel(){
   if (Sensors::GetAvgBatteryVoltage() < VoltageStopThreshold){
     if (Devices::Display){
       Devices::Display->clearScreen();
-      Devices::Display->flipDMABuffer();
+      Devices::Display->flipDma();
       Devices::Display->clearScreen();
-      Devices::Display->flipDMABuffer();
+      Devices::Display->flipDma();
     }
     return false;
   }

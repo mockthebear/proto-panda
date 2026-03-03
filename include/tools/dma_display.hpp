@@ -7,6 +7,8 @@ class MatrixPanel_I2S_DMA_2 : public MatrixPanel_I2S_DMA{
     public:
         MatrixPanel_I2S_DMA_2(const HUB75_I2S_CFG &mxconfig):MatrixPanel_I2S_DMA(mxconfig){}
 
+  
+        virtual void flipDma(){ flipDMABuffer();};
         inline void updateMatrixDMABuffer_2(uint16_t x, uint16_t y, uint8_t red, uint8_t green, uint8_t blue){
             updateMatrixDMABuffer(x, y, red, green, blue);
         }
@@ -22,18 +24,17 @@ class MatrixPanel_I2S_DMA_2 : public MatrixPanel_I2S_DMA{
         uint8_t external_brightness;
 };
 
-
 class MockDisplay : public MatrixPanel_I2S_DMA_2{
     public:
         MockDisplay(const HUB75_I2S_CFG &mxconfig):MatrixPanel_I2S_DMA_2(mxconfig){}
 
-        inline bool begin(){return false;};
-        inline void setBrightness8(const uint8_t b){};
-        inline void clearScreen(){};
-        inline void flipDMABuffer(){};
-        inline void updateMatrixDMABuffer_2(uint16_t x, uint16_t y, uint8_t red, uint8_t green, uint8_t blue){};
-        void startWrite(){};
-        void endWrite(){};
+        bool begin(){return false;};
+        void setBrightness8(const uint8_t b){};
+        void clearScreen(){};
+        void updateMatrixDMABuffer_2(uint16_t x, uint16_t y, uint8_t red, uint8_t green, uint8_t blue){};
+        void startWrite() override {};
+        void endWrite() override{};
+        void flipDma() override {};
 
         void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color){};
         void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color){};
