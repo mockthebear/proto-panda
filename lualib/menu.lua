@@ -366,10 +366,7 @@ function _M.DrawBottomBar()
     oledDrawFastVLine(OLED_SCREEN_WIDTH-1,posY+1,16,1);
 
     local startX = 0
-    --oledDrawFastVLine(startX,posY,17,1);
-    --DrawAccelerometer(0, startX, posY);
-    
-    --DrawAccelerometer(1, startX+17, posY);
+
     for i=0,MAX_BLE_CLIENTS-1 do
         if isElementIdConnected(i) then
             oledDrawRect(startX+2, posY+2, 13, 13, 1)
@@ -379,9 +376,6 @@ function _M.DrawBottomBar()
         end
         startX = startX + 15
     end
-
-
-    --oledDrawFastVLine(startX+33,posY,17,1);
 
     oledSetCursor(startX + 8, posY+4);
     if (_M.infoShown == 1) then
@@ -396,22 +390,24 @@ function _M.DrawBottomBar()
     elseif (_M.infoShown == 3) then
         if getLuaFps then
             local c = getLuaFps()
-            if c > 200 then
-                oledDrawText("L.FPS: >99")
-            else
-                oledDrawText(string.format("L.FPS: %2.2f", c))
-            end
+            oledDrawText(string.format("UPS: %3.1f", c))
         else
-            oledDrawText(string.format("FPS: %2.2f%%", getFps()))
+            oledDrawText(string.format("FPS: %2.2f", getFps()))
         end
     elseif (_M.infoShown == 4) then
-        oledDrawText(string.format("Heap: %2.2f%%", getFreeHeap()))
+        oledDrawText(string.format("F.Heap: %2.2f%%", getFreeHeap()))
+    elseif (_M.infoShown == 5) then
+        if USE_PIN_BATTERY_IN == 1 then  
+            oledDrawText(string.format("Volts: %2.2f", getAvgBatteryVoltage()))
+        else
+            _M.infoShown = 1
+        end
     end
 
     if _M.swapTimer < millis() then
         _M.swapTimer = millis() + 5 * 1000
         _M.infoShown = _M.infoShown+1
-        if _M.infoShown > 4 then
+        if _M.infoShown > 5 then
             _M.infoShown = 1
         end
         for i=0,MAX_BLE_CLIENTS-1 do  

@@ -1,0 +1,17 @@
+{
+    "wifi_ssid":{
+        "name": "Your 2.4ghz network name here",
+        "password": "your password"
+    },
+    "access_point":{
+        "name": "protopanda",
+        "password": "pandawah"
+    },
+    "ftp": {
+        "user": "wah",
+        "password": "wah",
+        "port": 80
+    },
+    "editedit_mode_portmode_port": 80,
+    "lua_console_port": 7171
+}

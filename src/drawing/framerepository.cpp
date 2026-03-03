@@ -161,9 +161,9 @@ bool FrameRepository::loadCachedData(){
     int frame_count = json_doc["total_frame_count"];
     int bulk_size = json_doc["bulk_size"];
 
-    File conf = SD.open( "/config.json" );
+    File conf = SD.open( "/animation.json" );
     if( !conf ) {
-        OledScreen::CriticalFail("Can't open config.json");
+        OledScreen::CriticalFail("Can't open animation.json");
         for(;;){}
         return false;
     }
@@ -173,7 +173,7 @@ bool FrameRepository::loadCachedData(){
     conf.close();
     if( err2 ) {
        char miniHBuffer[1000];
-       sprintf(miniHBuffer, "config.json:\n%s", err.c_str());
+       sprintf(miniHBuffer, "animation.json:\n%s", err2.c_str());
        OledScreen::CriticalFail(miniHBuffer);
        for(;;){}
        return false;
@@ -282,9 +282,9 @@ void FrameRepository::composeBulkFile(){
     xSemaphoreTake(m_mutex, portMAX_DELAY);
     uint64_t start = micros();
     
-    File file = SD.open( "/config.json" );
+    File file = SD.open( "/animation.json" );
     if( !file ) {
-        OledScreen::CriticalFail("Can't open config.json");
+        OledScreen::CriticalFail("Can't open animation.json");
         for(;;){}
     }
     m_bulkPercentage = 0.0f;
@@ -298,7 +298,7 @@ void FrameRepository::composeBulkFile(){
     file.close();
     if( err ) {
         char miniHBuffer[1000];
-        sprintf(miniHBuffer, "config.json:\n%s", err.c_str());
+        sprintf(miniHBuffer, "animation.json:\n%s", err.c_str());
         OledScreen::CriticalFail(miniHBuffer);
     }
 
@@ -405,7 +405,7 @@ void FrameRepository::composeBulkFile(){
                 }
             }
         }else{
-            OledScreen::CriticalFail("Error on config.json. Expected in folders the element be an object or string.");
+            OledScreen::CriticalFail("Error on animation.json. Expected in folders the element be an object or string.");
         }
         jsonElement++;
     }

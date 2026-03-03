@@ -3,6 +3,9 @@ local versions = require("versions")
 if not MAX_BLE_BUTTONS then
     _G.MAX_BLE_BUTTONS = 8
 end
+if not MAX_BLE_CLIENTS then
+    _G.MAX_BLE_CLIENTS = 2
+end
 
 local drivers = {
     mouseHandler = nil,

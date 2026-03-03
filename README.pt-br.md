@@ -69,7 +69,7 @@ O Protopanda usa imagens do cartão SD e alguns arquivos JSON para construir as 
 - [Modo managed](#modo-managed)  
 
 ## Carregando Frames
-Para carregar os quadros (frames), você precisa adicioná-los ao cartão SD e especificar suas localizações no arquivo `config.json`:
+Para carregar os quadros (frames), você precisa adicioná-los ao cartão SD e especificar suas localizações no arquivo `animation.json`:
 ```json
 {
   "frames": [
@@ -80,7 +80,7 @@ Para carregar os quadros (frames), você precisa adicioná-los ao cartão SD e e
 }
 ```
 
-> Modificar o arquivo `config.json` adicionando ou removendo arquivos forçará o sistema a reconstruir o [arquivo de bulk de frames](#bulk-file).
+> Modificar o arquivo `animation.json` adicionando ou removendo arquivos forçará o sistema a reconstruir o [arquivo de bulk de frames](#bulk-file).
 
 Cada elemento no array `frames` pode ser tanto o caminho do arquivo quanto um objeto que descreve múltiplos arquivos. [Você pode usar esta página para ajudar.](https://onlinetexttools.com/printf-text)
 

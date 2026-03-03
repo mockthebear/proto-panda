@@ -9,7 +9,6 @@
 #include "drawing/animation.hpp"
 #include "drawing/ledstrip.hpp"
 #include "bluetooth/ble_client.hpp"
-#include "drawing/dma_display.hpp"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc.h"
 #include <FFat.h>
@@ -557,18 +556,18 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("panelPowerOn", powerOn);
   m_lua->FuncRegister("panelPowerOff", powerOff);
   m_lua->FuncRegister("setPoweringMode", setPoweringMode);
-  m_lua->FuncRegisterOptional("waitForPower", Devices::WaitForPower, 64);
   m_lua->FuncRegister("setAutoCheckPowerLevel", Devices::SetAutoCheckPowerLevel);
   m_lua->FuncRegister("setVoltageStopThreshold", Devices::SetVoltageStopThreshold);
   m_lua->FuncRegister("setVoltageStartThreshold", Devices::SetVoltageStartThreshold);
   m_lua->FuncRegister("getBatteryVoltage", Sensors::GetBatteryVoltage);
   m_lua->FuncRegister("getAvgBatteryVoltage", Sensors::GetAvgBatteryVoltage);
   m_lua->FuncRegister("setHaltOnError", setHaltOnError);
-  m_lua->FuncRegister("getFps", Devices::getFps); 
+  m_lua->FuncRegister("getLuaFps", Devices::getFps); 
   m_lua->FuncRegister("getFreePsram", Devices::getFreePsram); 
-  m_lua->FuncRegister("getLuaFps", Devices::getAutoFps); 
+  m_lua->FuncRegister("getFps", Devices::getAutoFps); 
   m_lua->FuncRegister("getFreeHeap", Devices::getFreeHeap); 
   #ifdef USE_SERVO
+  m_lua->FuncRegister("servoPause", Devices::StartServos);
   m_lua->FuncRegister("servoPause", Devices::ServoPause);
   m_lua->FuncRegister("servoResume", Devices::ServoResume); 
   m_lua->FuncRegister("servoMove", Devices::ServoMove);
@@ -582,7 +581,6 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("getInternalButtonStatus", getInternalButtonStatus); 
   //Panels
   #ifdef ENABLE_HUB75_PANEL
-  m_lua->FuncRegister("startPanels", StartPanels); 
   m_lua->FuncRegister("flipPanelBuffer", FlipScreen);
   m_lua->FuncRegister("drawPanelRect", DrawRect);
   m_lua->FuncRegister("drawPanelFillRect", DrawFillRect);
@@ -717,10 +715,11 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("MAX_LED_GROUPS", (int)MAX_LED_GROUPS);
 
 
+  m_lua->setConstant("POWER_MODE_NONE", (int)POWER_MODE_NONE);
   m_lua->setConstant("POWER_MODE_USB_5V", (int)POWER_MODE_USB_5V);
   m_lua->setConstant("POWER_MODE_USB_9V", (int)POWER_MODE_USB_9V);
   m_lua->setConstant("POWER_MODE_BATTERY", (int)POWER_MODE_BATTERY);
-  m_lua->setConstant("POWER_MODE_REGULATOR_PD", (int)POWER_MODE_REGULATOR_PD);
+  m_lua->setConstant("POWER_MODE_NONE", (int)POWER_MODE_NONE);
 
   m_lua->setConstant("BLACK", (int)1);
   m_lua->setConstant("WHITE", (int)0);
@@ -759,7 +758,13 @@ void LuaInterface::RegisterConstants()
   #else
   m_lua->setConstant("PIN_ENABLE_REGULATOR", -1);
   #endif
-  m_lua->setConstant("PIN_USB_BATTERY_IN", (int)PIN_USB_BATTERY_IN);
+  #ifdef USE_PIN_BATTERY_IN
+    m_lua->setConstant("USE_PIN_BATTERY_IN", 1);
+    m_lua->setConstant("PIN_USB_BATTERY_IN", (int)PIN_USB_BATTERY_IN);
+  #else 
+    m_lua->setConstant("PIN_USB_BATTERY_IN", -1);
+    m_lua->setConstant("USE_PIN_BATTERY_IN", 0);
+  #endif
   m_lua->setConstant("RESISTOR_DIVIDER_R8", (float)RESISTOR_DIVIDER_R8);
   m_lua->setConstant("RESISTOR_DIVIDER_R9", (float)RESISTOR_DIVIDER_R9);
   m_lua->setConstant("V_REF", (float)V_REF);
@@ -769,17 +774,8 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("OLED_SCREEN_HEIGHT", OLED_SCREEN_HEIGHT);
   m_lua->setConstant("PANEL_WIDTH", PANEL_WIDTH);
   m_lua->setConstant("PANEL_HEIGHT", PANEL_HEIGHT);
-  m_lua->setConstant("MAX_BLE_BUTTONS", (int)MAX_BLE_BUTTONS);
-  m_lua->setConstant("MAX_BLE_CLIENTS", (int)MAX_BLE_CLIENTS);
-  m_lua->setConstant("SERVO_COUNT", (int)SERVO_COUNT);
   m_lua->setConstant("MAX_LED_GROUPS", MAX_LED_GROUPS);
   m_lua->setConstant("EDIT_MODE_PIN", EDIT_MODE_PIN);
-  m_lua->setConstant("WIFI_AP_NAME", WIFI_AP_NAME);
-  m_lua->setConstant("WIFI_AP_PASSWORD", WIFI_AP_PASSWORD);
-  m_lua->setConstant("EDIT_MODE_FTP_USER", EDIT_MODE_FTP_USER);
-  m_lua->setConstant("EDIT_MODE_FTP_PASSWORD", EDIT_MODE_FTP_PASSWORD);
-  m_lua->setConstant("EDIT_MODE_FTP_PORT", EDIT_MODE_FTP_PORT);
-  m_lua->setConstant("SERVO_COUNT", SERVO_COUNT);
   m_lua->setConstant("PANEL_CHAIN", PANEL_CHAIN);
 
   #ifdef ENABLE_HUB75_PANEL
