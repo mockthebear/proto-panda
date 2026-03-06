@@ -15,8 +15,9 @@ Protopanda é uma plataforma open source (firmware e hardware) para controlar pr
 5. [Tiras de LED](#tiras-de-led)  
 6. [Bluetooth](#bluetooth)  
 7. [Hardware](#hardware)   
-8. [Montando o seu protopanda](#montando-o-seu-protopanda)
-9. [Programação em Lua](#programação-em-lua)  
+8. [Montando os eletronicos](#montando-o-seu-protopanda)
+9. [Imprimindo e montando as peças](./doc/print-guide.pt-br.md)
+10. [Programação em Lua](#programação-em-lua)  
 
 # Features  
 
@@ -68,7 +69,7 @@ O Protopanda usa imagens do cartão SD e alguns arquivos JSON para construir as 
 - [Modo managed](#modo-managed)  
 
 ## Carregando Frames
-Para carregar os quadros (frames), você precisa adicioná-los ao cartão SD e especificar suas localizações no arquivo `config.json`:
+Para carregar os quadros (frames), você precisa adicioná-los ao cartão SD e especificar suas localizações no arquivo `animation.json`:
 ```json
 {
   "frames": [
@@ -79,7 +80,7 @@ Para carregar os quadros (frames), você precisa adicioná-los ao cartão SD e e
 }
 ```
 
-> Modificar o arquivo `config.json` adicionando ou removendo arquivos forçará o sistema a reconstruir o [arquivo de bulk de frames](#bulk-file).
+> Modificar o arquivo `animation.json` adicionando ou removendo arquivos forçará o sistema a reconstruir o [arquivo de bulk de frames](#bulk-file).
 
 Cada elemento no array `frames` pode ser tanto o caminho do arquivo quanto um objeto que descreve múltiplos arquivos. [Você pode usar esta página para ajudar.](https://onlinetexttools.com/printf-text)
 
@@ -270,6 +271,9 @@ For external use:
 * 2x [hub75 screen](https://aliexpress.com/item/4000002686894.html)
 * [Adderessable led strip](https://aliexpress.com/item/1005004752499978.html) (optional)
 
+
+# Imprimindo e montando as peças 
+[Guia aqui](./doc/print-guide.pt-br.md)
 
 # Programação em Lua  
 

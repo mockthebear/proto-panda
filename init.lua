@@ -11,16 +11,6 @@ function onSetup()
 
     dictLoad()
 
-    setLogDiscoveredBleDevices(false)
-    generic.displaySplashMessage("Starting:\nBLE")
-    startBLE()
-
-    drivers.EnableProtopandaController()
-    drivers.EnableGenericAndroidMouse()
-
-    
-    startBLERadio(ESP_PWR_LVL_P9)
-
     local seed = tonumber(dictGet("random_seed")) or millis()
     seed = seed + millis()
     math.randomseed(seed)
@@ -30,10 +20,11 @@ function onSetup()
         menu.setDictDefaultValues()
     end
     dictSave()
-    generic.displaySplashMessage("Starting:\nExpressions")
+    
 
-    configloader.Load("/config.json")
+    configloader.Load()
     input.Load()
+    generic.displaySplashMessage("Starting:\nExpressions")
     expressions.Load() 
     scripts.Load() 
     boop.Load()
@@ -54,16 +45,15 @@ function onPreflight()
     ledsSetManaged(true)
     setPanelManaged(true)
     expressions.Next()
-    generic.setAutoPowerMode(tonumber(dictGet("panel_brightness")) or 64)
-    beginBleScanning()
+    input.Start()
+    setPoweringMode(BUILT_IN_POWER_MODE)
     ledsGentlySeBrightness(tonumber(dictGet("led_brightness") ) or 64)
     gentlySetPanelBrightness(tonumber(dictGet("panel_brightness")) or 64)
-    
 end
 
 function onLoop(dt)
     drivers.update()
-    input.updateButtonStates()
+    input.update()
     if not scripts.Handle(dt) then
         return
     end

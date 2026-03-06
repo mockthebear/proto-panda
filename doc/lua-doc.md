@@ -22,9 +22,6 @@
 - [Arduino Core](#arduino-core)
 
 ## Power
-#### `waitForPower()`
-Forces the process to wait until the battery or USB voltage is above a threshold.
-- **Returns**: `nil`
 
 #### `panelPowerOn()`
 Turns on the regulator, powering the panel and the 5V output.
@@ -59,7 +56,7 @@ Sets the voltage threshold at which the system will automatically power on after
 - **Returns**: `nil`
 
 #### `setPoweringMode(mode)`
-Sets the powering mode of the system. The mode can be `POWER_MODE_USB_5V`, `POWER_MODE_USB_9V`, or `POWER_MODE_BATTERY`.
+Sets the powering mode of the system. The mode can be `POWER_MODE_5V_PD`, `POWER_MODE_USB_9V`, or `POWER_MODE_BATTERY`.
 - **Parameters**:
   - `mode` (int): The powering mode to set.
 - **Returns**: `nil`
@@ -976,11 +973,12 @@ Gets the current I2C operation timeout.
 - `OLED_SCREEN_HEIGHT`: The height of the internal OLED screen in pixels.
 - `PANEL_WIDTH`: The width of the HUB75 panel in pixels.
 - `PANEL_HEIGHT`: The height of the HUB75 panel in pixels.
+- `POWER_MODE_NONE`: Power mode for USB 5V input.
 - `POWER_MODE_USB_5V`: Power mode for USB 5V input.
-- `POWER_MODE_USB_9V`: Power mode for USB 9V input.
+- `POWER_MODE_USB_9V`: Power mode for USB 9V PD input.
 - `POWER_MODE_BATTERY`: Power mode for battery input.
-- `MAX_BLE_BUTTONS`:  Number of buttons per BLE device.
-- `MAX_BLE_CLIENTS`: Maximum number of connected BLE devices.
+- `POWER_MODE_5V_PD`: Power mode for USB 5V 3A 
+- `POWER_MODE_NONE`: Ignore any powering behavior 
 - `SERVO_COUNT`: The number of servos.
 
 ## Input

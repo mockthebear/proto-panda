@@ -71,13 +71,6 @@
 //#define LIDAR_ADDR 0x29
 
 /*
-    BLE Buttons
-*/
-
-//#define MAX_BLE_BUTTONS 5
-//#define MAX_BLE_CLIENTS 4
-
-/*
     Led strip
 */
 
@@ -97,19 +90,11 @@
 */
 
 //#define EDIT_MODE_PIN 39
-//#define WIFI_AP_NAME "protopanda"
-//#define WIFI_AP_PASSWORD "pandawah"
-//#define EDIT_MODE_FTP_USER "wah"
-//#define EDIT_MODE_FTP_PASSWORD "wah"
-//#define EDIT_MODE_FTP_PORT 21
-//#define EDIT_MODE_LUA_PORT 7171
-
 /* 
 Servos
 */
 
 // #define USE_SERVO
-//#define SERVO_COUNT 4
 
 /*
     DMA display, or actual display

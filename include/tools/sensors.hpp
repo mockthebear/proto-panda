@@ -20,6 +20,8 @@ class Sensors{
         static void FullMeasureVoltage();
     private:
         static float calculateVoltage(uint16_t val);
+        #ifdef USE_PIN_BATTERY_IN
         static uint16_t voltages[MEASUREMENTS];
         static uint16_t pointer;
+        #endif
 };

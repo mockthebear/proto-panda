@@ -19,7 +19,8 @@ Protopanda is a open source patform (firmware and hardware), for controling prot
 7. [Bluetooth](#bluetooth)
 7. [Hardware](#hardware)
 8. [DIY](#DIY)
-9. [Programming in Lua](#programming-in-lua)
+9. [Printing and assembling guide](./doc/print-guide.md)
+10. [Programming in Lua](#programming-in-lua)
 
 # Features
 
@@ -71,7 +72,7 @@ Protopanda uses images from the SD card and a few JSON files to construct the an
 - [Managed Mode](#managed-mode)
 
 ### Loading Frames  
-To load frames, add them to the SD card and specify their locations in the `config.json` file:  
+To load frames, add them to the SD card and specify their locations in the `animation.json` file:  
 
 ```json
 {
@@ -83,7 +84,7 @@ To load frames, add them to the SD card and specify their locations in the `conf
 }
 ```
 
-> **Note:** Modifying `config.json` (adding/removing files) forces the system to rebuild the [frame bulk file](#bulk-file).  
+> **Note:** Modifying `animation.json` (adding/removing files) forces the system to rebuild the [frame bulk file](#bulk-file).  
 
 Each entry in the `frames` array can be either:  
 - A file path, **or**  
@@ -173,7 +174,7 @@ After loading frames, [Lua scripts](#programming-in-lua) manage expressions. The
   Identifies the animation (e.g., for menus or scripting).  
 
 - **`frames`** (string)  
-  References a frame group from `config.json`.  
+  References a frame group from `animation.json`.  
 
 - **`animation`** (int[] or `"auto"`)  
   - `int[]`: Explicit frame order (e.g., `[1, 2, 3]`).  
@@ -309,7 +310,8 @@ For external use:
 * [Adderessable led strip](https://aliexpress.com/item/1005004752499978.html) (optional)
 
 
-
+# Printing and assembly guide
+[Guide here](./doc/print-guide.md)
 
 # Programming in Lua
 

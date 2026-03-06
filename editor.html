@@ -895,7 +895,7 @@
         <h2>Actions</h2>
         <div class="button-container">
             <button id="save-btn" class="secondary">Save Config</button>
-            <button id="view-json-btn" class="secondary">View config.json</button>
+            <button id="view-json-btn" class="secondary">View animation.json</button>
         </div>
     </div>
 
@@ -2521,9 +2521,9 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             try {
-                const response = await fetch('config.json');
+                const response = await fetch('animation.json');
                 if (!response.ok) {
-                    throw new Error('Failed to load config.json');
+                    throw new Error('Failed to load animation.json');
                 }
                 config = await response.json();
                 config.frames.forEach(frame => {
@@ -2540,7 +2540,7 @@
             } catch (e) {
                 console.error('Error loading config:', e);
                 document.getElementById('expressions-container').innerHTML =
-                    '<p>Error loading config.json. Please make sure the file exists.</p>';
+                    '<p>Error loading animation.json. Please make sure the file exists.</p>';
             }
 
 
@@ -2590,9 +2590,9 @@
                      .replace(/\..+Z$/, '')  // Remove milliseconds and Z
                      .replace('T', '_');  // Replace T with underscore
                  
-                 const backupPath = `/backup/${timestamp}-config.json`;
+                 const backupPath = `/backup/${timestamp}-animation.json`;
                      
-                 const backupResponse = await fetch(`/copy?src=${encodeURIComponent('/config.json')}&dst=${encodeURIComponent(backupPath)}`, {
+                 const backupResponse = await fetch(`/copy?src=${encodeURIComponent('/animation.json')}&dst=${encodeURIComponent(backupPath)}`, {
                      method: 'PUT'
                  });
                      
@@ -2619,7 +2619,7 @@
  
                  const configJson = JSON.stringify(config, null, 2);
                  const configBlob = new Blob([configJson], { type: 'application/json' });
-                 const configFileName = 'config.json';
+                 const configFileName = 'animation.json';
  
                  const formData = new FormData();
                  formData.append('path', '/');

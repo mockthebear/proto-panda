@@ -1,0 +1,60 @@
+{
+    "boop": {
+        "//comment": "The trigger_mode can accept either 'gpio' or 'lidar'",
+        "trigger_mode": "lidar", 
+        "gpio": 39,
+        "gpio_state": 0,
+        "enabled": true,
+        "transitionIn": "boop_intro",
+        "transitionOut": "boop_outro",
+        "boopAnimationName": "boop",
+        "transictionOnlyOnAnimation": "normal",
+        "transictionInOnlyOnSpecificFrame": 1
+    },
+    "scripts": [
+        {
+        "name": "lidar test",
+        "file": "/scripts/lidartest.lua"
+        },
+        {
+        "name": "color test",
+        "file": "/scripts/colortest.lua"
+        },
+        {
+        "name": "screen test",
+        "file": "/scripts/screentest.lua"
+        },
+        {
+        "name": "controls test",
+        "file": "/scripts/controls.lua"
+        },
+        {
+        "name": "snake",
+        "file": "/scripts/snake.lua"
+        },
+        {
+        "name": "jumping wah",
+        "file": "/scripts/wah.lua"
+        },
+        {
+        "name": "tetris",
+        "file": "/scripts/tetris.lua"
+        },
+        {
+        "name": "proximity game",
+        "file": "/scripts/proximitygame.lua"
+        },
+        {
+        "name": "breakout",
+        "file": "/scripts/breakout.lua"
+        },
+        {
+        "name": "color shift",
+        "file": "/scripts/colorshift.lua"
+        },
+        {
+        "name": "FFT",
+        "file": "/scripts/fft.lua"
+        }
+    ]
+}

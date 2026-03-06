@@ -1,7 +1,7 @@
 #pragma once 
 #include "config.hpp"
 
-void startWifiServer();
+void startWifiServer(int port);
 
 class EditMode{
     public:
@@ -9,7 +9,7 @@ class EditMode{
         void CheckBeginEditMode();
         bool IsOnEditMode();
         void LoopEditMode();
-        void DoBegin(bool useSSID);
+        void DoBegin(bool connectToWifi);
     private:
         bool m_running;
 };

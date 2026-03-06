@@ -5,7 +5,9 @@
 #include <map>
 #include <vector>
 #include <algorithm>
+#include <ArduinoJson.h>
 #include "esp_heap_caps.h"
+
 
 template <typename T>
 class PSRAMAllocator {
@@ -58,3 +60,18 @@ using PSRAMIntMap = std::map<PSRAMString, int, PSRAMStringComparator, PSRAMAlloc
 
 template <typename T>
 using PSRAMVector = std::vector<T, PSRAMAllocator<T>>;
+
+
+struct SpiRamAllocator : ArduinoJson::Allocator {
+  void* allocate(size_t size) override {
+    return heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
+  }
+
+  void deallocate(void* pointer) override {
+    heap_caps_free(pointer);
+  }
+
+  void* reallocate(void* ptr, size_t new_size) override {
+    return heap_caps_realloc(ptr, new_size, MALLOC_CAP_SPIRAM);
+  }
+};

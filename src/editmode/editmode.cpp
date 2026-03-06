@@ -23,10 +23,8 @@ WiFiServer *luaServer;
 extern FrameRepository g_frameRepo;
 extern LuaInterface g_lua;
 
-void _callback(FtpOperation ftpOperation, unsigned int freeSpace, unsigned int totalSpace)
-{
-  switch (ftpOperation)
-  {
+void _callback(FtpOperation ftpOperation, unsigned int freeSpace, unsigned int totalSpace){
+  switch (ftpOperation){
   case FTP_CONNECT:
     Serial.println(F("FTP: Connected!"));
     break;
@@ -40,10 +38,9 @@ void _callback(FtpOperation ftpOperation, unsigned int freeSpace, unsigned int t
     break;
   }
 };
-void _transferCallback(FtpTransferOperation ftpOperation, const char *name, unsigned int transferredSize)
-{
-  switch (ftpOperation)
-  {
+
+void _transferCallback(FtpTransferOperation ftpOperation, const char *name, unsigned int transferredSize){
+  switch (ftpOperation){
   case FTP_UPLOAD_START:
     Serial.println(F("FTP: Upload start!"));
     break;
@@ -93,14 +90,17 @@ void EditMode::CheckBeginEditMode(){
   }
 }
 
-void EditMode::DoBegin(bool useSSID)
+void EditMode::DoBegin(bool connectToWifi)
 {
-  if (!Storage::Begin()){
+  while (!Storage::Begin()){
     OledScreen::display.clearDisplay();
     OledScreen::display.drawBitmap(0,0, icon_sd, 128, 64, 1);
     OledScreen::display.display();
-    for (;;){}
+    delay(500);
+    OledScreen::display.clearDisplay();
+    OledScreen::display.display();
   }
+
   Logger::Begin();
 
   if (!g_frameRepo.Begin()){
@@ -115,89 +115,129 @@ void EditMode::DoBegin(bool useSSID)
     }
   }
 
-  if (useSSID)
-  {
-    File file = SD.open("/SSID.json", "r");
-    if (!file)
-    {
-      OledScreen::CriticalFail("Failed\nto open\n/SSID.json");
-      for (;;)
-      {
-      }
-    }
+  File file = SD.open("/wifi.json", "r");
+  if (!file){
+    OledScreen::CriticalFail("Failed\nto open\n/wifi.json");
+    for (;;){}
+  }
+  
 
-    SpiRamAllocator allocator;
-    JsonDocument json_doc(&allocator);
-    auto err = deserializeJson(json_doc, file);
-    if (err)
-    {
-      OledScreen::CriticalFail(err.c_str());
-      for (;;)
-      {
-      }
-    }
 
-    if (!json_doc.containsKey("name") || !json_doc["name"].is<const char *>())
-    {
-      OledScreen::CriticalFail("Expected\nfield\n'name'");
-      for (;;)
-      {
-      }
-    }
-    if (!json_doc.containsKey("password") || !json_doc["password"].is<const char *>())
-    {
-      OledScreen::CriticalFail("Expected\nfield\n'password'");
-      for (;;)
-      {
-      }
-    }
+  SpiRamAllocator allocator;
+  JsonDocument json_doc(&allocator);
+  auto err = deserializeJson(json_doc, file);
+  if (err){
+    OledScreen::CriticalFail(err.c_str());
+    for (;;){}
+  }
 
-    const char *name = json_doc["name"];
-    const char *password = json_doc["password"];
+    
+  if (!json_doc.containsKey("edit_mode_port") || !json_doc["edit_mode_port"].is<int>()){
+    OledScreen::CriticalFail("wifi.json\\nmissing\\nfield\n'editmode_port'");
+  }
+  if (!json_doc.containsKey("lua_console_port") || !json_doc["lua_console_port"].is<int>()){
+    OledScreen::CriticalFail("wifi.json\\nmissing\\nfield\n'lua_console_port'");
+  }
+  if (!json_doc.containsKey("ftp")){
+    OledScreen::CriticalFail("wifi.json\\nmissing\\nfield\n'user'");
+    for (;;){}
+  }
+  auto ftp_conf = json_doc["ftp"];
+
+  if (!ftp_conf.containsKey("user") || !ftp_conf["user"].is<const char *>()){
+    OledScreen::CriticalFail("wifi.json\nmissing\nfield\n'ftp.user'");
+  }
+  if (!ftp_conf.containsKey("password") || !ftp_conf["password"].is<const char *>()){
+    OledScreen::CriticalFail("wifi.json\nmissing\\nfield\n'ftp.password'");
+  }
+  if (!ftp_conf.containsKey("port") || !ftp_conf["port"].is<int>()){
+    OledScreen::CriticalFail("wifi.json\nmissing\nfield\n'ftp.port'");
+  }
+
+  if (!json_doc.containsKey("wifi_ssid")){
+    OledScreen::CriticalFail("wifi.json\nmissing\nfield\n'wifi_ssid'");
+    for (;;){}
+  }
+  auto wifi_ssid = json_doc["wifi_ssid"];
+  if (!wifi_ssid.containsKey("name") || !wifi_ssid["name"].is<const char *>()){
+    OledScreen::CriticalFail("wifi.json\\nmissing\nfield\n'name'");
+    for (;;){}
+  }
+  if (!wifi_ssid.containsKey("password") || !wifi_ssid["password"].is<const char *>()){
+    OledScreen::CriticalFail("wifi.json\nmissing\\nfield\n'password'");
+    for (;;){}
+  }
+  if (!json_doc.containsKey("access_point")){
+    OledScreen::CriticalFail("wifi.json\nmissing\nfield\n'access_point'");
+    for (;;){}
+  }
+  auto access_point = json_doc["access_point"];
+  if (!access_point.containsKey("name") || !access_point["name"].is<const char *>()){
+    OledScreen::CriticalFail("wifi.json\nmissing\nfield\n'name'");
+    for (;;){}
+  }
+  if (!access_point.containsKey("password") || !access_point["password"].is<const char *>()){
+    OledScreen::CriticalFail("wifi.json\nmissing\nfield\n'password'");
+    for (;;){}
+  }
+
+  
+  int editModePort = json_doc["edit_mode_port"];
+  int luaConsolePort = json_doc["lua_console_port"];
+  int ftpPort = ftp_conf["port"];
+  const char *ftpUser = ftp_conf["user"];
+  const char *ftpPassword = ftp_conf["password"];
+
+  if (connectToWifi){
+
+
+    const char *name = wifi_ssid["name"];
+    const char *password = wifi_ssid["password"];
 
     WiFi.begin(name, password);
     Logger::Info("Connecting to %s", name);
-    while (WiFi.status() != WL_CONNECTED)
-    {
+    while (WiFi.status() != WL_CONNECTED){
       delay(1000);
       Logger::Info("Trying...");
     }
     Logger::Info("Connected!");
-    if (EDIT_MODE_HTTP_PORT == 80){
-      Logger::Info("http://%s", WiFi.localIP().toString().c_str());
-    }else{
-      Logger::Info("http://%s:%d", WiFi.localIP().toString().c_str(), EDIT_MODE_HTTP_PORT);
-    }
-    Logger::Info("FTP: %s:%d", WiFi.localIP().toString().c_str(), EDIT_MODE_FTP_PORT);
-  }
-  else
-  {
-    WiFi.softAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
-    Logger::Info("Network: %s", WIFI_AP_NAME);
-    Logger::Info("Pass: %s", WIFI_AP_PASSWORD);
-    Logger::Info("FTP: %s:%d", WiFi.softAPIP().toString().c_str(), EDIT_MODE_FTP_PORT);
+  }else{
+  
+    const char *name = access_point["name"];
+    const char *password = access_point["password"];
+
+    WiFi.softAP(name, password);
+    Logger::Info("Network: %s", name);
+    Logger::Info("Pass: %s", password);
   }
 
-  ftpSrv = new FtpServer(EDIT_MODE_FTP_PORT);
-  luaServer = new WiFiServer(EDIT_MODE_LUA_PORT);
+  if (editModePort == 80){
+    Logger::Info("http://%s", WiFi.localIP().toString().c_str());
+  }else{
+    Logger::Info("http://%s:%d", WiFi.localIP().toString().c_str(), editModePort);
+  }
+  Logger::Info("FTP: %s:%d", WiFi.localIP().toString().c_str(), ftpPort);
+
+  ftpSrv = new FtpServer(ftpPort);
+  luaServer = new WiFiServer(luaConsolePort);
   
 
   ftpSrv->setCallback(_callback);
   ftpSrv->setTransferCallback(_transferCallback);
 
-  Logger::Info("User: %s", EDIT_MODE_FTP_USER);
-  Logger::Info("Password: %s",  EDIT_MODE_FTP_PASSWORD);
-  ftpSrv->begin(EDIT_MODE_FTP_USER, EDIT_MODE_FTP_PASSWORD);
+  Logger::Info("User: %s", ftpUser);
+  Logger::Info("Password: %s",  ftpPassword);
+  ftpSrv->begin(ftpUser, ftpPassword);
   m_running = true;
 
   if (!g_lua.Start()){
     OledScreen::CriticalFail("Failed to initialize Lua!");
     return;
   }
-  Logger::Info("Lua on port %d", EDIT_MODE_LUA_PORT);
+  Logger::Info("Lua on port %d", luaConsolePort);
   LuaInterface::HaltIfError = false;
   luaServer->begin();  
-  startWifiServer();
+  startWifiServer(editModePort);
 }
 
 bool EditMode::IsOnEditMode(){

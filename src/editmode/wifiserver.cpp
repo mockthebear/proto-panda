@@ -4,7 +4,6 @@
 #include "drawing/framerepository.hpp"
 #include "lua/luainterface.hpp"
 #include "drawing/animation.hpp"
-#include "drawing/dma_display.hpp"
 #include "SD.h"
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -14,77 +13,63 @@ extern LuaInterface g_lua;
 extern FrameRepository g_frameRepo;
 extern Animation g_animation;
 
-bool createDirectories(String path)
-{
+bool createDirectories(String path){
   String currentPath = "";
   int startIdx = 0;
   int slashIdx;
 
-  while ((slashIdx = path.indexOf('/', startIdx)) != -1)
-  {
+  while ((slashIdx = path.indexOf('/', startIdx)) != -1){
     currentPath = path.substring(0, slashIdx);
-    if (!SD.exists(currentPath))
-    {
+    if (!SD.exists(currentPath)){
       SD.mkdir(currentPath);
     }
     startIdx = slashIdx + 1;
   }
 
-  if (!SD.exists(path))
-  {
+  if (!SD.exists(path)){
     SD.mkdir(path);
   }
   return true;
 }
 
-void handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
-{
+void handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
   static File uploadFile;
   static String filePath;
 
-  if (!index)
-  {
+  if (!index){
     String path = "/";
-    if (request->hasParam("path", true))
-    {
+    if (request->hasParam("path", true)){
       path = request->getParam("path", true)->value();
     }
     filePath = path + "/" + filename;
 
     String dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
-    if (dirPath.length() > 0 && !SD.exists(dirPath))
-    {
-      if (!createDirectories(dirPath))
-      {
+    if (dirPath.length() > 0 && !SD.exists(dirPath)){
+      if (!createDirectories(dirPath)){
         request->send(500, "text/plain", "{\"success\": false, \"error\": \"Failed to open file for writing\"}");
       }
     }
 
     uploadFile = SD.open(filePath, FILE_WRITE);
-    if (!uploadFile)
-    {
+    if (!uploadFile){
       request->send(500, "text/plain", "{\"success\": false, \"error\": \"Failed to open file for writing\"}");
       Serial.println("Failed to open file for writing");
       return;
     }
   }
 
-  if (uploadFile && len)
-  {
+  if (uploadFile && len){
     uploadFile.write(data, len);
   }
 
-  if (final && uploadFile)
-  {
+  if (final && uploadFile){
     uploadFile.close();
     request->send(200, "text/plain", "{\"success\": true}");
   }
 }
 
-void handleCopy(AsyncWebServerRequest *request)
-{
-  if (!request->hasParam("src") || !request->hasParam("dst"))
-  {
+void handleCopy(AsyncWebServerRequest *request){
+  if (!request->hasParam("src") || !request->hasParam("dst")){
     request->send(400, "text/plain", "Missing src or dst parameter");
     return;
   }
@@ -92,15 +77,13 @@ void handleCopy(AsyncWebServerRequest *request)
   String srcPath = request->getParam("src")->value();
   String dstPath = request->getParam("dst")->value();
 
-  if (!SD.exists(srcPath))
-  {
+  if (!SD.exists(srcPath)){
     request->send(404, "text/plain", "Source file not found");
     return;
   }
 
   File src = SD.open(srcPath);
-  if (src.isDirectory())
-  {
+  if (src.isDirectory()){
     src.close();
     request->send(400, "text/plain", "Source is a directory");
     return;
@@ -108,24 +91,19 @@ void handleCopy(AsyncWebServerRequest *request)
 
   // Extract directory path from dstPath
   int lastSlash = dstPath.lastIndexOf('/');
-  if (lastSlash > 0)
-  {
+  if (lastSlash > 0){
     String dstDir = dstPath.substring(0, lastSlash);
     
     // Create directory if it doesn't exist
-    if (!SD.exists(dstDir))
-    {
+    if (!SD.exists(dstDir)){
       // Create all necessary parent directories
       String currentPath = "";
-      for (int i = 0; i < dstDir.length(); i++)
-      {
+      for (int i = 0; i < dstDir.length(); i++){
         currentPath += dstDir[i];
         if (dstDir[i] == '/' && i > 0) // Found a directory level
         {
-          if (!SD.exists(currentPath.substring(0, currentPath.length() - 1)))
-          {
-            if (!SD.mkdir(currentPath.substring(0, currentPath.length() - 1)))
-            {
+          if (!SD.exists(currentPath.substring(0, currentPath.length() - 1))){
+            if (!SD.mkdir(currentPath.substring(0, currentPath.length() - 1))){
               src.close();
               request->send(500, "text/plain", "Failed to create directory: " + currentPath);
               return;
@@ -135,8 +113,7 @@ void handleCopy(AsyncWebServerRequest *request)
       }
       
       // Create the final directory
-      if (!SD.mkdir(dstDir))
-      {
+      if (!SD.mkdir(dstDir)){
         src.close();
         request->send(500, "text/plain", "Failed to create destination directory");
         return;
@@ -145,8 +122,7 @@ void handleCopy(AsyncWebServerRequest *request)
   }
 
   // Check if destination already exists (file, not directory)
-  if (SD.exists(dstPath))
-  {
+  if (SD.exists(dstPath)){
     File dstCheck = SD.open(dstPath);
     if (!dstCheck.isDirectory()) // Only fail if it's a file
     {
@@ -159,8 +135,7 @@ void handleCopy(AsyncWebServerRequest *request)
   }
 
   File dst = SD.open(dstPath, FILE_WRITE);
-  if (!dst)
-  {
+  if (!dst){
     src.close();
     request->send(500, "text/plain", "Failed to create destination file");
     return;
@@ -170,10 +145,8 @@ void handleCopy(AsyncWebServerRequest *request)
   size_t bytesRead;
   bool error = false;
   
-  while ((bytesRead = src.read(buffer, sizeof(buffer))) > 0)
-  {
-    if (dst.write(buffer, bytesRead) != bytesRead)
-    {
+  while ((bytesRead = src.read(buffer, sizeof(buffer))) > 0){
+    if (dst.write(buffer, bytesRead) != bytesRead){
       error = true;
       break;
     }
@@ -182,8 +155,7 @@ void handleCopy(AsyncWebServerRequest *request)
   src.close();
   dst.close();
 
-  if (error)
-  {
+  if (error){
     SD.remove(dstPath);
     request->send(500, "text/plain", "Copy failed");
     return;
@@ -192,31 +164,25 @@ void handleCopy(AsyncWebServerRequest *request)
   request->send(200, "text/plain", "OK");
 }
 
-void handleRm(AsyncWebServerRequest *request)
-{
-  if (!request->hasParam("path"))
-  {
+void handleRm(AsyncWebServerRequest *request){
+  if (!request->hasParam("path")){
     request->send(400, "text/plain", "Missing path parameter");
     return;
   }
 
   String path = request->getParam("path")->value();
 
-  if (!SD.exists(path))
-  {
+  if (!SD.exists(path)){
     request->send(404, "text/plain", "Path not found");
     return;
   }
 
   File file = SD.open(path);
-  if (file.isDirectory())
-  {
+  if (file.isDirectory()){
     bool isEmpty = true;
     File entry = file.openNextFile();
-    while (entry)
-    {
-      if (String(entry.name()) != "." && String(entry.name()) != "..")
-      {
+    while (entry){
+      if (String(entry.name()) != "." && String(entry.name()) != ".."){
         isEmpty = false;
         break;
       }
@@ -224,25 +190,20 @@ void handleRm(AsyncWebServerRequest *request)
     }
     entry.close();
 
-    if (!isEmpty)
-    {
+    if (!isEmpty){
       file.close();
       request->send(400, "text/plain", "Directory is not empty");
       return;
     }
 
     file.close();
-    if (!SD.rmdir(path))
-    {
+    if (!SD.rmdir(path)){
       request->send(500, "text/plain", "Failed to delete directory");
       return;
     }
-  }
-  else
-  {
+  }else{
     file.close();
-    if (!SD.remove(path))
-    {
+    if (!SD.remove(path)){
       request->send(500, "text/plain", "Failed to delete file");
       return;
     }
@@ -251,45 +212,34 @@ void handleRm(AsyncWebServerRequest *request)
   request->send(200, "text/plain", "Deleted successfully");
 }
 
-void handleMkdir(AsyncWebServerRequest *request)
-{
-  if (request->hasParam("path", true) && request->hasParam("dirName", true))
-  {
+void handleMkdir(AsyncWebServerRequest *request){
+  if (request->hasParam("path", true) && request->hasParam("dirName", true)){
     String basePath = request->getParam("path", true)->value();
     String dirName = request->getParam("dirName", true)->value();
     String fullPath = basePath + "/" + dirName;
 
     fullPath.replace("//", "/");
-    if (SD.exists(fullPath))
-    {
+    if (SD.exists(fullPath)){
       request->send(400, "text/plain", "Directory already exists");
     }
-    else if (SD.mkdir(fullPath))
-    {
+    else if (SD.mkdir(fullPath)){
       request->send(200, "text/plain", "Directory created successfully");
-    }
-    else
-    {
+    }else{
       request->send(500, "text/plain", "Failed to create directory");
     }
-  }
-  else
-  {
+  }else{
     request->send(400, "text/plain", "Missing parameters");
   }
 }
 
-void serveDirectoryListing(AsyncWebServerRequest *request)
-{
+void serveDirectoryListing(AsyncWebServerRequest *request){
   String path = request->url();
   path.replace("//", "/");
-  while (path.endsWith("/") && path.length() > 1)
-  {
+  while (path.endsWith("/") && path.length() > 1){
     path.remove(path.length() - 1);
   }
 
-  if (!SD.exists(path))
-  {
+  if (!SD.exists(path)){
     path = "/";
   }
 
@@ -467,42 +417,34 @@ void serveDirectoryListing(AsyncWebServerRequest *request)
   <body>
     <div class="breadcrumb">)";
 
-  if (path != "/")
-  {
+  if (path != "/"){
     output += "<a href='/'>/</a> &gt; ";
 
     String currentPath = "";
     String parts = path.substring(1);
     int lastSlash = 0;
 
-    while (lastSlash != -1)
-    {
+    while (lastSlash != -1){
       int nextSlash = parts.indexOf('/', lastSlash);
       String part = nextSlash == -1 ? parts.substring(lastSlash) : parts.substring(lastSlash, nextSlash);
       currentPath += "/" + part;
 
-      if (nextSlash != -1)
-      {
+      if (nextSlash != -1){
         output += "<a href='" + currentPath + "'>" + part + "</a> &gt; ";
         lastSlash = nextSlash + 1;
-      }
-      else
-      {
+      }else{
         output += part;
         lastSlash = -1;
       }
     }
-  }
-  else
-  {
+  }else{
     output += "Root Directory";
   }
 
   output += R"(</div>)";
   
   // --- Updated Header Section Logic for Root Path ---
-  if (path == "/")
-  {
+  if (path == "/"){
     // 1. Image Inclusion (centered at the top)
     output += R"(
     <div class="logo-container">
@@ -535,17 +477,14 @@ void serveDirectoryListing(AsyncWebServerRequest *request)
 
   File root = SD.open(path);
   File file = root.openNextFile();
-  if (path == "/")
-  {
+  if (path == "/"){
     path = "";
   }
 
-  while (file)
-  {
+  while (file){
     String fileName = file.name();
     // Skip hidden files and special directories
-    if (!fileName.startsWith(".") && fileName.length() > 0)
-    {
+    if (!fileName.startsWith(".") && fileName.length() > 0){
       String filePath = path + "/" + fileName;
       output += "<tr>";
       output += "<td><a href='" + filePath + "'>" + fileName + "</a></td>";
@@ -624,7 +563,7 @@ void serveDirectoryListing(AsyncWebServerRequest *request)
           if (response.ok) {
             setStatus(statusDiv, 'Upload completed!', false);
             setTimeout(() => location.reload(), 500);
-          } else {
+          }else{
             response.text().then(text => setStatus(statusDiv, 'Error: ' + text, true));
           }
         })
@@ -647,7 +586,7 @@ void serveDirectoryListing(AsyncWebServerRequest *request)
           if (response.ok) {
             setStatus(statusDiv, 'Directory created successfully!', false);
             setTimeout(() => location.reload(), 500);
-          } else {
+          }else{
             response.text().then(text => setStatus(statusDiv, 'Error: ' + text, true));
           }
         })
@@ -667,24 +606,20 @@ void serveDirectoryListing(AsyncWebServerRequest *request)
   request->send(200, "text/html", output);
 }
 
-void handleLuaExecution(AsyncWebServerRequest *request)
-{
-  if (request->method() != HTTP_POST)
-  {
+void handleLuaExecution(AsyncWebServerRequest *request){
+  if (request->method() != HTTP_POST)  {
     request->send(405, "text/plain", "Method Not Allowed");
     return;
   }
 
-  if (!request->hasParam("body", true))
-  {
+  if (!request->hasParam("body", true))  {
     request->send(400, "text/plain", "Missing Lua code in body");
     return;
   }
 
   String luaCode = request->getParam("body", true)->value();
 
-  if (!g_lua.DoString(luaCode.c_str(), 1))
-  {
+  if (!g_lua.DoString(luaCode.c_str(), 1)){
     String error = g_lua.getLastError();
     request->send(500, "text/plain", "Lua Error: " + error);
     return;
@@ -711,11 +646,9 @@ void composeBulkFileTask(void *parameter){
   vTaskDelete(NULL);
 }
 
-void handleComposeStart(AsyncWebServerRequest *request)
-{
+void handleComposeStart(AsyncWebServerRequest *request){
   // Check if task is already running
-  if (composeTaskHandle != NULL)
-  {
+  if (composeTaskHandle != NULL){
     request->send(200, "text/plain", "Status: Composition already in progress");
     return;
   }
@@ -734,21 +667,16 @@ void handleComposeStart(AsyncWebServerRequest *request)
       tskIDLE_PRIORITY,
       &composeTaskHandle);
 
-  if (result == pdPASS)
-  {
+  if (result == pdPASS){
     request->send(200, "text/plain", "Status: Composition started successfully");
-  }
-  else
-  {
+  }else{
     request->send(500, "text/plain", "Error: Failed to start composition task");
   }
 }
 
-void managedLoop(void *)
-{
+void managedLoop(void *){
   
-  for (;;)
-  {
+  for (;;){
     Devices::BeginAutoFrame();
     g_animation.Update(g_frameRepo.takeFile());
     g_frameRepo.freeFile();
@@ -762,11 +690,9 @@ void managedLoop(void *)
   vTaskDelete(NULL);
 }
 
-void handleSetManaged(AsyncWebServerRequest *request)
-{
+void handleSetManaged(AsyncWebServerRequest *request){
   
-  if (!isManaged)
-  {
+  if (!isManaged){
     managedDuration = millis() + 10*1000;
     isManaged = true;
     xTaskCreate(
@@ -779,26 +705,21 @@ void handleSetManaged(AsyncWebServerRequest *request)
 
     
     request->send(200, "text/plain", "ok");
-  }
-  else
-  {
+  }else{
     request->send(400, "text/plain", "already running");
   }
 }
-void handleComposeGet(AsyncWebServerRequest *request)
-{
+void handleComposeGet(AsyncWebServerRequest *request){
   request->send(200, "text/plain", String(g_frameRepo.getBulkComposingPercentage()));
 }
 
-void startWifiServer()
-{
-  server = new AsyncWebServer(EDIT_MODE_HTTP_PORT);
+void startWifiServer(int port){
+  server = new AsyncWebServer(port);
 
   server->on("/", HTTP_GET, serveDirectoryListing);
   server->serveStatic("/", SD, "/", "max-age=0").setCacheControl("max-age=0");
   server->on("/mkdir", HTTP_POST, handleMkdir);
-  server->on("/upload", HTTP_POST, [](AsyncWebServerRequest *request)
-             { request->send(200); }, handleUpload);
+  server->on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){ request->send(200); }, handleUpload);
   server->on("/delete", HTTP_DELETE, handleRm);
   server->on("/copy", HTTP_PUT, handleCopy);
   server->on("/lua", HTTP_POST, handleLuaExecution);
@@ -815,15 +736,6 @@ void startWifiServer()
   float percentagePsramFree = freePsramBytes* 100.0f / (float)totalPsramBytes;
 
   Serial.printf("[Memory] %.1f%% free - %d of %d bytes free (psram: %d / %d  -> %.1f%%)", percentageHeapFree, freeHeapBytes, totalHeapBytes, totalPsramBytes, freePsramBytes, percentagePsramFree);
-  /*DMADisplay::Start(8, 1);
-
-  DMADisplay::Display->clearScreen();
-  DMADisplay::Display->setBrightness8(32);
-  char str[] = "u gay";
-  for (int i=0;i<strlen(str);i++){
-    DMADisplay::Display->drawChar(0 + i * 8,2, str[i], DMADisplay::Display->color333(255,255,255), 0, 1);
-  }
-  DMADisplay::Display->flipDMABuffer();*/
 
   freeHeapBytes = ESP.getFreeHeap();  
   totalHeapBytes = ESP.getHeapSize(); 

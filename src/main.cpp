@@ -9,13 +9,14 @@
 #include "tools/sensors.hpp"
 #include "tools/devices.hpp"
 #include "tools/oledscreen.hpp"
+#include "tools/hardwareconfig.hpp"
 #include "tools/storage.hpp"
 #include "tools/logger.hpp"
+#include "tools/ir.hpp"
 #include "lua/luainterface.hpp"
 
 
 #include "drawing/framerepository.hpp"
-#include "drawing/dma_display.hpp"
 #include "drawing/animation.hpp"
 #include "drawing/ledstrip.hpp"
 #include "drawing/icons/icons.hpp"
@@ -33,6 +34,7 @@ Animation g_animation;
 LuaInterface g_lua;
 TaskHandle_t g_secondCore;
 EditMode g_editMode;
+InfraRedManager g_InfraRed;
 
 void second_loop(void*);
 
@@ -40,13 +42,15 @@ void setup() {
   /*
     Startup regulator pins and shoot it low asap.
   */
-  #ifdef PIN_ENABLE_REGULATOR
+  #ifdef USE_ENABLE_PIN
   digitalWrite(PIN_ENABLE_REGULATOR, LOW);
   pinMode(PIN_ENABLE_REGULATOR, OUTPUT);
   digitalWrite(PIN_ENABLE_REGULATOR, LOW);
   #endif
   pinMode(EDIT_MODE_PIN, INPUT_PULLDOWN);
+  #ifdef USE_PIN_BATTERY_IN
   pinMode(PIN_USB_BATTERY_IN, INPUT);
+  #endif
 
   Devices::Begin();
   Serial.begin(115200);
@@ -77,34 +81,22 @@ void setup() {
     return;
   }
 
-  #ifdef ENABLE_HUB75_PANEL
-  Devices::CalculateMemmoryUsage(); 
-  if (!DMADisplay::Start()){
-    OledScreen::CriticalFail("Failed to initialize DMA display!");
-    Devices::BuzzerTone(300);
-    delay(1500);
-    Devices::BuzzerNoTone();
-    for(;;){}
-  }
-  Logger::Info("DMA display initialized!");
-  Devices::CalculateMemmoryUsageDifference("Dma display");
-  #endif 
-
   while (!Storage::Begin()){
-    DMADisplay::Display->clearScreen();
-    DMADisplay::Display->setBrightness8(8);
-    DMADisplay::Display->drawRGBBitmap(0,0, icon_panel_nosd, 64, 32);
-    DMADisplay::Display->drawRGBBitmap(63,0, icon_panel_nosd, 64, 32);
-    DMADisplay::Display->flipDMABuffer();
     OledScreen::display.clearDisplay();
     OledScreen::display.drawBitmap(0,0, icon_sd, 128, 64, 1);
     OledScreen::display.display();
     delay(500);
     OledScreen::display.clearDisplay();
     OledScreen::display.display();
-    DMADisplay::Display->setBrightness8(1);
   }
-  DMADisplay::Display->setBrightness8(0);
+
+  
+  Devices::CalculateMemmoryUsage(); 
+
+  HardwareConfig::LoadConfigs();
+
+
+  
   Devices::CalculateMemmoryUsageDifference("Storage");
   Logger::Begin();
   Devices::DisplayResetInfo();
@@ -161,7 +153,7 @@ void setup() {
 
   g_frameRepo.displayFFATInfo();
   Serial.printf("Running upon %d\n", xPortGetCoreID());
-  
+
   #ifndef SINGLE_CORE_RUN
   xTaskCreatePinnedToCore(second_loop, "second loop", 10000, NULL, ( 2 | portPRIVILEGE_BIT ), &g_secondCore, 0);
   Devices::CalculateMemmoryUsageDifference("second loop");
@@ -195,28 +187,28 @@ void second_loop(void*){
     if (st2 > 20){
       Logger::Info("FPS is %f, %d", 1000.0f/(float)st2, st2);
     }
-    vTaskDelay(1);
   }
   #endif
 }
 
 
+
 void loop() {
+  Devices::BeginFrame();
   if (g_editMode.IsOnEditMode()){
     g_editMode.LoopEditMode();
     return;
   }
-  
+
   if (Devices::AutoCheckPowerLevel() && !Devices::CheckPowerLevel()){
-    Devices::WaitForPower(0);
+    Devices::WaitForPower();
     return;
   }
-
-  Devices::BeginFrame();
+  
+  
   Devices::ReadSensors();
   g_remoteControls.update();
-  //g_remoteControls.updateButtons();
-
+  g_InfraRed.update();
   g_remoteControls.sendUpdatesToLua();
 
 

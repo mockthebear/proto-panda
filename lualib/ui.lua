@@ -103,10 +103,10 @@ function _M.generateUi(title, onEnter, onQuit)
             if (i-drawPos) <= maxPerScreen and ((i-1)-drawPos) >= 0  then
                 oledSetCursor(0, 11 + 11*((i-1)-drawPos))
                 if uiData.selected == i then 
-                    oledSetTextColor(BLACK, WHITE)
+                    oledSetTextColor(WHITE, BLACK)
                     oledDrawText(">")
                 else
-                    oledSetTextColor(WHITE, BLACK)
+                    oledSetTextColor(BLACK, WHITE)
                 end
                 local name = elements[i].name
                 if #name > uiData.maxTextShowSize then
