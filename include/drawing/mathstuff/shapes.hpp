@@ -5,7 +5,7 @@
 
 template<typename T> class Triangle {
 public:
-    Triangle(){};
+    Triangle():denominator(static_cast<T>(0)){};
     Triangle(const Vec2<T>& p1, const Vec2<T>& p2, const Vec2<T>& p3, uint16_t color){
         p1X = p1.x;
         p1Y = p1.y;
@@ -22,45 +22,47 @@ public:
 
         denominator = 1.0f / (v0X * v1Y - v1X * v0Y);
     }
+    
 
-
-    float denominator = 0.0f; ///< Precomputed denominator for barycentric coordinate calculations.
-    float p1X, p1Y, p2X, p2Y, p3X, p3Y; ///< Coordinates of the triangle's vertices.
-    float v0X, v0Y, v1X, v1Y, v2X, v2Y; ///< Edge vectors for barycentric coordinate calculations.
-    Vec2<T> min, max; ///< Minimum and maximum bounds of the triangle.
-
-    Vec3<T>* normal;
-    //Material* material; ///< Material assigned to the triangle.
-
-    Vec3<T>* t3p1; ///< Pointer to the first vertex in 3D space.
-    Vec3<T>* t3p2; ///< Pointer to the second vertex in 3D space.
-    Vec3<T>* t3p3; ///< Pointer to the third vertex in 3D space.
-
-    const Vec2<T>* p1UV; ///< UV coordinates of the first vertex.
-    const Vec2<T>* p2UV; ///< UV coordinates of the second vertex.
-    const Vec2<T>* p3UV; ///< UV coordinates of the third vertex.
-
-    bool hasUV = false; ///< Indicates whether the triangle has UV mapping.
-    float averageDepth = 0.0f; ///< Average depth of the triangle for rendering.
+    T denominator; 
+    T p1X, p1Y, p2X, p2Y, p3X, p3Y; 
+    T v0X, v0Y, v1X, v1Y; 
 
     uint16_t color;
 
-    //Triangle2D(Triangle3D* t);
-
-    bool DidIntersect(const float& x, const float& y, float& u, float& v, float& w){
-        float v2lX = x - p1X;
-        float v2lY = y - p1Y;
+    bool DidIntersect(const T& x, const T& y, T& u, T& v, T& w){
+        T v2lX = x - p1X;
+        T v2lY = y - p1Y;
 
         v = (v2lX * v1Y - v1X * v2lY) * denominator;
         w = (v0X * v2lY - v2lX * v0Y) * denominator;
 
-        if (v < 0.0f || w < 0.0f || v > 1.0f || w > 1.0f) return false;
+        if (v < static_cast<T>(0.0) || w < static_cast<T>(0.0) || v > static_cast<T>(1.0) || w > static_cast<T>(1.0)) return false;
 
-        u = 1.0f - v - w;
+        u = static_cast<T>(1.0) - v - w;
 
-        return u >= 0.0f;
+        return u >= static_cast<T>(0.0f);
     }
 
+};
+
+template<typename T, int N> class Shape {
+    public:
+        const int getSize(){ return N;};
+        Triangle<T> elements[M];
+};
+
+template<typename T> class Square : public Shape<2>  {
+public:
+    Square(){};
+    Square(const Vec2<T>& c1, const Vec2<T>& c2, const Vec2<T>& c3, const Vec2<T>& c4, uint16_t color=0){
+        elements[0] = Triangle<T>(c1, c2, c3, color);
+        elements[1] = Triangle<T>(c3, c4, c1, color);
+    }
+
+    void setColor(uint16_t color){
+        elements[0].color = elements[1].color = color;
+    }
 };
 
 

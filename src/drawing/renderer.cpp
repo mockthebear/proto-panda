@@ -29,10 +29,6 @@ void RenderEngine::beginTriangles(){
     randomizeIt();
 
     started = true;
-   /* 1 1 1 0.5773503 0.5773503 0.5773503 0.625 0.5
--1 1 1 -0.5773503 0.5773503 0.5773503 0.875 0.5
--1 -1 1 -0.5773503 -0.5773503 0.5773503 0.875 0.75
-*/
 }
 void RenderEngine::RenderTriangles() {
     if (!started){
@@ -120,17 +116,16 @@ uint16_t RenderEngine::RasterVec(Trianglef* triangles, int numTriangles, Vec2f p
         w = mult1Dst[i * 2 + 1];
         u = 1.0f - v - w;
 
-        if (triangles[i].averageDepth < zBuffer) {
-            bool intersect = !(v < 0.0f || w < 0.0f || v > 1.0f || w > 1.0f) && u > 0.0f;
-            if (intersect){
-                //uvw.X = u;
-                //uvw.Y = v;
-                //uvw.Z = w;
-                zBuffer = triangles[i].averageDepth;
-                triangle = i;
-                didIntersect = true;
-            }
+
+        bool intersect = !(v < 0.0f || w < 0.0f || v > 1.0f || w > 1.0f) && u > 0.0f;
+        if (intersect){
+            //uvw.X = u;
+            //uvw.Y = v;
+            //uvw.Z = w;
+            triangle = i;
+            didIntersect = true;
         }
+        
     }
 
     if (didIntersect) {
@@ -154,17 +149,17 @@ uint16_t RenderEngine::Raster(Trianglef* triangles, int numTriangles, Vec2f pixe
 
 
     for (int t = 0; t < numTriangles; t++) {
-        if (triangles[t].averageDepth < zBuffer) {
+        //if (triangles[t].averageDepth < zBuffer) {
             if (triangles[t].DidIntersect(pixelRay.x, pixelRay.y, u, v, w)) {
                 //uvw.X = u;
                 //uvw.Y = v;
                 //uvw.Z = w;
-                zBuffer = triangles[t].averageDepth;
+        //        zBuffer = triangles[t].averageDepth;
                 triangle = t;
                 didIntersect = true;
                 break;
             }
-        }
+        //}
     }
     
     if (didIntersect) {
