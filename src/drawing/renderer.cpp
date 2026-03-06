@@ -1,27 +1,28 @@
 #include "drawing/renderer.hpp"
-#include "drawing/dma_display.hpp"
+#include "tools/devices.hpp"
+#include <Arduino.h>
 
 #include "esp_dsp.h"
 
 void RenderEngine::randomizeIt(){
     for (int i=0;i<numTriangles;i++){
-        Vector2D v1(rand()%64,rand()%32);
-        Vector2D v2(rand()%64,rand()%32);
-        Vector2D v3(rand()%64,rand()%32);
-        triangles[i] = Triangle2D(v1,v2,v3, DMADisplay::Display->color565(rand()%255,rand()%255,rand()%255)) ;
+        Vec2f v1(rand()%64,rand()%32);
+        Vec2f v2(rand()%64,rand()%32);
+        Vec2f v3(rand()%64,rand()%32);
+        triangles[i] = Trianglef(v1,v2,v3, Devices::Display->color565(rand()%255,rand()%255,rand()%255)) ;
     }
 
-    triangles[0] = Triangle2D(Vector2D(8,16),Vector2D(16,16),Vector2D(16,8), DMADisplay::Display->color565(255,0,0)) ;
-    triangles[1] = Triangle2D(Vector2D(8,16),Vector2D(16,8),Vector2D(8,8), DMADisplay::Display->color565(0,255,0));
-    triangles[2] = Triangle2D(Vector2D(8,8),Vector2D(0,8),Vector2D(8,16), DMADisplay::Display->color565(0,0,255));
-    triangles[3] = Triangle2D(Vector2D(16,8),Vector2D(24,8),Vector2D(16,16), DMADisplay::Display->color565(100,100,100));
+    triangles[0] = Trianglef(Vec2f(8,16),Vec2f(16,16),Vec2f(16,8), Devices::Display->color565(255,0,0)) ;
+    triangles[1] = Trianglef(Vec2f(8,16),Vec2f(16,8),Vec2f(8,8), Devices::Display->color565(0,255,0));
+    triangles[2] = Trianglef(Vec2f(8,8),Vec2f(0,8),Vec2f(8,16), Devices::Display->color565(0,0,255));
+    triangles[3] = Trianglef(Vec2f(16,8),Vec2f(24,8),Vec2f(16,16), Devices::Display->color565(100,100,100));
 
 }
 
 void RenderEngine::beginTriangles(){
     numTriangles = 80;
-    Serial.printf("Lets do it\n");
-    triangles = (Triangle2D*)malloc(sizeof(Triangle2D) * numTriangles);
+
+    triangles = (Trianglef*)malloc(sizeof(Trianglef) * numTriangles);
     
 
     Serial.printf("done it\n");
@@ -39,22 +40,22 @@ void RenderEngine::RenderTriangles() {
     }
     //Serial.printf("aaaa\n");
     randomizeIt();
-    uint32_t start = millis();
+    //uint32_t start = millis();
     uint8_t r,g,b;
-    DMADisplay::Display->startWrite();
+    Devices::Display->startWrite();
     for (int16_t y=0;y<PANEL_HEIGHT;y++){
       for (int16_t x=0;x<PANEL_WIDTH;x++){  
-            int16_t color = Raster(triangles, numTriangles, Vector2D(x,y)); 
-            DMADisplay::Display->color565to888(color, r, g, b);
-            DMADisplay::Display->updateMatrixDMABuffer_2(x, y, r, g, b);
-            DMADisplay::Display->updateMatrixDMABuffer_2((PANEL_WIDTH)+x, y, r, g, b);
+            int16_t color = Raster(triangles, numTriangles, Vec2f(x,y)); 
+            Devices::Display->color565to888(color, r, g, b);
+            Devices::Display->updateMatrixDMABuffer_2(x, y, r, g, b);
+            Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH)+x, y, r, g, b);
       }
     }
     //Serial.printf("Finished in %d ms\n", millis()-start);
-    DMADisplay::Display->endWrite();
+    Devices::Display->endWrite();
 }
 
-uint16_t RenderEngine::RasterVec(Triangle2D* triangles, int numTriangles, Vector2D pixelRay) {
+uint16_t RenderEngine::RasterVec(Trianglef* triangles, int numTriangles, Vec2f pixelRay) {
     float zBuffer = 3.402823466e+38f;
     int triangle = 0;
     bool didIntersect = false;
@@ -64,8 +65,8 @@ uint16_t RenderEngine::RasterVec(Triangle2D* triangles, int numTriangles, Vector
 
 
     for (int i = 0; i < numTriangles; i++){
-        subA[i * 2 + 0] = pixelRay.X;//x
-        subA[i * 2 + 1] = pixelRay.Y;//y
+        subA[i * 2 + 0] = pixelRay.x;//x
+        subA[i * 2 + 1] = pixelRay.y;//y
 
         subB[i * 2 + 0] = triangles[i].p1X;//p1x
         subB[i * 2 + 1] = triangles[i].p1Y;//p1y
@@ -134,7 +135,7 @@ uint16_t RenderEngine::RasterVec(Triangle2D* triangles, int numTriangles, Vector
 
     if (didIntersect) {
         //Vector3D intersect = (*triangles[triangle]->t3p1 * uvw.X) + (*triangles[triangle]->t3p2 * uvw.Y) + (*triangles[triangle]->t3p3 * uvw.Z);
-        //Vector2D uv;
+        //Vec2f uv;
 
         //if (triangles[triangle]->hasUV) uv = *triangles[triangle]->p1UV * uvw.X + *triangles[triangle]->p2UV * uvw.Y + *triangles[triangle]->p3UV * uvw.Z;
         color = triangles[triangle].color;
@@ -143,7 +144,7 @@ uint16_t RenderEngine::RasterVec(Triangle2D* triangles, int numTriangles, Vector
     return color;
 }
 
-uint16_t RenderEngine::Raster(Triangle2D* triangles, int numTriangles, Vector2D pixelRay) {
+uint16_t RenderEngine::Raster(Trianglef* triangles, int numTriangles, Vec2f pixelRay) {
     float zBuffer = 3.402823466e+38f;
     int triangle = 0;
     bool didIntersect = false;
@@ -154,7 +155,7 @@ uint16_t RenderEngine::Raster(Triangle2D* triangles, int numTriangles, Vector2D 
 
     for (int t = 0; t < numTriangles; t++) {
         if (triangles[t].averageDepth < zBuffer) {
-            if (triangles[t].DidIntersect(pixelRay.X, pixelRay.Y, u, v, w)) {
+            if (triangles[t].DidIntersect(pixelRay.x, pixelRay.y, u, v, w)) {
                 //uvw.X = u;
                 //uvw.Y = v;
                 //uvw.Z = w;
@@ -168,7 +169,7 @@ uint16_t RenderEngine::Raster(Triangle2D* triangles, int numTriangles, Vector2D 
     
     if (didIntersect) {
         //Vector3D intersect = (*triangles[triangle]->t3p1 * uvw.X) + (*triangles[triangle]->t3p2 * uvw.Y) + (*triangles[triangle]->t3p3 * uvw.Z);
-        //Vector2D uv;
+        //Vec2f uv;
 
         //if (triangles[triangle]->hasUV) uv = *triangles[triangle]->p1UV * uvw.X + *triangles[triangle]->p2UV * uvw.Y + *triangles[triangle]->p3UV * uvw.Z;
         color = triangles[triangle].color;
@@ -179,41 +180,8 @@ uint16_t RenderEngine::Raster(Triangle2D* triangles, int numTriangles, Vector2D 
 }
 
 
-Triangle2D::Triangle2D(const Vector2D& p1, const Vector2D& p2, const Vector2D& p3, uint16_t colo) {
-    p1X = p1.X;
-    p1Y = p1.Y;
-    p2X = p2.X;
-    p2Y = p2.Y;
-    p3X = p3.X;
-    p3Y = p3.Y;
-    color = colo;
-
-    v0X = p2X - p1X;
-    v0Y = p2Y - p1Y;
-    v1X = p3X - p1X;
-    v1Y = p3Y - p1Y;
-
-    denominator = 1.0f / (v0X * v1Y - v1X * v0Y);
-}
-
-bool Triangle2D::DidIntersect(const float& x, const float& y, float& u, float& v, float& w){
-    float v2lX = x - p1X;
-    float v2lY = y - p1Y;
-
-    v = (v2lX * v1Y - v1X * v2lY) * denominator;
-    w = (v0X * v2lY - v2lX * v0Y) * denominator;
-
-    if (v < 0.0f || w < 0.0f || v > 1.0f || w > 1.0f) return false;
-
-    u = 1.0f - v - w;
-
-    return u >= 0.0f;
-}
-
-
-
 /*
-RGBColor Rasterizer::CheckRasterPixel(Triangle2D** triangles, int numTriangles, Vector2D pixelRay) {
+RGBColor Rasterizer::CheckRasterPixel(Trianglef** triangles, int numTriangles, Vec2f pixelRay) {
     float zBuffer = 3.402823466e+38f;
     int triangle = 0;
     bool didIntersect = false;
@@ -236,7 +204,7 @@ RGBColor Rasterizer::CheckRasterPixel(Triangle2D** triangles, int numTriangles, 
     
     if (didIntersect) {
         Vector3D intersect = (*triangles[triangle]->t3p1 * uvw.X) + (*triangles[triangle]->t3p2 * uvw.Y) + (*triangles[triangle]->t3p3 * uvw.Z);
-        Vector2D uv;
+        Vec2f uv;
 
         if (triangles[triangle]->hasUV) uv = *triangles[triangle]->p1UV * uvw.X + *triangles[triangle]->p2UV * uvw.Y + *triangles[triangle]->p3UV * uvw.Z;
 
@@ -249,7 +217,7 @@ RGBColor Rasterizer::CheckRasterPixel(Triangle2D** triangles, int numTriangles, 
 void Rasterizer::Rasterize(Scene* scene, CameraBase* camera) {
     if (camera->Is2D()) {
         for (unsigned int i = 0; i < camera->GetPixelGroup()->GetPixelCount(); i++) {
-            Vector2D pixelRay = camera->GetPixelGroup()->GetCoordinate(i);
+            Vec2f pixelRay = camera->GetPixelGroup()->GetCoordinate(i);
             Vector3D pixelRay3D = Vector3D(pixelRay.X, pixelRay.Y, 0) + camera->GetTransform()->GetPosition();
 
             RGBColor color = scene->GetObjects()[0]->GetMaterial()->GetRGB(pixelRay3D, Vector3D(), Vector3D());
@@ -264,8 +232,8 @@ void Rasterizer::Rasterize(Scene* scene, CameraBase* camera) {
         rayDirection = camera->GetTransform()->GetRotation().Multiply(camera->GetLookOffset());//Apply offset to camera if set
 
         //Set quad tree space to local camera coordinates
-        Vector2D minCoord = camera->GetCameraMinCoordinate();
-        Vector2D maxCoord = camera->GetCameraMaxCoordinate();
+        Vec2f minCoord = camera->GetCameraMinCoordinate();
+        Vec2f maxCoord = camera->GetCameraMaxCoordinate();
 
         QuadTree tree = QuadTree(minCoord, maxCoord);
 
@@ -277,14 +245,14 @@ void Rasterizer::Rasterize(Scene* scene, CameraBase* camera) {
             }
         }
 
-        Triangle2D triangles[tCount];
+        Trianglef triangles[tCount];
         uint16_t iterCount = 0;
 
         for (uint8_t i = 0; i < scene->GetObjectCount(); ++i) {
             if (scene->GetObjects()[i]->IsEnabled()) {
                 for (uint16_t j = 0; j < scene->GetObjects()[i]->GetTriangleGroup()->GetTriangleCount(); ++j) {
                     //Create 2D triangle mapping for rasterize, stores 3D coordinates for mapping material to 3d global coordinate space
-                    triangles[iterCount] = Triangle2D(camera->GetLookOffset(), camera->GetTransform(), &scene->GetObjects()[i]->GetTriangleGroup()->GetTriangles()[j], scene->GetObjects()[i]->GetMaterial());
+                    triangles[iterCount] = Trianglef(camera->GetLookOffset(), camera->GetTransform(), &scene->GetObjects()[i]->GetTriangleGroup()->GetTriangles()[j], scene->GetObjects()[i]->GetMaterial());
                     
                     tree.Insert(&triangles[iterCount]);
                     iterCount++;
@@ -294,7 +262,7 @@ void Rasterizer::Rasterize(Scene* scene, CameraBase* camera) {
 
         tree.Rebuild();
 
-        Vector2D scale, pixelRay, materialRay;
+        Vec2f scale, pixelRay, materialRay;
         for (uint16_t i = 0; i < camera->GetPixelGroup()->GetPixelCount(); ++i) {
             //Render camera in local camera space
             pixelRay = camera->GetPixelGroup()->GetCoordinate(i);
