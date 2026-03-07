@@ -171,11 +171,9 @@ void second_loop(void*){
   #ifndef SINGLE_CORE_RUN
   for( ;; )
   { 
-    uint32_t st = millis();
     Devices::BeginAutoFrame();
     g_animation.Update(g_frameRepo.takeFile());
     vTaskDelay(1);
-    uint32_t st2 = millis()-st;
     g_frameRepo.freeFile();
     g_leds.Update();
     if (g_leds.IsManaged()){
@@ -183,10 +181,6 @@ void second_loop(void*){
     }
     vTaskDelay(1);
     Devices::EndAutoFrame();
-    st = millis()-st;
-    if (st2 > 20){
-      Logger::Info("FPS is %f, %d", 1000.0f/(float)st2, st2);
-    }
   }
   #endif
 }

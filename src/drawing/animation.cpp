@@ -211,12 +211,7 @@ void Animation::DrawFrame(File *file, int i){
     if (i == 0){
         return;
     }
-    if (i < 9999){
-        rend.RenderTriangles();
-		//if (initialize())
-         m_needFlip = true;
-        return;
-    }
+
     uint64_t ld = micros();
     uint64_t begin = ld;
     
@@ -360,7 +355,7 @@ void Animation::SetShader(int id){
 void Animation::Update(File *file){
     if (file != nullptr){
 		rend.RenderTriangles();
-		 MakeFlip();
+		MakeFlip();
 		return;
 	}
     xSemaphoreTake(m_mutex, portMAX_DELAY);
