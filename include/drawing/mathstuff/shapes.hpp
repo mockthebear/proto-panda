@@ -24,7 +24,12 @@ public:
         v1X = p3X - p1X;
         v1Y = p3Y - p1Y;
 
-        denominator = 1.0f / (v0X * v1Y - v1X * v0Y);
+        T aux = ((v0X * v1Y) - (v1X * v0Y));
+        if (aux != T(0)){
+            denominator = T(1) / aux;
+        }else{
+            denominator = T(0);
+        }
     }
     
 
@@ -35,6 +40,9 @@ public:
     uint16_t color;
 
     bool DidIntersect(const T& x, const T& y, T& u, T& v, T& w){
+        if (denominator == T(0)){
+            return false;
+        }
         T v2lX = x - p1X;
         T v2lY = y - p1Y;
 
