@@ -7,11 +7,11 @@
 
 class RenderEngine{
     public:
-        RenderEngine():triangles(nullptr),numTriangles(0),started(false){};
+        RenderEngine():numTriangles(0),started(false){};
         uint16_t Raster(Trianglef* triangles, int numTriangles, Vec2f pixelRay);
         void RenderTriangles();
 
-        Trianglef *triangles;
+      
         int numTriangles;
         bool started;
         void randomizeIt();

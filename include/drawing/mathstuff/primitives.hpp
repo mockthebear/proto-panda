@@ -18,6 +18,14 @@ template<typename T> class Vec3 : public Vec2<T>{
     T z;
 };
 
+template<typename T, int N> class VecAligned2{
+    public:
+    VecAligned2(){};
+    T x[N];
+    T y[N];
+};
+
+
 
 typedef Vec2<float> Vec2f;
 typedef Vec3<float> Vec3f;
