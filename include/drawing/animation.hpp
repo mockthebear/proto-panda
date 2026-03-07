@@ -6,6 +6,7 @@
 #include <FS.h>
 #include "config.hpp"
 #include "tools/psrammap.hpp"
+#include "drawing/renderer.hpp"
 
 
 enum ColorMode{
@@ -114,7 +115,7 @@ class Animation{
         inline void drawPixelAt(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r, uint8_t &g, uint8_t &b, uint8_t &flip_left, uint8_t &flip_right, int &byteIdOled);
         inline void adjustColor(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r, uint8_t &g, uint8_t &b, ColorMode &colorMode, int16_t &frameId);
         std::stack<AnimationSequence> m_animations;
-
+        RenderEngine rend;
         bool internalUpdate(File *file, AnimationSequence &seq);
         int m_shader;
         int m_lastFace;

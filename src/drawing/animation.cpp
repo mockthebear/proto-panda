@@ -8,8 +8,6 @@
 
 
 #include "FS.h"
-#include "SPIFFS.h"
-
 unsigned char Animation::buffer[FILE_SIZE];
 
 
@@ -175,7 +173,6 @@ void reorder_rgb(ColorMode mode, uint8_t *r, uint8_t *g, uint8_t *b){
     }
 }
 
-
 void Animation::drawPixelAt(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r, uint8_t &g, uint8_t &b, uint8_t &flip_left, uint8_t &flip_right, int &byteIdOled){
     if ((color & 0x8610) != 0) { 
         OledScreen::DisplayFace[byteIdOled] = 1;
@@ -214,6 +211,7 @@ void Animation::DrawFrame(File *file, int i){
     if (i == 0){
         return;
     }
+
     uint64_t ld = micros();
     uint64_t begin = ld;
     
@@ -355,7 +353,11 @@ void Animation::SetShader(int id){
 }
 
 void Animation::Update(File *file){
-    
+    if (file != nullptr){
+		rend.RenderTriangles();
+		MakeFlip();
+		return;
+	}
     xSemaphoreTake(m_mutex, portMAX_DELAY);
     if (m_animations.size() > 0){
         auto &elem = m_animations.top();
@@ -388,6 +390,7 @@ void Animation::setManaged(bool v){
 }
 
 bool Animation::internalUpdate(File *file, AnimationSequence &running){
+
     switch (running.Update(m_interruptPin)){
     case ANIMATION_FINISHED:
         return 1;
