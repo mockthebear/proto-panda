@@ -88,7 +88,7 @@ public:
 
         if (v < static_cast<float>(0.0) || w < static_cast<float>(0.0) || v > static_cast<float>(1.0) || w > static_cast<float>(1.0)) return false;
 
-        u = static_cast<float>(1.0) - v - w;
+        u = 1.0 - v - w;
 
         return u >= static_cast<float>(0.0f);
     }
@@ -194,7 +194,7 @@ template<typename T> class Model {
 
             return aux;
         };
-
+        //https://www.rose-hulman.edu/class/cs/csse351-abet/m10/triangle_fill.pdf
         bool DidIntersect(const T& x, const T& y, T& u, T& v, T& w, uint16_t &colorOut){
             if (x > boundaries.x[0]){
                 return false;
@@ -219,18 +219,18 @@ template<typename T> class Model {
                 T v2lY = y - points.y[tringleId];
 
                 v = (v2lX * v1Y[i] - v1X[i] * v2lY) * denominators[i];
-                if (v < static_cast<T>(0.0) || v > static_cast<T>(1.0)){
+                if (v < 0.0f || v > 1.0f){
                     continue;
                 }
                 w = (v0X[i] * v2lY - v2lX * v0Y[i]) * denominators[i];
 
-                if (w < static_cast<T>(0.0) || w > static_cast<T>(1.0)){
+                if (w < 0.0f || w > 1.0f){
                     continue;
                 }
 
-                u = static_cast<T>(1.0) - v - w;
+                float ue = 1.0 - v - w;
 
-                if (u >= static_cast<T>(0.0f)){
+                if (ue >= 0.0f){
                     colorOut = color[i];
                     return true;
                 }

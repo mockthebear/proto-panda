@@ -10,23 +10,15 @@ void RenderEngine::randomizeIt(){
 }
 
 void RenderEngine::beginTriangles(){
-    numTriangles = 128;
+    numTriangles = 3;
 
     Serial.printf("done it\n");
     mem.begin(numTriangles);
     
-    for (int i=0;i<numTriangles;i++){
-        Vec2f v1(rand()%64,rand()%32);
-        Vec2f v2(rand()%64,rand()%32);
-        Vec2f v3(rand()%64,rand()%32);
-        mem.setTriangle(i, Trianglef(v1,v2,v3, Devices::Display->color565(rand()%255,rand()%255,rand()%255)));
-    }
+mem.setTriangle(0, Trianglef(Vec2f(0.0f,0.0f), Vec2f(63.0f,31.0f), Vec2f(0.0f,31.0f), Devices::Display->color565(255,0,0)));
+mem.setTriangle(1, Trianglef(Vec2f(6.0f,0.0f), Vec2f(63.0f,30.0f), Vec2f(63.0f,0.0f), Devices::Display->color565(0,255,0)));
 
-    mem.setTriangle(0, Trianglef(Vec2f(8,16),Vec2f(16,16),Vec2f(16,8), Devices::Display->color565(255,0,0)));
-    mem.setTriangle(1, Trianglef(Vec2f(8,16),Vec2f(16,8),Vec2f(8,8), Devices::Display->color565(0,255,0)));
-    mem.setTriangle(2, Trianglef(Vec2f(8,8),Vec2f(0,8),Vec2f(8,16), Devices::Display->color565(0,0,255)));
-    mem.setTriangle(3, Trianglef(Vec2f(16,8),Vec2f(24,8),Vec2f(16,16), Devices::Display->color565(100,100,100)));
-
+mem.recalculate();
     Serial.printf("done it\n");
 
     started = true;
@@ -57,14 +49,14 @@ void RenderEngine::RenderTriangles() {
         triangles[i].recalculate();
     }*/
     uint32_t start = millis();
-    mem.rotate(Vec2f(32,16), 1 * M_PI / 180.0f);
+    //mem.rotate(Vec2f(32,16), 1 * M_PI / 180.0f);
     uint32_t diffOp = millis()-start;
     start = millis();
     //Devices::Display->clearScreen();
     Devices::Display->startWrite();
     float u = 0.0f, v = 0.0f, w = 0.0f;
-    for (int16_t y=0;y<PANEL_HEIGHT;y++){
-      for (int16_t x=0;x<PANEL_WIDTH;x++){  
+    for (float y=0;y<PANEL_HEIGHT;y++){
+      for (float x=0;x<PANEL_WIDTH;x++){  
             uint16_t color = 0;
             if (!mem.DidIntersect(x, y, u, v, w, color)){
                 color = 0;
