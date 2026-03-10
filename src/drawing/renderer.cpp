@@ -2,9 +2,19 @@
 #include "tools/devices.hpp"
 #include <Arduino.h>
 
-static Memes mem;
+static Modelf mem;
 
 void RenderEngine::randomizeIt(){
+    
+
+}
+
+void RenderEngine::beginTriangles(){
+    numTriangles = 128;
+
+    Serial.printf("done it\n");
+    mem.begin(numTriangles);
+    
     for (int i=0;i<numTriangles;i++){
         Vec2f v1(rand()%64,rand()%32);
         Vec2f v2(rand()%64,rand()%32);
@@ -17,13 +27,7 @@ void RenderEngine::randomizeIt(){
     mem.setTriangle(2, Trianglef(Vec2f(8,8),Vec2f(0,8),Vec2f(8,16), Devices::Display->color565(0,0,255)));
     mem.setTriangle(3, Trianglef(Vec2f(16,8),Vec2f(24,8),Vec2f(16,16), Devices::Display->color565(100,100,100)));
 
-}
-
-void RenderEngine::beginTriangles(){
-    numTriangles = mem.getSize();
-
     Serial.printf("done it\n");
-    randomizeIt();
 
     started = true;
 }
@@ -56,6 +60,7 @@ void RenderEngine::RenderTriangles() {
     mem.rotate(Vec2f(32,16), 1 * M_PI / 180.0f);
     uint32_t diffOp = millis()-start;
     start = millis();
+    //Devices::Display->clearScreen();
     Devices::Display->startWrite();
     float u = 0.0f, v = 0.0f, w = 0.0f;
     for (int16_t y=0;y<PANEL_HEIGHT;y++){
@@ -73,7 +78,7 @@ void RenderEngine::RenderTriangles() {
     
     uint32_t diff = millis()-start;
     Devices::Display->endWrite();
-    Serial.printf("Transformed in %d and rendered in %d ms\n", diffOp, diff);
+    Serial.printf("Transformed in %d and rendered in %d ms (%2.2f fps)\n", diffOp, diff, 1000.0f/(float)diff);
 }
 
 uint16_t RenderEngine::Raster(Trianglef* triangles, int numTriangles, Vec2f pixelRay) {

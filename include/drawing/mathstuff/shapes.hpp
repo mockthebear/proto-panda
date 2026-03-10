@@ -1,5 +1,6 @@
 #pragma once 
 #include "drawing/mathstuff/primitives.hpp"
+#include "tools/config_default.hpp"
 
 #include "esp_dsp.h"
 
@@ -94,20 +95,65 @@ public:
 
 };
 
-template<typename T, int triangleCount> class Model {
+template<typename T> class Model {
     public:
-        const int getSize(){ return triangleCount;};
-        VecAligned2<T, 3 * triangleCount> points;
-        T denominators[triangleCount]; 
-        T v0X[triangleCount];
-        T v0Y[triangleCount];
-        T v1X[triangleCount];
-        T v1Y[triangleCount]; 
-        uint16_t color[triangleCount];
+        Model():triangleCount(0),denominators(nullptr),v0X(nullptr),v0Y(nullptr),v1X(nullptr),v1Y(nullptr),aux1(nullptr),aux2(nullptr),aux3(nullptr),color(nullptr){};
+        bool begin(int sz){
+            triangleCount = sz;
+            points.Allocate(triangleCount * 3 );
+            int allocateSize = triangleCount * 5 + ((triangleCount * 3) * 3);
+            denominators =  (T*)heap_caps_malloc(allocateSize * sizeof(T), MALLOC_CAP_SPIRAM); 
+            if (denominators == nullptr){
+                points.Deallocate();
+                triangleCount = 0;
+                return false;
+            }
+            v0X = denominators + triangleCount * 1;
+            v0Y = denominators + triangleCount * 2;
+            v1X = denominators + triangleCount * 3;
+            v1Y = denominators + triangleCount * 4;
+            aux1 = denominators +((triangleCount * 5) + ((triangleCount * 3) * 0));
+            aux2 = denominators +((triangleCount * 5) + ((triangleCount * 3) * 1));
+            aux3 = denominators +((triangleCount * 5) + ((triangleCount * 3) * 2));
+            color = (uint16_t*)heap_caps_malloc(sizeof(uint16_t) * triangleCount, MALLOC_CAP_SPIRAM);
+            if (color == nullptr){
+                points.Deallocate();
+                heap_caps_free(denominators);
+                triangleCount = 0;
+                denominators = v0X = v0Y = v1X = v1Y = aux1 = aux2 = aux3 = nullptr;
+                color = nullptr;
+                return false;
+            }
+            return true;
+        }
+        void free(){
+            if (triangleCount == 0){
+                return;
+            }
+            points.Deallocate();
+            heap_caps_free(denominators);
+            heap_caps_free(color);
+            triangleCount = 0;
+            denominators = v0X = v0Y = v1X = v1Y = aux1 = aux2 = aux3 = color;
+            color = nullptr;
+        }
 
-        T aux1[3 * triangleCount];
-        T aux2[3 * triangleCount];
-        T aux3[3 * triangleCount];
+        const int getSize(){ return triangleCount;};
+
+        int triangleCount;
+        VecAlignedCustom<T> points;
+        T *denominators; 
+        T *v0X;
+        T *v0Y;
+        T *v1X;
+        T *v1Y; 
+        T *aux1;
+        T *aux2;
+        T *aux3;
+
+        uint16_t *color;
+        VecAligned2<T, 2> boundaries;
+        Vec2f center;
 
         
         void setTriangle(int i, Trianglef aux){
@@ -150,6 +196,19 @@ template<typename T, int triangleCount> class Model {
         };
 
         bool DidIntersect(const T& x, const T& y, T& u, T& v, T& w, uint16_t &colorOut){
+            if (x > boundaries.x[0]){
+                return false;
+            }
+            if (y > boundaries.y[0]){
+                return false;
+            }
+            if (x < boundaries.x[1]){
+                return false;
+            }
+            if (y < boundaries.y[1]){
+                return false;
+            }
+   
             for (int i=0;i<triangleCount;i++){
                 if (denominators[i] == 0.0f){
                     continue;
@@ -176,11 +235,14 @@ template<typename T, int triangleCount> class Model {
                     return true;
                 }
             }
+
             return false;
         }
 
         void recalculate(){            
-
+            if (triangleCount == 0){
+                return;
+            }
             //dsps_sub_f32(input1    , input2  , *output, len          , step1, step2, step_out);
             //out[i*step_out] = input1[i*step1] - input2[i*step2]; i=[0..len)
             //For 0, 3
@@ -202,23 +264,45 @@ template<typename T, int triangleCount> class Model {
             //aux1 = ((aux1[i]) - (aux2[i]));
             dsps_sub_f32(aux1, aux2, aux1    , triangleCount,     1,     1, 1);
       
-
+            boundaries.x[1] = PANEL_WIDTH;
+            boundaries.y[1] = PANEL_HEIGHT;
+            boundaries.x[0] = 0;
+            boundaries.y[0] = 0;
             for (int i=0;i<triangleCount;i++){
                 if (aux1[i] != 0.0f){
                     denominators[i] = 1.0f / aux1[i];
                 }else{
                     denominators[i] = 0.0f;
                 }
+                for (int j = 0; j < 3; j++){
+                    //Calculate max and mins
+                    int pointIdx = j+i*3;
+                    if (points.x[pointIdx] > boundaries.x[0] ){
+                        boundaries.x[0] = points.x[pointIdx];
+                    }
+                    if (points.y[pointIdx] > boundaries.y[0] ){
+                        boundaries.y[0] = points.y[pointIdx];
+                    }
+
+                    if (points.x[pointIdx] < boundaries.x[1]){
+                        boundaries.x[1] = points.x[pointIdx];
+                    }
+                    if (points.y[pointIdx] < boundaries.y[1]){
+                        boundaries.y[1] = points.y[pointIdx];
+                    }
+                }
             }
+            center.x = (boundaries.x[0]-boundaries.x[1])/2.0f;
+            center.y = (boundaries.y[0]-boundaries.y[1])/2.0f;
         }
 
         void rotate(Vec2f center, float angle){
-
+            if (triangleCount == 0){
+                return;
+            }
             //esp_err_t dsps_mulc_f32_ae32(const float *input, float *output, int len, float C, int step_in, int step_out);
             // x[i*step_out] = y[i*step_in]*C; i=[0..len)
             const int vecSize = triangleCount * 3;
-
-
 
             float commonCos = cos(angle);
             float commonSin = sin(angle);
@@ -242,28 +326,37 @@ template<typename T, int triangleCount> class Model {
         
             recalculate();
         };
+
+        void translate(Vec2f delta) {
+            if (triangleCount == 0) {
+                return;
+            }
+
+            const int vecSize = triangleCount * 3;
+            dsps_addc_f32(this->points.x, this->points.x, vecSize, delta.x, 1, 1);
+            dsps_addc_f32(this->points.y, this->points.y, vecSize, delta.y, 1, 1);
+            
+            recalculate();
+        }
+
+        void scale(Vec2f center, Vec2f scaleFactors) {
+            if (triangleCount == 0) {
+                return;
+            }
+            
+            const int vecSize = triangleCount * 3;
+            
+            dsps_addc_f32(this->points.x, this->points.x, vecSize, -center.x, 1, 1);
+            dsps_addc_f32(this->points.y, this->points.y, vecSize, -center.y, 1, 1);
+            
+            dsps_mulc_f32(this->points.x, this->points.x, vecSize, scaleFactors.x, 1, 1);
+            dsps_mulc_f32(this->points.y, this->points.y, vecSize, scaleFactors.y, 1, 1);
+            
+            dsps_addc_f32(this->points.x, this->points.x, vecSize, center.x, 1, 1);
+            dsps_addc_f32(this->points.y, this->points.y, vecSize, center.y, 1, 1);
+            
+            recalculate();
+        }
 };
 
-typedef Model<float, 16> Memes; 
-
-/*
-template<typename T, int N> class Shape {
-    public:
-        const int getSize(){ return N;};
-        Triangle<T> elements[N];
-};
-
-template<typename T> class Square : public Shape<T,2>  {
-public:
-    Square(){};
-    Square(const Vec2<T>& c1, const Vec2<T>& c2, const Vec2<T>& c3, const Vec2<T>& c4, uint16_t color=0){
-        this->elements[0] = Triangle<T>(c1, c2, c3, color);
-        this->elements[1] = Triangle<T>(c3, c4, c1, color);
-    }
-
-    void setColor(uint16_t color){
-        this->elements[0].color = this->elements[1].color = color;
-    }
-};
-
-*/
+typedef Model<float> Modelf; 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "esp_heap_caps.h"
 
 template<typename T> class Vec2{
     public:
@@ -17,6 +18,26 @@ template<typename T> class Vec3 : public Vec2<T>{
     Vec3(T x1, T y1, T z1):Vec2<T>(x1, y1),z(z1){};
     T z;
 };
+
+
+template<typename T> class VecAlignedCustom{
+    public:
+    VecAlignedCustom():x(nullptr),y(nullptr){};
+    void Allocate(int size){
+        x = (T*)heap_caps_malloc(size*2 * sizeof(T), MALLOC_CAP_SPIRAM);   
+        y = x+size;   
+    };
+    void Deallocate(){
+        if (x == nullptr){
+            return;
+        }
+        heap_caps_free(x);
+        x = y = nullptr;
+    };
+    T *x;
+    T *y;
+};
+
 
 template<typename T, int N> class VecAligned2{
     public:
