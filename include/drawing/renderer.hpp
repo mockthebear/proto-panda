@@ -19,6 +19,7 @@ class RenderEngine{
         void beginTriangles();
 
 
+        Scene sc;
 
 
 };
