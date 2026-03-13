@@ -102,6 +102,7 @@ public:
 */
 
 class Model;
+class Scene;
 
 typedef std::vector<int> PointList;
 class PointGroups{
@@ -121,7 +122,7 @@ class PointGroups{
 
 class Model {
     public:
-        Model():triangleCount(0),denominators(nullptr),v0X(nullptr),v0Y(nullptr),v1X(nullptr),v1Y(nullptr),aux1(nullptr),aux2(nullptr),aux3(nullptr),color(nullptr),accumulatedOperation(true),batchOperations(false){
+        Model():triangleCount(0),aux1(nullptr),aux2(nullptr),aux3(nullptr),color(nullptr),accumulatedOperation(true),batchOperations(false){
             bones.setModel(this);
         };
         bool Begin(int sz);
@@ -145,14 +146,11 @@ class Model {
             batchOperations = b;
         }
 
+      
+
         int triangleCount;
         VecAlignedCustom<float> originalPoints;
         VecAlignedCustom<float> points;
-        float *denominators; 
-        float *v0X;
-        float *v0Y;
-        float *v1X;
-        float *v1Y; 
         float *aux1;
         float *aux2;
         float *aux3;
@@ -169,24 +167,41 @@ class Model {
         void SetTriangle(int i, Vec2f p1, Vec2f p2, Vec2f p3, uint16_t color);
 
         Trianglef GetTriangle(int i);
-        //https://www.rose-hulman.edu/class/cs/csse351-abet/m10/triangle_fill.pdf
-        //https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/rasterization-stage.html
-        bool DidIntersect(const float& x, const float& y, float& u, float& v, float& w, uint16_t &colorOut);
+        void RasterTriangle(Scene *s, int i);
+
+        
 
 
 };
 
 class Scene {
     public:
-        
+        __attribute__((aligned(32)))
+        uint8_t pixelBitmap[PANEL_HEIGHT * (PANEL_WIDTH/8)];
 
         void RenderScene();
-        inline bool RenderModels(const float& x, const float& y, uint16_t &colorOut);
+        void RenderModels();
 
         void addModel(Model *m){
             models.emplace_back(m);
         };
 
+        
+        void RasterTriangleScanline(const Model* model, int triangleIdx, uint16_t color);
+                    
+            // Mark pixel as drawn, return true if it was already drawn
+        inline bool IRAM_ATTR MarkPixel(int x, int y) {
+            // Single line: check and set without temporary variable
+            uint8_t* bytePtr = &pixelBitmap[(y * (PANEL_WIDTH/8)) + (x >> 3)];
+            uint8_t mask = 1 << (x & 7);
+            
+            // Compiler will optimize this well
+            if (*bytePtr & mask) return true;
+            *bytePtr |= mask;
+            return false;
+        }
+
+            
 
         std::vector<Model*> models;
 };
