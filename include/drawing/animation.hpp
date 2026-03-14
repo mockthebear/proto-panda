@@ -25,6 +25,7 @@ enum AnimationFrameAction{
     ANIMATION_NO_CHANGE,
     ANIMATION_FRAME_CHANGED,
     ANIMATION_FINISHED,
+    ANIMATION_MODEL,
 };
 class FrameRepository;
 extern FrameRepository g_frameRepo;
@@ -32,7 +33,7 @@ extern FrameRepository g_frameRepo;
 
 class AnimationSequence{
     public:
-        AnimationSequence():m_duration(2500),m_frame(0),m_counter(0),m_repeat(-1),m_updateMode(0),m_storageId(-1),m_isNew(true){}
+        AnimationSequence():m_duration(2500),m_frame(0),m_counter(0),m_repeat(-1),m_updateMode(0),m_storageId(-1),m_isNew(true),m_isModel(false){}
         PSRAMVector<int> m_frames;
         AnimationFrameAction Update(int m_interruptPin);
         inline int GetFrameId();
@@ -43,6 +44,7 @@ class AnimationSequence{
         int m_updateMode;
         int m_storageId;
         bool m_isNew;
+        bool m_isModel;
     private:
         AnimationFrameAction ChangeFrame();
         AnimationFrameAction InterruptFrame(int pinRead);
@@ -57,17 +59,19 @@ class Animation{
 
         void Update(File *file);
 
+        void SetModelAnimation(std::vector<int> models, bool dropAll);
         void SetAnimation(int duration, std::vector<int> frames, int repeatTimes, bool dropAll, int externalStorageId=-1);
         void SetInterruptAnimation(int duration, std::vector<int> frames);
         void SetInterruptPin(int pin){
             m_interruptPin = pin;
         }
+        void DrawAnimatonModel(AnimationSequence &running);
         void DrawFrame(File *file, int i);
         void DrawCurrentFrame(File *file){
             DrawFrame(file, m_lastFace);
         }
 
-        
+        int LoadModel(ModelData triangles);
 
         bool PopAnimation();
         void MakeFlip();
@@ -130,6 +134,8 @@ class Animation{
         uint64_t m_frameLoadDuration;
         uint64_t m_cycleDuration;
         SemaphoreHandle_t m_mutex;
+
+        Scene m_scene;
         
 };
 

@@ -35,11 +35,11 @@ void RenderEngine::beginTriangles(){
     mem->SetTriangle(13, Vec2f(9.0f,16.0f), Vec2f(6.0f,16.0f), Vec2f(4.0f,18.0f), Devices::Display->color565(0,0,255));
     mem->SetTriangle(14, Vec2f(4.0f,20.0f), Vec2f(10.0f,21.0f), Vec2f(6.0f,22.0f), Devices::Display->color565(0,0,255));
 
-    mem->AddPointGroup(std::vector<int>({1, 2, 5, 6, 9, 10}));
-    mem->AddPointGroup(std::vector<int>({7, 8, 11, 12, 15, 16}));
-    mem->AddPointGroup(std::vector<int>({13, 14, 17, 18, 19, 23}));
-    mem->AddPointGroup(std::vector<int>({20, 21, 22, 24, 27, 28}));
-    mem->AddPointGroup(std::vector<int>({25, 26, 29}));
+    //mem->AddPointGroup(PointList({1, 2, 5, 6, 9, 10}));
+    //mem->AddPointGroup(PointList({7, 8, 11, 12, 15, 16}));
+    //mem->AddPointGroup(PointList({13, 14, 17, 18, 19, 23}));
+    //mem->AddPointGroup(PointList({20, 21, 22, 24, 27, 28}));
+    //mem->AddPointGroup(PointList({25, 26, 29}));
     mem->Reset();
     mem->Recalculate();
     mem->SetBatchOperations(true);
@@ -58,8 +58,8 @@ void RenderEngine::beginTriangles(){
     mem->SetTriangle(5, Vec2f(14.0f,6.0f), Vec2f(18.0f,7.0f), Vec2f(17.0f,8.0f), Devices::Display->color565(102,102,255));
     mem->SetTriangle(6, Vec2f(16.0f,5.0f), Vec2f(14.0f,6.0f), Vec2f(18.0f,7.0f), Devices::Display->color565(102,102,255));
 
-    mem->AddPointGroup(std::vector<int>({3, 6, 7, 9, 10, 18}));
-    mem->AddPointGroup(std::vector<int>({2, 13, 14, 16, 17}));
+    //mem->AddPointGroup(PointList({3, 6, 7, 9, 10, 18}));
+    //mem->AddPointGroup(PointList({2, 13, 14, 16, 17}));
     mem->Reset();
     mem->Recalculate();
     mem->SetBatchOperations(true);

@@ -104,10 +104,10 @@ public:
 class Model;
 class Scene;
 
-typedef std::vector<int> PointList;
+
 class PointGroups{
-    PointGroups():groupCount(0),mainModel(nullptr){};
     public:
+        PointGroups():groupCount(0),mainModel(nullptr){};
         void Translate(uint32_t group, Vec2f position);
         void Scale(uint32_t group, Vec2f center, Vec2f scaleFactors);
         void Set(uint32_t group, Vec2f position);
@@ -121,6 +121,7 @@ class PointGroups{
         friend class Model;
 };
 
+
 class Model {
     public:
         Model():triangleCount(0),aux1(nullptr),aux2(nullptr),aux3(nullptr),color(nullptr),accumulatedOperation(true),batchOperations(false){
@@ -133,8 +134,9 @@ class Model {
         void Translate(Vec2f delta);
         void Reset();
         void Store();
+        void CopyToRaster();
         void Scale(Vec2f center, Vec2f scaleFactors);
-        int AddPointGroup(std::vector<int> points);
+        int AddPointGroup(PointList &points);
 
         void TranslatePoints(uint32_t pointId, Vec2f delta);
         void ScalePoints(uint32_t pointId, Vec2f center, Vec2f scaleFactors);
@@ -148,11 +150,10 @@ class Model {
             batchOperations = b;
         }
 
-      
-
         int triangleCount;
         VecAlignedCustom<float> originalPoints;
         VecAlignedCustom<float> points;
+        VecAlignedCustom<float> rasterPoints;
         float *aux1;
         float *aux2;
         float *aux3;
@@ -172,10 +173,6 @@ class Model {
 
         Trianglef GetTriangle(int i);
         void RasterTriangle(Scene *s, int i);
-
-        
-
-
 };
 
 class Scene {
@@ -186,25 +183,18 @@ class Scene {
         void RenderScene();
         void RenderModels();
 
-        void addModel(Model *m){
+        int addModel(Model *m){
             models.emplace_back(m);
+            return models.size() -1;
         };
-
-      
                     
-            // Mark pixel as drawn, return true if it was already drawn
         inline bool IRAM_ATTR MarkPixel(int x, int y) {
-            // Single line: check and set without temporary variable
             uint8_t* bytePtr = &pixelBitmap[(y * (PANEL_WIDTH/8)) + (x >> 3)];
             uint8_t mask = 1 << (x & 7);
-            
-            // Compiler will optimize this well
             if (*bytePtr & mask) return true;
             *bytePtr |= mask;
             return false;
         }
-
-            
 
         std::vector<Model*> models;
 };

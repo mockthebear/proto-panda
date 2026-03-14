@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <vector>
 #include "lua/luainterface.hpp"
+#include "drawing/mathstuff/shapes.hpp"
 
 #ifdef ENABLE_HUB75_PANEL
 
@@ -28,6 +29,8 @@ void FlipScreen();
 void deleteBulkFile();
 void composeBulkFile();
 void setAnimation(std::vector<int> frames, int duration, int repeatTimes, bool dropAll, int externalStorageId);
+void setModelAnimation(std::vector<int> frames, bool dropAll);
+void loadModel(ModelData triangles);
 void setInterruptFrames(std::vector<int> frames, int duration );
 void setInterruptAnimationPin(int pin);
 void setManaged(bool bn);

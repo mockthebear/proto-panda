@@ -593,7 +593,12 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("drawPanelFillTriangle", DrawFillTriangle);
   m_lua->FuncRegister("clearPanelBuffer", ClearScreen);
   m_lua->FuncRegister("drawPanelFace", DrawFace);
+
   m_lua->FuncRegisterOptional("setPanelAnimation", setAnimation, -1, false, -1, 250);
+  m_lua->FuncRegisterOptional("setModelAnimation", setModelAnimation, false);
+  m_lua->FuncRegisterOptional("loadModel", loadModel);
+
+
   m_lua->FuncRegister("popPanelAnimation", popPanelAnimation); 
   m_lua->FuncRegister("setPanelColorMode", setColorMode); 
   m_lua->FuncRegisterOptional("gentlySetPanelBrightness", gentlySetPanelBrightness, 0, 4);

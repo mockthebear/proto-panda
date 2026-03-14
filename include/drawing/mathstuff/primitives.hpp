@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <vector>
 #include "esp_heap_caps.h"
 
 template<typename T> class Vec2{
@@ -52,3 +53,20 @@ typedef Vec2<float> Vec2f;
 typedef Vec3<float> Vec3f;
 typedef Vec2<int> Vec2i;
 typedef Vec3<int> Vec3i;
+
+class TriangleData{
+    public:
+        Vec2f p1;
+        Vec2f p2;
+        Vec2f p3;
+        uint16_t color;
+};
+
+class ModelData{
+    public:
+        std::vector<float> x;
+        std::vector<float> y;
+        std::vector<uint16_t> color;
+};
+
+typedef std::vector<int> PointList;

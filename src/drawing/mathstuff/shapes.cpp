@@ -67,11 +67,13 @@ bool Model::Begin(int sz){
     triangleCount = sz;
     points.Allocate(triangleCount * 3 );
     originalPoints.Allocate(triangleCount * 3 );
+    rasterPoints.Allocate(triangleCount * 3 );
     int allocateSize = (triangleCount * 3) * 3;
     aux1 =  (float*)heap_caps_malloc(allocateSize * sizeof(float), MALLOC_CAP_SPIRAM); 
     if (aux1 == nullptr){
         points.Deallocate();
         originalPoints.Deallocate();
+        rasterPoints.Deallocate();
         triangleCount = 0;
         return false;
     }
@@ -80,6 +82,7 @@ bool Model::Begin(int sz){
 
     color = (uint16_t*)heap_caps_malloc(sizeof(uint16_t) * triangleCount, MALLOC_CAP_SPIRAM);
     if (color == nullptr){
+        rasterPoints.Deallocate();
         originalPoints.Deallocate();
         points.Deallocate();
         heap_caps_free(aux1);
@@ -101,6 +104,7 @@ void Model::Free(){
         return;
     }
     originalPoints.Deallocate();
+    rasterPoints.Deallocate();
     points.Deallocate();
     heap_caps_free(aux1);
     heap_caps_free(color);
@@ -190,6 +194,12 @@ void Model::Store() {
     if (!batchOperations){
         Recalculate();
     }
+}
+
+void Model::CopyToRaster() {
+    const int vecSize = triangleCount * 3;
+    dsps_addc_f32(this->points.x, this->rasterPoints.x, vecSize, 0, 1, 1);
+    dsps_addc_f32(this->points.y, this->rasterPoints.y, vecSize, 0, 1, 1);
 }
 
 void Model::Scale(Vec2f center, Vec2f scaleFactors) {
@@ -351,7 +361,7 @@ void Model::SetTriangle(int i, Trianglef aux){
     color[i] = aux.color;
 }
 
-int Model::AddPointGroup(std::vector<int> pts) {
+int Model::AddPointGroup(PointList &pts) {
     bones.points.emplace_back(pts);
     bones.groupCount++;
     return bones.points.size() - 1; 
@@ -360,12 +370,12 @@ void Model::RasterTriangle(Scene *scene, int i){
 
     int baseIdx = i * 3;
 
-    int16_t x0 = points.x[baseIdx + 0]; 
-    int16_t y0 = points.y[baseIdx + 0]; 
-    int16_t x1 = points.x[baseIdx + 1]; 
-    int16_t y1 = points.y[baseIdx + 1];
-    int16_t x2 = points.x[baseIdx + 2]; 
-    int16_t y2 = points.y[baseIdx + 2]; 
+    int16_t x0 = rasterPoints.x[baseIdx + 0]; 
+    int16_t y0 = rasterPoints.y[baseIdx + 0]; 
+    int16_t x1 = rasterPoints.x[baseIdx + 1]; 
+    int16_t y1 = rasterPoints.y[baseIdx + 1];
+    int16_t x2 = rasterPoints.x[baseIdx + 2]; 
+    int16_t y2 = rasterPoints.y[baseIdx + 2]; 
     uint16_t color = this->color[i];
     int16_t a, b, y, last;
   
@@ -494,6 +504,7 @@ void Scene::RenderModels(){
 void Model::TranslatePoints(uint32_t groupid, Vec2f delta){
     bones.Translate(groupid, delta);
 }
+
 void Model::ScalePoints(uint32_t groupid, Vec2f center, Vec2f scaleFactors){
     bones.Scale(groupid, center, scaleFactors);
 }
@@ -501,35 +512,17 @@ void Model::SetPointsPosition(uint32_t groupid, Vec2f pos){
     bones.Set(groupid, pos);
 }
 
-
 void Scene::RenderScene(){
-    /*Devices::Display->startWrite();
-    uint8_t r,g,b;
-    for (float y=0;y<PANEL_HEIGHT;y++ ){
-      for (float x=0;x<PANEL_WIDTH;x++){  
-            uint16_t color = 0;
-            RenderModels(x,y,color);
-            //Raster(triangles, numTriangles, Vec2f(x,y)); 
-            Devices::Display->color565to888(color, r, g, b);
-            Devices::Display->updateMatrixDMABuffer_2(x, y, r, g, b);
-            Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH)+x, y, r, g, b);
-      }
-    }
-    Devices::Display->endWrite();*/
     Devices::Display->startWrite();
     memset(pixelBitmap, 0, sizeof(pixelBitmap));
-    
-    // Clear the display buffer (you might want to add a clear color)
     uint8_t r, g, b;
-    Devices::Display->color565to888(0, r, g, b); // Black background
+    Devices::Display->color565to888(0, r, g, b);
     for (float y = 0; y < PANEL_HEIGHT; y++) {
         for (float x = 0; x < PANEL_WIDTH; x++) {
             Devices::Display->updateMatrixDMABuffer_2(x, y, r, g, b);
             Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH) + x, y, r, g, b);
         }
     }
-    
     RenderModels();
-    
     Devices::Display->endWrite();
 }
