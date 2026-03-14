@@ -1,0 +1,3153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #333;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* TOP BAR */
+        .top-bar {
+            background: #2d2d2d;
+            border-bottom: 2px solid #444;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: inset 0 -2px 0 #3a3a3a;
+            z-index: 200;
+            position: relative;
+        }
+        .top-bar-icon {
+            width: 32px;
+            height: 32px;
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            color: #ccc;
+            transition: all 0.1s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .top-bar-icon:hover {
+            background: #4a4a4a;
+            border-color: #777;
+        }
+        .top-bar-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #111;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 10000;
+            border: 1px solid #ff9900;
+            pointer-events: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+        }
+        .top-bar-separator {
+            width: 1px;
+            height: 24px;
+            background: #444;
+            margin: 0 8px;
+        }
+
+        /* MAIN LAYOUT */
+        .main-layout {
+            display: flex;
+            flex: 1;
+            position: relative;
+        }
+
+        /* LEFT PANEL */
+        .left-panel {
+            width: 60px;
+            background: #2d2d2d;
+            border-right: 2px solid #444;
+            padding: 8px 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            box-sizing: border-box;
+            box-shadow: inset -2px 0 0 #3a3a3a;
+            position: relative;
+        }
+        .panel-section-label {
+            color: #aaa;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+            margin-bottom: 2px;
+            width: 100%;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 1px solid #444;
+            padding-bottom: 2px;
+        }
+        .tool-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+            align-items: center;
+        }
+        .tool-icon {
+            width: 36px;
+            height: 36px;
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            color: #ccc;
+            transition: all 0.1s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .tool-icon.active {
+            background: #ff9900;
+            border-color: #ffaa33;
+            color: #111;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .tool-icon:hover {
+            background: #4a4a4a;
+            border-color: #777;
+        }
+        .tool-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 110%;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #111;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 10000;
+            border: 1px solid #ff9900;
+            pointer-events: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+        }
+        .color-picker-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .color-label {
+            color: #aaa;
+            font-size: 9px;
+            text-transform: uppercase;
+        }
+        #colorPicker {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border: 2px solid #ff9900;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #ffffff;
+        }
+        .tool-separator {
+            width: 80%;
+            height: 1px;
+            background: #444;
+            margin: 4px 0;
+        }
+        .toggle-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            border-top: 1px solid #444;
+            margin-top: 4px;
+        }
+        .toggle-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            color: #aaa;
+            font-size: 9px;
+            width: 100%;
+        }
+        .toggle-box {
+            width: 36px;
+            height: 36px;
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            color: #ccc;
+            transition: all 0.1s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .toggle-box.active {
+            background: #ff9900;
+            border-color: #ffaa33;
+            color: #111;
+        }
+        .toggle-box:hover {
+            background: #4a4a4a;
+            border-color: #777;
+        }
+        .points-icon {
+            display: flex;
+            gap: 3px;
+            align-items: center;
+            justify-content: center;
+        }
+        .points-icon span {
+            width: 5px;
+            height: 5px;
+            background: currentColor;
+            border-radius: 50%;
+        }
+        .lines-icon {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(-10deg);
+        }
+        .lines-icon span {
+            width: 12px;
+            height: 2px;
+            background: currentColor;
+            border-radius: 1px;
+        }
+        .lines-icon span:first-child {
+            transform: rotate(45deg);
+        }
+        .lines-icon span:last-child {
+            transform: rotate(-45deg);
+        }
+        .grid-icon {
+            font-size: 22px;
+            font-weight: bold;
+            line-height: 1;
+        }
+        .circle-icon {
+            font-size: 18px;
+            line-height: 1;
+        }
+        .pixel-icon {
+            font-size: 18px;
+            line-height: 1;
+            font-weight: bold;
+        }
+
+        /* RIGHT PANEL */
+        .right-panel {
+            width: 260px;
+            background: #2d2d2d;
+            border-left: 2px solid #555;
+            padding: 15px;
+            color: #eee;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 150;
+            position: relative;
+        }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .panel-header h3 {
+            margin: 0;
+            border-bottom: none;
+            padding: 0;
+        }
+        .add-model-btn {
+            background: #ff9900;
+            color: #111;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .add-model-btn:hover {
+            background: #ffaa33;
+        }
+        .model-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .model-item {
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        .model-item.selected {
+            border: 2px solid #ff9900;
+            background: #4a4a4a;
+            padding: 9px;
+        }
+        .model-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+        .model-vis-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #ff9900;
+        }
+        .model-name {
+            flex: 1;
+            font-size: 14px;
+            color: #ddd;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .model-count {
+            font-size: 12px;
+            color: #aaa;
+            background: #2d2d2d;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        .model-controls {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .model-order-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-right: 4px;
+        }
+        .model-order-btn {
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 3px;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #ccc;
+            font-size: 12px;
+            transition: all 0.1s;
+        }
+        .model-order-btn:hover {
+            background: #4a4a4a;
+            border-color: #ff9900;
+            color: #ff9900;
+        }
+        .model-order-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .model-order-btn:disabled:hover {
+            background: #3c3c3c;
+            border-color: #555;
+            color: #ccc;
+        }
+        .model-gear-btn {
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 3px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #ccc;
+            font-size: 14px;
+            transition: all 0.1s;
+        }
+        .model-gear-btn:hover {
+            background: #4a4a4a;
+            border-color: #ff9900;
+            color: #ff9900;
+        }
+        .model-remove {
+            color: #ff6666;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+        .model-remove:hover {
+            color: #ff9999;
+        }
+        .model-collapsible {
+            margin-left: 26px;
+            border-left: 1px solid #555;
+            padding-left: 8px;
+        }
+        .model-collapse-header {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #aaa;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 4px 0;
+        }
+        .model-collapse-header:hover {
+            color: #ff9900;
+        }
+        .model-collapse-content {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 4px 0;
+        }
+        .group-item {
+            background: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        .group-item.selected-group {
+            border: 2px solid #ff9900;
+            background: #3a3a3a;
+            padding: 7px;
+        }
+        .group-item:hover {
+            background: #4a4a4a;
+            border-color: #ff9900;
+        }
+        .group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .group-name {
+            font-weight: bold;
+            color: #ffaa33;
+        }
+        .group-delete-btn {
+            background: #ff6666;
+            color: #111;
+            border: none;
+            border-radius: 3px;
+            width: 20px;
+            height: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+        }
+        .group-delete-btn:hover {
+            background: #ff4444;
+            transform: scale(1.1);
+        }
+        .group-points-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .group-point-badge {
+            background: #1e1e1e;
+            color: #9cdcfe;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #444;
+        }
+        .group-item-placeholder {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 8px;
+        }
+        .right-placeholder {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            border: 2px dashed #444;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow: auto;
+            min-width: 0;
+            z-index: 1;
+            position: relative;
+        }
+        h1 {
+            color: white;
+            margin-top: 0;
+            border-bottom: 1px solid #555;
+            padding-bottom: 8px;
+        }
+        .canvas-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #222;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            box-sizing: border-box;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+        #meuCanvas {
+            border: 1px solid #000;
+            width: 1024px;
+            height: 512px;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+            background: #111;
+            display: block;
+            flex-shrink: 0;
+        }
+        /* Combined info bar: point info on left, coords on right, group button in middle */
+        .xy-info-bar {
+            width: 1024px;
+            background: #1e1e1e;
+            color: #ff9900;
+            padding: 6px 12px;
+            margin-top: 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            border: 1px solid #555;
+            display: flex;
+            justify-content: space-between;
+            box-sizing: border-box;
+            align-items: center;
+            min-height: 40px;
+        }
+        .left-info {
+            color: #ffaa33;
+            width: 140px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .middle-info {
+            flex: 1;
+            text-align: center;
+            min-width: 160px;
+        }
+        .create-group-btn {
+            background: #ff9900;
+            color: #111;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 16px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: all 0.1s;
+            white-space: nowrap;
+            border: 1px solid #ffaa33;
+        }
+        .create-group-btn:hover {
+            background: #ffaa33;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+        .create-group-btn:active {
+            transform: translateY(0px);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        .right-info {
+            color: #9cdcfe;
+            width: 140px;
+            text-align: right;
+            white-space: nowrap;
+        }
+        .right-info span {
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .code-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border: 1px solid #555;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        .code-label {
+            color: #9cdcfe;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        /* Selection rectangle */
+        .selection-rect {
+            position: fixed;
+            border: 1px dashed #ff9900;
+            background: rgba(255,153,0,0.1);
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
+        /* Confirmation Dialog */
+        .confirm-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2d2d2d;
+            border: 2px solid #ff9900;
+            border-radius: 8px;
+            padding: 20px;
+            color: #eee;
+            font-family: 'Courier New', monospace;
+            z-index: 10000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            display: none;
+        }
+        .confirm-dialog.active {
+            display: block;
+        }
+        .confirm-dialog p {
+            margin: 0 0 20px 0;
+            font-size: 16px;
+        }
+        .confirm-dialog-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .confirm-btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        .confirm-btn.yes {
+            background: #ff6666;
+            color: #111;
+        }
+        .confirm-btn.yes:hover {
+            background: #ff4444;
+        }
+        .confirm-btn.no {
+            background: #666;
+            color: #eee;
+        }
+        .confirm-btn.no:hover {
+            background: #888;
+        }
+        /* Name Input Dialog */
+        .name-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2d2d2d;
+            border: 2px solid #ff9900;
+            border-radius: 8px;
+            padding: 20px;
+            color: #eee;
+            font-family: 'Courier New', monospace;
+            z-index: 10000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            display: none;
+            min-width: 300px;
+        }
+        .name-dialog.active {
+            display: block;
+        }
+        .name-dialog h3 {
+            margin: 0 0 15px 0;
+            color: #ff9900;
+        }
+        .name-dialog input {
+            width: 100%;
+            padding: 8px;
+            background: #1e1e1e;
+            border: 1px solid #555;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        .name-dialog input:focus {
+            outline: none;
+            border-color: #ff9900;
+        }
+        .name-dialog-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .name-dialog-btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        .name-dialog-btn.create {
+            background: #ff9900;
+            color: #111;
+        }
+        .name-dialog-btn.create:hover {
+            background: #ffaa33;
+        }
+        .name-dialog-btn.cancel {
+            background: #666;
+            color: #eee;
+        }
+        .name-dialog-btn.cancel:hover {
+            background: #888;
+        }
+        /* Model Settings Dialog */
+        .model-settings-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2d2d2d;
+            border: 2px solid #ff9900;
+            border-radius: 8px;
+            padding: 20px;
+            color: #eee;
+            font-family: 'Courier New', monospace;
+            z-index: 10000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            display: none;
+            min-width: 300px;
+        }
+        .model-settings-dialog.active {
+            display: block;
+        }
+        .model-settings-dialog h3 {
+            margin: 0 0 15px 0;
+            color: #ff9900;
+        }
+        .model-settings-dialog .settings-row {
+            margin-bottom: 15px;
+        }
+        .model-settings-dialog label {
+            display: block;
+            color: #aaa;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        .model-settings-dialog input {
+            width: 100%;
+            padding: 8px;
+            background: #1e1e1e;
+            border: 1px solid #555;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .model-settings-dialog input:focus {
+            outline: none;
+            border-color: #ff9900;
+        }
+        .model-settings-dialog .danger-btn {
+            background: #ff6666;
+            color: #111;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .model-settings-dialog .danger-btn:hover {
+            background: #ff4444;
+        }
+        .model-settings-dialog-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+        .model-settings-dialog-btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        .model-settings-dialog-btn.save {
+            background: #ff9900;
+            color: #111;
+        }
+        .model-settings-dialog-btn.save:hover {
+            background: #ffaa33;
+        }
+        .model-settings-dialog-btn.cancel {
+            background: #666;
+            color: #eee;
+        }
+        .model-settings-dialog-btn.cancel:hover {
+            background: #888;
+        }
+        /* Overlay Control Panel */
+        .overlay-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2d2d2d;
+            border: 2px solid #ff9900;
+            border-radius: 8px;
+            padding: 20px;
+            color: #eee;
+            font-family: 'Courier New', monospace;
+            z-index: 10000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            display: none;
+            min-width: 300px;
+        }
+        .overlay-panel.active {
+            display: block;
+        }
+        .overlay-panel h3 {
+            margin: 0 0 20px 0;
+            color: #ff9900;
+            border-bottom: 1px solid #555;
+            padding-bottom: 8px;
+        }
+        .overlay-panel-section {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #3c3c3c;
+            border-radius: 4px;
+        }
+        .overlay-panel-section h4 {
+            margin: 0 0 10px 0;
+            color: #ffaa33;
+            font-size: 14px;
+        }
+        .overlay-panel-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .overlay-panel-label {
+            color: #aaa;
+            font-size: 12px;
+        }
+        .overlay-panel-slider {
+            flex: 1;
+            margin: 0 10px;
+            height: 4px;
+            background: #555;
+            border-radius: 2px;
+
+        }
+        .overlay-panel-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #ff9900;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .overlay-panel-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #ff9900;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        .overlay-panel-value {
+            min-width: 40px;
+            text-align: right;
+            color: #9cdcfe;
+            font-size: 12px;
+        }
+        .overlay-panel-select {
+            background: #1e1e1e;
+            border: 1px solid #555;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            width: 100px;
+        }
+        .overlay-panel-button {
+            background: #ff9900;
+            color: #111;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        .overlay-panel-button:hover {
+            background: #ffaa33;
+        }
+        .overlay-panel-button.danger {
+            background: #ff6666;
+        }
+        .overlay-panel-button.danger:hover {
+            background: #ff4444;
+        }
+        .overlay-panel-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        .overlay-panel-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .overlay-panel-close:hover {
+            color: #ff9900;
+        }
+        .overlay-panel-info {
+            color: #9cdcfe;
+            font-size: 12px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .alpha-slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <div class="top-bar-icon" id="saveBtn" data-tooltip="Save">💾</div>
+        <div class="top-bar-icon" id="loadBtn" data-tooltip="Load">📂</div>
+        <div class="top-bar-separator"></div>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <div class="main-layout">
+        <div class="left-panel">
+            <div class="panel-section-label">TOOLS</div>
+            <div class="tool-grid">
+                <div class="tool-icon" id="toolAddPoints" data-tooltip="Add points (A)">✏️</div>
+                <div class="tool-icon active" id="toolMovePoints" data-tooltip="Move vertices (M)">✋</div>
+                <div class="tool-icon" id="toolSelectPoints" data-tooltip="Select points (S)">🔲</div>
+                <div class="tool-icon" id="toolPaintPoints" data-tooltip="Paint triangle (P)">🎨</div>
+                <div class="tool-icon" id="toolDeleteTriangle" data-tooltip="Delete triangle (D)">🗑️</div>
+                <!-- Overlay tool button -->
+                <div class="tool-icon" id="toolOverlay" data-tooltip="Overlay controls (O)">🖼️</div>
+            </div>
+            
+            <div class="color-picker-container">
+                <div class="color-label">COLOR</div>
+                <input type="color" id="colorPicker" value="#ffffff">
+            </div>
+
+            <div class="tool-separator"></div>
+            
+            <div class="panel-section-label">View</div>
+            <div class="toggle-section">
+                <div class="toggle-item">
+                    <div class="toggle-box active" id="togglePointsBtn" title="Toggle points">
+                        <div class="points-icon">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    <span class="color-label">POINTS</span>
+                </div>
+                <div class="toggle-item">
+                    <div class="toggle-box active" id="toggleLinesBtn" title="Toggle lines">
+                        <div class="lines-icon">
+                            <span></span><span></span>
+                        </div>
+                    </div>
+                    <span class="color-label">LINES</span>
+                </div>
+                <div class="toggle-item">
+                    <div class="toggle-box active" id="toggleGridBtn" title="Toggle grid">
+                        <div class="grid-icon">⧉</div>
+                    </div>
+                    <span class="color-label">GRID</span>
+                </div>
+                <div class="toggle-item">
+                    <div class="toggle-box" id="toggleCirclesBtn" title="Toggle circle pixels">
+                        <div class="circle-icon">●</div>
+                    </div>
+                    <span class="color-label">CIRCLES</span>
+                </div>
+                <div class="toggle-item">
+                    <div class="toggle-box active" id="togglePixelatedBtn" title="Toggle pixelated rendering">
+                        <div class="pixel-icon">◼️</div>
+                    </div>
+                    <span class="color-label">PIXEL</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <div class="canvas-container">
+                <canvas id="meuCanvas" width="1024" height="512"></canvas>
+                
+                <!-- Combined info bar: left = point info, middle = group button, right = coordinates -->
+                <div class="xy-info-bar">
+                    <div class="left-info" id="pointInfo">Point -</div>
+                    <div class="middle-info" id="groupButtonContainer"></div>
+                    <div class="right-info">x: <span id="xCoord">0</span> y: <span id="yCoord">0</span></div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px; background: #1e1e1e; padding: 10px; border-radius: 5px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div class="code-label">baka data</div>
+                    <button id="copyCodeBtn" style="background: #ff9900; color: #111; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 12px; font-weight: bold;">📋 COPY ALL</button>
+                </div>
+                <div id="codeDisplay" class="code-output">wah</div>
+            </div>
+        </div>
+        
+        <!-- RIGHT PANEL -->
+        <div class="right-panel">
+            <div class="panel-header">
+                <h3>📁 MODELS</h3>
+                <button class="add-model-btn" id="addModelBtn">+</button>
+            </div>
+            <div class="model-list" id="modelList"></div>
+            <div class="right-placeholder" id="emptyModelPlaceholder" style="display: none;">
+                [ no models — click + to add ]
+            </div>
+        </div>
+    </div>
+
+    <!-- Selection rectangle overlay -->
+    <div id="selectionRect" class="selection-rect"></div>
+
+    <!-- Confirmation Dialog -->
+    <div id="confirmDialog" class="confirm-dialog">
+        <p id="confirmMessage">Delete this group?</p>
+        <div class="confirm-dialog-buttons">
+            <button class="confirm-btn yes" id="confirmYes">YES</button>
+            <button class="confirm-btn no" id="confirmNo">NO</button>
+        </div>
+    </div>
+
+    <!-- Name Input Dialog -->
+    <div id="nameDialog" class="name-dialog">
+        <h3>Enter model name</h3>
+        <input type="text" id="modelNameInput" placeholder="Model name" value="">
+        <div class="name-dialog-buttons">
+            <button class="name-dialog-btn cancel" id="nameDialogCancel">CANCEL</button>
+            <button class="name-dialog-btn create" id="nameDialogCreate">CREATE</button>
+        </div>
+    </div>
+
+    <!-- Model Settings Dialog -->
+    <div id="modelSettingsDialog" class="model-settings-dialog">
+        <h3 id="settingsDialogTitle">Model Settings</h3>
+        <div class="settings-row">
+            <label>Model Name:</label>
+            <input type="text" id="modelRenameInput" placeholder="Enter model name">
+        </div>
+        <button class="danger-btn" id="deleteModelBtn">🗑️ DELETE MODEL</button>
+        <div class="model-settings-dialog-buttons">
+            <button class="model-settings-dialog-btn cancel" id="settingsDialogCancel">CANCEL</button>
+            <button class="model-settings-dialog-btn save" id="settingsDialogSave">SAVE</button>
+        </div>
+    </div>
+
+    <!-- Overlay Control Panel -->
+    <div id="overlayPanel" class="overlay-panel">
+        <button class="overlay-panel-close" id="overlayPanelClose">×</button>
+        <h3>🖼️ OVERLAY CONTROLS</h3>
+        
+        <div class="overlay-panel-section">
+            <h4>Image</h4>
+            <button class="overlay-panel-button" id="overlayLoadBtn">📂 LOAD IMAGE</button>
+            <button class="overlay-panel-button danger" id="overlayClearBtn" disabled>🗑️ CLEAR IMAGE</button>
+        </div>
+
+        <div class="overlay-panel-section">
+            <h4>Appearance</h4>
+            <div class="overlay-panel-row">
+                <span class="overlay-panel-label">Alpha:</span>
+                <div class="alpha-slider-container">
+                    <input type="range" id="overlayAlpha" class="overlay-panel-slider" min="0" max="100" value="50" step="1">
+                    <span class="overlay-panel-value" id="alphaValue">50%</span>
+                </div>
+            </div>
+            <div class="overlay-panel-row">
+                <span class="overlay-panel-label">Draw order:</span>
+                <select id="overlayOrder" class="overlay-panel-select">
+                    <option value="below">Below pixels</option>
+                    <option value="above">Above pixels</option>
+                </select>
+            </div>
+            <div class="overlay-panel-row">
+                <span class="overlay-panel-label">Visible:</span>
+                <input type="checkbox" id="overlayVisible" checked>
+            </div>
+        </div>
+
+        <div class="overlay-panel-section">
+            <h4>Position</h4>
+            <button class="overlay-panel-button" id="overlayEditPosBtn" disabled>✏️ EDIT POSITION</button>
+            <button class="overlay-panel-button" id="overlayResetPosBtn" disabled>↺ RESET TO FULL</button>
+        </div>
+
+        <div class="overlay-panel-info" id="overlayStatus">No image loaded</div>
+    </div>
+
+    <script>
+        var c = document.getElementById("meuCanvas");
+        var ctx = c.getContext("2d");
+        
+        ctx.imageSmoothingEnabled = false;
+        
+        const LOGIC_WIDTH = 64;
+        const LOGIC_HEIGHT = 32;
+        const SCALE = 16;
+
+        var mouseX = -1;
+        var mouseY = -1;
+        var lastMouseX = 0;
+        var lastMouseY = 0;
+        var mouseDown = false;
+        
+        // Undo/Redo stacks
+        var undoStack = [];
+        var redoStack = [];
+        
+        // Models data
+        var models = [];
+        var selectedModelIndex = 0;
+        
+        // Track expanded state for each model's point groups section
+        var expandedGroups = {}; // key: modelIndex, value: boolean - now default false for collapsed
+        
+        // Default model with a sample triangle - groups collapsed by default
+        models.push({
+            name: "Model 0",
+            visible: true,
+            triangles: [
+                { v1: Vec2f(5.0,19.0), v2: Vec2f(8.0,22.0), v3: Vec2f(12.0,20.0), color: "#0000ff" },
+            ],
+            pointGroups: []
+        });
+        expandedGroups[0] = false; // Start collapsed for first model
+
+        // UI state
+        var points = [];
+        var state = 0;
+        var currentTool = "move";
+        var showPoints = true;
+        var showLines = true;
+        var showGrid = true;
+        var showCircles = false;
+        var showPixelated = true;
+        var draggingVertex = null;
+        var currentColor = "#ffffff";
+        
+        // Selection state
+        var selecting = false;
+        var selectionStart = { x: 0, y: 0 };
+        var selectionEnd = { x: 0, y: 0 };
+        var selectedVertices = []; // array of { triIndex, vertexIndex, vx, vy, globalPointIndex }
+        var multiDragStart = null;
+        var multiDragging = false;
+        
+        // Hover point index
+        var hoverPointInfo = null;
+        
+        // For oscillation effects
+        var hoverTriangleIndex = -1;
+        var originalTriangleColor = "#ffffff";
+        var oscillationTimer = null;
+        var oscillationPhase = 0;
+        var oscillationSpeed = 0.3;
+
+        // Selected point group index (for the active model)
+        var selectedGroupIndex = -1; // -1 means no group selected
+        
+        // Confirmation dialog state
+        var pendingGroupDelete = null;
+
+        // Name dialog state
+        var pendingModelName = null;
+        
+        // Settings dialog state
+        var settingsModelIndex = -1;
+
+        // Image overlay state
+        var overlayImage = null;
+        var overlayVisible = true;
+        var overlayAlpha = 50; // 0-100
+        var overlayDrawOrder = "below"; // "below" or "above"
+        var overlayActive = false;
+        var overlayControls = {
+            x: 0, y: 0,
+            width: 1024, height: 512,
+            dragging: false,
+            dragHandle: null,
+            dragStartX: 0, dragStartY: 0,
+            dragStartParams: {}
+        };
+
+        const toolIcons = {
+            add: "✏️",
+            move: "✋",
+            paint: "🎨",
+            delete: "🗑️",
+            select: "🔲",
+            overlay: "🖼️"
+        };
+
+        function toFloat32(value) { return Math.fround(value); }
+        function Vec2f(x, y) { return { x: toFloat32(x), y: toFloat32(y) }; }
+        function orderPointsOptimally(p1, p2, p3) { return [Vec2f(p1.x, p1.y), Vec2f(p2.x, p2.y), Vec2f(p3.x, p3.y)]; }
+
+        function getInverseHexColor(hexColor) {
+            const r = parseInt(hexColor.slice(1,3), 16);
+            const g = parseInt(hexColor.slice(3,5), 16);
+            const b = parseInt(hexColor.slice(5,7), 16);
+            const invR = 255 - r;
+            const invG = 255 - g;
+            const invB = 255 - b;
+            return '#' + ((1 << 24) + (invR << 16) + (invG << 8) + invB).toString(16).slice(1);
+        }
+
+        function interpolateColor(color1, color2, factor) {
+            const r1 = parseInt(color1.slice(1,3), 16);
+            const g1 = parseInt(color1.slice(3,5), 16);
+            const b1 = parseInt(color1.slice(5,7), 16);
+            const r2 = parseInt(color2.slice(1,3), 16);
+            const g2 = parseInt(color2.slice(3,5), 16);
+            const b2 = parseInt(color2.slice(5,7), 16);
+            const r = Math.round(r1 + (r2 - r1) * factor);
+            const g = Math.round(g1 + (g2 - g1) * factor);
+            const b = Math.round(b1 + (b2 - b1) * factor);
+            return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+
+        function saveUndoState() {
+            let stateCopy = JSON.parse(JSON.stringify(models));
+            undoStack.push(stateCopy);
+            redoStack = [];
+            if (undoStack.length > 50) undoStack.shift();
+        }
+
+        function undo() {
+            if (undoStack.length === 0) return;
+            let currentState = JSON.parse(JSON.stringify(models));
+            redoStack.push(currentState);
+            let previousState = undoStack.pop();
+            models = JSON.parse(JSON.stringify(previousState));
+            points = [];
+            state = 0;
+            draggingVertex = null;
+            mouseDown = false;
+            selectedVertices = [];
+            multiDragging = false;
+            if (selectedModelIndex >= models.length) {
+                selectedModelIndex = Math.max(0, models.length - 1);
+            }
+            selectedGroupIndex = -1;
+            hoverTriangleIndex = -1;
+            if (oscillationTimer) {
+                clearInterval(oscillationTimer);
+                oscillationTimer = null;
+            }
+            updateCodeDisplay();
+            renderModelList();
+            draw();
+        }
+
+        function redo() {
+            if (redoStack.length === 0) return;
+            let currentState = JSON.parse(JSON.stringify(models));
+            undoStack.push(currentState);
+            let nextState = redoStack.pop();
+            models = JSON.parse(JSON.stringify(nextState));
+            points = [];
+            state = 0;
+            draggingVertex = null;
+            mouseDown = false;
+            selectedVertices = [];
+            multiDragging = false;
+            if (selectedModelIndex >= models.length) {
+                selectedModelIndex = Math.max(0, models.length - 1);
+            }
+            selectedGroupIndex = -1;
+            hoverTriangleIndex = -1;
+            if (oscillationTimer) {
+                clearInterval(oscillationTimer);
+                oscillationTimer = null;
+            }
+            updateCodeDisplay();
+            renderModelList();
+            draw();
+        }
+
+        function moveModelUp(index) {
+            if (index <= 0) return;
+            saveUndoState();
+            [models[index - 1], models[index]] = [models[index], models[index - 1]];
+     
+            let tempExpanded = expandedGroups[index - 1];
+            expandedGroups[index - 1] = expandedGroups[index];
+            expandedGroups[index] = tempExpanded;
+            
+            if (selectedModelIndex === index) {
+                selectedModelIndex = index - 1;
+            } else if (selectedModelIndex === index - 1) {
+                selectedModelIndex = index;
+            }
+            renderModelList();
+            updateCodeDisplay();
+            draw();
+        }
+
+        function moveModelDown(index) {
+            if (index >= models.length - 1) return;
+            saveUndoState();
+            [models[index], models[index + 1]] = [models[index + 1], models[index]];
+
+            let tempExpanded = expandedGroups[index];
+            expandedGroups[index] = expandedGroups[index + 1];
+            expandedGroups[index + 1] = tempExpanded;
+            
+            if (selectedModelIndex === index) {
+                selectedModelIndex = index + 1;
+            } else if (selectedModelIndex === index + 1) {
+                selectedModelIndex = index;
+            }
+            renderModelList();
+            updateCodeDisplay();
+            draw();
+        }
+
+        function showModelSettings(index) {
+            settingsModelIndex = index;
+            document.getElementById('modelRenameInput').value = models[index].name;
+            document.getElementById('settingsDialogTitle').textContent = `Settings for "${models[index].name}"`;
+            document.getElementById('modelSettingsDialog').classList.add('active');
+            document.getElementById('modelRenameInput').focus();
+            document.getElementById('modelRenameInput').select();
+        }
+
+        function deleteModel(index) {
+            if (models.length <= 1) {
+                alert("Cannot delete the last model.");
+                return;
+            }
+            saveUndoState();
+            models.splice(index, 1);
+            if (selectedModelIndex >= models.length) selectedModelIndex = models.length - 1;
+            if (selectedModelIndex < 0) selectedModelIndex = 0;
+            points = [];
+            state = 0;
+            selectedVertices = [];
+            selectedGroupIndex = -1;
+            delete expandedGroups[index];
+            renderModelList();
+            updateCodeDisplay();
+            draw();
+        }
+
+        function fillTriangleScanline(p1, p2, p3, fillStyle) {
+            let x0 = Math.round(p1.x);
+            let y0 = Math.round(p1.y);
+            let x1 = Math.round(p2.x);
+            let y1 = Math.round(p2.y);
+            let x2 = Math.round(p3.x);
+            let y2 = Math.round(p3.y);
+            
+            if (y0 > y1) { [x0, y0, x1, y1] = [x1, y1, x0, y0]; }
+            if (y0 > y2) { [x0, y0, x2, y2] = [x2, y2, x0, y0]; }
+            if (y1 > y2) { [x1, y1, x2, y2] = [x2, y2, x1, y1]; }
+            
+            if (y0 === y2) {
+                let minX = Math.min(x0, x1, x2);
+                let maxX = Math.max(x0, x1, x2);
+                minX = Math.max(0, minX);
+                maxX = Math.min(63, maxX);
+                
+                ctx.fillStyle = fillStyle;
+                for (let x = minX; x <= maxX; x++) {
+                    if (showCircles) {
+                        ctx.beginPath();
+                        ctx.arc(x * SCALE + SCALE/2, y0 * SCALE + SCALE/2, (SCALE/2) - 1, 0, 2 * Math.PI);
+                        ctx.fill();
+                    } else {
+                        ctx.fillRect(x * SCALE, y0 * SCALE, SCALE, SCALE);
+                    }
+                }
+                return;
+            }
+            
+            let dx01 = x1 - x0, dy01 = y1 - y0;
+            let dx02 = x2 - x0, dy02 = y2 - y0;
+            let dx12 = x2 - x1, dy12 = y2 - y1;
+            
+            let sa = 0, sb = 0;
+            let last = (y1 === y2) ? y1 : y1 - 1;
+            
+            ctx.fillStyle = fillStyle;
+            
+            for (let y = y0; y <= last; y++) {
+                if (y < 0) {
+                    sa += dx01;
+                    sb += dx02;
+                    continue;
+                }
+                if (y >= LOGIC_HEIGHT) break;
+                
+                let a = x0 + Math.floor(sa / dy01);
+                let b = x0 + Math.floor(sb / dy02);
+                sa += dx01;
+                sb += dx02;
+                
+                if (a > b) [a, b] = [b, a];
+                a = Math.max(0, a);
+                b = Math.min(63, b);
+                
+                for (let x = a; x <= b; x++) {
+                    if (showCircles) {
+                        ctx.beginPath();
+                        ctx.arc(x * SCALE + SCALE/2, y * SCALE + SCALE/2, (SCALE/2) - 1, 0, 2 * Math.PI);
+                        ctx.fill();
+                    } else {
+                        ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
+                    }
+                }
+            }
+            
+            sa = dx12 * (last + 1 - y1);
+            sb = dx02 * (last + 1 - y0);
+            
+            for (let y = last + 1; y <= y2; y++) {
+                if (y < 0) {
+                    sa += dx12;
+                    sb += dx02;
+                    continue;
+                }
+                if (y >= LOGIC_HEIGHT) break;
+                
+                let a = x1 + Math.floor(sa / dy12);
+                let b = x0 + Math.floor(sb / dy02);
+                sa += dx12;
+                sb += dx02;
+                
+                if (a > b) [a, b] = [b, a];
+                a = Math.max(0, a);
+                b = Math.min(63, b);
+                
+                for (let x = a; x <= b; x++) {
+                    if (showCircles) {
+                        ctx.beginPath();
+                        ctx.arc(x * SCALE + SCALE/2, y * SCALE + SCALE/2, (SCALE/2) - 1, 0, 2 * Math.PI);
+                        ctx.fill();
+                    } else {
+                        ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
+                    }
+                }
+            }
+        }
+
+        function fillTriangleSmooth(p1, p2, p3, fillStyle) {
+            ctx.fillStyle = fillStyle;
+            ctx.beginPath();
+            ctx.moveTo(p1.x * SCALE +SCALE/2, p1.y * SCALE +SCALE/2);
+            ctx.lineTo(p2.x * SCALE +SCALE/2, p2.y * SCALE +SCALE/2);
+            ctx.lineTo(p3.x * SCALE +SCALE/2, p3.y * SCALE +SCALE/2);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawGrid() {
+            if (!showGrid) return;
+            ctx.save();
+            ctx.strokeStyle = "#333";
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= LOGIC_WIDTH; x++) {
+                let physX = x * SCALE;
+                ctx.beginPath();
+                ctx.moveTo(physX, 0);
+                ctx.lineTo(physX, 512);
+                ctx.strokeStyle = "#333";
+                ctx.stroke();
+            }
+            for (let y = 0; y <= LOGIC_HEIGHT; y++) {
+                let physY = y * SCALE;
+                ctx.beginPath();
+                ctx.moveTo(0, physY);
+                ctx.lineTo(1024, physY);
+                ctx.strokeStyle = "#333";
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawPoint(x, y, col = "#FFA500", isSelected = false, isGroupMember = false) {
+            if (!showPoints) return;
+            if (x >= 0 && x < 64 && y >= 0 && y < 32) {
+                let cx = x * SCALE + SCALE/2;
+                let cy = y * SCALE + SCALE/2;
+                ctx.save();
+                
+                let fillColor = col;
+                if (isGroupMember && !isSelected) {
+                    fillColor = "#0066cc";
+                }
+                if (isSelected) {
+                    fillColor = "#0066ff";
+                }
+                
+                ctx.shadowColor = "#000";
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 1;
+                
+                ctx.fillStyle = fillColor;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 4, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        }
+
+        function drawLine(v1, v2, color = "#FFA500") {
+            if (!showLines) return;
+            let x1 = v1.x * SCALE + SCALE/2;
+            let y1 = v1.y * SCALE + SCALE/2;
+            let x2 = v2.x * SCALE + SCALE/2;
+            let y2 = v2.y * SCALE + SCALE/2;
+            
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function getInverseColor(x, y) {
+            let physX = x * SCALE + SCALE/2;
+            let physY = y * SCALE + SCALE/2;
+            var data = ctx.getImageData(physX, physY, 1, 1).data;
+            return `rgb(${255-data[0]}, ${255-data[1]}, ${255-data[2]})`;
+        }
+
+        function updateInfoBar() {
+            document.getElementById('xCoord').textContent = (mouseX >= 0 && mouseX < 64) ? mouseX : lastMouseX;
+            document.getElementById('yCoord').textContent = (mouseY >= 0 && mouseY < 64) ? mouseY : lastMouseY;
+            
+            let pointSpan = document.getElementById('pointInfo');
+            if (selectedVertices.length > 0) {
+                const indices = selectedVertices.map(s => s.globalPointIndex).sort((a,b)=>a-b);
+                pointSpan.textContent = 'Point ' + indices.join(', ');
+            } else if (hoverPointInfo) {
+                pointSpan.textContent = 'Point ' + hoverPointInfo.globalPointIndex;
+            } else {
+                pointSpan.textContent = 'Point -';
+            }
+
+            let container = document.getElementById('groupButtonContainer');
+            if (models.length > 0 && selectedVertices.length > 0 && selectedGroupIndex === -1) {
+                container.innerHTML = '<button class="create-group-btn" id="createGroupBtn">📁 CREATE POINT GROUP</button>';
+                let btn = document.getElementById('createGroupBtn');
+                if (btn) {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        createPointGroupFromSelection();
+                    });
+                }
+            } else {
+                container.innerHTML = '';
+            }
+        }
+
+        function createPointGroupFromSelection() {
+            if (selectedVertices.length === 0 || models.length === 0) return;
+            saveUndoState();
+            let active = models[selectedModelIndex];
+            if (!active.pointGroups) active.pointGroups = [];
+            let indices = selectedVertices.map(v => v.globalPointIndex).sort((a,b)=>a-b);
+            let newGroupIndex = active.pointGroups.length;
+            active.pointGroups.push({
+                name: "Group " + (newGroupIndex + 1),
+                pointIndices: indices
+            });
+            selectedGroupIndex = newGroupIndex;
+            selectedVertices = [];
+
+            renderModelList();
+            updateCodeDisplay();
+            draw();
+        }
+
+        function deletePointGroup(modelIndex, groupIndex) {
+            if (models[modelIndex] && models[modelIndex].pointGroups) {
+                models[modelIndex].pointGroups.splice(groupIndex, 1);
+                if (selectedModelIndex === modelIndex && selectedGroupIndex === groupIndex) {
+                    selectedGroupIndex = -1;
+                }
+                renderModelList();
+                updateCodeDisplay();
+                draw();
+            }
+        }
+
+        function updateCodeDisplay() {
+            var displayDiv = document.getElementById("codeDisplay");
+            if (models.length === 0) {
+                displayDiv.textContent = "// no models";
+                return;
+            }
+            
+            var lines = [];
+            
+            models.forEach(function(model, idx) {
+                var tris = model.triangles;
+                
+                if (tris.length === 0) {
+                    lines.push(`// Model ${idx}: "${model.name}" has no triangles`);
+                    lines.push(`mem = new Model();`);
+                    lines.push(`sc.addModel(mem);`);
+                    lines.push(``);
+                    return;
+                }
+                
+                lines.push(`    // Model ${idx}: "${model.name}"`);
+                lines.push(`    mem = new Model();`);
+                lines.push(`    numTriangles = ${tris.length};`);
+                lines.push(`    mem->Begin(numTriangles);`);
+                
+                for (var i = 0; i < tris.length; i++) {
+                    var tri = tris[i];
+                    var v1 = tri.v1, v2 = tri.v2, v3 = tri.v3;
+                    var colorHex = tri.color.slice(1);
+                    var r = parseInt(colorHex.slice(0, 2), 16);
+                    var g = parseInt(colorHex.slice(2, 4), 16);
+                    var b = parseInt(colorHex.slice(4, 6), 16);
+                    lines.push(`    mem->SetTriangle(${i}, Vec2f(${v1.x.toFixed(1)}f,${v1.y.toFixed(1)}f), Vec2f(${v2.x.toFixed(1)}f,${v2.y.toFixed(1)}f), Vec2f(${v3.x.toFixed(1)}f,${v3.y.toFixed(1)}f), Devices::Display->color565(${r},${g},${b}));`);
+                }
+                
+                if (model.pointGroups && model.pointGroups.length > 0) {
+                    lines.push(``);
+                    for (var j = 0; j < model.pointGroups.length; j++) {
+                        var group = model.pointGroups[j];
+                        if (group.pointIndices && group.pointIndices.length > 0) {
+                            var indicesStr = group.pointIndices.join(', ');
+                            lines.push(`    mem->AddPointGroup(std::vector<int>({${indicesStr}}));`);
+                        }
+                    }
+                }
+                
+                lines.push(`    mem->Reset();`);
+                lines.push(`    mem->Recalculate();`);
+                lines.push(`    mem->SetBatchOperations(true);`);
+                lines.push(`    mem->SetAccumulativeOperations(true);`);
+                lines.push(`    sc.addModel(mem);`);
+                lines.push(``);
+            });
+            
+            displayDiv.textContent = lines.join('\n');
+        }
+
+        function renderModelList() {
+            var listDiv = document.getElementById("modelList");
+            var placeholder = document.getElementById("emptyModelPlaceholder");
+            listDiv.innerHTML = "";
+            
+            if (models.length === 0) {
+                placeholder.style.display = "block";
+                return;
+            }
+            placeholder.style.display = "none";
+            
+            models.forEach(function(model, index) {
+                var item = document.createElement("div");
+                item.className = "model-item" + (index === selectedModelIndex ? " selected" : "");
+                
+                var header = document.createElement("div");
+                header.className = "model-header";
+                
+                var visCheck = document.createElement("input");
+                visCheck.type = "checkbox";
+                visCheck.className = "model-vis-checkbox";
+                visCheck.checked = model.visible;
+                visCheck.addEventListener("change", function(e) {
+                    e.stopPropagation();
+                    model.visible = visCheck.checked;
+                    draw();
+                });
+                
+                var orderControls = document.createElement("div");
+                orderControls.className = "model-order-controls";
+                
+                var upBtn = document.createElement("span");
+                upBtn.className = "model-order-btn";
+                upBtn.textContent = "▲";
+                upBtn.title = "Move model up";
+                upBtn.disabled = index === 0;
+                upBtn.addEventListener("click", function(e) {
+                    e.stopPropagation();
+                    moveModelUp(index);
+                });
+                
+                var downBtn = document.createElement("span");
+                downBtn.className = "model-order-btn";
+                downBtn.textContent = "▼";
+                downBtn.title = "Move model down";
+                downBtn.disabled = index === models.length - 1;
+                downBtn.addEventListener("click", function(e) {
+                    e.stopPropagation();
+                    moveModelDown(index);
+                });
+                
+                orderControls.appendChild(upBtn);
+                orderControls.appendChild(downBtn);
+                
+                var nameSpan = document.createElement("span");
+                nameSpan.className = "model-name";
+                nameSpan.textContent = model.name;
+                
+                var countSpan = document.createElement("span");
+                countSpan.className = "model-count";
+                countSpan.textContent = model.triangles.length + " △";
+                
+                var controlsDiv = document.createElement("div");
+                controlsDiv.className = "model-controls";
+                
+                var gearBtn = document.createElement("span");
+                gearBtn.className = "model-gear-btn";
+                gearBtn.textContent = "⚙️";
+                gearBtn.title = "Model settings";
+                gearBtn.addEventListener("click", function(e) {
+                    e.stopPropagation();
+                    showModelSettings(index);
+                });
+                
+                controlsDiv.appendChild(gearBtn);
+                
+                header.appendChild(orderControls);
+                header.appendChild(visCheck);
+                header.appendChild(nameSpan);
+                header.appendChild(countSpan);
+                header.appendChild(controlsDiv);
+                
+                var collapsible = document.createElement("div");
+                collapsible.className = "model-collapsible";
+                
+                var collapseHeader = document.createElement("div");
+                collapseHeader.className = "model-collapse-header";
+                let groupCount = model.pointGroups ? model.pointGroups.length : 0;
+                let isExpanded = expandedGroups[index] || false;
+                collapseHeader.innerHTML = isExpanded ? `▼ POINT GROUPS (${groupCount})` : `▶ POINT GROUPS (${groupCount})`;
+                
+                var collapseContent = document.createElement("div");
+                collapseContent.className = "model-collapse-content";
+                collapseContent.style.display = isExpanded ? "flex" : "none";
+                
+                if (model.pointGroups && model.pointGroups.length > 0) {
+                    model.pointGroups.forEach((group, gIdx) => {
+                        var groupDiv = document.createElement("div");
+                        groupDiv.className = "group-item" + (selectedGroupIndex === gIdx && selectedModelIndex === index ? " selected-group" : "");
+                        
+                        var groupHeader = document.createElement("div");
+                        groupHeader.className = "group-header";
+                        
+                        var groupName = document.createElement("span");
+                        groupName.className = "group-name";
+                        groupName.textContent = group.name;
+                        
+                        var deleteBtn = document.createElement("button");
+                        deleteBtn.className = "group-delete-btn";
+                        deleteBtn.textContent = "✕";
+                        deleteBtn.addEventListener("click", function(e) {
+                            e.stopPropagation();
+                            pendingGroupDelete = { modelIndex: index, groupIndex: gIdx };
+                            document.getElementById('confirmMessage').textContent = `Delete "${group.name}"?`;
+                            document.getElementById('confirmDialog').classList.add('active');
+                        });
+                        
+                        groupHeader.appendChild(groupName);
+                        groupHeader.appendChild(deleteBtn);
+                        
+                        var pointsList = document.createElement("div");
+                        pointsList.className = "group-points-list";
+                        
+                        group.pointIndices.forEach((pointIdx, badgeIdx) => {
+                            var badge = document.createElement("span");
+                            badge.className = "group-point-badge";
+                            badge.textContent = `#${pointIdx}`;
+                            badge.title = "Click to remove from group";
+                            badge.style.cursor = "pointer";
+                            badge.addEventListener("click", function(e) {
+                                e.stopPropagation();
+                                if (selectedModelIndex === index) {
+                                    saveUndoState();
+                                    group.pointIndices.splice(badgeIdx, 1);
+                                    renderModelList();
+                                    updateCodeDisplay();
+                                    draw();
+                                }
+                            });
+                            pointsList.appendChild(badge);
+                        });
+                        
+                        groupDiv.appendChild(groupHeader);
+                        groupDiv.appendChild(pointsList);
+                        
+                        groupDiv.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            if (selectedModelIndex !== index) {
+                                selectedModelIndex = index;
+                            }
+                            if (selectedGroupIndex === gIdx) {
+                                selectedGroupIndex = -1;
+                            } else {
+                                selectedGroupIndex = gIdx;
+                            }
+
+                            renderModelList();
+                            draw();
+                        });
+                        
+                        collapseContent.appendChild(groupDiv);
+                    });
+                } else {
+                    let empty = document.createElement("div");
+                    empty.className = "group-item-placeholder";
+                    empty.textContent = "(no groups)";
+                    collapseContent.appendChild(empty);
+                }
+                
+                collapseHeader.addEventListener("click", function(e) {
+                    e.stopPropagation();
+                    expandedGroups[index] = !expandedGroups[index];
+                    renderModelList();
+                });
+                
+                collapsible.appendChild(collapseHeader);
+                collapsible.appendChild(collapseContent);
+                
+                item.appendChild(header);
+                item.appendChild(collapsible);
+                
+                item.addEventListener("click", function(e) {
+                    if (e.target === visCheck || e.target.closest('.model-order-btn') || e.target.closest('.model-gear-btn') || e.target.closest('.model-collapse-header') || e.target.closest('.group-item')) return;
+                    selectedModelIndex = index;
+                    selectedGroupIndex = -1;
+                    points = [];
+                    state = 0;
+                    selectedVertices = [];
+                    renderModelList();
+                    updateCodeDisplay();
+                    draw();
+                });
+                
+                listDiv.appendChild(item);
+            });
+        }
+
+        function showNameDialog() {
+            document.getElementById('modelNameInput').value = "Model " + models.length;
+            document.getElementById('nameDialog').classList.add('active');
+            document.getElementById('modelNameInput').focus();
+            document.getElementById('modelNameInput').select();
+        }
+
+        function createNewModel(name) {
+            saveUndoState();
+            models.push({
+                name: name,
+                visible: true,
+                triangles: [],
+                pointGroups: []
+            });
+            expandedGroups[models.length - 1] = false;
+            selectedModelIndex = models.length - 1;
+            selectedGroupIndex = -1;
+            points = [];
+            state = 0;
+            selectedVertices = [];
+            renderModelList();
+            updateCodeDisplay();
+            draw();
+        }
+
+        function findTriangleUnderMouse(x, y) {
+            if (models.length === 0) return null;
+            var active = models[selectedModelIndex];
+            for (let i = active.triangles.length - 1; i >= 0; i--) {
+                let tri = active.triangles[i];
+                if (didIntersect(x, y, tri.v1, tri.v2, tri.v3)) {
+                    return { triIndex: i };
+                }
+            }
+            return null;
+        }
+
+        function findVertexUnderMouse(x, y) {
+            if (models.length === 0) return null;
+            var active = models[selectedModelIndex];
+            let globalIdx = 0;
+            for (let i = 0; i < active.triangles.length; i++) {
+                let tri = active.triangles[i];
+                let vertices = [tri.v1, tri.v2, tri.v3];
+                for (let j = 0; j < 3; j++) {
+                    let v = vertices[j];
+                    if (Math.floor(v.x) === x && Math.floor(v.y) === y) {
+                        return { triIndex: i, vertexIndex: j, globalPointIndex: globalIdx };
+                    }
+                    globalIdx++;
+                }
+            }
+            return null;
+        }
+
+        function selectVerticesInRect(start, end) {
+            let newSelection = [];
+            if (models.length === 0) return;
+            let active = models[selectedModelIndex];
+            let x1 = Math.min(start.x, end.x);
+            let x2 = Math.max(start.x, end.x);
+            let y1 = Math.min(start.y, end.y);
+            let y2 = Math.max(start.y, end.y);
+            
+            let globalIdx = 0;
+            for (let i = 0; i < active.triangles.length; i++) {
+                let tri = active.triangles[i];
+                let vertices = [tri.v1, tri.v2, tri.v3];
+                for (let j = 0; j < 3; j++) {
+                    let v = vertices[j];
+                    let fx = Math.floor(v.x);
+                    let fy = Math.floor(v.y);
+                    //yee man, need to be < and >= otherwise shits happen
+                    if (fx >= x1 && fx < x2 && fy >= y1 && fy < y2) {
+                        newSelection.push({
+                            triIndex: i,
+                            vertexIndex: j,
+                            vx: v.x,
+                            vy: v.y,
+                            globalPointIndex: globalIdx
+                        });
+                    }
+                    globalIdx++;
+                }
+            }
+            
+            selectedVertices = newSelection;
+            draw();
+        }
+
+        function finalizeSelection() {
+            if (selectedGroupIndex !== -1 && models[selectedModelIndex]?.pointGroups?.[selectedGroupIndex] && selectedVertices.length > 0) {
+                let active = models[selectedModelIndex];
+                let group = active.pointGroups[selectedGroupIndex];
+                let newIndices = selectedVertices.map(v => v.globalPointIndex);
+                let added = false;
+                newIndices.forEach(idx => {
+                    if (!group.pointIndices.includes(idx)) {
+                        group.pointIndices.push(idx);
+                        added = true;
+                    }
+                });
+                if (added) {
+                    group.pointIndices.sort((a,b)=>a-b);
+                    saveUndoState();
+                    renderModelList();
+                    updateCodeDisplay();
+                }
+            }
+        }
+
+        function deleteSelectedVertices() {
+            if (selectedVertices.length === 0 || models.length === 0) return;
+            saveUndoState();
+            let active = models[selectedModelIndex];
+            let triIndicesToDelete = new Set(selectedVertices.map(v => v.triIndex));
+            let sortedIndices = Array.from(triIndicesToDelete).sort((a,b)=>b-a);
+            for (let idx of sortedIndices) {
+                active.triangles.splice(idx, 1);
+            }
+            selectedVertices = [];
+            selectedGroupIndex = -1;
+            updateCodeDisplay();
+            renderModelList();
+            draw();
+        }
+
+        function updateCursor() {
+            if (mouseX < 0 || mouseX >= 64 || mouseY < 0 || mouseY >= 32) {
+                c.style.cursor = 'default';
+                return;
+            }
+            if (selectedGroupIndex !== -1 && models[selectedModelIndex]?.pointGroups?.[selectedGroupIndex]) {
+                let group = models[selectedModelIndex].pointGroups[selectedGroupIndex];
+                let hit = findVertexUnderMouse(mouseX, mouseY);
+                if (hit && group.pointIndices.includes(hit.globalPointIndex)) {
+                    c.style.cursor = 'copy';
+                    return;
+                }
+            }
+            if (overlayActive && overlayImage) {
+                c.style.cursor = 'move';
+                return;
+            }
+            if (currentTool === 'move') {
+                if (multiDragging) {
+                    c.style.cursor = 'move';
+                    return;
+                }
+                if (draggingVertex) {
+                    c.style.cursor = 'move';
+                    return;
+                }
+                if (findVertexUnderMouse(mouseX, mouseY)) {
+                    c.style.cursor = 'pointer';
+                    return;
+                }
+                c.style.cursor = 'crosshair';
+            } else if (currentTool === 'select') {
+                c.style.cursor = 'crosshair';
+            } else if (currentTool === 'paint') {
+                if (findTriangleUnderMouse(mouseX, mouseY)) {
+                    c.style.cursor = 'crosshair';
+                    return;
+                }
+            } else if (currentTool === 'delete') {
+                if (findTriangleUnderMouse(mouseX, mouseY)) {
+                    c.style.cursor = 'not-allowed';
+                    return;
+                }
+            } else if (currentTool === 'overlay') {
+                c.style.cursor = 'pointer';
+                return;
+            }
+            const cursorCanvas = document.createElement('canvas');
+            cursorCanvas.width = 32;
+            cursorCanvas.height = 32;
+            const cursorCtx = cursorCanvas.getContext('2d');
+            cursorCtx.clearRect(0, 0, 32, 32);
+            cursorCtx.font = "16px 'Courier New', monospace";
+            cursorCtx.fillStyle = "#ffffff";
+            cursorCtx.shadowColor = "#000000";
+            cursorCtx.shadowBlur = 2;
+            cursorCtx.shadowOffsetX = 1;
+            cursorCtx.shadowOffsetY = 1;
+            cursorCtx.fillText("^", 4, 16);
+            cursorCtx.font = "20px 'Courier New', monospace";
+            cursorCtx.fillText(toolIcons[currentTool], 8, 30);
+            const cursorUrl = cursorCanvas.toDataURL('image/png');
+            c.style.cursor = `url(${cursorUrl}) 0 0, auto`;
+        }
+
+        function updateOverlayPanel() {
+            const hasImage = overlayImage !== null;
+            document.getElementById('overlayClearBtn').disabled = !hasImage;
+            document.getElementById('overlayResetPosBtn').disabled = !hasImage;
+            document.getElementById('overlayEditPosBtn').disabled = !hasImage;
+            
+            if (hasImage) {
+                document.getElementById('overlayAlpha').value = overlayAlpha;
+                document.getElementById('alphaValue').textContent = overlayAlpha + '%';
+                document.getElementById('overlayVisible').checked = overlayVisible;
+                document.getElementById('overlayOrder').value = overlayDrawOrder;
+                document.getElementById('overlayStatus').textContent = `Image loaded (${overlayImage.width}×${overlayImage.height})`;
+            } else {
+                document.getElementById('overlayStatus').textContent = 'No image loaded';
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, 1024, 512);
+
+            if (overlayVisible && overlayImage && overlayDrawOrder === "below") {
+                ctx.save();
+                ctx.globalAlpha = overlayAlpha / 100;
+                ctx.drawImage(overlayImage, overlayControls.x, overlayControls.y, overlayControls.width, overlayControls.height);
+                ctx.restore();
+            }
+            
+            drawGrid();
+
+            models.forEach(function(model) {
+                if (!model.visible) return;
+                model.triangles.forEach(function(tri, index) {
+                    let fillColor = tri.color;
+                    if (model === models[selectedModelIndex] && index === hoverTriangleIndex && oscillationTimer) {
+                        if (currentTool === 'paint') {
+                            if (originalTriangleColor.toLowerCase() !== currentColor.toLowerCase()) {
+                                const factor = (Math.sin(oscillationPhase) + 1) / 2;
+                                fillColor = interpolateColor(originalTriangleColor, currentColor, factor);
+                            }
+                        } else if (currentTool === 'delete') {
+                            const inverseColor = getInverseHexColor(originalTriangleColor);
+                            const factor = (Math.sin(oscillationPhase) + 1) / 2;
+                            fillColor = interpolateColor(originalTriangleColor, inverseColor, factor);
+                        }
+                    }
+                    
+                    if (showPixelated) {
+                        fillTriangleScanline(tri.v1, tri.v2, tri.v3, fillColor);
+                    } else {
+                        fillTriangleSmooth(tri.v1, tri.v2, tri.v3, fillColor);
+                    }
+                });
+            });
+            
+
+            if (overlayVisible && overlayImage && overlayDrawOrder === "above") {
+                ctx.save();
+                ctx.globalAlpha = overlayAlpha / 100;
+                ctx.drawImage(overlayImage, overlayControls.x, overlayControls.y, overlayControls.width, overlayControls.height);
+                ctx.restore();
+            }
+
+            if (showLines && models.length > 0 && models[selectedModelIndex].visible) {
+                let activeTriangles = models[selectedModelIndex].triangles;
+                for (let tri of activeTriangles) {
+                    drawLine(tri.v1, tri.v2, "#FFA500");
+                    drawLine(tri.v2, tri.v3, "#FFA500");
+                    drawLine(tri.v3, tri.v1, "#FFA500");
+                }
+            }
+
+            hoverPointInfo = null;
+            if (showPoints && models.length > 0 && models[selectedModelIndex].visible) {
+                let active = models[selectedModelIndex];
+                let groupIndices = new Set();
+                if (selectedGroupIndex !== -1 && active.pointGroups?.[selectedGroupIndex]) {
+                    active.pointGroups[selectedGroupIndex].pointIndices.forEach(idx => groupIndices.add(idx));
+                }
+                let globalIdx = 0;
+                for (let i = 0; i < active.triangles.length; i++) {
+                    let tri = active.triangles[i];
+                    let vertices = [tri.v1, tri.v2, tri.v3];
+                    for (let j = 0; j < 3; j++) {
+                        let v = vertices[j];
+                        let isSel = selectedVertices.some(s => s.triIndex === i && s.vertexIndex === j);
+                        let isGroup = groupIndices.has(globalIdx);
+                        if (!isSel) {
+                            drawPoint(v.x, v.y, "#FFA500", false, isGroup);
+                        }
+                        if (mouseX >=0 && mouseY >=0 && Math.floor(v.x) === mouseX && Math.floor(v.y) === mouseY) {
+                            hoverPointInfo = { globalPointIndex: globalIdx };
+                        }
+                        globalIdx++;
+                    }
+                }
+                for (let sel of selectedVertices) {
+                    let tri = active.triangles[sel.triIndex];
+                    let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
+                    drawPoint(v.x, v.y, "#FFA500", true, false);
+                }
+            }
+            
+            // Draw points currently being placed
+            points.forEach(function(point) {
+                drawPoint(point.x, point.y, "#FFA500");
+            });
+            
+            // Draw line between first point and cursor during triangle creation
+            if (currentTool === 'add') {
+                if (state === 1 && points.length === 1 && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
+                    drawLine(points[0], Vec2f(mouseX, mouseY), "#888");
+                } else if (state === 2 && points.length === 2 && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
+                    if (showPixelated) {
+                        fillTriangleScanline(points[0], points[1], Vec2f(mouseX, mouseY), "#404040");
+                    } else {
+                        fillTriangleSmooth(points[0], points[1], Vec2f(mouseX, mouseY), "#404040");
+                    }
+                    if (showLines) {
+                        drawLine(points[0], points[1], "#888");
+                        drawLine(points[1], Vec2f(mouseX, mouseY), "#888");
+                        drawLine(Vec2f(mouseX, mouseY), points[0], "#888");
+                    }
+                }
+            }
+            
+            if (overlayActive && overlayImage) {
+                ctx.save();
+                ctx.strokeStyle = "#ff9900";
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(overlayControls.x, overlayControls.y, overlayControls.width, overlayControls.height);
+                ctx.setLineDash([]);
+
+                ctx.fillStyle = "#ff9900";
+                ctx.fillRect(overlayControls.x-4, overlayControls.y-4, 8, 8);
+                ctx.fillRect(overlayControls.x+overlayControls.width-4, overlayControls.y-4, 8, 8);
+                ctx.fillRect(overlayControls.x-4, overlayControls.y+overlayControls.height-4, 8, 8);
+                ctx.fillRect(overlayControls.x+overlayControls.width-4, overlayControls.y+overlayControls.height-4, 8, 8);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(overlayControls.x+overlayControls.width/2, overlayControls.y+overlayControls.height/2, 6, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.restore();
+            }
+            
+            if (showPixelated && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
+                let physX = mouseX * SCALE + SCALE/2;
+                let physY = mouseY * SCALE + SCALE/2;
+                let invColor = getInverseColor(mouseX, mouseY);
+                ctx.fillStyle = invColor;
+                ctx.fillRect(physX - 2, physY - 2, 4, 4);
+            }
+            
+            updateInfoBar();
+            updateCursor();
+
+            let selRect = document.getElementById('selectionRect');
+            if (selecting && (currentTool === 'move' || currentTool === 'select')) {
+                let rect = c.getBoundingClientRect();
+                let scaleX = c.width / rect.width;
+                let scaleY = c.height / rect.height;
+                let startPhys = {
+                    x: rect.left + selectionStart.x * SCALE * scaleX,
+                    y: rect.top + selectionStart.y * SCALE * scaleY
+                };
+                let endPhys = {
+                    x: rect.left + mouseX * SCALE * scaleX,
+                    y: rect.top + mouseY * SCALE * scaleY
+                };
+                let left = Math.min(startPhys.x, endPhys.x);
+                let top = Math.min(startPhys.y, endPhys.y);
+                let width = Math.abs(endPhys.x - startPhys.x);
+                let height = Math.abs(endPhys.y - startPhys.y);
+                selRect.style.left = left + 'px';
+                selRect.style.top = top + 'px';
+                selRect.style.width = width + 'px';
+                selRect.style.height = height + 'px';
+                selRect.style.display = 'block';
+            } else {
+                selRect.style.display = 'none';
+            }
+            
+            updateOverlayPanel();
+        }
+
+        document.getElementById('colorPicker').addEventListener('input', function(e) {
+            currentColor = e.target.value;
+        });
+
+        document.getElementById('saveBtn').addEventListener('click', function() {
+            var exportData = {
+                models: models.map(model => {
+                    let xCoords = [];
+                    let yCoords = [];
+                    let colors = [];
+                    model.triangles.forEach(tri => {
+                        xCoords.push(tri.v1.x, tri.v2.x, tri.v3.x);
+                        yCoords.push(tri.v1.y, tri.v2.y, tri.v3.y);
+                        let numColor = parseInt(tri.color.slice(1), 16);
+                        colors.push(numColor);
+                    });
+                    return {
+                        x: xCoords,
+                        y: yCoords,
+                        color: colors,
+                        name: model.name,
+                        pointGroups: model.pointGroups || []
+                    };
+                })
+            };
+            var jsonStr = JSON.stringify(exportData, null, 2);
+            var blob = new Blob([jsonStr], {type: "application/json"});
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = "triangles.json";
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('loadBtn').addEventListener('click', function() {
+            var input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.onchange = function(e) {
+                var file = e.target.files[0];
+                var reader = new FileReader();
+                reader.onload = function(ev) {
+                    try {
+                        var parsed = JSON.parse(ev.target.result);
+                        if (parsed.models && Array.isArray(parsed.models)) {
+                            let newModels = [];
+                            parsed.models.forEach((m, idx) => {
+                                let triangles = [];
+                                if (m.x && m.y && m.color && m.x.length === m.y.length && m.x.length % 3 === 0) {
+                                    for (let i = 0; i < m.x.length; i += 3) {
+                                        let colorHex = '#' + m.color[i/3].toString(16).padStart(6, '0');
+                                        triangles.push({
+                                            v1: Vec2f(m.x[i], m.y[i]),
+                                            v2: Vec2f(m.x[i+1], m.y[i+1]),
+                                            v3: Vec2f(m.x[i+2], m.y[i+2]),
+                                            color: colorHex
+                                        });
+                                    }
+                                }
+                                newModels.push({
+                                    name: m.name || ("Model " + idx),
+                                    visible: true,
+                                    triangles: triangles,
+                                    pointGroups: m.pointGroups || []
+                                });
+                                expandedGroups[idx] = false;
+                            });
+                            if (newModels.length > 0) {
+                                saveUndoState();
+                                models = newModels;
+                                selectedModelIndex = 0;
+                                selectedGroupIndex = -1;
+                                points = [];
+                                state = 0;
+                                selectedVertices = [];
+                                renderModelList();
+                                updateCodeDisplay();
+                                draw();
+                            }
+                        } else {
+                            alert("Invalid JSON format: missing 'models' array");
+                        }
+                    } catch (err) {
+                        alert("Error parsing JSON: " + err);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        });
+
+        document.getElementById('addModelBtn').addEventListener('click', function() {
+            showNameDialog();
+        });
+
+        document.getElementById('nameDialogCreate').addEventListener('click', function() {
+            var name = document.getElementById('modelNameInput').value.trim();
+            if (name === "") {
+                name = "Model " + models.length;
+            }
+            createNewModel(name);
+            document.getElementById('nameDialog').classList.remove('active');
+        });
+
+        document.getElementById('nameDialogCancel').addEventListener('click', function() {
+            document.getElementById('nameDialog').classList.remove('active');
+        });
+
+        document.getElementById('modelNameInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                document.getElementById('nameDialogCreate').click();
+            }
+        });
+
+        document.getElementById('settingsDialogSave').addEventListener('click', function() {
+            if (settingsModelIndex >= 0 && settingsModelIndex < models.length) {
+                var newName = document.getElementById('modelRenameInput').value.trim();
+                if (newName !== "") {
+                    models[settingsModelIndex].name = newName;
+                    renderModelList();
+                    updateCodeDisplay();
+                    draw();
+                }
+            }
+            document.getElementById('modelSettingsDialog').classList.remove('active');
+        });
+
+        document.getElementById('settingsDialogCancel').addEventListener('click', function() {
+            document.getElementById('modelSettingsDialog').classList.remove('active');
+        });
+
+        document.getElementById('deleteModelBtn').addEventListener('click', function() {
+            if (settingsModelIndex >= 0 && settingsModelIndex < models.length) {
+                if (models.length > 1) {
+                    deleteModel(settingsModelIndex);
+                } else {
+                    alert("Cannot delete the last model.");
+                }
+            }
+            document.getElementById('modelSettingsDialog').classList.remove('active');
+        });
+
+        document.getElementById('modelRenameInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                document.getElementById('settingsDialogSave').click();
+            }
+        });
+
+        document.getElementById('toolOverlay').addEventListener('click', function() {
+            document.getElementById('overlayPanel').classList.add('active');
+        });
+
+        document.getElementById('overlayPanelClose').addEventListener('click', function() {
+            document.getElementById('overlayPanel').classList.remove('active');
+        });
+
+        document.getElementById('overlayLoadBtn').addEventListener('click', function() {
+            var input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = function(e) {
+                var file = e.target.files[0];
+                var reader = new FileReader();
+                reader.onload = function(ev) {
+                    var img = new Image();
+                    img.onload = function() {
+                        overlayImage = img;
+                        overlayVisible = true;
+                        overlayControls.x = 0;
+                        overlayControls.y = 0;
+                        overlayControls.width = 1024;
+                        overlayControls.height = 512;
+                        updateOverlayPanel();
+                        draw();
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        });
+
+        document.getElementById('overlayClearBtn').addEventListener('click', function() {
+            overlayImage = null;
+            overlayActive = false;
+            updateOverlayPanel();
+            draw();
+        });
+
+        document.getElementById('overlayAlpha').addEventListener('input', function(e) {
+            overlayAlpha = parseInt(e.target.value);
+            document.getElementById('alphaValue').textContent = overlayAlpha + '%';
+            draw();
+        });
+
+        document.getElementById('overlayVisible').addEventListener('change', function(e) {
+            overlayVisible = e.target.checked;
+            draw();
+        });
+
+        document.getElementById('overlayOrder').addEventListener('change', function(e) {
+            overlayDrawOrder = e.target.value;
+            draw();
+        });
+
+        document.getElementById('overlayResetPosBtn').addEventListener('click', function() {
+            overlayControls.x = 0;
+            overlayControls.y = 0;
+            overlayControls.width = 1024;
+            overlayControls.height = 512;
+            updateOverlayPanel();
+            draw();
+        });
+
+        document.getElementById('overlayEditPosBtn').addEventListener('click', function() {
+            if (!overlayImage) return;
+            overlayActive = !overlayActive;
+            document.getElementById('overlayPanel').classList.remove('active');
+            if (overlayActive) {
+                currentTool = 'move';
+                document.querySelectorAll('.tool-icon').forEach(el => el.classList.remove('active'));
+                document.getElementById('toolMovePoints').classList.add('active');
+            }
+            draw();
+        });
+
+        function didIntersect(px, py, p1, p2, p3) {
+            var px_f = toFloat32(px), py_f = toFloat32(py);
+            var p1x = p1.x, p1y = p1.y, p2x = p2.x, p2y = p2.y, p3x = p3.x, p3y = p3.y;
+            var v0x = p2x - p1x, v0y = p2y - p1y;
+            var v1x = p3x - p1x, v1y = p3y - p1y;
+            var aux = toFloat32((v0x * v1y) - (v1x * v0y));
+            if (aux === 0.0) return false;
+            var denominator = toFloat32(1.0 / aux);
+            var v2lx = toFloat32(px_f - p1x), v2ly = toFloat32(py_f - p1y);
+            var v = toFloat32(toFloat32(toFloat32(v2lx * v1y) - toFloat32(v1x * v2ly)) * denominator);
+            var w = toFloat32(toFloat32(toFloat32(v0x * v2ly) - toFloat32(v2lx * v0y)) * denominator);
+            if (v < 0.0 || w < 0.0 || v > 1.0 || w > 1.0) return false;
+            var u = toFloat32(1.001) - toFloat32(v) - toFloat32(w);
+            return toFloat32(u) >= toFloat32(0.0);
+        }
+
+        document.getElementById('copyCodeBtn').addEventListener('click', function() {
+            var codeDisplay = document.getElementById('codeDisplay');
+            var codeText = codeDisplay.textContent;
+            navigator.clipboard.writeText(codeText).then(function() {
+                var btn = document.getElementById('copyCodeBtn');
+                var originalText = btn.textContent;
+                btn.textContent = 'done';
+                btn.style.background = '#4CAF50';
+                setTimeout(function() {
+                    btn.textContent = originalText;
+                    btn.style.background = '#ff9900';
+                }, 1500);
+            })
+        });
+
+        document.getElementById('confirmYes').addEventListener('click', function() {
+            if (pendingGroupDelete) {
+                deletePointGroup(pendingGroupDelete.modelIndex, pendingGroupDelete.groupIndex);
+                pendingGroupDelete = null;
+            }
+            document.getElementById('confirmDialog').classList.remove('active');
+        });
+
+        document.getElementById('confirmNo').addEventListener('click', function() {
+            pendingGroupDelete = null;
+            document.getElementById('confirmDialog').classList.remove('active');
+        });
+
+        function setTool(toolId) {
+            if (overlayActive) {
+                overlayActive = false;
+            }
+            
+            if (toolId === 'toolAddPoints') currentTool = 'add';
+            else if (toolId === 'toolMovePoints') currentTool = 'move';
+            else if (toolId === 'toolSelectPoints') currentTool = 'select';
+            else if (toolId === 'toolPaintPoints') currentTool = 'paint';
+            else if (toolId === 'toolDeleteTriangle') currentTool = 'delete';
+            else if (toolId === 'toolOverlay') {
+                currentTool = 'overlay';
+                document.getElementById('overlayPanel').classList.add('active');
+            }
+            
+            selectedGroupIndex = -1;
+            selectedVertices = [];
+            document.querySelectorAll('.tool-icon').forEach(el => el.classList.remove('active'));
+            document.getElementById(toolId).classList.add('active');
+            points = []; 
+            state = 0; 
+            draggingVertex = null;
+            hoverTriangleIndex = -1;
+            if (oscillationTimer) {
+                clearInterval(oscillationTimer);
+                oscillationTimer = null;
+            }
+            renderModelList();
+            draw();
+        }
+
+        document.getElementById('toolAddPoints').addEventListener('click', function() {
+            setTool('toolAddPoints');
+        });
+        
+        document.getElementById('toolMovePoints').addEventListener('click', function() {
+            setTool('toolMovePoints');
+        });
+
+        document.getElementById('toolSelectPoints').addEventListener('click', function() {
+            setTool('toolSelectPoints');
+        });
+
+        document.getElementById('toolPaintPoints').addEventListener('click', function() {
+            setTool('toolPaintPoints');
+        });
+
+        document.getElementById('toolDeleteTriangle').addEventListener('click', function() {
+            setTool('toolDeleteTriangle');
+        });
+        
+        document.getElementById('togglePointsBtn').addEventListener('click', function() {
+            showPoints = !showPoints;
+            this.classList.toggle('active', showPoints);
+            draw();
+        });
+
+        document.getElementById('toggleLinesBtn').addEventListener('click', function() {
+            showLines = !showLines;
+            this.classList.toggle('active', showLines);
+            draw();
+        });
+
+        document.getElementById('toggleGridBtn').addEventListener('click', function() {
+            showGrid = !showGrid;
+            this.classList.toggle('active', showGrid);
+            draw();
+        });
+
+        document.getElementById('toggleCirclesBtn').addEventListener('click', function() {
+            showCircles = !showCircles;
+            this.classList.toggle('active', showCircles);
+            draw();
+        });
+
+        document.getElementById('togglePixelatedBtn').addEventListener('click', function() {
+            showPixelated = !showPixelated;
+            this.classList.toggle('active', showPixelated);
+            draw();
+        });
+
+        // Global keydown handler with better input management
+        document.addEventListener('keydown', function(e) {
+            // Don't trigger tool shortcuts if we're typing in an input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+                return;
+            }
+            
+            if (e.key === 'a' || e.key === 'A') {
+                e.preventDefault();
+                document.getElementById('toolAddPoints').click();
+            } else if (e.key === 'm' || e.key === 'M') {
+                e.preventDefault();
+                document.getElementById('toolMovePoints').click();
+            } else if (e.key === 's' || e.key === 'S') {
+                e.preventDefault();
+                document.getElementById('toolSelectPoints').click();
+            } else if (e.key === 'p' || e.key === 'P') {
+                e.preventDefault();
+                document.getElementById('toolPaintPoints').click();
+            } else if (e.key === 'd' || e.key === 'D') {
+                e.preventDefault();
+                document.getElementById('toolDeleteTriangle').click();
+            } else if (e.key === 'o' || e.key === 'O') {
+                e.preventDefault();
+                document.getElementById('toolOverlay').click();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                if (overlayActive) {
+                    overlayActive = false;
+                    draw();
+                } else if (currentTool === 'add' && (state === 1 || state === 2)) {
+                    points = [];
+                    state = 0;
+                    draw();
+                } else {
+                    selectedGroupIndex = -1;
+                    selectedVertices = [];
+                    renderModelList();
+                    draw();
+                }
+                document.getElementById('overlayPanel').classList.remove('active');
+                document.getElementById('nameDialog').classList.remove('active');
+                document.getElementById('modelSettingsDialog').classList.remove('active');
+            } else if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                undo();
+            } else if ((e.key === 'y' || e.key === 'Y') && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                redo();
+            } else if (e.key === 'Delete' || e.key === 'Del') {
+                if (selectedVertices.length > 0) {
+                    e.preventDefault();
+                    deleteSelectedVertices();
+                }
+            }
+            
+            if (selectedVertices.length > 0 && (e.key.startsWith('Arrow'))) {
+                e.preventDefault();
+                let dx = 0, dy = 0;
+                if (e.key === 'ArrowUp') dy = -1;
+                else if (e.key === 'ArrowDown') dy = 1;
+                else if (e.key === 'ArrowLeft') dx = -1;
+                else if (e.key === 'ArrowRight') dx = 1;
+                
+                if (dx !== 0 || dy !== 0) {
+                    saveUndoState();
+                    let active = models[selectedModelIndex];
+                    for (let sel of selectedVertices) {
+                        let tri = active.triangles[sel.triIndex];
+                        let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
+                        let newX = Math.min(63, Math.max(0, Math.round(v.x + dx)));
+                        let newY = Math.min(31, Math.max(0, Math.round(v.y + dy)));
+                        v.x = toFloat32(newX);
+                        v.y = toFloat32(newY);
+                    }
+                    for (let sel of selectedVertices) {
+                        let tri = active.triangles[sel.triIndex];
+                        let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
+                        sel.vx = v.x;
+                        sel.vy = v.y;
+                    }
+                    updateCodeDisplay();
+                    draw();
+                }
+            }
+        });
+
+        c.addEventListener('mousemove', function(e) {
+            var rect = c.getBoundingClientRect();
+            var scaleX = c.width / rect.width;
+            var scaleY = c.height / rect.height;
+            var physX = (e.clientX - rect.left) * scaleX;
+            var physY = (e.clientY - rect.top) * scaleY;
+            mouseX = Math.min(63, Math.max(0, Math.floor(physX / SCALE)));
+            mouseY = Math.min(31, Math.max(0, Math.floor(physY / SCALE)));
+            
+            if (overlayActive && overlayImage && mouseDown) {
+                if (overlayControls.dragging) {
+                    let dx = (e.clientX - overlayControls.dragStartX) / scaleX;
+                    let dy = (e.clientY - overlayControls.dragStartY) / scaleY;
+                    if (overlayControls.dragHandle === 'move') {
+                        overlayControls.x = overlayControls.dragStartParams.x + dx;
+                        overlayControls.y = overlayControls.dragStartParams.y + dy;
+                    } else if (overlayControls.dragHandle === 'resize-tl') {
+                        overlayControls.x = overlayControls.dragStartParams.x + dx;
+                        overlayControls.y = overlayControls.dragStartParams.y + dy;
+                        overlayControls.width = overlayControls.dragStartParams.w - dx;
+                        overlayControls.height = overlayControls.dragStartParams.h - dy;
+                    } else if (overlayControls.dragHandle === 'resize-br') {
+                        overlayControls.width = overlayControls.dragStartParams.w + dx;
+                        overlayControls.height = overlayControls.dragStartParams.h + dy;
+                    }
+                    overlayControls.x = Math.max(-overlayControls.width + 50, Math.min(1024 - 50, overlayControls.x));
+                    overlayControls.y = Math.max(-overlayControls.height + 50, Math.min(512 - 50, overlayControls.y));
+                    draw();
+                }
+                if (overlayControls.dragging) {
+                    draw();
+                    return;
+                }
+            }
+            
+            if ((currentTool === 'paint' || currentTool === 'delete') && models.length > 0) {
+                let hoverTri = findTriangleUnderMouse(mouseX, mouseY);
+                if (hoverTri) {
+                    if (hoverTriangleIndex !== hoverTri.triIndex) {
+                        hoverTriangleIndex = hoverTri.triIndex;
+                        originalTriangleColor = models[selectedModelIndex].triangles[hoverTriangleIndex].color;
+                        if (!oscillationTimer) {
+                            oscillationPhase = 0;
+                            oscillationTimer = setInterval(() => {
+                                oscillationPhase += oscillationSpeed;
+                                draw();
+                            }, 50);
+                        }
+                    }
+                } else {
+                    hoverTriangleIndex = -1;
+                    if (oscillationTimer) {
+                        clearInterval(oscillationTimer);
+                        oscillationTimer = null;
+                    }
+                }
+            } else {
+                hoverTriangleIndex = -1;
+                if (oscillationTimer) {
+                    clearInterval(oscillationTimer);
+                    oscillationTimer = null;
+                }
+            }
+            
+            if ((currentTool === 'move' || currentTool === 'select') && mouseDown && !draggingVertex && !multiDragging && !overlayActive) {
+                if (!selecting) {
+                    selecting = true;
+                    selectionStart = { x: mouseX, y: mouseY };
+                }
+                selectionEnd = { x: mouseX, y: mouseY };
+                selectVerticesInRect(selectionStart, selectionEnd);
+                draw();
+            }
+            
+            if (currentTool === 'move' && multiDragging && selectedVertices.length > 0 && mouseDown) {
+                let dx = mouseX - multiDragStart.x;
+                let dy = mouseY - multiDragStart.y;
+                let active = models[selectedModelIndex];
+                for (let sel of selectedVertices) {
+                    let tri = active.triangles[sel.triIndex];
+                    let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
+                    let newX = Math.min(63, Math.max(0, Math.round(sel.vx + dx)));
+                    let newY = Math.min(31, Math.max(0, Math.round(sel.vy + dy)));
+                    v.x = toFloat32(newX);
+                    v.y = toFloat32(newY);
+                }
+                updateCodeDisplay();
+                draw();
+            }
+            
+            if (currentTool === 'move' && mouseDown && draggingVertex && models.length > 0) {
+                let tri = models[selectedModelIndex].triangles[draggingVertex.triIndex];
+                let v = [tri.v1, tri.v2, tri.v3][draggingVertex.vertexIndex];
+                v.x = toFloat32(mouseX);
+                v.y = toFloat32(mouseY);
+                updateCodeDisplay();
+                draw();
+            } else {
+                draw();
+            }
+        });
+
+        c.addEventListener('mouseleave', function() { 
+            mouseX = -1; 
+            mouseY = -1; 
+            hoverTriangleIndex = -1;
+            hoverPointInfo = null;
+            if (oscillationTimer) {
+                clearInterval(oscillationTimer);
+                oscillationTimer = null;
+            }
+            selecting = false;
+            document.getElementById('selectionRect').style.display = 'none';
+            updateInfoBar();
+            draw(); 
+        });
+        c.addEventListener('contextmenu', e => e.preventDefault());
+
+        c.addEventListener('mousedown', function(e) {
+            if (e.button === 2) { e.preventDefault(); cancelLastPoint(); return; }
+            if (e.button === 0) {
+                mouseDown = true;
+                
+                if (overlayActive && overlayImage) {
+                    let rect = c.getBoundingClientRect();
+                    let scaleX = c.width / rect.width;
+                    let scaleY = c.height / rect.height;
+                    let canvasX = (e.clientX - rect.left) * scaleX;
+                    let canvasY = (e.clientY - rect.top) * scaleY;
+                    
+                    let hx = overlayControls.x, hy = overlayControls.y, hw = overlayControls.width, hh = overlayControls.height;
+                    let handleSize = 12;
+                    
+                    if (Math.abs(canvasX - hx) < handleSize && Math.abs(canvasY - hy) < handleSize) {
+                        overlayControls.dragging = true;
+                        overlayControls.dragHandle = 'resize-tl';
+                        overlayControls.dragStartX = e.clientX;
+                        overlayControls.dragStartY = e.clientY;
+                        overlayControls.dragStartParams = { x: hx, y: hy, w: hw, h: hh };
+                        e.preventDefault();
+                        return;
+                    } else if (Math.abs(canvasX - (hx+hw)) < handleSize && Math.abs(canvasY - hy) < handleSize) {
+                        overlayControls.dragging = true;
+                        overlayControls.dragHandle = 'resize-tr';
+                        overlayControls.dragStartX = e.clientX;
+                        overlayControls.dragStartY = e.clientY;
+                        overlayControls.dragStartParams = { x: hx, y: hy, w: hw, h: hh };
+                        e.preventDefault();
+                        return;
+                    } else if (Math.abs(canvasX - hx) < handleSize && Math.abs(canvasY - (hy+hh)) < handleSize) {
+                        overlayControls.dragging = true;
+                        overlayControls.dragHandle = 'resize-bl';
+                        overlayControls.dragStartX = e.clientX;
+                        overlayControls.dragStartY = e.clientY;
+                        overlayControls.dragStartParams = { x: hx, y: hy, w: hw, h: hh };
+                        e.preventDefault();
+                        return;
+                    } else if (Math.abs(canvasX - (hx+hw)) < handleSize && Math.abs(canvasY - (hy+hh)) < handleSize) {
+                        overlayControls.dragging = true;
+                        overlayControls.dragHandle = 'resize-br';
+                        overlayControls.dragStartX = e.clientX;
+                        overlayControls.dragStartY = e.clientY;
+                        overlayControls.dragStartParams = { x: hx, y: hy, w: hw, h: hh };
+                        e.preventDefault();
+                        return;
+                    } else if (canvasX >= hx && canvasX <= hx+hw && canvasY >= hy && canvasY <= hy+hh) {
+                        overlayControls.dragging = true;
+                        overlayControls.dragHandle = 'move';
+                        overlayControls.dragStartX = e.clientX;
+                        overlayControls.dragStartY = e.clientY;
+                        overlayControls.dragStartParams = { x: hx, y: hy };
+                        e.preventDefault();
+                        return;
+                    }
+                }
+                
+                if (!overlayActive && (currentTool === 'move' || currentTool === 'select') && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32 && models.length > 0) {
+                    let hit = findVertexUnderMouse(mouseX, mouseY);
+                    
+                    if (hit) {
+                        if (selectedGroupIndex !== -1 && models[selectedModelIndex]?.pointGroups?.[selectedGroupIndex]) {
+                            let group = models[selectedModelIndex].pointGroups[selectedGroupIndex];
+                            let idx = group.pointIndices.indexOf(hit.globalPointIndex);
+                            saveUndoState();
+                            if (idx === -1) {
+                                group.pointIndices.push(hit.globalPointIndex);
+                                group.pointIndices.sort((a,b)=>a-b);
+                            } else {
+                                group.pointIndices.splice(idx, 1);
+                            }
+                            selectedVertices = [];
+                            renderModelList();
+                            updateCodeDisplay();
+                            draw();
+                            return;
+                        }
+
+                        if (currentTool === 'move') {
+                            if (selectedVertices.length > 0) {
+                                let isInSelection = selectedVertices.some(s => s.triIndex === hit.triIndex && s.vertexIndex === hit.vertexIndex);
+                                if (isInSelection) {
+                                    saveUndoState();
+                                    multiDragging = true;
+                                    multiDragStart = { x: mouseX, y: mouseY };
+                                    let active = models[selectedModelIndex];
+                                    for (let sel of selectedVertices) {
+                                        let tri = active.triangles[sel.triIndex];
+                                        let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
+                                        sel.vx = v.x;
+                                        sel.vy = v.y;
+                                    }
+                                } else {
+                                    selectedVertices = [];
+                                    saveUndoState();
+                                    draggingVertex = hit;
+                                }
+                            } else {
+                                saveUndoState();
+                                draggingVertex = hit;
+                            }
+                        } else if (currentTool === 'select') {
+                            let existingIndex = selectedVertices.findIndex(s => s.triIndex === hit.triIndex && s.vertexIndex === hit.vertexIndex);
+                            if (existingIndex >= 0) {
+                                selectedVertices.splice(existingIndex, 1);
+                            } else {
+                                let active = models[selectedModelIndex];
+                                let v = [active.triangles[hit.triIndex].v1, active.triangles[hit.triIndex].v2, active.triangles[hit.triIndex].v3][hit.vertexIndex];
+                                selectedVertices.push({
+                                    triIndex: hit.triIndex,
+                                    vertexIndex: hit.vertexIndex,
+                                    vx: v.x,
+                                    vy: v.y,
+                                    globalPointIndex: hit.globalPointIndex
+                                });
+                            }
+                            draw();
+                        }
+                        e.preventDefault();
+                    } else {
+                        if (selectedVertices.length > 0 && currentTool === 'move') {
+                            selectedVertices = [];
+                            draw();
+                        }
+                        if (currentTool === 'select') {
+                            selectedVertices = [];
+                            draw();
+                        }
+                    }
+                }
+            }
+        });
+
+        window.addEventListener('mouseup', function(e) {
+            if (e.button === 0) {
+                mouseDown = false;
+                if (selecting) {
+                    selecting = false;
+                    document.getElementById('selectionRect').style.display = 'none';
+                    finalizeSelection();
+                    draw();
+                }
+                if (draggingVertex) {
+                    draggingVertex = null;
+                    updateCodeDisplay();
+                    draw();
+                }
+                if (multiDragging) {
+                    multiDragging = false;
+                    updateCodeDisplay();
+                    draw();
+                }
+                overlayControls.dragging = false;
+            }
+        });
+
+        c.addEventListener('click', function(e) {
+            if (e.button !== 0) return;
+            if (mouseX < 0 || mouseX >= 64 || mouseY < 0 || mouseY >= 32) return;
+            if (models.length === 0) return;
+            
+            if (overlayActive) return;
+            
+            if (currentTool === 'add') {
+                if (state === 0) {
+                    points = [Vec2f(mouseX, mouseY)];
+                    state = 1;
+                } else if (state === 1) {
+                    points.push(Vec2f(mouseX, mouseY));
+                    state = 2;
+                } else if (state === 2) {
+                    saveUndoState();
+                    
+                    let v0 = Vec2f(points[0].x, points[0].y);
+                    let v1 = Vec2f(points[1].x, points[1].y);
+                    let v2 = Vec2f(mouseX, mouseY);
+                    
+                    function swap(a, b) {
+                        let tempX = a.x;
+                        let tempY = a.y;
+                        a.x = b.x;
+                        a.y = b.y;
+                        b.x = tempX;
+                        b.y = tempY;
+                    }
+                    
+                    if (v0.y > v1.y) swap(v0, v1);
+                    if (v0.y > v2.y) swap(v0, v2);
+                    if (v1.y > v2.y) swap(v1, v2);
+                    
+                    var tri = {
+                        v1: v0,
+                        v2: v1,
+                        v3: v2,
+                        color: currentColor
+                    };
+                    models[selectedModelIndex].triangles.push(tri);
+                    points = [];
+                    state = 0;
+                    updateCodeDisplay();
+                    renderModelList();
+                    draw();
+                }
+            } else if (currentTool === 'paint') {
+                let hit = findTriangleUnderMouse(mouseX, mouseY);
+                if (hit) {
+                    if (models[selectedModelIndex].triangles[hit.triIndex].color.toLowerCase() !== currentColor.toLowerCase()) {
+                        saveUndoState();
+                        models[selectedModelIndex].triangles[hit.triIndex].color = currentColor;
+                        updateCodeDisplay();
+                    }
+                    hoverTriangleIndex = -1;
+                    if (oscillationTimer) {
+                        clearInterval(oscillationTimer);
+                        oscillationTimer = null;
+                    }
+                    draw();
+                }
+            } else if (currentTool === 'delete') {
+                let hit = findTriangleUnderMouse(mouseX, mouseY);
+                if (hit) {
+                    saveUndoState();
+                    models[selectedModelIndex].triangles.splice(hit.triIndex, 1);
+                    updateCodeDisplay();
+                    renderModelList();
+                    hoverTriangleIndex = -1;
+                    if (oscillationTimer) {
+                        clearInterval(oscillationTimer);
+                        oscillationTimer = null;
+                    }
+                    draw();
+                }
+            }
+        });
+
+        function cancelLastPoint() {
+            if (currentTool !== "add") return;
+            if (state === 1) { 
+                points = []; 
+                state = 0; 
+                draw();
+            }
+            else if (state === 2) { 
+                points = [points[0]]; 
+                state = 1; 
+                draw();
+            }
+        }
+
+
+        renderModelList();
+        updateCodeDisplay();
+        draw();
+        document.getElementById('toolMovePoints').classList.add('active');
+        currentTool = 'move';
+    </script>
+</body>
+</html>

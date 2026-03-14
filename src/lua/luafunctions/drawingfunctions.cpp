@@ -41,22 +41,22 @@ void DrawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
   Devices::Display->drawRect(x, y, w, h, color);
 }
 
-int DrawLine(int16_t x, int16_t y, int16_t x1, int16_t x2, uint16_t color)
+void DrawLine(int16_t x, int16_t y, int16_t x1, int16_t x2, uint16_t color)
 {
   Devices::Display->drawLine(x, y, x1, x2, color);
-  return 0;
 }
 
-int DrawCircle(int16_t x, int16_t y, int16_t r, uint16_t color)
+void DrawCircle(int16_t x, int16_t y, int16_t r, uint16_t color)
 {
   Devices::Display->drawCircle(x, y, r, color);
-  return 0;
 }
 
-int DrawFillCircle(int16_t x, int16_t y, int16_t r, uint16_t color)
-{
+void DrawFillCircle(int16_t x, int16_t y, int16_t r, uint16_t color){
   Devices::Display->fillCircle(x, y, r, color);
-  return 0;
+}
+
+void DrawFillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color){
+  Devices::Display->fillTriangle(x0, y0, x1, y1, x2, y2, color);
 }
 
 uint16_t color444(uint8_t r, uint8_t g, uint8_t b)

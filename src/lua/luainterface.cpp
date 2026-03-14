@@ -590,6 +590,7 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("drawPanelLine", DrawLine);
   m_lua->FuncRegister("drawPanelCircle", DrawCircle);
   m_lua->FuncRegister("drawPanelFillCircle", DrawFillCircle);
+  m_lua->FuncRegister("drawPanelFillTriangle", DrawFillTriangle);
   m_lua->FuncRegister("clearPanelBuffer", ClearScreen);
   m_lua->FuncRegister("drawPanelFace", DrawFace);
   m_lua->FuncRegisterOptional("setPanelAnimation", setAnimation, -1, false, -1, 250);
