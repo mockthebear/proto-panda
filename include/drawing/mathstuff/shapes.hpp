@@ -109,6 +109,7 @@ class PointGroups{
     PointGroups():groupCount(0),mainModel(nullptr){};
     public:
         void Translate(uint32_t group, Vec2f position);
+        void Scale(uint32_t group, Vec2f center, Vec2f scaleFactors);
         void Set(uint32_t group, Vec2f position);
         uint32_t groupCount;
         Model *mainModel;
@@ -136,6 +137,7 @@ class Model {
         int AddPointGroup(std::vector<int> points);
 
         void TranslatePoints(uint32_t pointId, Vec2f delta);
+        void ScalePoints(uint32_t pointId, Vec2f center, Vec2f scaleFactors);
         void SetPointsPosition(uint32_t pointId, Vec2f pos);
 
         const int GetSize(){ return triangleCount;};
@@ -156,8 +158,10 @@ class Model {
         float *aux3;
 
         uint16_t *color;
+        VecAligned2<float, 2> originalBoundaries;
         VecAligned2<float, 2> boundaries;
         Vec2f center;
+        Vec2f originalCenter;
         PointGroups bones;
         bool accumulatedOperation;
         bool batchOperations;
@@ -186,8 +190,7 @@ class Scene {
             models.emplace_back(m);
         };
 
-        
-        void RasterTriangleScanline(const Model* model, int triangleIdx, uint16_t color);
+      
                     
             // Mark pixel as drawn, return true if it was already drawn
         inline bool IRAM_ATTR MarkPixel(int x, int y) {

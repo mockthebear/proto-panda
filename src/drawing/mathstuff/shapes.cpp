@@ -19,6 +19,32 @@ void PointGroups::Translate(uint32_t group, Vec2f position){
     }
 };
 
+void PointGroups::Scale(uint32_t group, Vec2f center, Vec2f scaleFactors){
+    if (group >= groupCount){
+        return;
+    }
+    auto &it = points[group];
+    auto xPoints = mainModel->originalPoints.x;
+    auto yPoints = mainModel->originalPoints.y;
+    if (mainModel->accumulatedOperation){
+        xPoints = mainModel->points.x;
+        yPoints = mainModel->points.y;
+    }
+    for (auto &pointid : it){
+        // Translate point to origin relative to center
+        float x = xPoints[pointid] - center.x;
+        float y = yPoints[pointid] - center.y;
+        
+        // Scale
+        x *= scaleFactors.x;
+        y *= scaleFactors.y;
+        
+        // Translate back
+        xPoints[pointid] = x + center.x;
+        yPoints[pointid] = y + center.y;
+    }
+}
+
 void PointGroups::Set(uint32_t group, Vec2f position){
     if (group >= groupCount){
         return;
@@ -62,6 +88,11 @@ bool Model::Begin(int sz){
         color = nullptr;
         return false;
     }
+
+    originalBoundaries.x[1] = 999999.0f;
+    originalBoundaries.y[1] = 999999.0f;
+    originalBoundaries.x[0] = -999999.0f;
+    originalBoundaries.y[0] = -999999.0f;
     return true;
 }
 
@@ -254,6 +285,8 @@ void Model::Recalculate(){
     }
     center.x = (boundaries.x[0]-boundaries.x[1])/2.0f;
     center.y = (boundaries.y[0]-boundaries.y[1])/2.0f;
+
+    
 }
 
 Trianglef Model::GetTriangle(int i){
@@ -283,6 +316,24 @@ void Model::SetTriangle(int i, Vec2f p1, Vec2f p2, Vec2f p3, uint16_t color){
     originalPoints.x[localIndex+2]          = p3.x;
     originalPoints.y[localIndex+2]          = p3.y;
     this->color[i] = color;
+
+    for (int idx = localIndex; idx < localIndex+3; idx++ ){
+        if (originalPoints.x[idx] > originalBoundaries.x[0] ){
+            originalBoundaries.x[0] = originalPoints.x[idx];
+        }
+        if (originalPoints.y[idx] > originalBoundaries.y[0] ){
+            originalBoundaries.y[0] = originalPoints.y[idx];
+        }
+
+        if (originalPoints.x[idx] < originalBoundaries.x[1]){
+            originalBoundaries.x[1] = originalPoints.x[idx];
+        }
+        if (originalPoints.x[idx] < originalBoundaries.y[1]){
+            originalBoundaries.y[1] = originalPoints.y[idx];
+        }
+    }
+    originalCenter.x = (originalBoundaries.x[0]-originalBoundaries.x[1])/2.0f;
+    originalCenter.y = (originalBoundaries.y[0]-originalBoundaries.y[1])/2.0f;
 }
 
 void Model::SetTriangle(int i, Trianglef aux){
@@ -443,6 +494,9 @@ void Scene::RenderModels(){
 void Model::TranslatePoints(uint32_t groupid, Vec2f delta){
     bones.Translate(groupid, delta);
 }
+void Model::ScalePoints(uint32_t groupid, Vec2f center, Vec2f scaleFactors){
+    bones.Scale(groupid, center, scaleFactors);
+}
 void Model::SetPointsPosition(uint32_t groupid, Vec2f pos){
     bones.Set(groupid, pos);
 }
@@ -479,112 +533,3 @@ void Scene::RenderScene(){
     
     Devices::Display->endWrite();
 }
-
-
-void Scene::RasterTriangleScanline(const Model* model, int triangleIdx, uint16_t color) {
-    int baseIdx = triangleIdx * 3;
-    
-    // Get vertices (they're already sorted by Y from Recalculate())
-    float x0 = model->points.x[baseIdx];
-    float y0 = model->points.y[baseIdx];
-    float x1 = model->points.x[baseIdx + 1];
-    float y1 = model->points.y[baseIdx + 1];
-    float x2 = model->points.x[baseIdx + 2];
-    float y2 = model->points.y[baseIdx + 2];
-    
-    // Quick screen bounds check
-    if ((y0 < 0 && y1 < 0 && y2 < 0) || (y0 >= PANEL_HEIGHT && y1 >= PANEL_HEIGHT && y2 >= PANEL_HEIGHT)) {
-        return;
-    }
-    
-    Devices::Display->startWrite();
-    
-    // Pre-calculate color once
-    uint8_t r, g, b;
-    Devices::Display->color565to888(color, r, g, b);
-    
-    // Handle all-on-same-line case
-    if (y0 == y2) {
-        float a = x0, b = x0;
-        if (x1 < a) a = x1;
-        else if (x1 > b) b = x1;
-        if (x2 < a) a = x2;
-        else if (x2 > b) b = x2;
-        
-        int16_t yInt = (int16_t)y0;
-        if (yInt >= 0 && yInt < PANEL_HEIGHT) {
-            int16_t aInt = std::max((int16_t)0, (int16_t)a);
-            int16_t bInt = std::min((int16_t)(PANEL_WIDTH - 1), (int16_t)b);
-            
-            for (int16_t x = aInt; x <= bInt; x++) {
-                Devices::Display->updateMatrixDMABuffer_2(x, yInt, r, g, b);
-                Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH) + x, yInt, r, g, b);
-            }
-        }
-        Devices::Display->endWrite();
-        return;
-    }
-    
-    // Pre-calculate slopes and inverses
-    float dy01 = y1 - y0;
-    float dy02 = y2 - y0;
-    float dy12 = y2 - y1;
-    
-    float slope01 = (dy01 != 0) ? (x1 - x0) / dy01 : 0;
-    float slope02 = (dy02 != 0) ? (x2 - x0) / dy02 : 0;
-    float slope12 = (dy12 != 0) ? (x2 - x1) / dy12 : 0;
-    
-    // Top part of triangle
-    int yStart = std::max(0, (int)ceilf(y0));
-    int yMid = (int)ceilf(y1);
-    int yEnd = std::min((int)y2, PANEL_HEIGHT - 1);
-    
-    // Rasterize top half (y0 to y1)
-    if (yStart < yMid) {
-        for (int y = yStart; y < yMid; y++) {
-            // Calculate x positions using slopes
-            float xLeft = x0 + slope01 * (y - y0);
-            float xRight = x0 + slope02 * (y - y0);
-            
-            if (xLeft > xRight) {
-                float tmp = xLeft;
-                xLeft = xRight;
-                xRight = tmp;
-            }
-            
-            int xStartInt = std::max(0, (int)xLeft);
-            int xEndInt = std::min(PANEL_WIDTH - 1, (int)xRight);
-            
-            for (int x = xStartInt; x <= xEndInt; x++) {
-                Devices::Display->updateMatrixDMABuffer_2(x, y, r, g, b);
-                Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH) + x, y, r, g, b);
-            }
-        }
-    }
-    
-    // Rasterize bottom half (y1 to y2)
-    if (yMid <= yEnd && y1 != y2) {
-        for (int y = yMid; y <= yEnd; y++) {
-            // Calculate x positions using slopes
-            float xLeft = x1 + slope12 * (y - y1);
-            float xRight = x0 + slope02 * (y - y0);
-            
-            if (xLeft > xRight) {
-                float tmp = xLeft;
-                xLeft = xRight;
-                xRight = tmp;
-            }
-            
-            int xStartInt = std::max(0, (int)xLeft);
-            int xEndInt = std::min(PANEL_WIDTH - 1, (int)xRight);
-            
-            for (int x = xStartInt; x <= xEndInt; x++) {
-                Devices::Display->updateMatrixDMABuffer_2(x, y, r, g, b);
-                Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH) + x, y, r, g, b);
-            }
-        }
-    }
-    
-    Devices::Display->endWrite();
-}
-

@@ -33,7 +33,7 @@
 
 #define DEVICE_NAME                     "Proto panda hand 0xc1"                  
 
-#define STREAM_SIZE                     11
+#define STREAM_SIZE                     12
 #define APP_BLE_OBSERVER_PRIO           3                                       /**< Application's BLE observer priority. You shouldn't need to modify this value. */
 #define APP_BLE_CONN_CFG_TAG            1                                       /**< A tag identifying the SoftDevice BLE configuration. */
 

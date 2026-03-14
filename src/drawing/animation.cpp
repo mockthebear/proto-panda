@@ -353,11 +353,6 @@ void Animation::SetShader(int id){
 }
 
 void Animation::Update(File *file){
-    if (file != nullptr){
-		rend.RenderTriangles();
-		MakeFlip();
-		return;
-	}
     xSemaphoreTake(m_mutex, portMAX_DELAY);
     if (m_animations.size() > 0){
         auto &elem = m_animations.top();
