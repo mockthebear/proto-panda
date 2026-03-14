@@ -8,8 +8,6 @@
 
 
 #include "FS.h"
-#include "SPIFFS.h"
-
 unsigned char Animation::buffer[FILE_SIZE];
 
 
@@ -53,6 +51,9 @@ AnimationFrameAction AnimationSequence::ChangeFrame(){
 }
 
 AnimationFrameAction AnimationSequence::Update(int m_interruptPin){
+    if (m_isModel){
+        return ANIMATION_MODEL;
+    }
     if (m_isNew){
         m_counter = millis()+m_duration;
         m_isNew = false;
@@ -63,12 +64,10 @@ AnimationFrameAction AnimationSequence::Update(int m_interruptPin){
         if (m_interruptPin < 0){
             return ChangeFrame();
         }
-        switch (m_updateMode)
-        {
+        switch (m_updateMode){
         case 1:
             return InterruptFrame(digitalRead(m_interruptPin));
             break;
-        
         default:
             return ChangeFrame();
         }
@@ -175,7 +174,6 @@ void reorder_rgb(ColorMode mode, uint8_t *r, uint8_t *g, uint8_t *b){
     }
 }
 
-
 void Animation::drawPixelAt(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r, uint8_t &g, uint8_t &b, uint8_t &flip_left, uint8_t &flip_right, int &byteIdOled){
     if ((color & 0x8610) != 0) { 
         OledScreen::DisplayFace[byteIdOled] = 1;
@@ -214,6 +212,7 @@ void Animation::DrawFrame(File *file, int i){
     if (i == 0){
         return;
     }
+
     uint64_t ld = micros();
     uint64_t begin = ld;
     
@@ -355,7 +354,6 @@ void Animation::SetShader(int id){
 }
 
 void Animation::Update(File *file){
-    
     xSemaphoreTake(m_mutex, portMAX_DELAY);
     if (m_animations.size() > 0){
         auto &elem = m_animations.top();
@@ -388,6 +386,7 @@ void Animation::setManaged(bool v){
 }
 
 bool Animation::internalUpdate(File *file, AnimationSequence &running){
+
     switch (running.Update(m_interruptPin)){
     case ANIMATION_FINISHED:
         return 1;
@@ -398,6 +397,8 @@ bool Animation::internalUpdate(File *file, AnimationSequence &running){
             DrawFrame(file, m_lastFace);
         }
         break;
+    case ANIMATION_MODEL:
+        DrawAnimatonModel(running);
     case ANIMATION_NO_CHANGE:
         if (m_shader == 1){
             m_lastFace = running.GetFrameId();
@@ -414,6 +415,16 @@ bool Animation::internalUpdate(File *file, AnimationSequence &running){
         break;
     }
     return false;
+}
+
+
+void Animation::DrawAnimatonModel(AnimationSequence &running){
+    uint64_t ld = micros();
+    uint64_t begin = ld;
+    m_scene.RenderScene();
+    m_needFlip = true;
+    m_frameDrawDuration = micros()-ld;
+    m_cycleDuration =  micros()-begin;
 }
 
 int Animation::getCurrentAnimationStorage(){
@@ -444,6 +455,27 @@ void Animation::SetInterruptAnimation(int duration, std::vector<int> frames){
     xSemaphoreGive(m_mutex);
 }
 
+void Animation::SetModelAnimation(std::vector<int> models, bool dropAll){
+    if (dropAll){
+        xSemaphoreTake(m_mutex, portMAX_DELAY);
+        while (m_animations.size() > 0){
+            m_animations.pop();
+        }
+        xSemaphoreGive(m_mutex);
+    }
+
+    AnimationSequence newSeq;
+    newSeq.m_duration = 0;
+    newSeq.m_frames = PSRAMVector<int>(models.begin(), models.end());
+    newSeq.m_counter = 0;
+    newSeq.m_frame = 0;
+    newSeq.m_isNew = true;
+    newSeq.m_isModel = true;
+    xSemaphoreTake(m_mutex, portMAX_DELAY);
+    m_animations.emplace(newSeq);
+    xSemaphoreGive(m_mutex);
+}
+
 void Animation::SetAnimation(int duration, std::vector<int> frames, int repeatTimes, bool dropAll, int externalStorageId){
     if (dropAll){
         xSemaphoreTake(m_mutex, portMAX_DELAY);
@@ -466,5 +498,34 @@ void Animation::SetAnimation(int duration, std::vector<int> frames, int repeatTi
     xSemaphoreGive(m_mutex);
 }
 
+
+int Animation::LoadModel(ModelData modelInfo){
+    Model *mem = new Model();
+    int tsize = modelInfo.color.size();
+    mem->Begin(tsize);
+    for (int i=0;i<tsize;i++){
+        int currDataTriangle = i * 3;
+        mem->SetTriangle(i, 
+            Vec2f(modelInfo.x[currDataTriangle + 0], modelInfo.y[currDataTriangle + 0]), 
+            Vec2f(modelInfo.x[currDataTriangle + 1], modelInfo.y[currDataTriangle + 1]), 
+            Vec2f(modelInfo.x[currDataTriangle + 2], modelInfo.y[currDataTriangle + 2]), 
+            modelInfo.color[i]
+        );
+    }
+
+    mem->Recalculate();
+    mem->Reset();
+    mem->SetBatchOperations(true);
+    mem->SetAccumulativeOperations(true);
+    mem->CopyToRaster();
+    return m_scene.addModel(mem);
+}
+
+int Animation::AddModelPointList(int modelId, PointList points){
+    if (modelId >= m_scene.models.size()){
+        return -1;
+    }
+    return m_scene.models[modelId]->AddPointGroup(points);
+}
 
 #endif

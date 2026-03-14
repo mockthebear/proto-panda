@@ -41,22 +41,22 @@ void DrawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
   Devices::Display->drawRect(x, y, w, h, color);
 }
 
-int DrawLine(int16_t x, int16_t y, int16_t x1, int16_t x2, uint16_t color)
+void DrawLine(int16_t x, int16_t y, int16_t x1, int16_t x2, uint16_t color)
 {
   Devices::Display->drawLine(x, y, x1, x2, color);
-  return 0;
 }
 
-int DrawCircle(int16_t x, int16_t y, int16_t r, uint16_t color)
+void DrawCircle(int16_t x, int16_t y, int16_t r, uint16_t color)
 {
   Devices::Display->drawCircle(x, y, r, color);
-  return 0;
 }
 
-int DrawFillCircle(int16_t x, int16_t y, int16_t r, uint16_t color)
-{
+void DrawFillCircle(int16_t x, int16_t y, int16_t r, uint16_t color){
   Devices::Display->fillCircle(x, y, r, color);
-  return 0;
+}
+
+void DrawFillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color){
+  Devices::Display->fillTriangle(x0, y0, x1, y1, x2, y2, color);
 }
 
 uint16_t color444(uint8_t r, uint8_t g, uint8_t b)
@@ -117,22 +117,33 @@ void deleteBulkFile(){
   FFat.remove("/frames.bulk");
 }
 
-void composeBulkFile()
-{
+void composeBulkFile(){
   g_frameRepo.composeBulkFile();
 }
 
-void setAnimation(std::vector<int> frames, int duration, int repeatTimes, bool dropAll, int externalStorageId)
-{
+void setAnimation(std::vector<int> frames, int duration, int repeatTimes, bool dropAll, int externalStorageId){
   g_animation.SetAnimation(duration, frames, repeatTimes, dropAll, externalStorageId);
 }
 
-void setInterruptFrames(std::vector<int> frames, int duration )
-{
+void setModelAnimation(std::vector<int> models, bool dropAll){
+  g_animation.SetModelAnimation(models, dropAll);
+}
+
+
+int loadModel(ModelData triangles){
+  return g_animation.LoadModel(triangles);
+}
+
+int addModelPointList(std::vector<int> points, int modelId){
+  Serial.printf("baka is baka\n");
+  return g_animation.AddModelPointList(modelId, points);
+}
+
+void setInterruptFrames(std::vector<int> frames, int duration ){
   g_animation.SetInterruptAnimation(duration, frames);
 }
-void setInterruptAnimationPin(int pin)
-{
+
+void setInterruptAnimationPin(int pin){
   if (pin > 0){
     pinMode(pin, INPUT);
   }
@@ -140,40 +151,33 @@ void setInterruptAnimationPin(int pin)
 }
 
 
-void setManaged(bool bn)
-{
+void setManaged(bool bn){
   g_animation.setManaged(bn);
 }
-bool isManaged()
-{
+
+bool isManaged(){
   return g_animation.isManaged();
 }
 
-int getCurrentAnimationStorage()
-{
+int getCurrentAnimationStorage(){
   return g_animation.getCurrentAnimationStorage();
 }
-int getCurrentFace()
-{
+
+int getCurrentFace(){
   return g_animation.getCurrentFace();
 }
 
-void DrawPanelFaceToScreen(int x, int y)
-{
+void DrawPanelFaceToScreen(int x, int y){
   OledScreen::DrawPanelFaceToScreen(x, y);
   return;
 }
 
-
-void gentlySetPanelBrightness(uint8_t bright, uint8_t rate)
-{
+void gentlySetPanelBrightness(uint8_t bright, uint8_t rate){
   Devices::SetGentlyBrightness(bright, rate);
   return;
 }
 
-
-bool popPanelAnimation()
-{
+bool popPanelAnimation(){
   return g_animation.PopAnimation();
 }
 

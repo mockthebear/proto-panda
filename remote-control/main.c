@@ -19,11 +19,10 @@ const uint8_t button_pins[] = {
   31,
   7,
   6,
-  5
+  5,
+  29,
 };
-const uint8_t button_wakeup_pins[] = {
-  29
-};
+
 static int gmode = 0;
 
 static int adv_led = 0;
@@ -208,9 +207,10 @@ static void sleep_mode_enter(void) {
   nrf_gpio_pin_clear(PIN_LED_1);
 
   uint32_t err_code;
-
-  nrf_gpio_cfg_sense_input(button_wakeup_pins[0], NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
-
+  for (int i = 0; i < 6; i++) {
+    nrf_gpio_cfg_input(button_pins[i], NRF_GPIO_PIN_PULLUP);
+    nrf_gpio_cfg_sense_input(button_pins[i], NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
+  }
   if (hasLis3) {
 
     LSM6_set_power_mode(false);
@@ -220,14 +220,8 @@ static void sleep_mode_enter(void) {
   nrf_delay_ms(2000);
 
 
-  for (int i = 0; i < 5; i++) {
-      nrf_gpio_cfg_input(button_pins[i], NRF_GPIO_PIN_PULLDOWN);
-  }
-
   nrf_gpio_pin_clear(PIN_LED_2);
   nrf_gpio_pin_clear(PIN_LED_2);
-  //nrf_gpio_pin_clear(PIN_POWER_ACC);
-
   sd_power_system_off();
 }
 
@@ -341,6 +335,24 @@ static void ble_evt_handler(ble_evt_t
         APP_ERROR_CHECK(err_code);
     }
     break;
+  case BLE_GAP_EVT_DATA_LENGTH_UPDATE_REQUEST:
+    NRF_LOG_DEBUG("Data length update request received");
+    // Accept the requested data length parameters
+    ble_gap_data_length_params_t dl_params;
+    
+    // You can either accept the peer's requested parameters or propose your own
+    err_code = sd_ble_gap_data_length_update(p_ble_evt->evt.gap_evt.conn_handle, NULL, NULL);
+    // Using NULL, NULL accepts the peer's requested parameters
+    
+    if (err_code != NRF_SUCCESS) {
+        NRF_LOG_ERROR("Failed to update data length: %d", err_code);
+    }
+    break;
+  case BLE_GAP_EVT_ADV_REPORT:
+
+    NRF_LOG_DEBUG("Advertising report received from:");
+
+    break;
   case BLE_GAP_EVT_PHY_UPDATE_REQUEST: {
         NRF_LOG_DEBUG("PHY update request.");
         ble_gap_phys_t
@@ -373,7 +385,28 @@ static void ble_evt_handler(ble_evt_t
     err_code = sd_ble_gatts_sys_attr_set(m_our_service.conn_handle, NULL, 0, 0);
     APP_ERROR_CHECK(err_code);
     break;
-
+  case BLE_GATTC_EVT_EXCHANGE_MTU_RSP:
+  {
+      NRF_LOG_INFO("GATT Client MTU exchange response received");
+    
+      // Get the negotiated MTU from the event
+      ble_gattc_evt_exchange_mtu_rsp_t *p_mtu_rsp = 
+          &p_ble_evt->evt.gattc_evt.params.exchange_mtu_rsp;
+    
+      // The negotiated MTU is available in the response
+      // The SoftDevice automatically sets ATT_MTU to the minimum of:
+      // - Client RX MTU value you requested, and
+      // - Server RX MTU value from this response [citation:1][citation:3]
+      uint16_t negotiated_mtu = p_mtu_rsp->server_rx_mtu;
+    
+      NRF_LOG_INFO("Negotiated MTU: %d", negotiated_mtu);
+    
+      // You can store this value if needed for your application
+      // current_mtu = negotiated_mtu;
+    
+      // The ATT MTU is now updated - you can proceed with larger data transfers
+      break;
+  }
   case BLE_GATTC_EVT_TIMEOUT:
     NRF_LOG_DEBUG("GATT Client Timeout.");
     err_code = sd_ble_gap_disconnect(p_ble_evt -> evt.gattc_evt.conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
@@ -387,13 +420,13 @@ static void ble_evt_handler(ble_evt_t
     APP_ERROR_CHECK(err_code);
     break;
   case BLE_GATTS_EVT_EXCHANGE_MTU_REQUEST:
-    NRF_LOG_DEBUG("Asked for MTU");
-    // err_code = sd_ble_gatts_exchange_mtu_reply(p_ble_evt->evt.gatts_evt.conn_handle, BLE_GATT_ATT_MTU_DEFAULT);
-    //  APP_ERROR_CHECK(err_code);
-    // ok
+    NRF_LOG_DEBUG("MTU exchange request received");
+    err_code = sd_ble_gatts_exchange_mtu_reply(p_ble_evt->evt.gatts_evt.conn_handle, NRF_SDH_BLE_GATT_MAX_MTU_SIZE);
+    APP_ERROR_CHECK(err_code);
+    NRF_LOG_INFO("Responded with MTU: %d", NRF_SDH_BLE_GATT_MAX_MTU_SIZE);
     break;
   case BLE_GATTS_EVT_HVN_TX_COMPLETE:
-    // ok
+    NRF_LOG_INFO("Not implemented: %d", (int) p_ble_evt -> header.evt_id);
     break;
   default:
     NRF_LOG_INFO("Not implemented: %d", (int) p_ble_evt -> header.evt_id);
@@ -500,7 +533,7 @@ static void app_timer_handler(void * p_context) {
     aux[0] = config_integer;
     
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 6; i++) {
       uint32_t state = nrf_gpio_pin_read(button_pins[i]);
       aux[i+1] = !state;
     }
@@ -528,23 +561,16 @@ static void app_timer_handler(void * p_context) {
 
       LSM6_readGyro( & gx, & gy, & gz);
     }
-    if (advCountToSleep < 799) {
+    if (advCountToSleep < 1995) {
       NRF_LOG_INFO("Count: %d/%d (%d, %d, %d) ", advCountToSleep, started_timer,gx, gy, gz);
     }
 
-    if (advCountToSleep >= 801) {
+    if (advCountToSleep >= 2001) {
       sleep_mode_enter();
     }
   }
 
-  if (advCountToSleep >= 20) {
-    for (int i = 0; i < 2; i++) {
-      uint32_t state = nrf_gpio_pin_read(button_wakeup_pins[0]);
-      if (state == 1) {
-        sleep_mode_enter();
-      }
-    }
-  }
+ 
   started_timer--;
 }
 
@@ -623,7 +649,7 @@ int main(void) {
   nrf_gpio_pin_clear(PIN_LED_2);
   nrf_gpio_pin_clear(PIN_LED_1);
 
-   for (int i = 0; i < 5; i++) {
+   for (int i = 0; i < 6; i++) {
       nrf_gpio_cfg_input(button_pins[i], NRF_GPIO_PIN_PULLUP);
    }
 
@@ -638,8 +664,6 @@ int main(void) {
   nrf_delay_ms(50);
   nrf_gpio_pin_clear(PIN_LED_1);
   nrf_delay_ms(500);
-
-  nrf_gpio_cfg_input(button_wakeup_pins[0], NRF_GPIO_PIN_PULLDOWN);
 
   adv_led = PIN_LED_1;
   gmode = 0;
