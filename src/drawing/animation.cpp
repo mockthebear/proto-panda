@@ -502,11 +502,9 @@ void Animation::SetAnimation(int duration, std::vector<int> frames, int repeatTi
 int Animation::LoadModel(ModelData modelInfo){
     Model *mem = new Model();
     int tsize = modelInfo.color.size();
-    Serial.printf("Setando model ai mano kkkjjjkjjjk=%d", tsize);
     mem->Begin(tsize);
     for (int i=0;i<tsize;i++){
         int currDataTriangle = i * 3;
-        Serial.printf("Vamos idx %d / %d\n", i, currDataTriangle);
         mem->SetTriangle(i, 
             Vec2f(modelInfo.x[currDataTriangle + 0], modelInfo.y[currDataTriangle + 0]), 
             Vec2f(modelInfo.x[currDataTriangle + 1], modelInfo.y[currDataTriangle + 1]), 
@@ -514,21 +512,20 @@ int Animation::LoadModel(ModelData modelInfo){
             modelInfo.color[i]
         );
     }
-    Serial.printf("oooooo added\n");
-    //, std::vector<PointList> pointGroups
-    //for (int i=0;i<pointGroups.size();i++){
-    //    mem->AddPointGroup(pointGroups[i]);
-    //}
+
     mem->Recalculate();
-    Serial.printf("r added\n");
     mem->Reset();
-    Serial.printf("a\n");
     mem->SetBatchOperations(true);
     mem->SetAccumulativeOperations(true);
-    Serial.printf("c added\n");
     mem->CopyToRaster();
-    Serial.printf("bora de bora\n");
     return m_scene.addModel(mem);
+}
+
+int Animation::AddModelPointList(int modelId, PointList points){
+    if (modelId >= m_scene.models.size()){
+        return -1;
+    }
+    return m_scene.models[modelId]->AddPointGroup(points);
 }
 
 #endif

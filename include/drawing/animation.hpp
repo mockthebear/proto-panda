@@ -72,6 +72,7 @@ class Animation{
         }
 
         int LoadModel(ModelData triangles);
+        int AddModelPointList(int modelId, PointList points);
 
         bool PopAnimation();
         void MakeFlip();

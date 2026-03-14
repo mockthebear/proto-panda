@@ -7,6 +7,30 @@ local configloader = require("configloader")
 local drivers = require("drivers")
 local input = require("input")
 
+
+function loadModelsFromJson(filename)
+    local json = require("json")
+    local fp, err = io.open(filename, "r")
+    if not fp then 
+        error("Failed to load "..filename..": "..tostring(err))
+    end
+    local content = fp:read("*a")
+    fp:close()
+    json.filename = filename
+    local content = json.decode(content)
+    for i,model in pairs(content.models) do  
+        print("Loading "..model.name)
+        local id = loadModel(model)
+        print("ID="..id)
+        if model.pointGroups and #model.pointGroups > 0 then 
+            for idx,pg in pairs(model.pointGroups) do 
+                local pgid = addModelPointList(pg.pointIndices, id)
+                print("Added point group id "..pgid)
+            end
+        end
+    end
+end
+
 function onSetup()
 
     dictLoad()
@@ -39,6 +63,9 @@ function onSetup()
     generic.displaySplashMessage("Starting:\nMenu") 
     menu.setup()
 
+    loadModelsFromJson("/models/face.json")
+    
+
 end
 
 function onPreflight()
@@ -49,6 +76,7 @@ function onPreflight()
     setPoweringMode(BUILT_IN_POWER_MODE)
     ledsGentlySeBrightness(tonumber(dictGet("led_brightness") ) or 64)
     gentlySetPanelBrightness(tonumber(dictGet("panel_brightness")) or 64)
+    setModelAnimation({0,1,2,3}, true)
 end
 
 function onLoop(dt)

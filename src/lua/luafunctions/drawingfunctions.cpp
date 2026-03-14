@@ -130,8 +130,13 @@ void setModelAnimation(std::vector<int> models, bool dropAll){
 }
 
 
-void loadModel(ModelData triangles){
-  g_animation.LoadModel(triangles);
+int loadModel(ModelData triangles){
+  return g_animation.LoadModel(triangles);
+}
+
+int addModelPointList(std::vector<int> points, int modelId){
+  Serial.printf("baka is baka\n");
+  return g_animation.AddModelPointList(modelId, points);
 }
 
 void setInterruptFrames(std::vector<int> frames, int duration ){

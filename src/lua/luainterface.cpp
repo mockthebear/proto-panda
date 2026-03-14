@@ -597,6 +597,7 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegisterOptional("setPanelAnimation", setAnimation, -1, false, -1, 250);
   m_lua->FuncRegisterOptional("setModelAnimation", setModelAnimation, false);
   m_lua->FuncRegisterOptional("loadModel", loadModel);
+  m_lua->FuncRegisterOptional("addModelPointList", addModelPointList);
 
 
   m_lua->FuncRegister("popPanelAnimation", popPanelAnimation); 
