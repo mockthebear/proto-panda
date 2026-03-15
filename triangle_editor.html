@@ -13,19 +13,59 @@
             height: 100vh;
             overflow: hidden;
         }
-        /* TOP BAR */
-        .top-bar {
-            background: #2d2d2d;
-            border-bottom: 2px solid #444;
-            padding: 8px 16px;
+
+        /* MAIN LAYOUT */
+        .main-layout {
             display: flex;
-            align-items: center;
-            gap: 16px;
-            box-shadow: inset 0 -2px 0 #3a3a3a;
-            z-index: 200;
+            flex: 1;
             position: relative;
         }
-        .top-bar-icon {
+
+        /* LEFT PANEL - with logo at top */
+        .left-panel {
+            width: 80px;
+            background: #2d2d2d;
+            border-right: 2px solid #444;
+            padding: 8px 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            box-sizing: border-box;
+            box-shadow: inset -2px 0 0 #3a3a3a;
+            position: relative;
+            z-index: 100;
+        }
+
+        /* Logo container at the very top */
+        .logo-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0px 0;
+            margin-bottom: 0px;
+            border-bottom: 1px solid #444;
+            cursor: pointer;
+        }
+
+        .logo-container img {
+            max-width: 60px;
+            max-height: 55px;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
+        /* Save/Load buttons at top of tool bar */
+        .top-tool-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+            width: 100%;
+            margin-bottom: 4px;
+        }
+
+        .top-tool-icon {
             width: 32px;
             height: 32px;
             background: #3c3c3c;
@@ -35,22 +75,25 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 16px;
             color: #ccc;
             transition: all 0.1s ease;
             box-shadow: 0 1px 2px rgba(0,0,0,0.5);
             position: relative;
+            margin: 0 auto;
         }
-        .top-bar-icon:hover {
+
+        .top-tool-icon:hover {
             background: #4a4a4a;
             border-color: #777;
         }
-        .top-bar-icon:hover::after {
+
+        .top-tool-icon:hover::after {
             content: attr(data-tooltip);
             position: absolute;
-            bottom: -30px;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 110%;
+            top: 50%;
+            transform: translateY(-50%);
             background: #111;
             color: #fff;
             padding: 4px 8px;
@@ -62,34 +105,7 @@
             pointer-events: none;
             box-shadow: 0 2px 8px rgba(0,0,0,0.8);
         }
-        .top-bar-separator {
-            width: 1px;
-            height: 24px;
-            background: #444;
-            margin: 0 8px;
-        }
 
-        /* MAIN LAYOUT */
-        .main-layout {
-            display: flex;
-            flex: 1;
-            position: relative;
-        }
-
-        /* LEFT PANEL */
-        .left-panel {
-            width: 60px;
-            background: #2d2d2d;
-            border-right: 2px solid #444;
-            padding: 8px 4px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            box-sizing: border-box;
-            box-shadow: inset -2px 0 0 #3a3a3a;
-            position: relative;
-        }
         .panel-section-label {
             color: #aaa;
             font-size: 10px;
@@ -104,15 +120,15 @@
             padding-bottom: 2px;
         }
         .tool-grid {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 4px;
             width: 100%;
             align-items: center;
         }
         .tool-icon {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             background: #3c3c3c;
             border: 1px solid #555;
             border-radius: 4px;
@@ -120,11 +136,12 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 20px;
+            font-size: 16px;
             color: #ccc;
             transition: all 0.1s ease;
             box-shadow: 0 1px 2px rgba(0,0,0,0.5);
             position: relative;
+            margin: 0 auto;
         }
         .tool-icon.active {
             background: #ff9900;
@@ -158,6 +175,7 @@
             flex-direction: column;
             align-items: center;
             gap: 4px;
+            width: 100%;
         }
         .color-label {
             color: #aaa;
@@ -165,8 +183,8 @@
             text-transform: uppercase;
         }
         #colorPicker {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             padding: 0;
             border: 2px solid #ff9900;
             border-radius: 4px;
@@ -181,10 +199,9 @@
         }
         .toggle-section {
             width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px 4px;
             padding: 8px 0;
             border-top: 1px solid #444;
             margin-top: 4px;
@@ -199,8 +216,8 @@
             width: 100%;
         }
         .toggle-box {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             background: #3c3c3c;
             border: 1px solid #555;
             border-radius: 6px;
@@ -208,7 +225,7 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 20px;
+            font-size: 18px;
             color: #ccc;
             transition: all 0.1s ease;
             box-shadow: 0 1px 2px rgba(0,0,0,0.5);
@@ -254,126 +271,236 @@
             transform: rotate(-45deg);
         }
         .grid-icon {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: bold;
             line-height: 1;
         }
         .circle-icon {
-            font-size: 18px;
+            font-size: 16px;
             line-height: 1;
         }
         .pixel-icon {
-            font-size: 18px;
+            font-size: 16px;
             line-height: 1;
             font-weight: bold;
         }
 
-        /* RIGHT PANEL */
+
         .right-panel {
-            width: 260px;
-            background: #2d2d2d;
+            width: 280px;
+            background: #1a1a1a;
             border-left: 2px solid #555;
-            padding: 15px;
+            padding: 0; 
             color: #eee;
             box-sizing: border-box;
-            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 15px;
             z-index: 150;
             position: relative;
+            box-shadow: -4px 0 8px rgba(0,0,0,0.5);
+            height: 100%;
         }
-        .panel-header {
+
+
+        .models-section {
+            height: 50%;
+            display: flex;
+            flex-direction: column;
+            padding: 12px 12px 6px 12px;
+            box-sizing: border-box;
+            border-bottom: 2px solid #444;
+            overflow: hidden;
+        }
+
+
+        .animations-section {
+            height: 50%;
+            display: flex;
+            flex-direction: column;
+            padding: 12px 12px 6px 12px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+
+        .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 5px;
+            background: #2d2d2d;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #ff9900;
+            margin-bottom: 10px;
+            flex-shrink: 0;
         }
-        .panel-header h3 {
+
+        .section-header h3 {
             margin: 0;
-            border-bottom: none;
-            padding: 0;
+            color: #ff9900;
+            font-size: 13px;
+            font-weight: bold;
         }
-        .add-model-btn {
+
+        .add-btn {
             background: #ff9900;
             color: #111;
             border: none;
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             border-radius: 4px;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.1s ease;
         }
-        .add-model-btn:hover {
+
+        .add-btn:hover {
             background: #ffaa33;
+            transform: scale(1.05);
         }
+
+
+        .section-content {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0; 
+            background: #222;
+            border-radius: 4px;
+            padding: 8px;
+            border: 1px solid #444;
+        }
+
+        /* Model list container */
         .model-list {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            max-height: 400px;
-            overflow-y: auto;
-            padding-right: 5px;
+            gap: 6px;
         }
+
+  
+        .animation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .animation-placeholder {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+            border: 2px dashed #444;
+            border-radius: 6px;
+            background: #2d2d2d;
+            font-size: 12px;
+        }
+
+    
         .model-item {
             background: #3c3c3c;
             border: 1px solid #555;
             border-radius: 6px;
-            padding: 10px;
+            padding: 8px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             cursor: pointer;
             transition: all 0.1s;
         }
+
         .model-item.selected {
             border: 2px solid #ff9900;
             background: #4a4a4a;
-            padding: 9px;
+            padding: 7px;
+            box-shadow: 0 0 8px rgba(255,153,0,0.3);
         }
+
+        .model-item:hover {
+            background: #4a4a4a;
+            border-color: #777;
+        }
+
         .model-header {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             width: 100%;
         }
+
         .model-vis-checkbox {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             cursor: pointer;
             accent-color: #ff9900;
         }
+
         .model-name {
             flex: 1;
-            font-size: 14px;
+            font-size: 12px;
             color: #ddd;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            font-weight: bold;
         }
+
         .model-count {
-            font-size: 12px;
-            color: #aaa;
+            font-size: 10px;
+            color: #9cdcfe;
             background: #2d2d2d;
-            padding: 2px 6px;
-            border-radius: 10px;
+            padding: 2px 4px;
+            border-radius: 8px;
+            border: 1px solid #444;
         }
+
         .model-controls {
             display: flex;
-            gap: 4px;
+            gap: 2px;
             align-items: center;
         }
+
         .model-order-controls {
             display: flex;
             flex-direction: column;
-            gap: 2px;
-            margin-right: 4px;
+            gap: 1px;
+            margin-right: 2px;
         }
+
         .model-order-btn {
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 3px;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #ccc;
+            font-size: 10px;
+            transition: all 0.1s;
+        }
+
+        .model-order-btn:hover:not(:disabled) {
+            background: #4a4a4a;
+            border-color: #ff9900;
+            color: #ff9900;
+        }
+
+        .model-order-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .model-gear-btn {
             background: #3c3c3c;
             border: 1px solid #555;
             border-radius: 3px;
@@ -387,110 +514,84 @@
             font-size: 12px;
             transition: all 0.1s;
         }
-        .model-order-btn:hover {
-            background: #4a4a4a;
-            border-color: #ff9900;
-            color: #ff9900;
-        }
-        .model-order-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-        .model-order-btn:disabled:hover {
-            background: #3c3c3c;
-            border-color: #555;
-            color: #ccc;
-        }
-        .model-gear-btn {
-            background: #3c3c3c;
-            border: 1px solid #555;
-            border-radius: 3px;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: #ccc;
-            font-size: 14px;
-            transition: all 0.1s;
-        }
+
         .model-gear-btn:hover {
             background: #4a4a4a;
             border-color: #ff9900;
             color: #ff9900;
         }
-        .model-remove {
-            color: #ff6666;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            padding: 0 4px;
-        }
-        .model-remove:hover {
-            color: #ff9999;
-        }
+
         .model-collapsible {
-            margin-left: 26px;
+            margin-left: 22px;
             border-left: 1px solid #555;
-            padding-left: 8px;
+            padding-left: 6px;
         }
+
         .model-collapse-header {
             display: flex;
             align-items: center;
             gap: 4px;
             color: #aaa;
-            font-size: 12px;
+            font-size: 10px;
             cursor: pointer;
             padding: 4px 0;
         }
+
         .model-collapse-header:hover {
             color: #ff9900;
         }
+
         .model-collapse-content {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
             padding: 4px 0;
         }
+
         .group-item {
             background: #2d2d2d;
             border: 1px solid #444;
             border-radius: 4px;
-            padding: 8px;
+            padding: 6px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
             cursor: pointer;
             transition: all 0.1s;
         }
+
         .group-item.selected-group {
             border: 2px solid #ff9900;
             background: #3a3a3a;
-            padding: 7px;
+            padding: 5px;
         }
+
         .group-item:hover {
             background: #4a4a4a;
             border-color: #ff9900;
         }
+
         .group-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             width: 100%;
         }
+
         .group-name {
             font-weight: bold;
             color: #ffaa33;
+            font-size: 11px;
         }
+
         .group-delete-btn {
             background: #ff6666;
             color: #111;
             border: none;
             border-radius: 3px;
-            width: 20px;
-            height: 20px;
-            font-size: 14px;
+            width: 18px;
+            height: 18px;
+            font-size: 12px;
             font-weight: bold;
             cursor: pointer;
             display: flex;
@@ -498,38 +599,75 @@
             justify-content: center;
             transition: all 0.1s;
         }
+
         .group-delete-btn:hover {
             background: #ff4444;
             transform: scale(1.1);
         }
+
         .group-points-list {
             display: flex;
             flex-wrap: wrap;
-            gap: 4px;
-            margin-top: 4px;
+            gap: 3px;
+            margin-top: 2px;
         }
+
         .group-point-badge {
             background: #1e1e1e;
             color: #9cdcfe;
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 10px;
+            padding: 2px 4px;
+            border-radius: 8px;
+            font-size: 9px;
             font-family: 'Courier New', monospace;
             border: 1px solid #444;
+            cursor: pointer;
+            transition: all 0.1s;
+            position: relative;
+            z-index: 100;
         }
+
+        .group-point-badge:hover {
+            background: #ff9900;
+            color: #111;
+            transform: scale(1.1);
+        }
+
         .group-item-placeholder {
             color: #666;
             font-style: italic;
             text-align: center;
-            padding: 8px;
+            padding: 6px;
+            font-size: 10px;
         }
+
         .right-placeholder {
             color: #666;
             font-style: italic;
             text-align: center;
             border: 2px dashed #444;
-            padding: 20px;
-            border-radius: 8px;
+            padding: 15px;
+            border-radius: 6px;
+            background: #2d2d2d;
+            font-size: 12px;
+        }
+
+        /* Stats section at bottom of models */
+        .stats-section {
+            background: #2d2d2d;
+            border-radius: 4px;
+            padding: 6px 8px;
+            border: 1px solid #444;
+            font-size: 10px;
+            color: #aaa;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            flex-shrink: 0;
+        }
+
+        .stats-section span {
+            color: #9cdcfe;
+            font-weight: bold;
         }
 
         /* MAIN CONTENT */
@@ -542,12 +680,6 @@
             min-width: 0;
             z-index: 1;
             position: relative;
-        }
-        h1 {
-            color: white;
-            margin-top: 0;
-            border-bottom: 1px solid #555;
-            padding-bottom: 8px;
         }
         .canvas-container {
             width: 100%;
@@ -572,8 +704,9 @@
             background: #111;
             display: block;
             flex-shrink: 0;
+            position: relative;
+            z-index: 2;
         }
-        /* Combined info bar: point info on left, coords on right, group button in middle */
         .xy-info-bar {
             width: 1024px;
             background: #1e1e1e;
@@ -589,6 +722,8 @@
             box-sizing: border-box;
             align-items: center;
             min-height: 40px;
+            position: relative;
+            z-index: 2;
         }
         .left-info {
             color: #ffaa33;
@@ -656,7 +791,6 @@
             margin-bottom: 8px;
             font-size: 16px;
         }
-        /* Selection rectangle */
         .selection-rect {
             position: fixed;
             border: 1px dashed #ff9900;
@@ -665,7 +799,6 @@
             z-index: 1000;
             display: none;
         }
-        /* Confirmation Dialog */
         .confirm-dialog {
             position: fixed;
             top: 50%;
@@ -716,7 +849,6 @@
         .confirm-btn.no:hover {
             background: #888;
         }
-        /* Name Input Dialog */
         .name-dialog {
             position: fixed;
             top: 50%;
@@ -783,7 +915,6 @@
         .name-dialog-btn.cancel:hover {
             background: #888;
         }
-        /* Model Settings Dialog */
         .model-settings-dialog {
             position: fixed;
             top: 50%;
@@ -878,33 +1009,57 @@
         .overlay-panel {
             position: fixed;
             top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            left: 90px;
+            transform: translateY(-50%);
             background: #2d2d2d;
             border: 2px solid #ff9900;
             border-radius: 8px;
-            padding: 20px;
+            padding: 0;
             color: #eee;
             font-family: 'Courier New', monospace;
             z-index: 10000;
             box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            min-width: 280px;
             display: none;
-            min-width: 300px;
+            overflow: hidden;
         }
         .overlay-panel.active {
             display: block;
         }
-        .overlay-panel h3 {
-            margin: 0 0 20px 0;
-            color: #ff9900;
+        .overlay-panel-header {
+            background: #3c3c3c;
+            padding: 10px 15px;
             border-bottom: 1px solid #555;
-            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            color: #ff9900;
+            cursor: move;
+        }
+        .overlay-panel-close {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+        .overlay-panel-close:hover {
+            color: #ff9900;
+        }
+        .overlay-panel-content {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: 60vh;
+            overflow-y: auto;
         }
         .overlay-panel-section {
-            margin-bottom: 20px;
-            padding: 10px;
             background: #3c3c3c;
             border-radius: 4px;
+            padding: 10px;
         }
         .overlay-panel-section h4 {
             margin: 0 0 10px 0;
@@ -927,7 +1082,6 @@
             height: 4px;
             background: #555;
             border-radius: 2px;
-
         }
         .overlay-panel-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
@@ -971,9 +1125,11 @@
             cursor: pointer;
             width: 100%;
             margin-bottom: 8px;
+            transition: all 0.1s ease;
         }
         .overlay-panel-button:hover {
             background: #ffaa33;
+            transform: translateX(2px);
         }
         .overlay-panel-button.danger {
             background: #ff6666;
@@ -985,19 +1141,7 @@
             background: #666;
             cursor: not-allowed;
             opacity: 0.5;
-        }
-        .overlay-panel-close {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: #aaa;
-            font-size: 20px;
-            cursor: pointer;
-        }
-        .overlay-panel-close:hover {
-            color: #ff9900;
+            transform: none;
         }
         .overlay-panel-info {
             color: #9cdcfe;
@@ -1011,19 +1155,201 @@
             gap: 10px;
             width: 100%;
         }
+
+        /* Shapes Window */
+        .shapes-window {
+            position: fixed;
+            top: 50%;
+            left: 90px;
+            transform: translateY(-50%);
+            background: #2d2d2d;
+            border: 2px solid #ff9900;
+            border-radius: 8px;
+            padding: 0;
+            color: #eee;
+            font-family: 'Courier New', monospace;
+            z-index: 10000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            min-width: 220px;
+            display: none;
+            overflow: hidden;
+        }
+        .shapes-window.active {
+            display: block;
+        }
+        .shapes-window-header {
+            background: #3c3c3c;
+            padding: 10px 15px;
+            border-bottom: 1px solid #555;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            color: #ff9900;
+            cursor: move;
+        }
+        .shapes-window-close {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+        .shapes-window-close:hover {
+            color: #ff9900;
+        }
+        .shapes-window-content {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .shape-button {
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+        .shape-button:hover {
+            background: #4a4a4a;
+            border-color: #ff9900;
+            transform: translateX(2px);
+        }
+        .shape-button.active {
+            background: #ff9900;
+            border-color: #ffaa33;
+        }
+        .shape-button.active .shape-preview {
+            background: #ffffff;
+            border-color: #ffffff;
+        }
+        .shape-preview {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .shape-preview.square {
+            width: 24px;
+            height: 24px;
+            background: #ff9900;
+            border: 2px solid #ffaa33;
+        }
+        .shape-preview.circle {
+            width: 24px;
+            height: 24px;
+            background: #ff9900;
+            border: 2px solid #ffaa33;
+            border-radius: 50%;
+        }
+        .shape-preview.hexagon {
+            width: 24px;
+            height: 24px;
+            background: #ff9900;
+            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+        }
+        .shape-preview.line {
+            width: 32px;
+            height: 4px;
+            background: #ff9900;
+            transform: rotate(45deg);
+        }
+        #connectionCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        /* Logo navigation modal */
+        .logo-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2d2d2d;
+            border: 2px solid #ff9900;
+            border-radius: 8px;
+            padding: 25px;
+            color: #eee;
+            font-family: 'Courier New', monospace;
+            z-index: 20000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            display: none;
+            min-width: 320px;
+            text-align: center;
+        }
+        .logo-modal.active {
+            display: block;
+        }
+        .logo-modal h3 {
+            margin: 0 0 15px 0;
+            color: #ff9900;
+            font-size: 18px;
+        }
+        .logo-modal p {
+            margin: 0 0 20px 0;
+            color: #aaa;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .logo-modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        .logo-modal-btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+            font-size: 14px;
+        }
+        .logo-modal-btn.yes {
+            background: #ff9900;
+            color: #111;
+        }
+        .logo-modal-btn.yes:hover {
+            background: #ffaa33;
+            transform: translateY(-2px);
+        }
+        .logo-modal-btn.no {
+            background: #666;
+            color: #eee;
+        }
+        .logo-modal-btn.no:hover {
+            background: #888;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
-    <!-- TOP BAR -->
-    <div class="top-bar">
-        <div class="top-bar-icon" id="saveBtn" data-tooltip="Save">💾</div>
-        <div class="top-bar-icon" id="loadBtn" data-tooltip="Load">📂</div>
-        <div class="top-bar-separator"></div>
-    </div>
+    <canvas id="connectionCanvas"></canvas>
 
-    <!-- MAIN LAYOUT -->
     <div class="main-layout">
         <div class="left-panel">
+            <div class="logo-container" id="logoContainer">
+                <a><img src="doc/iconprotopanda.png" alt="Logo" onerror="this.style.display='none'"></a>
+            </div>
+
+            <div class="top-tool-buttons">
+                <div class="top-tool-icon" id="saveBtn" data-tooltip="Save">💾</div>
+                <div class="top-tool-icon" id="loadBtn" data-tooltip="Load">📂</div>
+            </div>
+
             <div class="panel-section-label">TOOLS</div>
             <div class="tool-grid">
                 <div class="tool-icon" id="toolAddPoints" data-tooltip="Add points (A)">✏️</div>
@@ -1031,7 +1357,15 @@
                 <div class="tool-icon" id="toolSelectPoints" data-tooltip="Select points (S)">🔲</div>
                 <div class="tool-icon" id="toolPaintPoints" data-tooltip="Paint triangle (P)">🎨</div>
                 <div class="tool-icon" id="toolDeleteTriangle" data-tooltip="Delete triangle (D)">🗑️</div>
-                <!-- Overlay tool button -->
+                <div class="tool-icon" id="toolShapes" data-tooltip="Shapes (H)">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                        <div style="display: flex; gap: 2px;">
+                            <div style="width: 8px; height: 8px; border: 1px solid currentColor;"></div>
+                            <div style="width: 8px; height: 8px; border-radius: 50%; border: 1px solid currentColor;"></div>
+                        </div>
+                        <div style="width: 16px; height: 2px; background: currentColor; transform: rotate(-10deg);"></div>
+                    </div>
+                </div>
                 <div class="tool-icon" id="toolOverlay" data-tooltip="Overlay controls (O)">🖼️</div>
             </div>
             
@@ -1081,12 +1415,10 @@
             </div>
         </div>
         
-        <!-- MAIN CONTENT -->
         <div class="main-content">
             <div class="canvas-container">
                 <canvas id="meuCanvas" width="1024" height="512"></canvas>
                 
-                <!-- Combined info bar: left = point info, middle = group button, right = coordinates -->
                 <div class="xy-info-bar">
                     <div class="left-info" id="pointInfo">Point -</div>
                     <div class="middle-info" id="groupButtonContainer"></div>
@@ -1103,23 +1435,51 @@
             </div>
         </div>
         
-        <!-- RIGHT PANEL -->
         <div class="right-panel">
-            <div class="panel-header">
-                <h3>📁 MODELS</h3>
-                <button class="add-model-btn" id="addModelBtn">+</button>
+            <div class="models-section">
+                <div class="section-header">
+                    <h3>📁 MODELS</h3>
+                    <button class="add-btn" id="addModelBtn">+</button>
+                </div>
+
+                <div class="section-content">
+                    <div class="model-list" id="modelList"></div>
+                    <div class="right-placeholder" id="emptyModelPlaceholder" style="display: none;">
+                        [ no models — click + to add ]
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <span>TOTAL TRIANGLES</span>
+                    <span id="totalTriangles">0</span>
+                </div>
             </div>
-            <div class="model-list" id="modelList"></div>
-            <div class="right-placeholder" id="emptyModelPlaceholder" style="display: none;">
-                [ no models — click + to add ]
+
+
+            <div class="animations-section">
+                <div class="section-header">
+                    <h3>🎬 ANIMATIONS</h3>
+                    <button class="add-btn" id="addAnimationBtn">+</button>
+                </div>
+
+                <div class="section-content">
+                    <div class="animation-placeholder">
+                        [ no animations — click + to add ]
+                    </div>
+
+                    <div class="animation-list" id="animationList"></div>
+                </div>
+
+                <div class="stats-section">
+                    <span>TOTAL FRAMES</span>
+                    <span id="totalFrames">0</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Selection rectangle overlay -->
     <div id="selectionRect" class="selection-rect"></div>
 
-    <!-- Confirmation Dialog -->
     <div id="confirmDialog" class="confirm-dialog">
         <p id="confirmMessage">Delete this group?</p>
         <div class="confirm-dialog-buttons">
@@ -1128,7 +1488,6 @@
         </div>
     </div>
 
-    <!-- Name Input Dialog -->
     <div id="nameDialog" class="name-dialog">
         <h3>Enter model name</h3>
         <input type="text" id="modelNameInput" placeholder="Model name" value="">
@@ -1138,7 +1497,6 @@
         </div>
     </div>
 
-    <!-- Model Settings Dialog -->
     <div id="modelSettingsDialog" class="model-settings-dialog">
         <h3 id="settingsDialogTitle">Model Settings</h3>
         <div class="settings-row">
@@ -1152,51 +1510,99 @@
         </div>
     </div>
 
-    <!-- Overlay Control Panel -->
     <div id="overlayPanel" class="overlay-panel">
-        <button class="overlay-panel-close" id="overlayPanelClose">×</button>
-        <h3>🖼️ OVERLAY CONTROLS</h3>
-        
-        <div class="overlay-panel-section">
-            <h4>Image</h4>
-            <button class="overlay-panel-button" id="overlayLoadBtn">📂 LOAD IMAGE</button>
-            <button class="overlay-panel-button danger" id="overlayClearBtn" disabled>🗑️ CLEAR IMAGE</button>
+        <div class="overlay-panel-header">
+            <span>🖼️ OVERLAY CONTROLS</span>
+            <button class="overlay-panel-close" id="overlayPanelClose">×</button>
         </div>
+        <div class="overlay-panel-content">
+            <div class="overlay-panel-section">
+                <h4>Image</h4>
+                <button class="overlay-panel-button" id="overlayLoadBtn">📂 LOAD IMAGE</button>
+                <button class="overlay-panel-button danger" id="overlayClearBtn" disabled>🗑️ CLEAR IMAGE</button>
+            </div>
 
-        <div class="overlay-panel-section">
-            <h4>Appearance</h4>
-            <div class="overlay-panel-row">
-                <span class="overlay-panel-label">Alpha:</span>
-                <div class="alpha-slider-container">
-                    <input type="range" id="overlayAlpha" class="overlay-panel-slider" min="0" max="100" value="50" step="1">
-                    <span class="overlay-panel-value" id="alphaValue">50%</span>
+            <div class="overlay-panel-section">
+                <h4>Appearance</h4>
+                <div class="overlay-panel-row">
+                    <span class="overlay-panel-label">Alpha:</span>
+                    <div class="alpha-slider-container">
+                        <input type="range" id="overlayAlpha" class="overlay-panel-slider" min="0" max="100" value="50" step="1">
+                        <span class="overlay-panel-value" id="alphaValue">50%</span>
+                    </div>
+                </div>
+                <div class="overlay-panel-row">
+                    <span class="overlay-panel-label">Draw order:</span>
+                    <select id="overlayOrder" class="overlay-panel-select">
+                        <option value="below">Below pixels</option>
+                        <option value="above">Above pixels</option>
+                    </select>
+                </div>
+                <div class="overlay-panel-row">
+                    <span class="overlay-panel-label">Visible:</span>
+                    <input type="checkbox" id="overlayVisible" checked>
                 </div>
             </div>
-            <div class="overlay-panel-row">
-                <span class="overlay-panel-label">Draw order:</span>
-                <select id="overlayOrder" class="overlay-panel-select">
-                    <option value="below">Below pixels</option>
-                    <option value="above">Above pixels</option>
-                </select>
+
+            <div class="overlay-panel-section">
+                <h4>Position</h4>
+                <button class="overlay-panel-button" id="overlayEditPosBtn" disabled>✏️ EDIT POSITION</button>
+                <button class="overlay-panel-button" id="overlayResetPosBtn" disabled>↺ RESET TO FULL</button>
             </div>
-            <div class="overlay-panel-row">
-                <span class="overlay-panel-label">Visible:</span>
-                <input type="checkbox" id="overlayVisible" checked>
+
+            <div class="overlay-panel-info" id="overlayStatus">No image loaded</div>
+        </div>
+    </div>
+
+    <div id="shapesWindow" class="shapes-window">
+        <div class="shapes-window-header">
+            <span>SHAPES</span>
+            <button class="shapes-window-close" id="shapesWindowClose">×</button>
+        </div>
+        <div class="shapes-window-content">
+            <div class="shape-button" id="shapeSquare" title="Square">
+                <div class="shape-preview square"></div>
+                <span>SQUARE</span>
+            </div>
+            <div class="shape-button" id="shapeCircle" title="Circle (8 points)">
+                <div class="shape-preview circle"></div>
+                <span>CIRCLE</span>
+            </div>
+            <div class="shape-button" id="shapeHexagon" title="Hexagon">
+                <div class="shape-preview hexagon"></div>
+                <span>HEXAGON</span>
+            </div>
+            <div class="shape-button" id="shapeLine" title="Line">
+                <div class="shape-preview line"></div>
+                <span>LINE</span>
             </div>
         </div>
+    </div>
 
-        <div class="overlay-panel-section">
-            <h4>Position</h4>
-            <button class="overlay-panel-button" id="overlayEditPosBtn" disabled>✏️ EDIT POSITION</button>
-            <button class="overlay-panel-button" id="overlayResetPosBtn" disabled>↺ RESET TO FULL</button>
+    <!-- Logo Navigation Modal -->
+    <div id="logoModal" class="logo-modal">
+        <h3>📂 PROTO PANDA</h3>
+        <p>Go to GitHub repository?<br><span style="color:#666; font-size:12px;">(unsaved changes will be lost)</span></p>
+        <div class="logo-modal-buttons">
+            <button class="logo-modal-btn yes" id="logoModalYes">YES</button>
+            <button class="logo-modal-btn no" id="logoModalNo">NO</button>
         </div>
-
-        <div class="overlay-panel-info" id="overlayStatus">No image loaded</div>
     </div>
 
     <script>
         var c = document.getElementById("meuCanvas");
         var ctx = c.getContext("2d");
+        var connectionCanvas = document.getElementById("connectionCanvas");
+        var connectionCtx = connectionCanvas.getContext("2d");
+        
+        // Resize connection canvas to match window
+        function resizeConnectionCanvas() {
+            connectionCanvas.width = window.innerWidth;
+            connectionCanvas.height = window.innerHeight;
+            drawConnectionLines();
+        }
+        window.addEventListener('resize', resizeConnectionCanvas);
+        resizeConnectionCanvas();
         
         ctx.imageSmoothingEnabled = false;
         
@@ -1217,11 +1623,10 @@
         // Models data
         var models = [];
         var selectedModelIndex = 0;
+
+        var expandedGroups = {}; 
         
-        // Track expanded state for each model's point groups section
-        var expandedGroups = {}; // key: modelIndex, value: boolean - now default false for collapsed
-        
-        // Default model with a sample triangle - groups collapsed by default
+  
         models.push({
             name: "Model 0",
             visible: true,
@@ -1230,7 +1635,7 @@
             ],
             pointGroups: []
         });
-        expandedGroups[0] = false; // Start collapsed for first model
+        expandedGroups[0] = false; 
 
         // UI state
         var points = [];
@@ -1251,6 +1656,7 @@
         var selectedVertices = []; // array of { triIndex, vertexIndex, vx, vy, globalPointIndex }
         var multiDragStart = null;
         var multiDragging = false;
+        var selectionFromSelectTool = false; // Tracks if selection came from select tool
         
         // Hover point index
         var hoverPointInfo = null;
@@ -1264,6 +1670,9 @@
 
         // Selected point group index (for the active model)
         var selectedGroupIndex = -1; // -1 means no group selected
+        
+        // Hover state for group badges
+        var hoveredGroupInfo = null; 
         
         // Confirmation dialog state
         var pendingGroupDelete = null;
@@ -1289,12 +1698,21 @@
             dragStartParams: {}
         };
 
+
+        var shapesWindowActive = false;
+        var shapesWindowDragging = false;
+        var shapesWindowDragOffset = { x: 0, y: 0 };
+        var currentShape = null; 
+        var shapePlacementMode = false;
+        var shapeStartPos = null;
+
         const toolIcons = {
             add: "✏️",
             move: "✋",
             paint: "🎨",
             delete: "🗑️",
             select: "🔲",
+            shapes: "🔺",
             overlay: "🖼️"
         };
 
@@ -1343,7 +1761,10 @@
             draggingVertex = null;
             mouseDown = false;
             selectedVertices = [];
+            selectionFromSelectTool = false;
             multiDragging = false;
+            shapePlacementMode = false;
+            currentShape = null;
             if (selectedModelIndex >= models.length) {
                 selectedModelIndex = Math.max(0, models.length - 1);
             }
@@ -1369,7 +1790,10 @@
             draggingVertex = null;
             mouseDown = false;
             selectedVertices = [];
+            selectionFromSelectTool = false;
             multiDragging = false;
+            shapePlacementMode = false;
+            currentShape = null;
             if (selectedModelIndex >= models.length) {
                 selectedModelIndex = Math.max(0, models.length - 1);
             }
@@ -1388,7 +1812,7 @@
             if (index <= 0) return;
             saveUndoState();
             [models[index - 1], models[index]] = [models[index], models[index - 1]];
-     
+    
             let tempExpanded = expandedGroups[index - 1];
             expandedGroups[index - 1] = expandedGroups[index];
             expandedGroups[index] = tempExpanded;
@@ -1443,6 +1867,7 @@
             points = [];
             state = 0;
             selectedVertices = [];
+            selectionFromSelectTool = false;
             selectedGroupIndex = -1;
             delete expandedGroups[index];
             renderModelList();
@@ -1652,14 +2077,19 @@
             }
 
             let container = document.getElementById('groupButtonContainer');
+
             if (models.length > 0 && selectedVertices.length > 0 && selectedGroupIndex === -1) {
-                container.innerHTML = '<button class="create-group-btn" id="createGroupBtn">📁 CREATE POINT GROUP</button>';
-                let btn = document.getElementById('createGroupBtn');
-                if (btn) {
-                    btn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        createPointGroupFromSelection();
-                    });
+                if (selectionFromSelectTool) {
+                    container.innerHTML = '<button class="create-group-btn" id="createGroupBtn">📁 CREATE POINT GROUP</button>';
+                    let btn = document.getElementById('createGroupBtn');
+                    if (btn) {
+                        btn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            createPointGroupFromSelection();
+                        });
+                    }
+                } else {
+                    container.innerHTML = '';
                 }
             } else {
                 container.innerHTML = '';
@@ -1679,6 +2109,7 @@
             });
             selectedGroupIndex = newGroupIndex;
             selectedVertices = [];
+            selectionFromSelectTool = false;
 
             renderModelList();
             updateCodeDisplay();
@@ -1877,22 +2308,83 @@
                         var pointsList = document.createElement("div");
                         pointsList.className = "group-points-list";
                         
-                        group.pointIndices.forEach((pointIdx, badgeIdx) => {
+
+                        let active = models[selectedModelIndex];
+                        let positionMap = new Map(); 
+                        
+
+                        let globalIdx = 0;
+                        for (let i = 0; i < active.triangles.length; i++) {
+                            let tri = active.triangles[i];
+                            let vertices = [tri.v1, tri.v2, tri.v3];
+                            for (let j = 0; j < 3; j++) {
+                                let v = vertices[j];
+                                if (group.pointIndices.includes(globalIdx)) {
+                                    let posKey = Math.floor(v.x) + "," + Math.floor(v.y);
+                                    if (!positionMap.has(posKey)) {
+                                        positionMap.set(posKey, {
+                                            indices: [],
+                                            x: Math.floor(v.x),
+                                            y: Math.floor(v.y)
+                                        });
+                                    }
+                                    positionMap.get(posKey).indices.push(globalIdx);
+                                }
+                                globalIdx++;
+                            }
+                        }
+  
+                        positionMap.forEach((posData, posKey) => {
                             var badge = document.createElement("span");
                             badge.className = "group-point-badge";
-                            badge.textContent = `#${pointIdx}`;
-                            badge.title = "Click to remove from group";
+                            
+       
+                            posData.indices.sort((a,b)=>a-b);
+                            
+  
+                            if (posData.indices.length === 1) {
+                                badge.textContent = `#${posData.indices[0]}`;
+                            } else {
+                                badge.textContent = `#[${posData.indices.join(',')}]`;
+                            }
+                            
+                            badge.title = `Position (${posData.x}, ${posData.y}) - Click to remove all points at this position`;
                             badge.style.cursor = "pointer";
+                            badge.setAttribute('data-positions', posKey);
+                            badge.setAttribute('data-indices', posData.indices.join(','));
+                            
+                            badge.addEventListener("mouseenter", function(e) {
+
+                                let rect = e.target.getBoundingClientRect();
+                                
+       
+                                hoveredGroupInfo = {
+                                    groupIndex: gIdx,
+                                    positionKey: posKey,
+                                    indices: posData.indices,
+                                    badgeX: rect.left + rect.width/2,
+                                    badgeY: rect.top + rect.height/2
+                                };
+                                drawConnectionLines();
+                            });
+                            
+                            badge.addEventListener("mouseleave", function() {
+                                hoveredGroupInfo = null;
+                                connectionCtx.clearRect(0, 0, connectionCanvas.width, connectionCanvas.height);
+                            });
+                            
                             badge.addEventListener("click", function(e) {
                                 e.stopPropagation();
                                 if (selectedModelIndex === index) {
                                     saveUndoState();
-                                    group.pointIndices.splice(badgeIdx, 1);
+
+                                    group.pointIndices = group.pointIndices.filter(idx => !posData.indices.includes(idx));
                                     renderModelList();
                                     updateCodeDisplay();
                                     draw();
                                 }
                             });
+                            
                             pointsList.appendChild(badge);
                         });
                         
@@ -1901,15 +2393,24 @@
                         
                         groupDiv.addEventListener('click', (e) => {
                             e.stopPropagation();
+                            e.preventDefault();
+                            
                             if (selectedModelIndex !== index) {
                                 selectedModelIndex = index;
                             }
+                            
                             if (selectedGroupIndex === gIdx) {
                                 selectedGroupIndex = -1;
                             } else {
                                 selectedGroupIndex = gIdx;
+                                selectedVertices = [];
+                                selectionFromSelectTool = false;
                             }
-
+                            
+                            if (currentTool !== 'select') {
+                                setTool('toolSelectPoints');
+                            }
+                            
                             renderModelList();
                             draw();
                         });
@@ -1942,6 +2443,7 @@
                     points = [];
                     state = 0;
                     selectedVertices = [];
+                    selectionFromSelectTool = false;
                     renderModelList();
                     updateCodeDisplay();
                     draw();
@@ -1950,7 +2452,15 @@
                 listDiv.appendChild(item);
             });
         }
-
+        
+        function updateTotalTriangles() {
+            let total = 0;
+            for (let model of models) {
+                total += model.triangles.length;
+            }
+            document.getElementById('totalTriangles').textContent = total;
+        }
+        
         function showNameDialog() {
             document.getElementById('modelNameInput').value = "Model " + models.length;
             document.getElementById('nameDialog').classList.add('active');
@@ -1972,6 +2482,7 @@
             points = [];
             state = 0;
             selectedVertices = [];
+            selectionFromSelectTool = false;
             renderModelList();
             updateCodeDisplay();
             draw();
@@ -2039,6 +2550,7 @@
             }
             
             selectedVertices = newSelection;
+            selectionFromSelectTool = (currentTool === 'select');
             draw();
         }
 
@@ -2073,6 +2585,7 @@
                 active.triangles.splice(idx, 1);
             }
             selectedVertices = [];
+            selectionFromSelectTool = false;
             selectedGroupIndex = -1;
             updateCodeDisplay();
             renderModelList();
@@ -2082,6 +2595,10 @@
         function updateCursor() {
             if (mouseX < 0 || mouseX >= 64 || mouseY < 0 || mouseY >= 32) {
                 c.style.cursor = 'default';
+                return;
+            }
+            if (shapePlacementMode) {
+                c.style.cursor = 'crosshair';
                 return;
             }
             if (selectedGroupIndex !== -1 && models[selectedModelIndex]?.pointGroups?.[selectedGroupIndex]) {
@@ -2161,6 +2678,166 @@
             }
         }
 
+        function createSquare(x1, y1, x2, y2) {
+            let minX = Math.min(x1, x2);
+            let maxX = Math.max(x1, x2);
+            let minY = Math.min(y1, y2);
+            let maxY = Math.max(y1, y2);
+            
+ 
+            let tri1 = {
+                v1: Vec2f(minX, minY),
+                v2: Vec2f(maxX, minY),
+                v3: Vec2f(minX, maxY),
+                color: currentColor
+            };
+            
+            let tri2 = {
+                v1: Vec2f(maxX, minY),
+                v2: Vec2f(maxX, maxY),
+                v3: Vec2f(minX, maxY),
+                color: currentColor
+            };
+            
+            models[selectedModelIndex].triangles.push(tri1, tri2);
+        }
+
+        function createCircle(centerX, centerY, radius) {
+            let points = [];
+            let numPoints = 8; 
+            
+            for (let i = 0; i < numPoints; i++) {
+                let angle = (i / numPoints) * Math.PI * 2;
+                let x = Math.round(centerX + Math.cos(angle) * radius);
+                let y = Math.round(centerY + Math.sin(angle) * radius);
+                points.push(Vec2f(x, y));
+            }
+
+            for (let i = 0; i < numPoints; i++) {
+                let next = (i + 1) % numPoints;
+                let tri = {
+                    v1: Vec2f(centerX, centerY),
+                    v2: points[i],
+                    v3: points[next],
+                    color: currentColor
+                };
+                models[selectedModelIndex].triangles.push(tri);
+            }
+        }
+
+        function createHexagon(centerX, centerY, size) {
+            let points = [];
+            let numPoints = 6;
+            
+            for (let i = 0; i < numPoints; i++) {
+                let angle = (i / numPoints) * Math.PI * 2 - Math.PI / 2; 
+                let x = Math.round(centerX + Math.cos(angle) * size);
+                let y = Math.round(centerY + Math.sin(angle) * size);
+                points.push(Vec2f(x, y));
+            }
+            
+
+            for (let i = 0; i < numPoints; i++) {
+                let next = (i + 1) % numPoints;
+                let tri = {
+                    v1: Vec2f(centerX, centerY),
+                    v2: points[i],
+                    v3: points[next],
+                    color: currentColor
+                };
+                models[selectedModelIndex].triangles.push(tri);
+            }
+        }
+
+        function createLine(x1, y1, x2, y2) {
+            let dx = x2 - x1;
+            let dy = y2 - y1;
+
+            let perpX = -dy;
+            let perpY = dx;
+            
+
+            let length = Math.sqrt(perpX * perpX + perpY * perpY);
+            if (length > 0) {
+                perpX = perpX / length * 1.0; 
+                perpY = perpY / length * 1.0;
+            }
+            
+
+            let p1 = Vec2f(Math.round(x1 + perpX), Math.round(y1 + perpY));
+            let p2 = Vec2f(Math.round(x1 - perpX), Math.round(y1 - perpY));
+            let p3 = Vec2f(Math.round(x2 - perpX), Math.round(y2 - perpY));
+            let p4 = Vec2f(Math.round(x2 + perpX), Math.round(y2 + perpY));
+            
+
+            let tri1 = {
+                v1: p1,
+                v2: p2,
+                v3: p3,
+                color: currentColor
+            };
+            
+            let tri2 = {
+                v1: p1,
+                v2: p3,
+                v3: p4,
+                color: currentColor
+            };
+            
+            models[selectedModelIndex].triangles.push(tri1, tri2);
+        }
+
+        function drawConnectionLines() {
+            connectionCtx.clearRect(0, 0, connectionCanvas.width, connectionCanvas.height);
+            
+            if (!hoveredGroupInfo || !models.length || !models[selectedModelIndex] || !models[selectedModelIndex].pointGroups) return;
+            
+            let group = models[selectedModelIndex].pointGroups[hoveredGroupInfo.groupIndex];
+            if (!group || !group.pointIndices) return;
+            
+            connectionCtx.save();
+            connectionCtx.strokeStyle = "#ff9900";
+            connectionCtx.lineWidth = 2;
+            connectionCtx.setLineDash([5, 5]);
+            connectionCtx.shadowColor = "#000";
+            connectionCtx.shadowBlur = 4;
+            connectionCtx.shadowOffsetX = 1;
+            connectionCtx.shadowOffsetY = 1;
+
+            let canvasRect = c.getBoundingClientRect();
+            
+            let [x, y] = hoveredGroupInfo.positionKey.split(',').map(Number);
+            
+
+            let endX = canvasRect.left + x * SCALE + SCALE/2;
+            let endY = canvasRect.top + y * SCALE + SCALE/2;
+            
+
+            connectionCtx.beginPath();
+            connectionCtx.moveTo(hoveredGroupInfo.badgeX, hoveredGroupInfo.badgeY);
+            connectionCtx.lineTo(endX, endY);
+            connectionCtx.stroke();
+            
+
+            connectionCtx.fillStyle = "#ff9900";
+            connectionCtx.shadowColor = "#000";
+            connectionCtx.shadowBlur = 4;
+            connectionCtx.beginPath();
+            connectionCtx.arc(endX, endY, 8, 0, 2 * Math.PI);
+            connectionCtx.fill();
+            
+            if (hoveredGroupInfo.indices.length > 1) {
+                connectionCtx.fillStyle = "#000000";
+                connectionCtx.shadowBlur = 0;
+                connectionCtx.font = "bold 10px 'Courier New'";
+                connectionCtx.textAlign = "center";
+                connectionCtx.textBaseline = "middle";
+                connectionCtx.fillText(hoveredGroupInfo.indices.length, endX, endY);
+            }
+            
+            connectionCtx.restore();
+        }
+        
         function draw() {
             ctx.fillStyle = "#000000";
             ctx.fillRect(0, 0, 1024, 512);
@@ -2247,12 +2924,11 @@
                 }
             }
             
-            // Draw points currently being placed
             points.forEach(function(point) {
                 drawPoint(point.x, point.y, "#FFA500");
             });
             
-            // Draw line between first point and cursor during triangle creation
+
             if (currentTool === 'add') {
                 if (state === 1 && points.length === 1 && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
                     drawLine(points[0], Vec2f(mouseX, mouseY), "#888");
@@ -2268,6 +2944,143 @@
                         drawLine(Vec2f(mouseX, mouseY), points[0], "#888");
                     }
                 }
+            }
+            
+
+            if (shapePlacementMode && shapeStartPos && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
+                ctx.save();
+                ctx.globalAlpha = 0.5;
+                ctx.fillStyle = currentColor;
+                
+                if (currentShape === 'square') {
+                    let minX = Math.min(shapeStartPos.x, mouseX);
+                    let maxX = Math.max(shapeStartPos.x, mouseX);
+                    let minY = Math.min(shapeStartPos.y, mouseY);
+                    let maxY = Math.max(shapeStartPos.y, mouseY);
+                    
+                    fillTriangleScanline(
+                        Vec2f(minX, minY),
+                        Vec2f(maxX, minY),
+                        Vec2f(minX, maxY),
+                        currentColor
+                    );
+
+                    fillTriangleScanline(
+                        Vec2f(maxX, minY),
+                        Vec2f(maxX, maxY),
+                        Vec2f(minX, maxY),
+                        currentColor
+                    );
+                    
+                    if (showLines) {
+                        ctx.strokeStyle = "#ffffff";
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(minX * SCALE, minY * SCALE, (maxX - minX) * SCALE, (maxY - minY) * SCALE);
+                    }
+                } else if (currentShape === 'circle') {
+                    let radius = Math.max(1, Math.round(Math.sqrt(
+                        Math.pow(mouseX - shapeStartPos.x, 2) + 
+                        Math.pow(mouseY - shapeStartPos.y, 2)
+                    )));
+                    let points = [];
+                    let numPoints = 8;
+                    
+                    for (let i = 0; i < numPoints; i++) {
+                        let angle = (i / numPoints) * Math.PI * 2;
+                        let x = Math.round(shapeStartPos.x + Math.cos(angle) * radius);
+                        let y = Math.round(shapeStartPos.y + Math.sin(angle) * radius);
+                        points.push(Vec2f(x, y));
+                    }
+                    
+                    for (let i = 0; i < numPoints; i++) {
+                        let next = (i + 1) % numPoints;
+                        fillTriangleScanline(
+                            Vec2f(shapeStartPos.x, shapeStartPos.y),
+                            points[i],
+                            points[next],
+                            currentColor
+                        );
+                    }
+                    
+                    if (showLines) {
+                        ctx.strokeStyle = "#ffffff";
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        for (let i = 0; i < numPoints; i++) {
+                            let next = (i + 1) % numPoints;
+                            ctx.moveTo(points[i].x * SCALE + SCALE/2, points[i].y * SCALE + SCALE/2);
+                            ctx.lineTo(points[next].x * SCALE + SCALE/2, points[next].y * SCALE + SCALE/2);
+                        }
+                        ctx.stroke();
+                    }
+                } else if (currentShape === 'hexagon') {
+                    let size = Math.max(1, Math.round(Math.sqrt(
+                        Math.pow(mouseX - shapeStartPos.x, 2) + 
+                        Math.pow(mouseY - shapeStartPos.y, 2)
+                    )));
+                    let points = [];
+                    let numPoints = 6;
+                    
+                    for (let i = 0; i < numPoints; i++) {
+                        let angle = (i / numPoints) * Math.PI * 2 - Math.PI / 2;
+                        let x = Math.round(shapeStartPos.x + Math.cos(angle) * size);
+                        let y = Math.round(shapeStartPos.y + Math.sin(angle) * size);
+                        points.push(Vec2f(x, y));
+                    }
+                    
+                    for (let i = 0; i < numPoints; i++) {
+                        let next = (i + 1) % numPoints;
+                        fillTriangleScanline(
+                            Vec2f(shapeStartPos.x, shapeStartPos.y),
+                            points[i],
+                            points[next],
+                            currentColor
+                        );
+                    }
+                    
+                    if (showLines) {
+                        ctx.strokeStyle = "#ffffff";
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        for (let i = 0; i < numPoints; i++) {
+                            let next = (i + 1) % numPoints;
+                            ctx.moveTo(points[i].x * SCALE + SCALE/2, points[i].y * SCALE + SCALE/2);
+                            ctx.lineTo(points[next].x * SCALE + SCALE/2, points[next].y * SCALE + SCALE/2);
+                        }
+                        ctx.stroke();
+                    }
+                } else if (currentShape === 'line') {
+
+                    let dx = mouseX - shapeStartPos.x;
+                    let dy = mouseY - shapeStartPos.y;
+
+                    let perpX = -dy;
+                    let perpY = dx;
+                    
+                    let length = Math.sqrt(perpX * perpX + perpY * perpY);
+                    if (length > 0) {
+                        perpX = perpX / length * 1.0;
+                        perpY = perpY / length * 1.0;
+                    }
+                    
+                    let p1 = Vec2f(Math.round(shapeStartPos.x + perpX), Math.round(shapeStartPos.y + perpY));
+                    let p2 = Vec2f(Math.round(shapeStartPos.x - perpX), Math.round(shapeStartPos.y - perpY));
+                    let p3 = Vec2f(Math.round(mouseX - perpX), Math.round(mouseY - perpY));
+                    let p4 = Vec2f(Math.round(mouseX + perpX), Math.round(mouseY + perpY));
+                    
+                    fillTriangleScanline(p1, p2, p3, currentColor);
+                    fillTriangleScanline(p1, p3, p4, currentColor);
+                    
+                    if (showLines) {
+                        ctx.strokeStyle = "#ffffff";
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(shapeStartPos.x * SCALE + SCALE/2, shapeStartPos.y * SCALE + SCALE/2);
+                        ctx.lineTo(mouseX * SCALE + SCALE/2, mouseY * SCALE + SCALE/2);
+                        ctx.stroke();
+                    }
+                }
+                ctx.restore();
             }
             
             if (overlayActive && overlayImage) {
@@ -2329,6 +3142,8 @@
             }
             
             updateOverlayPanel();
+            drawConnectionLines();
+            updateTotalTriangles();
         }
 
         document.getElementById('colorPicker').addEventListener('input', function(e) {
@@ -2407,6 +3222,7 @@
                                 points = [];
                                 state = 0;
                                 selectedVertices = [];
+                                selectionFromSelectTool = false;
                                 renderModelList();
                                 updateCodeDisplay();
                                 draw();
@@ -2484,12 +3300,113 @@
             }
         });
 
+        document.getElementById('toolShapes').addEventListener('click', function() {
+            setTool('toolShapes');
+            document.getElementById('shapesWindow').classList.add('active');
+            shapesWindowActive = true;
+        });
+
+        document.getElementById('shapesWindowClose').addEventListener('click', function() {
+            document.getElementById('shapesWindow').classList.remove('active');
+            shapesWindowActive = false;
+            shapePlacementMode = false;
+            currentShape = null;
+
+            setTool('toolMovePoints');
+        });
+
+
+        const shapesWindow = document.getElementById('shapesWindow');
+        const shapesHeader = document.querySelector('.shapes-window-header');
+
+        shapesHeader.addEventListener('mousedown', function(e) {
+            if (e.target.classList.contains('shapes-window-close')) return;
+            shapesWindowDragging = true;
+            const rect = shapesWindow.getBoundingClientRect();
+            shapesWindowDragOffset = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+            shapesWindow.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (!shapesWindowDragging) return;
+            e.preventDefault();
+            
+            const newLeft = e.clientX - shapesWindowDragOffset.x;
+            const newTop = e.clientY - shapesWindowDragOffset.y;
+            
+     
+            const maxLeft = window.innerWidth - shapesWindow.offsetWidth;
+            const maxTop = window.innerHeight - shapesWindow.offsetHeight;
+            
+            shapesWindow.style.left = Math.max(10, Math.min(maxLeft, newLeft)) + 'px';
+            shapesWindow.style.top = Math.max(10, Math.min(maxTop, newTop)) + 'px';
+            shapesWindow.style.transform = 'none'; 
+        });
+
+        document.addEventListener('mouseup', function() {
+            if (shapesWindowDragging) {
+                shapesWindowDragging = false;
+                shapesWindow.style.cursor = 'default';
+            }
+        });
+
+
+        document.getElementById('shapeSquare').addEventListener('click', function() {
+            document.querySelectorAll('.shape-button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            currentShape = 'square';
+            shapePlacementMode = true;
+            shapeStartPos = null;
+            document.getElementById('shapesWindow').classList.remove('active');
+            shapesWindowActive = false;
+            setTool('toolShapes'); 
+        });
+
+        document.getElementById('shapeCircle').addEventListener('click', function() {
+            document.querySelectorAll('.shape-button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            currentShape = 'circle';
+            shapePlacementMode = true;
+            shapeStartPos = null;
+            document.getElementById('shapesWindow').classList.remove('active');
+            shapesWindowActive = false;
+            setTool('toolShapes'); 
+        });
+
+        document.getElementById('shapeHexagon').addEventListener('click', function() {
+            document.querySelectorAll('.shape-button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            currentShape = 'hexagon';
+            shapePlacementMode = true;
+            shapeStartPos = null;
+            document.getElementById('shapesWindow').classList.remove('active');
+            shapesWindowActive = false;
+            setTool('toolShapes'); 
+        });
+
+        document.getElementById('shapeLine').addEventListener('click', function() {
+            document.querySelectorAll('.shape-button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            currentShape = 'line';
+            shapePlacementMode = true;
+            shapeStartPos = null;
+            document.getElementById('shapesWindow').classList.remove('active');
+            shapesWindowActive = false;
+            setTool('toolShapes'); 
+        });
+
         document.getElementById('toolOverlay').addEventListener('click', function() {
+            setTool('toolOverlay');
             document.getElementById('overlayPanel').classList.add('active');
         });
 
         document.getElementById('overlayPanelClose').addEventListener('click', function() {
             document.getElementById('overlayPanel').classList.remove('active');
+  
+            setTool('toolMovePoints');
         });
 
         document.getElementById('overlayLoadBtn').addEventListener('click', function() {
@@ -2611,28 +3528,59 @@
                 overlayActive = false;
             }
             
+            let oldTool = currentTool;
+            
             if (toolId === 'toolAddPoints') currentTool = 'add';
             else if (toolId === 'toolMovePoints') currentTool = 'move';
             else if (toolId === 'toolSelectPoints') currentTool = 'select';
             else if (toolId === 'toolPaintPoints') currentTool = 'paint';
             else if (toolId === 'toolDeleteTriangle') currentTool = 'delete';
+            else if (toolId === 'toolShapes') currentTool = 'shapes';
             else if (toolId === 'toolOverlay') {
                 currentTool = 'overlay';
                 document.getElementById('overlayPanel').classList.add('active');
             }
+
+            if (currentTool !== 'overlay') {
+                document.getElementById('overlayPanel').classList.remove('active');
+            }
             
-            selectedGroupIndex = -1;
-            selectedVertices = [];
-            document.querySelectorAll('.tool-icon').forEach(el => el.classList.remove('active'));
-            document.getElementById(toolId).classList.add('active');
+            if (currentTool === 'move') {
+                selectedGroupIndex = -1;
+            }
+            
+            if (currentTool !== 'shapes' && shapesWindowActive) {
+                document.getElementById('shapesWindow').classList.remove('active');
+                shapesWindowActive = false;
+            }
+            
+  
+            if (currentTool !== 'shapes') {
+                shapePlacementMode = false;
+                currentShape = null;
+                shapeStartPos = null;
+            }
+
+            selectionFromSelectTool = (currentTool === 'select');
+
+            if (!((oldTool === 'select' && currentTool === 'move') || 
+                (oldTool === 'move' && currentTool === 'select'))) {
+                selectedVertices = [];
+                selectedGroupIndex = -1;
+            }
+            
             points = []; 
             state = 0; 
             draggingVertex = null;
             hoverTriangleIndex = -1;
+            
             if (oscillationTimer) {
                 clearInterval(oscillationTimer);
                 oscillationTimer = null;
             }
+            
+            document.querySelectorAll('.tool-icon').forEach(el => el.classList.remove('active'));
+            document.getElementById(toolId).classList.add('active');
             renderModelList();
             draw();
         }
@@ -2687,31 +3635,33 @@
             draw();
         });
 
-        // Global keydown handler with better input management
         document.addEventListener('keydown', function(e) {
-            // Don't trigger tool shortcuts if we're typing in an input
+
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
                 return;
             }
             
             if (e.key === 'a' || e.key === 'A') {
                 e.preventDefault();
-                document.getElementById('toolAddPoints').click();
+                setTool('toolAddPoints');
             } else if (e.key === 'm' || e.key === 'M') {
                 e.preventDefault();
-                document.getElementById('toolMovePoints').click();
+                setTool('toolMovePoints');
             } else if (e.key === 's' || e.key === 'S') {
                 e.preventDefault();
-                document.getElementById('toolSelectPoints').click();
+                setTool('toolSelectPoints');
             } else if (e.key === 'p' || e.key === 'P') {
                 e.preventDefault();
-                document.getElementById('toolPaintPoints').click();
+                setTool('toolPaintPoints');
             } else if (e.key === 'd' || e.key === 'D') {
                 e.preventDefault();
-                document.getElementById('toolDeleteTriangle').click();
+                setTool('toolDeleteTriangle');
+            } else if (e.key === 'h' || e.key === 'H') {
+                e.preventDefault();
+                setTool('toolShapes');
             } else if (e.key === 'o' || e.key === 'O') {
                 e.preventDefault();
-                document.getElementById('toolOverlay').click();
+                setTool('toolOverlay');
             } else if (e.key === 'Escape') {
                 e.preventDefault();
                 if (overlayActive) {
@@ -2721,15 +3671,26 @@
                     points = [];
                     state = 0;
                     draw();
+                } else if (shapesWindowActive) {
+                    document.getElementById('shapesWindow').classList.remove('active');
+                    shapesWindowActive = false;
+                    setTool('toolMovePoints');
+                } else if (shapePlacementMode) {
+                    shapePlacementMode = false;
+                    currentShape = null;
+                    shapeStartPos = null;
+                    draw();
                 } else {
                     selectedGroupIndex = -1;
                     selectedVertices = [];
+                    selectionFromSelectTool = false;
                     renderModelList();
                     draw();
                 }
                 document.getElementById('overlayPanel').classList.remove('active');
                 document.getElementById('nameDialog').classList.remove('active');
                 document.getElementById('modelSettingsDialog').classList.remove('active');
+                document.getElementById('logoModal').classList.remove('active');
             } else if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 undo();
@@ -2897,6 +3858,37 @@
             if (e.button === 0) {
                 mouseDown = true;
                 
+                if (shapePlacementMode && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
+                    if (!shapeStartPos) {
+                        shapeStartPos = { x: mouseX, y: mouseY };
+                    } else {
+                        saveUndoState();
+                        if (currentShape === 'square') {
+                            createSquare(shapeStartPos.x, shapeStartPos.y, mouseX, mouseY);
+                        } else if (currentShape === 'circle') {
+                            let radius = Math.max(1, Math.round(Math.sqrt(
+                                Math.pow(mouseX - shapeStartPos.x, 2) + 
+                                Math.pow(mouseY - shapeStartPos.y, 2)
+                            )));
+                            createCircle(shapeStartPos.x, shapeStartPos.y, radius);
+                        } else if (currentShape === 'hexagon') {
+                            let size = Math.max(1, Math.round(Math.sqrt(
+                                Math.pow(mouseX - shapeStartPos.x, 2) + 
+                                Math.pow(mouseY - shapeStartPos.y, 2)
+                            )));
+                            createHexagon(shapeStartPos.x, shapeStartPos.y, size);
+                        } else if (currentShape === 'line') {
+                            createLine(shapeStartPos.x, shapeStartPos.y, mouseX, mouseY);
+                        }
+                        shapeStartPos = null;
+                        updateCodeDisplay();
+                        renderModelList();
+                        draw();
+                    }
+                    e.preventDefault();
+                    return;
+                }
+                
                 if (overlayActive && overlayImage) {
                     let rect = c.getBoundingClientRect();
                     let scaleX = c.width / rect.width;
@@ -2954,17 +3946,46 @@
                     let hit = findVertexUnderMouse(mouseX, mouseY);
                     
                     if (hit) {
-                        if (selectedGroupIndex !== -1 && models[selectedModelIndex]?.pointGroups?.[selectedGroupIndex]) {
+
+                        if (selectedGroupIndex !== -1 && models[selectedModelIndex]?.pointGroups?.[selectedGroupIndex] && !e.ctrlKey) {
                             let group = models[selectedModelIndex].pointGroups[selectedGroupIndex];
-                            let idx = group.pointIndices.indexOf(hit.globalPointIndex);
-                            saveUndoState();
-                            if (idx === -1) {
-                                group.pointIndices.push(hit.globalPointIndex);
-                                group.pointIndices.sort((a,b)=>a-b);
-                            } else {
-                                group.pointIndices.splice(idx, 1);
+                            
+
+                            let active = models[selectedModelIndex];
+                            let pointsAtLocation = [];
+                            let globalIdx = 0;
+                            
+                            for (let i = 0; i < active.triangles.length; i++) {
+                                let tri = active.triangles[i];
+                                let vertices = [tri.v1, tri.v2, tri.v3];
+                                for (let j = 0; j < 3; j++) {
+                                    let v = vertices[j];
+                                    if (Math.floor(v.x) === mouseX && Math.floor(v.y) === mouseY) {
+                                        pointsAtLocation.push(globalIdx);
+                                    }
+                                    globalIdx++;
+                                }
                             }
+                            
+                            saveUndoState();
+                            
+                            let anyInGroup = pointsAtLocation.some(idx => group.pointIndices.includes(idx));
+                            
+                            if (anyInGroup) {
+
+                                group.pointIndices = group.pointIndices.filter(idx => !pointsAtLocation.includes(idx));
+                            } else {
+       
+                                pointsAtLocation.forEach(idx => {
+                                    if (!group.pointIndices.includes(idx)) {
+                                        group.pointIndices.push(idx);
+                                    }
+                                });
+                                group.pointIndices.sort((a,b)=>a-b);
+                            }
+                            
                             selectedVertices = [];
+                            selectionFromSelectTool = false;
                             renderModelList();
                             updateCodeDisplay();
                             draw();
@@ -2987,12 +4008,97 @@
                                     }
                                 } else {
                                     selectedVertices = [];
+                                    selectionFromSelectTool = false;
                                     saveUndoState();
-                                    draggingVertex = hit;
+
+                                    if (!e.ctrlKey) {
+
+                                        let active = models[selectedModelIndex];
+                                        let pointsAtLocation = [];
+                                        let globalIdx = 0;
+                                        
+                                        for (let i = 0; i < active.triangles.length; i++) {
+                                            let tri = active.triangles[i];
+                                            let vertices = [tri.v1, tri.v2, tri.v3];
+                                            for (let j = 0; j < 3; j++) {
+                                                let v = vertices[j];
+                                                if (Math.floor(v.x) === mouseX && Math.floor(v.y) === mouseY) {
+                                                    pointsAtLocation.push({
+                                                        triIndex: i,
+                                                        vertexIndex: j,
+                                                        vx: v.x,
+                                                        vy: v.y,
+                                                        globalPointIndex: globalIdx
+                                                    });
+                                                }
+                                                globalIdx++;
+                                            }
+                                        }
+                                        
+                                        if (pointsAtLocation.length > 1) {
+                                            selectedVertices = pointsAtLocation;
+                                            selectionFromSelectTool = false;
+                                            multiDragging = true;
+                                            multiDragStart = { x: mouseX, y: mouseY };
+
+                                            for (let sel of selectedVertices) {
+                                                let tri = active.triangles[sel.triIndex];
+                                                let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
+                                                sel.vx = v.x;
+                                                sel.vy = v.y;
+                                            }
+                                        } else {
+                                            draggingVertex = hit;
+                                        }
+                                    } else {
+
+                                        draggingVertex = hit;
+                                    }
                                 }
                             } else {
                                 saveUndoState();
-                                draggingVertex = hit;
+                                
+                                if (!e.ctrlKey) {
+                                    let active = models[selectedModelIndex];
+                                    let pointsAtLocation = [];
+                                    let globalIdx = 0;
+                                    
+                                    for (let i = 0; i < active.triangles.length; i++) {
+                                        let tri = active.triangles[i];
+                                        let vertices = [tri.v1, tri.v2, tri.v3];
+                                        for (let j = 0; j < 3; j++) {
+                                            let v = vertices[j];
+                                            if (Math.floor(v.x) === mouseX && Math.floor(v.y) === mouseY) {
+                                                pointsAtLocation.push({
+                                                    triIndex: i,
+                                                    vertexIndex: j,
+                                                    vx: v.x,
+                                                    vy: v.y,
+                                                    globalPointIndex: globalIdx
+                                                });
+                                            }
+                                            globalIdx++;
+                                        }
+                                    }
+                                    
+                                    if (pointsAtLocation.length > 1) {
+                                        selectedVertices = pointsAtLocation;
+                                        selectionFromSelectTool = false;
+                                        multiDragging = true;
+                                        multiDragStart = { x: mouseX, y: mouseY };
+                                        
+                                        for (let sel of selectedVertices) {
+                                            let tri = active.triangles[sel.triIndex];
+                                            let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
+                                            sel.vx = v.x;
+                                            sel.vy = v.y;
+                                        }
+                                    } else {
+                                        draggingVertex = hit;
+                                    }
+                                } else {
+                                    draggingVertex = hit;
+                                }
                             }
                         } else if (currentTool === 'select') {
                             let existingIndex = selectedVertices.findIndex(s => s.triIndex === hit.triIndex && s.vertexIndex === hit.vertexIndex);
@@ -3009,23 +4115,25 @@
                                     globalPointIndex: hit.globalPointIndex
                                 });
                             }
+                            selectionFromSelectTool = true;
                             draw();
                         }
                         e.preventDefault();
                     } else {
                         if (selectedVertices.length > 0 && currentTool === 'move') {
                             selectedVertices = [];
+                            selectionFromSelectTool = false;
                             draw();
                         }
                         if (currentTool === 'select') {
                             selectedVertices = [];
+                            selectionFromSelectTool = false;
                             draw();
                         }
                     }
                 }
             }
         });
-
         window.addEventListener('mouseup', function(e) {
             if (e.button === 0) {
                 mouseDown = false;
@@ -3142,9 +4250,32 @@
             }
         }
 
+        document.getElementById('logoContainer').addEventListener('click', function() {
+            document.getElementById('logoModal').classList.add('active');
+        });
+
+        document.getElementById('logoModalYes').addEventListener('click', function() {
+            window.open('https://github.com/mockthebear/proto-panda', '_blank');
+            document.getElementById('logoModal').classList.remove('active');
+        });
+
+        document.getElementById('logoModalNo').addEventListener('click', function() {
+            document.getElementById('logoModal').classList.remove('active');
+        });
+
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('logoModal');
+            const logo = document.getElementById('logoContainer');
+            if (modal.classList.contains('active') && 
+                !modal.contains(e.target) && 
+                !logo.contains(e.target)) {
+                modal.classList.remove('active');
+            }
+        });
 
         renderModelList();
         updateCodeDisplay();
+        updateTotalTriangles();
         draw();
         document.getElementById('toolMovePoints').classList.add('active');
         currentTool = 'move';
