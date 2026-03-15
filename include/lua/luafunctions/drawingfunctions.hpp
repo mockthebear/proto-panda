@@ -25,22 +25,14 @@ int GetOffsetByName(std::string aliasName);
 int GetFrameCountByName(std::string aliasName);
 int DrawFace(int i);
 void DrawCurrentFrame();
-void FlipScreen();
+
 void deleteBulkFile();
 void composeBulkFile();
-void setAnimation(std::vector<int> frames, int duration, int repeatTimes, bool dropAll, int externalStorageId);
-void setModelAnimation(std::vector<int> frames, bool dropAll);
-int loadModel(ModelData triangles);
-int addModelPointList(std::vector<int> points, int modelId);
-void setInterruptFrames(std::vector<int> frames, int duration );
-void setInterruptAnimationPin(int pin);
-void setManaged(bool bn);
-bool isManaged();
-int getCurrentAnimationStorage();
-int getCurrentFace();
+
+
+
 void DrawPanelFaceToScreen(int x, int y);
 void gentlySetPanelBrightness(uint8_t bright, uint8_t rate);
-bool popPanelAnimation();
-void setColorMode(int mode);
+
 
 #endif

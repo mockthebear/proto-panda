@@ -316,7 +316,7 @@ TriangleData Model::GetTriangle(int i){
     return aux;
 };
 
-void Model::SetTriangle(int i, Vec2f p1, Vec2f p2, Vec2f p3, uint16_t color){
+void Model::SetTriangleF(int i, Vec2f p1, Vec2f p2, Vec2f p3, uint16_t color){
     if (i >= triangleCount){
         return;
     }
@@ -363,7 +363,7 @@ void Model::SetTriangle(int i, TriangleData aux){
     color[i] = aux.color;
 }
 
-int Model::AddPointGroup(PointList &pts) {
+int Model::AddPointGroup(PointList pts) {
     bones.points.emplace_back(pts);
     bones.groupCount++;
     return bones.points.size() - 1; 

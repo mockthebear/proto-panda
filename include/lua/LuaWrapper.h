@@ -210,6 +210,36 @@ template<> struct GenericLuaGetter<PixelStruct> {
     }
 };
 
+
+template<> struct GenericLuaGetter<Vec2f> {
+    static inline Vec2f Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
+        Vec2f vec;
+
+        if (!lua_istable(L, stackPos)) {
+            hasArgError = true;
+            const char* function_name = lua_tostring(L, lua_upvalueindex(1));
+            luaL_error(L, "Expected a table value on parameter %d of function %s", lua_gettop(L), function_name);
+            return vec;
+        }
+
+        // Get x field
+        lua_getfield(L, stackPos, "x");
+        vec.x = static_cast<float>(luaL_optnumber(L, -1, 0));
+        lua_pop(L, 1);
+
+        // Get y field
+        lua_getfield(L, stackPos, "y");
+        vec.y = static_cast<float>(luaL_optnumber(L, -1, 0));
+        lua_pop(L, 1);
+
+        if (pop) {
+            lua_pop(L, 1); // Remove the table from stack if necessary
+        }
+
+        return vec;
+    }
+};
+
 template<> struct GenericLuaGetter<ModelData> {
     static inline ModelData Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
         ModelData modelData;
@@ -436,6 +466,20 @@ template<typename T1> struct GenericLuaReturner{
         lua_pushnil(L);
         return 1;
     };
+};
+
+template<> struct GenericLuaReturner<Vec2f> {
+    static inline int Ret(const Vec2f& vec, lua_State* L, bool forceTable = false) {
+        lua_createtable(L, 0, 2);
+            
+        lua_pushnumber(L, static_cast<lua_Number>(vec.x));
+        lua_setfield(L, -2, "x");
+            
+        lua_pushnumber(L, static_cast<lua_Number>(vec.y));
+        lua_setfield(L, -2, "y");
+            
+        return 1;
+    }
 };
 
 template<> struct GenericLuaReturner<char>{

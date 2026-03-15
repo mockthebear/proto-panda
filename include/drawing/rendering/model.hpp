@@ -39,19 +39,23 @@ class Model {
         bool Begin(int sz);
         void Free();
         void Recalculate();
-        void Rotate(Vec2f center, float angle);
-        void Translate(Vec2f delta);
+  
         void Reset();
         void Store();
         void CopyToRaster();
+
+        void Rotate(Vec2f center, float angle);
+        void Translate(Vec2f delta);
         void Scale(Vec2f center, Vec2f scaleFactors);
-        int AddPointGroup(PointList &points);
+
+        int AddPointGroup(PointList points);
 
         void TranslatePoints(uint32_t pointId, Vec2f delta);
         void ScalePoints(uint32_t pointId, Vec2f center, Vec2f scaleFactors);
         void SetPointsPosition(uint32_t pointId, Vec2f pos);
 
-        const int GetSize(){ return triangleCount;};
+        int GetSize(){ return triangleCount;};
+        int GetId(){ return id;};
         void SetAccumulativeOperations(bool b){
             accumulatedOperation = b;
         }
@@ -60,6 +64,7 @@ class Model {
         }
 
         int triangleCount;
+        int id;
         VecAlignedCustom<float> originalPoints;
         VecAlignedCustom<float> points;
         VecAlignedCustom<float> rasterPoints;
@@ -78,7 +83,7 @@ class Model {
         bool needRecalculate;
 
         void SetTriangle(int i, TriangleData aux);
-        void SetTriangle(int i, Vec2f p1, Vec2f p2, Vec2f p3, uint16_t color);
+        void SetTriangleF(int i, Vec2f p1, Vec2f p2, Vec2f p3, uint16_t color);
 
         TriangleData GetTriangle(int i);
         void RasterTriangle(ModelHandler *s, int i);

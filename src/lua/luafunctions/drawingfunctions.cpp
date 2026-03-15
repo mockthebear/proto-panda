@@ -109,10 +109,7 @@ void DrawCurrentFrame()
   g_frameRepo.freeFile();
 }
 
-void FlipScreen()
-{
-  g_animation.MakeFlip();
-}
+
 void deleteBulkFile(){
   FFat.remove("/frames.bulk");
 }
@@ -121,51 +118,8 @@ void composeBulkFile(){
   g_frameRepo.composeBulkFile();
 }
 
-void setAnimation(std::vector<int> frames, int duration, int repeatTimes, bool dropAll, int externalStorageId){
-  g_animation.SetAnimation(duration, frames, repeatTimes, dropAll, externalStorageId);
-}
-
-void setModelAnimation(std::vector<int> models, bool dropAll){
-  g_animation.SetModelAnimation(models, dropAll);
-}
 
 
-int loadModel(ModelData triangles){
-  return g_animation.LoadModel(triangles);
-}
-
-int addModelPointList(std::vector<int> points, int modelId){
-  Serial.printf("baka is baka\n");
-  return g_animation.AddModelPointList(modelId, points);
-}
-
-void setInterruptFrames(std::vector<int> frames, int duration ){
-  g_animation.SetInterruptAnimation(duration, frames);
-}
-
-void setInterruptAnimationPin(int pin){
-  if (pin > 0){
-    pinMode(pin, INPUT);
-  }
-  g_animation.SetInterruptPin(pin);
-}
-
-
-void setManaged(bool bn){
-  g_animation.setManaged(bn);
-}
-
-bool isManaged(){
-  return g_animation.isManaged();
-}
-
-int getCurrentAnimationStorage(){
-  return g_animation.getCurrentAnimationStorage();
-}
-
-int getCurrentFace(){
-  return g_animation.getCurrentFace();
-}
 
 void DrawPanelFaceToScreen(int x, int y){
   OledScreen::DrawPanelFaceToScreen(x, y);
@@ -177,13 +131,6 @@ void gentlySetPanelBrightness(uint8_t bright, uint8_t rate){
   return;
 }
 
-bool popPanelAnimation(){
-  return g_animation.PopAnimation();
-}
-
-void setColorMode(int mode){
-  g_animation.setColorMode((ColorMode)mode);
-}
 
 
 #endif

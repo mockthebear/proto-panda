@@ -59,9 +59,12 @@ class Animation{
         void Update(File *file);
 
         void SetModelAnimation(std::vector<int> models, bool dropAll);
-        void SetAnimation(int duration, std::vector<int> frames, int repeatTimes, bool dropAll, int externalStorageId=-1);
+        void SetAnimation(std::vector<int> frames, int duration, int repeatTimes, bool dropAll, int externalStorageId=-1);
         void SetInterruptAnimation(int duration, std::vector<int> frames);
         void SetInterruptPin(int pin){
+              if (pin > 0){
+                pinMode(pin, INPUT);
+            }
             m_interruptPin = pin;
         }
         void DrawAnimatonModel(AnimationSequence &running);
@@ -70,8 +73,7 @@ class Animation{
             DrawFrame(file, m_lastFace);
         }
 
-        int LoadModel(ModelData triangles);
-        int AddModelPointList(int modelId, PointList points);
+        Model* LoadModel(ModelData triangles);
 
         bool PopAnimation();
         void MakeFlip();

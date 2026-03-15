@@ -476,7 +476,7 @@ void Animation::SetModelAnimation(std::vector<int> models, bool dropAll){
     xSemaphoreGive(m_mutex);
 }
 
-void Animation::SetAnimation(int duration, std::vector<int> frames, int repeatTimes, bool dropAll, int externalStorageId){
+void Animation::SetAnimation( std::vector<int> frames, int duration,int repeatTimes, bool dropAll, int externalStorageId){
     if (dropAll){
         xSemaphoreTake(m_mutex, portMAX_DELAY);
         while (m_animations.size() > 0){
@@ -499,33 +499,28 @@ void Animation::SetAnimation(int duration, std::vector<int> frames, int repeatTi
 }
 
 
-int Animation::LoadModel(ModelData modelInfo){
+Model* Animation::LoadModel(ModelData modelInfo){
     Model *mem = new Model();
     int tsize = modelInfo.color.size();
     mem->Begin(tsize);
     for (int i=0;i<tsize;i++){
         int currDataTriangle = i * 3;
-        mem->SetTriangle(i, 
+        mem->SetTriangleF(i, 
             Vec2f(modelInfo.x[currDataTriangle + 0], modelInfo.y[currDataTriangle + 0]), 
             Vec2f(modelInfo.x[currDataTriangle + 1], modelInfo.y[currDataTriangle + 1]), 
             Vec2f(modelInfo.x[currDataTriangle + 2], modelInfo.y[currDataTriangle + 2]), 
             modelInfo.color[i]
         );
     }
+    mem->id = m_models.models.size();
 
     mem->Recalculate();
     mem->Reset();
     mem->SetBatchOperations(true);
     mem->SetAccumulativeOperations(true);
     mem->CopyToRaster();
-    return m_models.addModel(mem);
-}
-
-int Animation::AddModelPointList(int modelId, PointList points){
-    if (modelId >= m_models.models.size()){
-        return -1;
-    }
-    return m_models.models[modelId]->AddPointGroup(points);
+    m_models.addModel(mem);
+    return mem;
 }
 
 #endif
