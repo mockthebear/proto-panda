@@ -10,7 +10,7 @@
 #define LUA_USE_C89
 #include "lua/lua.hpp"
 #include "tools/ir.hpp"
-#include "drawing/mathstuff/primitives.hpp"
+#include "drawing/rendering/primitives.hpp"
 
 typedef std::function<int(lua_State*)> LuaCFunctionLambda;
 

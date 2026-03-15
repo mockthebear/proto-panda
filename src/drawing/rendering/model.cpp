@@ -1,4 +1,5 @@
-#include "drawing/mathstuff/shapes.hpp"
+#include "drawing/rendering/model.hpp"
+#include "drawing/rendering/modelhandler.hpp"
 #include "tools/devices.hpp"
 
 
@@ -299,18 +300,19 @@ void Model::Recalculate(){
     
 }
 
-Trianglef Model::GetTriangle(int i){
+TriangleData Model::GetTriangle(int i){
     if (i > triangleCount){
-        return Trianglef();
+        return TriangleData();
     }
-    Trianglef aux;
+    TriangleData aux;
     int localIndex = i * 3;
-    aux.points.x[0] = originalPoints.x[localIndex];
-    aux.points.y[0] = originalPoints.y[localIndex];
-    aux.points.x[1] = originalPoints.x[localIndex+1];
-    aux.points.y[1] = originalPoints.y[localIndex+1];
-    aux.points.x[2] = originalPoints.x[localIndex+2];
-    aux.points.y[2] = originalPoints.y[localIndex+2];
+    aux.p1.x = originalPoints.x[localIndex];
+    aux.p1.y = originalPoints.y[localIndex];
+    aux.p2.x = originalPoints.x[localIndex+1];
+    aux.p2.y = originalPoints.y[localIndex+1];
+    aux.p3.x = originalPoints.x[localIndex+2];
+    aux.p3.y  = originalPoints.y[localIndex+2];
+    aux.color = color[i];
     return aux;
 };
 
@@ -346,18 +348,18 @@ void Model::SetTriangle(int i, Vec2f p1, Vec2f p2, Vec2f p3, uint16_t color){
     originalCenter.y = (originalBoundaries.y[0]-originalBoundaries.y[1])/2.0f;
 }
 
-void Model::SetTriangle(int i, Trianglef aux){
+void Model::SetTriangle(int i, TriangleData aux){
     if (i >= triangleCount){
         return;
     }
 
     int localIndex = i * 3;
-    originalPoints.x[localIndex  ]          = aux.points.x[0];
-    originalPoints.y[localIndex  ]          = aux.points.y[0];
-    originalPoints.x[localIndex+1]          = aux.points.x[1];
-    originalPoints.y[localIndex+1]          = aux.points.y[1];
-    originalPoints.x[localIndex+2]          = aux.points.x[2];
-    originalPoints.y[localIndex+2]          = aux.points.y[2];
+    originalPoints.x[localIndex  ]          = aux.p1.x;
+    originalPoints.y[localIndex  ]          = aux.p1.y;
+    originalPoints.x[localIndex+1]          = aux.p2.x;
+    originalPoints.y[localIndex+1]          = aux.p2.y;
+    originalPoints.x[localIndex+2]          = aux.p3.x;
+    originalPoints.y[localIndex+2]          = aux.p3.y;
     color[i] = aux.color;
 }
 
@@ -366,7 +368,7 @@ int Model::AddPointGroup(PointList &pts) {
     bones.groupCount++;
     return bones.points.size() - 1; 
 }
-void Model::RasterTriangle(Scene *scene, int i){
+void Model::RasterTriangle(ModelHandler *scene, int i){
 
     int baseIdx = i * 3;
 
@@ -491,15 +493,6 @@ void Model::RasterTriangle(Scene *scene, int i){
 }
 
 
-void Scene::RenderModels(){
-    for (auto& model : models) {
-        if (model->triangleCount == 0) continue;
-        
-        for (int i = model->triangleCount - 1; i >= 0; i--) {
-            model->RasterTriangle(this, i);
-        }
-    }
-}
 
 void Model::TranslatePoints(uint32_t groupid, Vec2f delta){
     bones.Translate(groupid, delta);
@@ -510,19 +503,4 @@ void Model::ScalePoints(uint32_t groupid, Vec2f center, Vec2f scaleFactors){
 }
 void Model::SetPointsPosition(uint32_t groupid, Vec2f pos){
     bones.Set(groupid, pos);
-}
-
-void Scene::RenderScene(){
-    Devices::Display->startWrite();
-    memset(pixelBitmap, 0, sizeof(pixelBitmap));
-    uint8_t r, g, b;
-    Devices::Display->color565to888(0, r, g, b);
-    for (float y = 0; y < PANEL_HEIGHT; y++) {
-        for (float x = 0; x < PANEL_WIDTH; x++) {
-            Devices::Display->updateMatrixDMABuffer_2(x, y, r, g, b);
-            Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH) + x, y, r, g, b);
-        }
-    }
-    RenderModels();
-    Devices::Display->endWrite();
 }

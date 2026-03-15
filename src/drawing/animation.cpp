@@ -421,7 +421,7 @@ bool Animation::internalUpdate(File *file, AnimationSequence &running){
 void Animation::DrawAnimatonModel(AnimationSequence &running){
     uint64_t ld = micros();
     uint64_t begin = ld;
-    m_scene.RenderScene();
+    m_models.RenderScene();
     m_needFlip = true;
     m_frameDrawDuration = micros()-ld;
     m_cycleDuration =  micros()-begin;
@@ -518,14 +518,14 @@ int Animation::LoadModel(ModelData modelInfo){
     mem->SetBatchOperations(true);
     mem->SetAccumulativeOperations(true);
     mem->CopyToRaster();
-    return m_scene.addModel(mem);
+    return m_models.addModel(mem);
 }
 
 int Animation::AddModelPointList(int modelId, PointList points){
-    if (modelId >= m_scene.models.size()){
+    if (modelId >= m_models.models.size()){
         return -1;
     }
-    return m_scene.models[modelId]->AddPointGroup(points);
+    return m_models.models[modelId]->AddPointGroup(points);
 }
 
 #endif

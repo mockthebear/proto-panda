@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <vector>
 #include "lua/luainterface.hpp"
-#include "drawing/mathstuff/shapes.hpp"
+#include "drawing/rendering/model.hpp"
 
 #ifdef ENABLE_HUB75_PANEL
 
