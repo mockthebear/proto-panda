@@ -823,18 +823,7 @@
             position: relative;
         }
 
-        .left-info {
-            color: #ffaa33;
-            width: 140px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .middle-info {
-            flex: 1;
-            text-align: center;
-            min-width: 160px;
-        }
+    
         .create-group-btn {
             background: #ff9900;
             color: #111;
@@ -859,16 +848,7 @@
             transform: translateY(0px);
             box-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
-        .right-info {
-            color: #9cdcfe;
-            width: 140px;
-            text-align: right;
-            white-space: nowrap;
-        }
-        .right-info span {
-            font-weight: bold;
-            margin-left: 8px;
-        }
+    
         
         /* Code output - hidden in animation mode */
         .code-output-container {
@@ -2047,7 +2027,7 @@
             <div style="background: #1e1e1e; border-radius: 6px; padding: 10px; border: 1px solid #444;">
                 <span style="color: #9cdcfe;">Current width: <span id="currentWidth">0</span>px</span>
             </div>
-            <button onclick="document.getElementById('mobileWarning').style.display='none'" style="background: #ff9900; color: #111; border: none; border-radius: 6px; padding: 12px 30px; font-family: 'Courier New', monospace; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; border: 1px solid #ffaa33;">Whatever.</button>
+            <button onclick="document.getElementById('mobileWarning').style.display='none'" style="background: #ff9900; color: #111; border: none; border-radius: 6px; padding: 12px 30px; font-family: 'Courier New', monospace; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; border: 1px solid #ffaa33;">Whatever</button>
         </div>
     </div>
     <div class="main-layout">
@@ -2162,6 +2142,9 @@
                     <div class="info-item">
                         <span class="info-label">Points:</span>
                         <span class="info-value" id="pointInfo">-</span>
+                    </div>
+                    <div class="info-item" id="groupButtonContainer" style="margin-top: 8px; justify-content: center; width: 100%;">
+                        <!-- Group button will be inserted here -->
                     </div>
                 </div>
             </div>
@@ -3135,7 +3118,9 @@
                 } else {
                     container.innerHTML = '';
                 }
-            }
+            }else {
+                    container.innerHTML = '';
+                }
         }
 
         function createPointGroupFromSelection() {
