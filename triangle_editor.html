@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body {
             margin: 0;
@@ -104,6 +105,19 @@
             border: 1px solid #ff9900;
             pointer-events: none;
             box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+        }
+
+        /* Tools section - hidden in animation mode */
+        .tools-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tools-section.hidden {
+            display: none;
         }
 
         .panel-section-label {
@@ -363,6 +377,66 @@
             transform: scale(1.05);
         }
 
+        /* Mode toggle between sections */
+        .mode-toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #2d2d2d;
+            border-bottom: 1px solid #444;
+        }
+
+        .mode-toggle-label {
+            color: #aaa;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .mode-toggle-label.model {
+            color: #ff9900;
+            font-weight: bold;
+        }
+
+        .mode-toggle-label.anim {
+            color: #ff9900;
+            font-weight: bold;
+        }
+
+        .mode-toggle-switch {
+            width: 48px;
+            height: 24px;
+            background: #3c3c3c;
+            border: 2px solid #555;
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mode-toggle-switch.active {
+            border-color: #ff9900;
+            background: #4a4a4a;
+        }
+
+        .mode-toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: #ff9900;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .mode-toggle-switch.active::after {
+            left: 27px;
+            background: #ffaa33;
+        }
 
         .section-content {
             flex: 1;
@@ -675,7 +749,7 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding: 20px;
+            padding: 10px;
             overflow: auto;
             min-width: 0;
             z-index: 1;
@@ -687,8 +761,8 @@
             flex-direction: column;
             align-items: center;
             background: #222;
-            padding: 15px;
-            border-radius: 8px;
+            padding: 5px;
+            border-radius: 8px !important;
             border: 1px solid #555;
             box-sizing: border-box;
             overflow: hidden;
@@ -707,24 +781,48 @@
             position: relative;
             z-index: 2;
         }
-        .xy-info-bar {
-            width: 1024px;
+        
+        .info-bar-right {
+            position: absolute;
+            right: 300px; /* Position near the right panel (width 280px + padding) */
+            top: 20px;
             background: #1e1e1e;
             color: #ff9900;
-            padding: 6px 12px;
-            margin-top: 8px;
-            border-radius: 4px;
+            padding: 12px 16px;
+            border-radius: 6px;
             font-family: 'Courier New', monospace;
-            font-size: 15px;
-            border: 1px solid #555;
+            font-size: 14px;
+            border: 2px solid #ff9900;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 150;
+            min-width: 140px;
             display: flex;
-            justify-content: space-between;
-            box-sizing: border-box;
-            align-items: center;
-            min-height: 40px;
-            position: relative;
-            z-index: 2;
+            flex-direction: column;
+            gap: 8px;
         }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .info-label {
+            color: #aaa;
+            font-weight: bold;
+            min-width: 50px;
+        }
+
+        .info-value {
+            color: #9cdcfe;
+            font-weight: bold;
+        }
+
+        /* Make sure canvas container doesn't overlap */
+        .canvas-container {
+            position: relative;
+        }
+
         .left-info {
             color: #ffaa33;
             width: 140px;
@@ -771,11 +869,30 @@
             font-weight: bold;
             margin-left: 8px;
         }
+        
+        /* Code output - hidden in animation mode */
+        .code-output-container {
+            margin-top: 10px;
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 5px;
+            transition: opacity 0.2s ease;
+        }
+
+        .animation-mode .code-output-container {
+            display: none;
+        }
+
+        .code-label {
+            color: #9cdcfe;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
         .code-output {
             background: #1e1e1e;
             color: #d4d4d4;
             padding: 15px;
-            margin-top: 20px;
             border-radius: 6px;
             font-family: 'Courier New', monospace;
             font-size: 14px;
@@ -784,12 +901,6 @@
             word-wrap: break-word;
             max-height: 250px;
             overflow-y: auto;
-        }
-        .code-label {
-            color: #9cdcfe;
-            font-weight: bold;
-            margin-bottom: 8px;
-            font-size: 16px;
         }
         .selection-rect {
             position: fixed;
@@ -1334,12 +1445,613 @@
             background: #888;
             transform: translateY(-2px);
         }
+   
+        .animation-tools-section {
+            width: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .animation-tools-section.visible {
+            display: flex;
+        }
+
+        .frame-indicator {
+            color: #ff9900;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 4px 8px;
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 4px;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Timeline - only visible in animation mode */
+        .timeline-container {
+            margin-top: 10px;
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #555;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 100%;
+            overflow: hidden;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .animation-mode .timeline-container {
+            display: flex;
+        }
+
+        .animation-mode .code-output-container {
+            display: none;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow: auto;
+            min-width: 0;
+            z-index: 1;
+            position: relative;
+            min-height: 0;
+        }
+
+        .canvas-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #222;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            box-sizing: border-box;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .timeline-header h3 {
+            color: #ff9900;
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .timeline-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .interval-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #2d2d2d;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #444;
+        }
+
+        .interval-control label {
+            color: #aaa;
+            font-size: 12px;
+        }
+
+        .interval-control input {
+            width: 70px;
+            background: #3c3c3c;
+            border: 1px solid #555;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .interval-control input:focus {
+            outline: none;
+            border-color: #ff9900;
+        }
+
+        .interval-control span {
+            color: #ffaa33;
+            font-size: 12px;
+            font-weight: bold;
+            min-width: 30px;
+        }
+
+        .repeat-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #2d2d2d;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #444;
+        }
+
+        .repeat-control label {
+            color: #aaa;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .repeat-control input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #ff9900;
+        }
+
+        .timeline-tracks {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto !important;
+            overflow-x: auto;
+            background: #2d2d2d;
+            border-radius: 4px;
+            border: 1px solid #444;
+            position: relative;
+        }
+
+        .timeline-time-header {
+            display: flex;
+            background: #3c3c3c;
+            border-bottom: 2px solid #ff9900;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            min-width: min-content;
+            flex-shrink: 0;
+        }
+
+        .header-corner {
+            width: 80px;
+            height: 30px;
+            flex-shrink: 0;
+            background: #2d2d2d;
+            border-right: 2px solid #ff9900;
+            position: sticky;
+            left: 0;
+            z-index: 11;
+        }
+
+        .time-header-cell {
+            width: 40px;
+            height: 30px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffaa33;
+            font-size: 10px;
+            font-weight: bold;
+            border-right: 1px solid #555;
+            background: #3c3c3c;
+        }
+
+        .time-header-cell:last-child {
+            border-right: none;
+        }
+
+        .tracks-container {
+            display: flex;
+            flex-direction: column;
+            min-width: min-content;
+        }
+
+        .track {
+            display: flex;
+            align-items: center;
+            background: #3c3c3c;
+            border-bottom: 1px solid #444;
+            min-width: min-content;
+            height: 40px;
+            flex-shrink: 0;
+        }
+
+        .track:last-child {
+            border-bottom: none;
+        }
+
+        .track-label {
+            width: 80px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffaa33;
+            font-size: 12px;
+            font-weight: bold;
+            background: #2d2d2d;
+            border-right: 2px solid #ff9900;
+            flex-shrink: 0;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+        }
+
+        .track-cells {
+            display: flex;
+            flex: 1;
+            height: 40px;
+        }
+
+        .timeline-cell {
+            width: 40px;
+            height: 40px;
+            background: #4a4a4a;
+            border-right: 1px solid #666;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+            font-size: 10px;
+        }
+
+        .timeline-cell:last-child {
+            border-right: none;
+        }
+
+        .timeline-cell:hover {
+            background: #5a5a5a;
+        }
+
+        .timeline-cell.active {
+            background: #ff9900;
+            color: #111;
+        }
+
+        .timeline-cell.playing {
+            background: #4CAF50;
+            color: white;
+            font-weight: bold;
+            box-shadow: inset 0 0 0 2px #fff;
+        }
+
+        .timeline-tracks::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        .timeline-tracks::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+
+        .timeline-tracks::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 5px;
+            border: 2px solid #2d2d2d;
+        }
+
+        .timeline-tracks::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        .timeline-tracks::-webkit-scrollbar-corner {
+            background: #2d2d2d;
+        }
+
+        .timeline-tracks {
+            scrollbar-width: thin;
+            scrollbar-color: #555 #2d2d2d;
+        }
+
+        .timeline-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .timeline-btn {
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 6px 12px;
+            color: #ccc;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            transition: all 0.1s ease;
+        }
+
+        .timeline-btn:hover {
+            background: #4a4a4a;
+            border-color: #ff9900;
+            color: #ff9900;
+        }
+
+        .timeline-time {
+            color: #9cdcfe;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            background: #2d2d2d;
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: 1px solid #444;
+        }
+
+        /* Enhanced scrollbars */
+        .section-content::-webkit-scrollbar,
+        .model-list::-webkit-scrollbar,
+        .animation-list::-webkit-scrollbar,
+        .timeline-tracks::-webkit-scrollbar,
+        .code-output::-webkit-scrollbar,
+        .overlay-panel-content::-webkit-scrollbar,
+        .model-collapse-content::-webkit-scrollbar {
+            width: 14px;
+            height: 14px;
+        }
+
+        .section-content::-webkit-scrollbar-track,
+        .model-list::-webkit-scrollbar-track,
+        .animation-list::-webkit-scrollbar-track,
+        .timeline-tracks::-webkit-scrollbar-track,
+        .code-output::-webkit-scrollbar-track,
+        .overlay-panel-content::-webkit-scrollbar-track,
+        .model-collapse-content::-webkit-scrollbar-track {
+            background: #2d2d2d;
+            border-radius: 7px;
+            border: 1px solid #444;
+        }
+
+        .section-content::-webkit-scrollbar-thumb,
+        .model-list::-webkit-scrollbar-thumb,
+        .animation-list::-webkit-scrollbar-thumb,
+        .timeline-tracks::-webkit-scrollbar-thumb,
+        .code-output::-webkit-scrollbar-thumb,
+        .overlay-panel-content::-webkit-scrollbar-thumb,
+        .model-collapse-content::-webkit-scrollbar-thumb {
+            background: #ff9900;
+            border-radius: 7px;
+            border: 2px solid #2d2d2d;
+            min-height: 40px;
+        }
+
+        .section-content::-webkit-scrollbar-thumb:hover,
+        .model-list::-webkit-scrollbar-thumb:hover,
+        .animation-list::-webkit-scrollbar-thumb:hover,
+        .timeline-tracks::-webkit-scrollbar-thumb:hover,
+        .code-output::-webkit-scrollbar-thumb:hover,
+        .overlay-panel-content::-webkit-scrollbar-thumb:hover,
+        .model-collapse-content::-webkit-scrollbar-thumb:hover {
+            background: #ffaa33;
+        }
+
+        .section-content::-webkit-scrollbar-corner,
+        .model-list::-webkit-scrollbar-corner,
+        .animation-list::-webkit-scrollbar-corner,
+        .timeline-tracks::-webkit-scrollbar-corner,
+        .code-output::-webkit-scrollbar-corner,
+        .overlay-panel-content::-webkit-scrollbar-corner,
+        .model-collapse-content::-webkit-scrollbar-corner {
+            background: #2d2d2d;
+        }
+
+        .section-content,
+        .model-list,
+        .animation-list,
+        .timeline-tracks,
+        .code-output,
+        .overlay-panel-content,
+        .model-collapse-content {
+            scrollbar-width: thick;
+            scrollbar-color: #ff9900 #2d2d2d;
+        }
+
+        .models-section {
+            height: 50%;
+            display: flex;
+            flex-direction: column;
+            padding: 12px 6px 6px 12px;
+            box-sizing: border-box;
+            border-bottom: 2px solid #444;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .animations-section {
+            height: 50%;
+            display: flex;
+            flex-direction: column;
+            padding: 12px 6px 6px 12px;
+            box-sizing: border-box;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .section-content {
+            flex: 1;
+            overflow-y: auto !important;
+            overflow-x: hidden;
+            min-height: 0;
+            max-height: 100%;
+            background: #222;
+            border-radius: 4px;
+            padding: 8px 6px 8px 8px;
+            border: 1px solid #444;
+            width: calc(100% - 14px);
+            margin-right: 0;
+        }
+
+        .model-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+            padding-right: 2px;
+        }
+
+        .model-item {
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.1s;
+            width: calc(100% - 16px);
+        }
+
+        .animation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: calc(100% - 14px);
+        }
+
+        .animation-placeholder {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+            border: 2px dashed #444;
+            border-radius: 6px;
+            background: #2d2d2d;
+            font-size: 12px;
+            width: calc(100% - 44px);
+            margin-right: 10px;
+        }
+
+        .model-collapse-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 4px 4px 4px 0;
+            max-height: 200px;
+            overflow-y: auto !important;
+            width: calc(100% - 10px);
+        }
+
+        .group-item {
+            background: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.1s;
+            width: calc(100% - 12px);
+        }
+
+        .group-points-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+            margin-top: 2px;
+            width: 100%;
+        }
+
+        .timeline-tracks {
+            scrollbar-width: thick !important;
+            scrollbar-color: #ff9900 #2d2d2d !important;
+            width: calc(100% - 4px);
+            margin-right: 2px;
+        }
+
+        .timeline-tracks::-webkit-scrollbar {
+            width: 14px !important;
+            height: 14px !important;
+        }
+
+        .timeline-tracks::-webkit-scrollbar-track {
+            background: #2d2d2d !important;
+            border-radius: 7px !important;
+            border: 1px solid #444 !important;
+        }
+
+        .timeline-tracks::-webkit-scrollbar-thumb {
+            background: #ff9900 !important;
+            border-radius: 7px !important;
+            border: 2px solid #2d2d2d !important;
+        }
+
+        .timeline-tracks::-webkit-scrollbar-thumb:hover {
+            background: #ffaa33 !important;
+        }
+
+        .timeline-tracks::-webkit-scrollbar-corner {
+            background: #2d2d2d !important;
+        }
+
+        .code-output {
+            max-height: 250px;
+            overflow-y: auto !important;
+            scrollbar-width: thick;
+            scrollbar-color: #ff9900 #2d2d2d;
+            padding-right: 12px;
+            width: calc(100% - 28px);
+        }
+
+        .overlay-panel-content {
+            max-height: 60vh;
+            overflow-y: auto !important;
+            padding-right: 10px;
+            width: calc(100% - 25px);
+        }
+
+        .stats-section {
+            background: #2d2d2d;
+            border-radius: 4px;
+            padding: 6px 8px;
+            border: 1px solid #444;
+            font-size: 10px;
+            color: #aaa;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            flex-shrink: 0;
+            width: calc(100% - 16px);
+            margin-left: 0;
+        }
     </style>
 </head>
 <body>
     <canvas id="connectionCanvas"></canvas>
-
+    <div id="mobileWarning" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 99999; font-family: 'Courier New', monospace; color: #fff; align-items: center; justify-content: center; text-align: center; padding: 20px; box-sizing: border-box;">
+        <div style="background: #2d2d2d; border: 3px solid #ff9900; border-radius: 12px; padding: 30px; max-width: 400px; box-shadow: 0 0 30px rgba(255,153,0,0.3);">
+            <div style="font-size: 60px; margin-bottom: 20px;">⚠️</div>
+            <h2 style="color: #ff9900; margin: 0 0 15px 0; font-size: 24px;">Not for mobile</h2>
+            <p style="color: #ccc; margin: 0 0 20px 0; font-size: 16px; line-height: 1.5;">
+                Ideally with a screen with at least 1024px width
+            </p>
+            <div style="background: #1e1e1e; border-radius: 6px; padding: 10px; border: 1px solid #444;">
+                <span style="color: #9cdcfe;">Current width: <span id="currentWidth">0</span>px</span>
+            </div>
+            <button onclick="document.getElementById('mobileWarning').style.display='none'" style="background: #ff9900; color: #111; border: none; border-radius: 6px; padding: 12px 30px; font-family: 'Courier New', monospace; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; border: 1px solid #ffaa33;">Whatever.</button>
+        </div>
+    </div>
     <div class="main-layout">
+
         <div class="left-panel">
             <div class="logo-container" id="logoContainer">
                 <a><img src="doc/iconprotopanda.png" alt="Logo" onerror="this.style.display='none'"></a>
@@ -1350,32 +2062,53 @@
                 <div class="top-tool-icon" id="loadBtn" data-tooltip="Load">📂</div>
             </div>
 
-            <div class="panel-section-label">TOOLS</div>
-            <div class="tool-grid">
-                <div class="tool-icon" id="toolAddPoints" data-tooltip="Add points (A)">✏️</div>
-                <div class="tool-icon active" id="toolMovePoints" data-tooltip="Move vertices (M)">✋</div>
-                <div class="tool-icon" id="toolSelectPoints" data-tooltip="Select points (S)">🔲</div>
-                <div class="tool-icon" id="toolPaintPoints" data-tooltip="Paint triangle (P)">🎨</div>
-                <div class="tool-icon" id="toolDeleteTriangle" data-tooltip="Delete triangle (D)">🗑️</div>
-                <div class="tool-icon" id="toolShapes" data-tooltip="Shapes (H)">
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-                        <div style="display: flex; gap: 2px;">
-                            <div style="width: 8px; height: 8px; border: 1px solid currentColor;"></div>
-                            <div style="width: 8px; height: 8px; border-radius: 50%; border: 1px solid currentColor;"></div>
+            <!-- Editing tools section - visible only in model mode -->
+            <div class="tools-section" id="editingToolsSection">
+                <div class="panel-section-label">TOOLS</div>
+                <div class="tool-grid">
+                    <div class="tool-icon" id="toolAddPoints" data-tooltip="Add points (A)">✏️</div>
+                    <div class="tool-icon active" id="toolMovePoints" data-tooltip="Move vertices (M)">✋</div>
+                    <div class="tool-icon" id="toolSelectPoints" data-tooltip="Select points (S)">🔲</div>
+                    <div class="tool-icon" id="toolPaintPoints" data-tooltip="Paint triangle (P)">🎨</div>
+                    <div class="tool-icon" id="toolDeleteTriangle" data-tooltip="Delete triangle (D)">🗑️</div>
+                    <div class="tool-icon" id="toolShapes" data-tooltip="Shapes (H)">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                            <div style="display: flex; gap: 2px;">
+                                <div style="width: 8px; height: 8px; border: 1px solid currentColor;"></div>
+                                <div style="width: 8px; height: 8px; border-radius: 50%; border: 1px solid currentColor;"></div>
+                            </div>
+                            <div style="width: 16px; height: 2px; background: currentColor; transform: rotate(-10deg);"></div>
                         </div>
-                        <div style="width: 16px; height: 2px; background: currentColor; transform: rotate(-10deg);"></div>
                     </div>
+                    <div class="tool-icon" id="toolOverlay" data-tooltip="Overlay controls (O)">🖼️</div>
                 </div>
-                <div class="tool-icon" id="toolOverlay" data-tooltip="Overlay controls (O)">🖼️</div>
-            </div>
-            
-            <div class="color-picker-container">
-                <div class="color-label">COLOR</div>
-                <input type="color" id="colorPicker" value="#ffffff">
+                
+                <div class="color-picker-container">
+                    <div class="color-label">COLOR</div>
+                    <input type="color" id="colorPicker" value="#ffffff">
+                </div>
+
+                <div class="tool-separator"></div>
             </div>
 
-            <div class="tool-separator"></div>
+            <!-- Animation tools section - visible only in animation mode -->
+            <div class="animation-tools-section" id="animationToolsSection">
+                <div class="panel-section-label">ANIM TOOLS</div>
+                <div class="tool-grid">
+                    <div class="tool-icon" id="toolPlayPause" data-tooltip="Play/Pause (P)">▶️</div>
+                    <div class="tool-icon" id="toolStep" data-tooltip="Step forward (Right Arrow)">⏯️</div>
+                    <div class="tool-icon" id="toolStop" data-tooltip="Stop (S)">⏹️</div>
+                </div>
+                
+                <div class="tool-separator"></div>
+                
+                <div class="panel-section-label">FRAME</div>
+                <div class="color-picker-container">
+                    <div class="frame-indicator" id="frameIndicator">0 / 0</div>
+                </div>
+            </div>
             
+            <!-- View tools - always visible -->
             <div class="panel-section-label">View</div>
             <div class="toggle-section">
                 <div class="toggle-item">
@@ -1419,23 +2152,65 @@
             <div class="canvas-container">
                 <canvas id="meuCanvas" width="1024" height="512"></canvas>
                 
-                <div class="xy-info-bar">
-                    <div class="left-info" id="pointInfo">Point -</div>
-                    <div class="middle-info" id="groupButtonContainer"></div>
-                    <div class="right-info">x: <span id="xCoord">0</span> y: <span id="yCoord">0</span></div>
+                <div class="info-bar-right">
+                    <div class="info-item">
+                        <span class="info-label">Pos:</span>
+                        <span class="info-value" id="xCoord">0</span>
+                        <span class="info-value">,</span>
+                        <span class="info-value" id="yCoord">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Points:</span>
+                        <span class="info-value" id="pointInfo">-</span>
+                    </div>
                 </div>
             </div>
             
-            <div style="margin-top: 20px; background: #1e1e1e; padding: 10px; border-radius: 5px;">
+            <!-- Code output - visible only in model mode -->
+            <div class="code-output-container" id="codeOutputContainer">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <div class="code-label">baka data</div>
                     <button id="copyCodeBtn" style="background: #ff9900; color: #111; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 12px; font-weight: bold;">📋 COPY ALL</button>
                 </div>
                 <div id="codeDisplay" class="code-output">wah</div>
             </div>
+            
+            <!-- Timeline - visible only in animation mode -->
+            <div class="timeline-container" id="timelineContainer">
+                <div class="timeline-header">
+                    <h3>🎬 TIMELINE</h3>
+                    <div class="timeline-controls">
+                        <div class="interval-control">
+                            <label>Interval:</label>
+                            <input type="number" id="intervalValue" value="50" min="10" step="10">
+                            <span>ms</span>
+                        </div>
+                        <div class="repeat-control">
+                            <input type="checkbox" id="repeatCheckbox">
+                            <label for="repeatCheckbox">Repeat</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-tracks" id="timelineTracks">
+                    <!-- Tracks will be generated here -->
+                </div>
+                
+                <div class="timeline-footer">
+                    <button class="timeline-btn" id="addTrackBtn">➕ ADD TRACK</button>
+                    <span class="timeline-time" id="currentTime">0 ms</span>
+                </div>
+            </div>
         </div>
         
         <div class="right-panel">
+            <!-- Mode Toggle between sections -->
+            <div class="mode-toggle-container">
+                <span class="mode-toggle-label model" id="modelModeLabel">MODEL</span>
+                <div class="mode-toggle-switch" id="modeToggle"></div>
+                <span class="mode-toggle-label anim" id="animModeLabel">ANIM</span>
+            </div>
+
             <div class="models-section">
                 <div class="section-header">
                     <h3>📁 MODELS</h3>
@@ -1616,6 +2391,10 @@
         var lastMouseY = 0;
         var mouseDown = false;
         
+        // Mode state
+        var isAnimationMode = false;
+        var savedPointsData = null;
+        
         // Undo/Redo stacks
         var undoStack = [];
         var redoStack = [];
@@ -1716,6 +2495,17 @@
             overlay: "🖼️"
         };
 
+
+        var timelineTracks = [];
+        var timelineInterval = 50; 
+        var totalCells = 30; // Number of time cells
+        
+        // Animation state
+        var isPlaying = false;
+        var currentFrame = 0;
+        var animationTimer = null;
+        var repeatAnimation = false;
+
         function toFloat32(value) { return Math.fround(value); }
         function Vec2f(x, y) { return { x: toFloat32(x), y: toFloat32(y) }; }
         function orderPointsOptimally(p1, p2, p3) { return [Vec2f(p1.x, p1.y), Vec2f(p2.x, p2.y), Vec2f(p3.x, p3.y)]; }
@@ -1744,6 +2534,7 @@
         }
 
         function saveUndoState() {
+            if (isAnimationMode) return; // No undo in animation mode
             let stateCopy = JSON.parse(JSON.stringify(models));
             undoStack.push(stateCopy);
             redoStack = [];
@@ -1751,6 +2542,10 @@
         }
 
         function undo() {
+            if (isAnimationMode) {
+                timelineUndo();
+                return;
+            }
             if (undoStack.length === 0) return;
             let currentState = JSON.parse(JSON.stringify(models));
             redoStack.push(currentState);
@@ -1780,6 +2575,10 @@
         }
 
         function redo() {
+            if (isAnimationMode) {
+                timelineRedo();
+                return;
+            }
             if (redoStack.length === 0) return;
             let currentState = JSON.parse(JSON.stringify(models));
             undoStack.push(currentState);
@@ -1808,8 +2607,252 @@
             draw();
         }
 
+        // Toggle between model and animation mode
+        function toggleMode() {
+            isAnimationMode = !isAnimationMode;
+            
+            const toggleSwitch = document.getElementById('modeToggle');
+            const modelLabel = document.getElementById('modelModeLabel');
+            const animLabel = document.getElementById('animModeLabel');
+            const editingTools = document.getElementById('editingToolsSection');
+            const animationTools = document.getElementById('animationToolsSection');
+            const codeOutput = document.getElementById('codeOutputContainer');
+            const timeline = document.getElementById('timelineContainer');
+            
+            // Stop any playing animation when switching modes
+            if (isPlaying) {
+                stopAnimation();
+            }
+            
+            if (isAnimationMode) {
+                toggleSwitch.classList.add('active');
+                modelLabel.style.color = '#aaa';
+                animLabel.style.color = '#ff9900';
+                editingTools.classList.add('hidden');
+                animationTools.classList.add('visible');
+                
+                // Show timeline, hide code
+                if (codeOutput) codeOutput.style.display = 'none';
+                if (timeline) timeline.style.display = 'flex';
+                
+                // Clear timeline undo/redo stacks when entering animation mode
+                timelineUndoStack = [];
+                timelineRedoStack = [];
+                
+                // Save ONLY the points data (triangles) from all models
+                savedPointsData = models.map(model => ({
+                    triangles: JSON.parse(JSON.stringify(model.triangles)),
+                    pointGroups: JSON.parse(JSON.stringify(model.pointGroups || []))
+                }));
+                
+                // Clear any selection state
+                selectedVertices = [];
+                selectedGroupIndex = -1;
+                points = [];
+                state = 0;
+                
+                // Deselect any selected tools
+                document.querySelectorAll('.tool-icon').forEach(el => el.classList.remove('active'));
+                
+                // Hide any open windows
+                document.getElementById('overlayPanel').classList.remove('active');
+                document.getElementById('shapesWindow').classList.remove('active');
+                shapesWindowActive = false;
+                shapePlacementMode = false;
+                overlayActive = false;
+                
+                // Update timeline height after a short delay to allow DOM to update
+                setTimeout(updateTimelineHeight, 50);
+                
+                console.log('Entered animation mode - saved points data');
+            } else {
+                toggleSwitch.classList.remove('active');
+                modelLabel.style.color = '#ff9900';
+                animLabel.style.color = '#aaa';
+                editingTools.classList.remove('hidden');
+                animationTools.classList.remove('visible');
+                
+                // Show code, hide timeline
+                if (codeOutput) codeOutput.style.display = 'block';
+                if (timeline) timeline.style.display = 'none';
+                
+                // Restore ONLY the points data from the saved state
+                if (savedPointsData) {
+                    models.forEach((model, index) => {
+                        if (savedPointsData[index]) {
+                            model.triangles = JSON.parse(JSON.stringify(savedPointsData[index].triangles));
+                            model.pointGroups = JSON.parse(JSON.stringify(savedPointsData[index].pointGroups));
+                        }
+                    });
+                    savedPointsData = null;
+                }
+                
+                // Restore tool state
+                document.getElementById('toolMovePoints').classList.add('active');
+                currentTool = 'move';
+                
+                // Clear any selection state
+                selectedVertices = [];
+                selectedGroupIndex = -1;
+                points = [];
+                state = 0;
+                
+                // Update UI
+                renderModelList();
+                updateCodeDisplay();
+                
+                console.log('Exited animation mode - restored points data');
+            }
+            
+            draw();
+        }
+
+        // Animation control functions
+        function playAnimation() {
+            if (!isAnimationMode) return;
+            
+            if (isPlaying) {
+                pauseAnimation();
+                return;
+            }
+            
+            isPlaying = true;
+            document.getElementById('toolPlayPause').textContent = '⏸️';
+            document.getElementById('toolPlayPause').setAttribute('data-tooltip', 'Pause (P)');
+            
+            // If we're at the end, restart if repeat is on
+            if (currentFrame >= totalCells - 1) {
+                if (repeatAnimation) {
+                    currentFrame = 0;
+                } else {
+                    stopAnimation();
+                    return;
+                }
+            }
+            
+            // Start the animation timer
+            animationTimer = setInterval(() => {
+                if (!isPlaying) return;
+                
+                // Move to next frame
+                stepForward();
+                
+                // Check if we've reached the end
+                if (currentFrame >= totalCells - 1) {
+                    if (repeatAnimation) {
+                        // Clear all playing highlights
+                        clearPlayingHighlight();
+                        currentFrame = 0;
+                        highlightCurrentFrame();
+                    } else {
+                        stopAnimation();
+                    }
+                }
+            }, timelineInterval);
+        }
+
+        function pauseAnimation() {
+            if (!isAnimationMode) return;
+            
+            isPlaying = false;
+            document.getElementById('toolPlayPause').textContent = '▶️';
+            document.getElementById('toolPlayPause').setAttribute('data-tooltip', 'Play (P)');
+            
+            if (animationTimer) {
+                clearInterval(animationTimer);
+                animationTimer = null;
+            }
+        }
+
+        function stopAnimation() {
+            if (!isAnimationMode) return;
+            
+            isPlaying = false;
+            document.getElementById('toolPlayPause').textContent = '▶️';
+            document.getElementById('toolPlayPause').setAttribute('data-tooltip', 'Play (P)');
+            
+            if (animationTimer) {
+                clearInterval(animationTimer);
+                animationTimer = null;
+            }
+            
+            // Reset to first frame
+            clearPlayingHighlight();
+            currentFrame = 0;
+            highlightCurrentFrame();
+            updateFrameIndicator();
+        }
+
+        function stepForward() {
+            if (!isAnimationMode) return;
+            
+            // Clear current playing highlight
+            clearPlayingHighlight();
+            
+            // Move to next frame
+            if (currentFrame < totalCells - 1) {
+                currentFrame++;
+            } else {
+                if (repeatAnimation) {
+                    currentFrame = 0;
+                } else {
+                    // At the end, just stay there
+                    highlightCurrentFrame();
+                    updateFrameIndicator();
+                    return;
+                }
+            }
+            
+            // Highlight new frame
+            highlightCurrentFrame();
+            updateFrameIndicator();
+            
+            // Here you would trigger the actual animation logic
+            // For now, just update the display
+            draw();
+        }
+
+        function stepBackward() {
+            if (!isAnimationMode) return;
+            
+            // Clear current playing highlight
+            clearPlayingHighlight();
+            
+            // Move to previous frame
+            if (currentFrame > 0) {
+                currentFrame--;
+            }
+            
+            // Highlight new frame
+            highlightCurrentFrame();
+            updateFrameIndicator();
+            
+            // Here you would trigger the actual animation logic
+            draw();
+        }
+
+        function clearPlayingHighlight() {
+            document.querySelectorAll('.timeline-cell.playing').forEach(cell => {
+                cell.classList.remove('playing');
+            });
+        }
+
+        function highlightCurrentFrame() {
+            document.querySelectorAll(`.timeline-cell[data-cell="${currentFrame}"]`).forEach(cell => {
+                cell.classList.add('playing');
+            });
+        }
+
+        function updateFrameIndicator() {
+            const indicator = document.getElementById('frameIndicator');
+            if (indicator) {
+                indicator.textContent = `${currentFrame + 1} / ${totalCells}`;
+            }
+            document.getElementById('currentTime').textContent = (currentFrame * timelineInterval) + ' ms';
+        }
+
         function moveModelUp(index) {
-            if (index <= 0) return;
+            if (index <= 0 || isAnimationMode) return;
             saveUndoState();
             [models[index - 1], models[index]] = [models[index], models[index - 1]];
     
@@ -1828,7 +2871,7 @@
         }
 
         function moveModelDown(index) {
-            if (index >= models.length - 1) return;
+            if (index >= models.length - 1 || isAnimationMode) return;
             saveUndoState();
             [models[index], models[index + 1]] = [models[index + 1], models[index]];
 
@@ -1847,6 +2890,7 @@
         }
 
         function showModelSettings(index) {
+            if (isAnimationMode) return;
             settingsModelIndex = index;
             document.getElementById('modelRenameInput').value = models[index].name;
             document.getElementById('settingsDialogTitle').textContent = `Settings for "${models[index].name}"`;
@@ -1856,8 +2900,8 @@
         }
 
         function deleteModel(index) {
-            if (models.length <= 1) {
-                alert("Cannot delete the last model.");
+            if (isAnimationMode || models.length <= 1) {
+                if (models.length <= 1) alert("Cannot delete the last model.");
                 return;
             }
             saveUndoState();
@@ -1980,7 +3024,7 @@
             ctx.beginPath();
             ctx.moveTo(p1.x * SCALE +SCALE/2, p1.y * SCALE +SCALE/2);
             ctx.lineTo(p2.x * SCALE +SCALE/2, p2.y * SCALE +SCALE/2);
-            ctx.lineTo(p3.x * SCALE +SCALE/2, p3.y * SCALE +SCALE/2);
+            ctx.lineTo(p3.x * SCALE +SCALE/2, p3.y *SCALE +SCALE/2);
             ctx.closePath();
             ctx.fill();
         }
@@ -2078,7 +3122,7 @@
 
             let container = document.getElementById('groupButtonContainer');
 
-            if (models.length > 0 && selectedVertices.length > 0 && selectedGroupIndex === -1) {
+            if (!isAnimationMode && models.length > 0 && selectedVertices.length > 0 && selectedGroupIndex === -1) {
                 if (selectionFromSelectTool) {
                     container.innerHTML = '<button class="create-group-btn" id="createGroupBtn">📁 CREATE POINT GROUP</button>';
                     let btn = document.getElementById('createGroupBtn');
@@ -2091,13 +3135,11 @@
                 } else {
                     container.innerHTML = '';
                 }
-            } else {
-                container.innerHTML = '';
             }
         }
 
         function createPointGroupFromSelection() {
-            if (selectedVertices.length === 0 || models.length === 0) return;
+            if (isAnimationMode || selectedVertices.length === 0 || models.length === 0) return;
             saveUndoState();
             let active = models[selectedModelIndex];
             if (!active.pointGroups) active.pointGroups = [];
@@ -2117,6 +3159,7 @@
         }
 
         function deletePointGroup(modelIndex, groupIndex) {
+            if (isAnimationMode) return;
             if (models[modelIndex] && models[modelIndex].pointGroups) {
                 models[modelIndex].pointGroups.splice(groupIndex, 1);
                 if (selectedModelIndex === modelIndex && selectedGroupIndex === groupIndex) {
@@ -2207,6 +3250,7 @@
                 visCheck.type = "checkbox";
                 visCheck.className = "model-vis-checkbox";
                 visCheck.checked = model.visible;
+                visCheck.disabled = isAnimationMode;
                 visCheck.addEventListener("change", function(e) {
                     e.stopPropagation();
                     model.visible = visCheck.checked;
@@ -2220,7 +3264,7 @@
                 upBtn.className = "model-order-btn";
                 upBtn.textContent = "▲";
                 upBtn.title = "Move model up";
-                upBtn.disabled = index === 0;
+                upBtn.disabled = index === 0 || isAnimationMode;
                 upBtn.addEventListener("click", function(e) {
                     e.stopPropagation();
                     moveModelUp(index);
@@ -2230,7 +3274,7 @@
                 downBtn.className = "model-order-btn";
                 downBtn.textContent = "▼";
                 downBtn.title = "Move model down";
-                downBtn.disabled = index === models.length - 1;
+                downBtn.disabled = index === models.length - 1 || isAnimationMode;
                 downBtn.addEventListener("click", function(e) {
                     e.stopPropagation();
                     moveModelDown(index);
@@ -2254,6 +3298,7 @@
                 gearBtn.className = "model-gear-btn";
                 gearBtn.textContent = "⚙️";
                 gearBtn.title = "Model settings";
+                gearBtn.disabled = isAnimationMode;
                 gearBtn.addEventListener("click", function(e) {
                     e.stopPropagation();
                     showModelSettings(index);
@@ -2295,6 +3340,7 @@
                         var deleteBtn = document.createElement("button");
                         deleteBtn.className = "group-delete-btn";
                         deleteBtn.textContent = "✕";
+                        deleteBtn.disabled = isAnimationMode;
                         deleteBtn.addEventListener("click", function(e) {
                             e.stopPropagation();
                             pendingGroupDelete = { modelIndex: index, groupIndex: gIdx };
@@ -2349,7 +3395,7 @@
                             }
                             
                             badge.title = `Position (${posData.x}, ${posData.y}) - Click to remove all points at this position`;
-                            badge.style.cursor = "pointer";
+                            badge.style.cursor = isAnimationMode ? "default" : "pointer";
                             badge.setAttribute('data-positions', posKey);
                             badge.setAttribute('data-indices', posData.indices.join(','));
                             
@@ -2373,17 +3419,18 @@
                                 connectionCtx.clearRect(0, 0, connectionCanvas.width, connectionCanvas.height);
                             });
                             
-                            badge.addEventListener("click", function(e) {
-                                e.stopPropagation();
-                                if (selectedModelIndex === index) {
-                                    saveUndoState();
-
-                                    group.pointIndices = group.pointIndices.filter(idx => !posData.indices.includes(idx));
-                                    renderModelList();
-                                    updateCodeDisplay();
-                                    draw();
-                                }
-                            });
+                            if (!isAnimationMode) {
+                                badge.addEventListener("click", function(e) {
+                                    e.stopPropagation();
+                                    if (selectedModelIndex === index) {
+                                        saveUndoState();
+                                        group.pointIndices = group.pointIndices.filter(idx => !posData.indices.includes(idx));
+                                        renderModelList();
+                                        updateCodeDisplay();
+                                        draw();
+                                    }
+                                });
+                            }
                             
                             pointsList.appendChild(badge);
                         });
@@ -2392,6 +3439,7 @@
                         groupDiv.appendChild(pointsList);
                         
                         groupDiv.addEventListener('click', (e) => {
+                            if (isAnimationMode) return;
                             e.stopPropagation();
                             e.preventDefault();
                             
@@ -2437,6 +3485,7 @@
                 item.appendChild(collapsible);
                 
                 item.addEventListener("click", function(e) {
+                    if (isAnimationMode) return;
                     if (e.target === visCheck || e.target.closest('.model-order-btn') || e.target.closest('.model-gear-btn') || e.target.closest('.model-collapse-header') || e.target.closest('.group-item')) return;
                     selectedModelIndex = index;
                     selectedGroupIndex = -1;
@@ -2462,6 +3511,7 @@
         }
         
         function showNameDialog() {
+            if (isAnimationMode) return;
             document.getElementById('modelNameInput').value = "Model " + models.length;
             document.getElementById('nameDialog').classList.add('active');
             document.getElementById('modelNameInput').focus();
@@ -2469,6 +3519,7 @@
         }
 
         function createNewModel(name) {
+            if (isAnimationMode) return;
             saveUndoState();
             models.push({
                 name: name,
@@ -2491,6 +3542,7 @@
         function findTriangleUnderMouse(x, y) {
             if (models.length === 0) return null;
             var active = models[selectedModelIndex];
+            if (!active) return null;
             for (let i = active.triangles.length - 1; i >= 0; i--) {
                 let tri = active.triangles[i];
                 if (didIntersect(x, y, tri.v1, tri.v2, tri.v3)) {
@@ -2503,6 +3555,7 @@
         function findVertexUnderMouse(x, y) {
             if (models.length === 0) return null;
             var active = models[selectedModelIndex];
+            if (!active) return null;
             let globalIdx = 0;
             for (let i = 0; i < active.triangles.length; i++) {
                 let tri = active.triangles[i];
@@ -2521,7 +3574,8 @@
         function selectVerticesInRect(start, end) {
             let newSelection = [];
             if (models.length === 0) return;
-            let active = models[selectedModelIndex];
+            var active = models[selectedModelIndex];
+            if (!active) return;
             let x1 = Math.min(start.x, end.x);
             let x2 = Math.max(start.x, end.x);
             let y1 = Math.min(start.y, end.y);
@@ -2550,11 +3604,12 @@
             }
             
             selectedVertices = newSelection;
-            selectionFromSelectTool = (currentTool === 'select');
+            selectionFromSelectTool = (currentTool === 'select' && !isAnimationMode);
             draw();
         }
 
         function finalizeSelection() {
+            if (isAnimationMode) return;
             if (selectedGroupIndex !== -1 && models[selectedModelIndex]?.pointGroups?.[selectedGroupIndex] && selectedVertices.length > 0) {
                 let active = models[selectedModelIndex];
                 let group = active.pointGroups[selectedGroupIndex];
@@ -2576,7 +3631,7 @@
         }
 
         function deleteSelectedVertices() {
-            if (selectedVertices.length === 0 || models.length === 0) return;
+            if (isAnimationMode || selectedVertices.length === 0 || models.length === 0) return;
             saveUndoState();
             let active = models[selectedModelIndex];
             let triIndicesToDelete = new Set(selectedVertices.map(v => v.triIndex));
@@ -2594,6 +3649,10 @@
 
         function updateCursor() {
             if (mouseX < 0 || mouseX >= 64 || mouseY < 0 || mouseY >= 32) {
+                c.style.cursor = 'default';
+                return;
+            }
+            if (isAnimationMode) {
                 c.style.cursor = 'default';
                 return;
             }
@@ -2663,9 +3722,9 @@
 
         function updateOverlayPanel() {
             const hasImage = overlayImage !== null;
-            document.getElementById('overlayClearBtn').disabled = !hasImage;
-            document.getElementById('overlayResetPosBtn').disabled = !hasImage;
-            document.getElementById('overlayEditPosBtn').disabled = !hasImage;
+            document.getElementById('overlayClearBtn').disabled = !hasImage || isAnimationMode;
+            document.getElementById('overlayResetPosBtn').disabled = !hasImage || isAnimationMode;
+            document.getElementById('overlayEditPosBtn').disabled = !hasImage || isAnimationMode;
             
             if (hasImage) {
                 document.getElementById('overlayAlpha').value = overlayAlpha;
@@ -2679,6 +3738,7 @@
         }
 
         function createSquare(x1, y1, x2, y2) {
+            if (isAnimationMode) return;
             let minX = Math.min(x1, x2);
             let maxX = Math.max(x1, x2);
             let minY = Math.min(y1, y2);
@@ -2703,6 +3763,7 @@
         }
 
         function createCircle(centerX, centerY, radius) {
+            if (isAnimationMode) return;
             let points = [];
             let numPoints = 8; 
             
@@ -2726,6 +3787,7 @@
         }
 
         function createHexagon(centerX, centerY, size) {
+            if (isAnimationMode) return;
             let points = [];
             let numPoints = 6;
             
@@ -2750,6 +3812,7 @@
         }
 
         function createLine(x1, y1, x2, y2) {
+            if (isAnimationMode) return;
             let dx = x2 - x1;
             let dy = y2 - y1;
 
@@ -2851,11 +3914,15 @@
             
             drawGrid();
 
-            models.forEach(function(model) {
+            // Always use models directly - in animation mode we're working on the current models
+            // but they'll be restored when exiting
+            let modelsToDraw = models;
+            
+            modelsToDraw.forEach(function(model) {
                 if (!model.visible) return;
                 model.triangles.forEach(function(tri, index) {
                     let fillColor = tri.color;
-                    if (model === models[selectedModelIndex] && index === hoverTriangleIndex && oscillationTimer) {
+                    if (!isAnimationMode && model === models[selectedModelIndex] && index === hoverTriangleIndex && oscillationTimer) {
                         if (currentTool === 'paint') {
                             if (originalTriangleColor.toLowerCase() !== currentColor.toLowerCase()) {
                                 const factor = (Math.sin(oscillationPhase) + 1) / 2;
@@ -2884,8 +3951,8 @@
                 ctx.restore();
             }
 
-            if (showLines && models.length > 0 && models[selectedModelIndex].visible) {
-                let activeTriangles = models[selectedModelIndex].triangles;
+            if (showLines && modelsToDraw.length > 0 && modelsToDraw[selectedModelIndex] && modelsToDraw[selectedModelIndex].visible) {
+                let activeTriangles = modelsToDraw[selectedModelIndex].triangles;
                 for (let tri of activeTriangles) {
                     drawLine(tri.v1, tri.v2, "#FFA500");
                     drawLine(tri.v2, tri.v3, "#FFA500");
@@ -2894,10 +3961,10 @@
             }
 
             hoverPointInfo = null;
-            if (showPoints && models.length > 0 && models[selectedModelIndex].visible) {
-                let active = models[selectedModelIndex];
+            if (showPoints && modelsToDraw.length > 0 && modelsToDraw[selectedModelIndex] && modelsToDraw[selectedModelIndex].visible) {
+                let active = modelsToDraw[selectedModelIndex];
                 let groupIndices = new Set();
-                if (selectedGroupIndex !== -1 && active.pointGroups?.[selectedGroupIndex]) {
+                if (!isAnimationMode && selectedGroupIndex !== -1 && active.pointGroups?.[selectedGroupIndex]) {
                     active.pointGroups[selectedGroupIndex].pointIndices.forEach(idx => groupIndices.add(idx));
                 }
                 let globalIdx = 0;
@@ -2906,8 +3973,8 @@
                     let vertices = [tri.v1, tri.v2, tri.v3];
                     for (let j = 0; j < 3; j++) {
                         let v = vertices[j];
-                        let isSel = selectedVertices.some(s => s.triIndex === i && s.vertexIndex === j);
-                        let isGroup = groupIndices.has(globalIdx);
+                        let isSel = !isAnimationMode && selectedVertices.some(s => s.triIndex === i && s.vertexIndex === j);
+                        let isGroup = !isAnimationMode && groupIndices.has(globalIdx);
                         if (!isSel) {
                             drawPoint(v.x, v.y, "#FFA500", false, isGroup);
                         }
@@ -2917,10 +3984,12 @@
                         globalIdx++;
                     }
                 }
-                for (let sel of selectedVertices) {
-                    let tri = active.triangles[sel.triIndex];
-                    let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
-                    drawPoint(v.x, v.y, "#FFA500", true, false);
+                if (!isAnimationMode) {
+                    for (let sel of selectedVertices) {
+                        let tri = active.triangles[sel.triIndex];
+                        let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
+                        drawPoint(v.x, v.y, "#FFA500", true, false);
+                    }
                 }
             }
             
@@ -2928,8 +3997,8 @@
                 drawPoint(point.x, point.y, "#FFA500");
             });
             
-
-            if (currentTool === 'add') {
+            // Only draw shape previews in model mode
+            if (!isAnimationMode && currentTool === 'add') {
                 if (state === 1 && points.length === 1 && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
                     drawLine(points[0], Vec2f(mouseX, mouseY), "#888");
                 } else if (state === 2 && points.length === 2 && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
@@ -2946,8 +4015,8 @@
                 }
             }
             
-
-            if (shapePlacementMode && shapeStartPos && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
+            // Only draw shape previews in model mode
+            if (!isAnimationMode && shapePlacementMode && shapeStartPos && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
                 ctx.save();
                 ctx.globalAlpha = 0.5;
                 ctx.fillStyle = currentColor;
@@ -3083,7 +4152,7 @@
                 ctx.restore();
             }
             
-            if (overlayActive && overlayImage) {
+            if (!isAnimationMode && overlayActive && overlayImage) {
                 ctx.save();
                 ctx.strokeStyle = "#ff9900";
                 ctx.lineWidth = 2;
@@ -3116,7 +4185,7 @@
             updateCursor();
 
             let selRect = document.getElementById('selectionRect');
-            if (selecting && (currentTool === 'move' || currentTool === 'select')) {
+            if (!isAnimationMode && selecting && (currentTool === 'move' || currentTool === 'select')) {
                 let rect = c.getBoundingClientRect();
                 let scaleX = c.width / rect.width;
                 let scaleY = c.height / rect.height;
@@ -3151,8 +4220,28 @@
         });
 
         document.getElementById('saveBtn').addEventListener('click', function() {
+            // Determine which data to save
+            let modelsToSave;
+            
+            if (isAnimationMode && savedPointsData) {
+                // In animation mode, save the original models from savedPointsData
+                modelsToSave = models.map((model, index) => {
+                    // Create a copy of the model with original triangles and pointGroups
+                    let savedModel = {
+                        name: model.name,
+                        visible: model.visible,
+                        triangles: savedPointsData[index] ? JSON.parse(JSON.stringify(savedPointsData[index].triangles)) : [],
+                        pointGroups: savedPointsData[index] ? JSON.parse(JSON.stringify(savedPointsData[index].pointGroups)) : []
+                    };
+                    return savedModel;
+                });
+            } else {
+                // In model mode, save the current models
+                modelsToSave = models;
+            }
+            
             var exportData = {
-                models: models.map(model => {
+                models: modelsToSave.map(model => {
                     let xCoords = [];
                     let yCoords = [];
                     let colors = [];
@@ -3188,6 +4277,9 @@
             input.onchange = function(e) {
                 var file = e.target.files[0];
                 var reader = new FileReader();
+                if (isAnimationMode){
+                    toggleMode()
+                }
                 reader.onload = function(ev) {
                     try {
                         var parsed = JSON.parse(ev.target.result);
@@ -3240,10 +4332,18 @@
         });
 
         document.getElementById('addModelBtn').addEventListener('click', function() {
-            showNameDialog();
+            if (!isAnimationMode) {
+                showNameDialog();
+            }
+        });
+
+        document.getElementById('addAnimationBtn').addEventListener('click', function() {
+            // Placeholder for adding animations
+            alert("Animation creation will be implemented soon!");
         });
 
         document.getElementById('nameDialogCreate').addEventListener('click', function() {
+            if (isAnimationMode) return;
             var name = document.getElementById('modelNameInput').value.trim();
             if (name === "") {
                 name = "Model " + models.length;
@@ -3265,6 +4365,7 @@
         });
 
         document.getElementById('settingsDialogSave').addEventListener('click', function() {
+            if (isAnimationMode) return;
             if (settingsModelIndex >= 0 && settingsModelIndex < models.length) {
                 var newName = document.getElementById('modelRenameInput').value.trim();
                 if (newName !== "") {
@@ -3282,6 +4383,7 @@
         });
 
         document.getElementById('deleteModelBtn').addEventListener('click', function() {
+            if (isAnimationMode) return;
             if (settingsModelIndex >= 0 && settingsModelIndex < models.length) {
                 if (models.length > 1) {
                     deleteModel(settingsModelIndex);
@@ -3300,7 +4402,10 @@
             }
         });
 
+        document.getElementById('modeToggle').addEventListener('click', toggleMode);
+
         document.getElementById('toolShapes').addEventListener('click', function() {
+            if (isAnimationMode) return;
             setTool('toolShapes');
             document.getElementById('shapesWindow').classList.add('active');
             shapesWindowActive = true;
@@ -3320,7 +4425,7 @@
         const shapesHeader = document.querySelector('.shapes-window-header');
 
         shapesHeader.addEventListener('mousedown', function(e) {
-            if (e.target.classList.contains('shapes-window-close')) return;
+            if (e.target.classList.contains('shapes-window-close') || isAnimationMode) return;
             shapesWindowDragging = true;
             const rect = shapesWindow.getBoundingClientRect();
             shapesWindowDragOffset = {
@@ -3331,7 +4436,7 @@
         });
 
         document.addEventListener('mousemove', function(e) {
-            if (!shapesWindowDragging) return;
+            if (!shapesWindowDragging || isAnimationMode) return;
             e.preventDefault();
             
             const newLeft = e.clientX - shapesWindowDragOffset.x;
@@ -3355,6 +4460,7 @@
 
 
         document.getElementById('shapeSquare').addEventListener('click', function() {
+            if (isAnimationMode) return;
             document.querySelectorAll('.shape-button').forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
             currentShape = 'square';
@@ -3366,6 +4472,7 @@
         });
 
         document.getElementById('shapeCircle').addEventListener('click', function() {
+            if (isAnimationMode) return;
             document.querySelectorAll('.shape-button').forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
             currentShape = 'circle';
@@ -3377,6 +4484,7 @@
         });
 
         document.getElementById('shapeHexagon').addEventListener('click', function() {
+            if (isAnimationMode) return;
             document.querySelectorAll('.shape-button').forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
             currentShape = 'hexagon';
@@ -3388,6 +4496,7 @@
         });
 
         document.getElementById('shapeLine').addEventListener('click', function() {
+            if (isAnimationMode) return;
             document.querySelectorAll('.shape-button').forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
             currentShape = 'line';
@@ -3399,6 +4508,7 @@
         });
 
         document.getElementById('toolOverlay').addEventListener('click', function() {
+            if (isAnimationMode) return;
             setTool('toolOverlay');
             document.getElementById('overlayPanel').classList.add('active');
         });
@@ -3410,6 +4520,7 @@
         });
 
         document.getElementById('overlayLoadBtn').addEventListener('click', function() {
+            if (isAnimationMode) return;
             var input = document.createElement('input');
             input.type = 'file';
             input.accept = 'image/*';
@@ -3436,6 +4547,7 @@
         });
 
         document.getElementById('overlayClearBtn').addEventListener('click', function() {
+            if (isAnimationMode) return;
             overlayImage = null;
             overlayActive = false;
             updateOverlayPanel();
@@ -3459,6 +4571,7 @@
         });
 
         document.getElementById('overlayResetPosBtn').addEventListener('click', function() {
+            if (isAnimationMode) return;
             overlayControls.x = 0;
             overlayControls.y = 0;
             overlayControls.width = 1024;
@@ -3468,7 +4581,7 @@
         });
 
         document.getElementById('overlayEditPosBtn').addEventListener('click', function() {
-            if (!overlayImage) return;
+            if (isAnimationMode || !overlayImage) return;
             overlayActive = !overlayActive;
             document.getElementById('overlayPanel').classList.remove('active');
             if (overlayActive) {
@@ -3496,6 +4609,7 @@
         }
 
         document.getElementById('copyCodeBtn').addEventListener('click', function() {
+            if (isAnimationMode) return;
             var codeDisplay = document.getElementById('codeDisplay');
             var codeText = codeDisplay.textContent;
             navigator.clipboard.writeText(codeText).then(function() {
@@ -3511,7 +4625,7 @@
         });
 
         document.getElementById('confirmYes').addEventListener('click', function() {
-            if (pendingGroupDelete) {
+            if (pendingGroupDelete && !isAnimationMode) {
                 deletePointGroup(pendingGroupDelete.modelIndex, pendingGroupDelete.groupIndex);
                 pendingGroupDelete = null;
             }
@@ -3524,6 +4638,8 @@
         });
 
         function setTool(toolId) {
+            if (isAnimationMode) return;
+            
             if (overlayActive) {
                 overlayActive = false;
             }
@@ -3635,6 +4751,28 @@
             draw();
         });
 
+        // Animation tool buttons
+        document.getElementById('toolPlayPause').addEventListener('click', function() {
+            if (!isAnimationMode) return;
+            playAnimation();
+        });
+
+        document.getElementById('toolStep').addEventListener('click', function() {
+            if (!isAnimationMode) return;
+            if (isPlaying) pauseAnimation();
+            stepForward();
+        });
+
+        document.getElementById('toolStop').addEventListener('click', function() {
+            if (!isAnimationMode) return;
+            stopAnimation();
+        });
+
+        // Repeat checkbox
+        document.getElementById('repeatCheckbox').addEventListener('change', function(e) {
+            repeatAnimation = e.target.checked;
+        });
+
         document.addEventListener('keydown', function(e) {
 
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
@@ -3643,39 +4781,59 @@
             
             if (e.key === 'a' || e.key === 'A') {
                 e.preventDefault();
-                setTool('toolAddPoints');
+                if (!isAnimationMode) setTool('toolAddPoints');
             } else if (e.key === 'm' || e.key === 'M') {
                 e.preventDefault();
-                setTool('toolMovePoints');
+                if (!isAnimationMode) setTool('toolMovePoints');
             } else if (e.key === 's' || e.key === 'S') {
                 e.preventDefault();
-                setTool('toolSelectPoints');
+                if (isAnimationMode) {
+                    stopAnimation();
+                } else {
+                    setTool('toolSelectPoints');
+                }
             } else if (e.key === 'p' || e.key === 'P') {
                 e.preventDefault();
-                setTool('toolPaintPoints');
+                if (isAnimationMode) {
+                    playAnimation();
+                } else {
+                    setTool('toolPaintPoints');
+                }
             } else if (e.key === 'd' || e.key === 'D') {
                 e.preventDefault();
-                setTool('toolDeleteTriangle');
+                if (!isAnimationMode) setTool('toolDeleteTriangle');
             } else if (e.key === 'h' || e.key === 'H') {
                 e.preventDefault();
-                setTool('toolShapes');
+                if (!isAnimationMode) setTool('toolShapes');
             } else if (e.key === 'o' || e.key === 'O') {
                 e.preventDefault();
-                setTool('toolOverlay');
+                if (!isAnimationMode) setTool('toolOverlay');
+            } else if (e.key === 'ArrowRight') {
+                if (isAnimationMode) {
+                    e.preventDefault();
+                    if (isPlaying) pauseAnimation();
+                    stepForward();
+                }
+            } else if (e.key === 'ArrowLeft') {
+                if (isAnimationMode) {
+                    e.preventDefault();
+                    if (isPlaying) pauseAnimation();
+                    stepBackward();
+                }
             } else if (e.key === 'Escape') {
                 e.preventDefault();
                 if (overlayActive) {
                     overlayActive = false;
                     draw();
-                } else if (currentTool === 'add' && (state === 1 || state === 2)) {
+                } else if (!isAnimationMode && currentTool === 'add' && (state === 1 || state === 2)) {
                     points = [];
                     state = 0;
                     draw();
                 } else if (shapesWindowActive) {
                     document.getElementById('shapesWindow').classList.remove('active');
                     shapesWindowActive = false;
-                    setTool('toolMovePoints');
-                } else if (shapePlacementMode) {
+                    if (!isAnimationMode) setTool('toolMovePoints');
+                } else if (!isAnimationMode && shapePlacementMode) {
                     shapePlacementMode = false;
                     currentShape = null;
                     shapeStartPos = null;
@@ -3698,13 +4856,16 @@
                 e.preventDefault();
                 redo();
             } else if (e.key === 'Delete' || e.key === 'Del') {
-                if (selectedVertices.length > 0) {
+                if (!isAnimationMode && selectedVertices.length > 0) {
                     e.preventDefault();
                     deleteSelectedVertices();
                 }
+            } else if (e.key === '`' || e.key === '~') {
+                e.preventDefault();
+                toggleMode();
             }
             
-            if (selectedVertices.length > 0 && (e.key.startsWith('Arrow'))) {
+            if (!isAnimationMode && selectedVertices.length > 0 && (e.key.startsWith('Arrow'))) {
                 e.preventDefault();
                 let dx = 0, dy = 0;
                 if (e.key === 'ArrowUp') dy = -1;
@@ -3744,7 +4905,7 @@
             mouseX = Math.min(63, Math.max(0, Math.floor(physX / SCALE)));
             mouseY = Math.min(31, Math.max(0, Math.floor(physY / SCALE)));
             
-            if (overlayActive && overlayImage && mouseDown) {
+            if (!isAnimationMode && overlayActive && overlayImage && mouseDown) {
                 if (overlayControls.dragging) {
                     let dx = (e.clientX - overlayControls.dragStartX) / scaleX;
                     let dy = (e.clientY - overlayControls.dragStartY) / scaleY;
@@ -3770,7 +4931,7 @@
                 }
             }
             
-            if ((currentTool === 'paint' || currentTool === 'delete') && models.length > 0) {
+            if (!isAnimationMode && (currentTool === 'paint' || currentTool === 'delete') && models.length > 0) {
                 let hoverTri = findTriangleUnderMouse(mouseX, mouseY);
                 if (hoverTri) {
                     if (hoverTriangleIndex !== hoverTri.triIndex) {
@@ -3799,7 +4960,7 @@
                 }
             }
             
-            if ((currentTool === 'move' || currentTool === 'select') && mouseDown && !draggingVertex && !multiDragging && !overlayActive) {
+            if (!isAnimationMode && (currentTool === 'move' || currentTool === 'select') && mouseDown && !draggingVertex && !multiDragging && !overlayActive) {
                 if (!selecting) {
                     selecting = true;
                     selectionStart = { x: mouseX, y: mouseY };
@@ -3809,7 +4970,7 @@
                 draw();
             }
             
-            if (currentTool === 'move' && multiDragging && selectedVertices.length > 0 && mouseDown) {
+            if (!isAnimationMode && currentTool === 'move' && multiDragging && selectedVertices.length > 0 && mouseDown) {
                 let dx = mouseX - multiDragStart.x;
                 let dy = mouseY - multiDragStart.y;
                 let active = models[selectedModelIndex];
@@ -3825,7 +4986,7 @@
                 draw();
             }
             
-            if (currentTool === 'move' && mouseDown && draggingVertex && models.length > 0) {
+            if (!isAnimationMode && currentTool === 'move' && mouseDown && draggingVertex && models.length > 0) {
                 let tri = models[selectedModelIndex].triangles[draggingVertex.triIndex];
                 let v = [tri.v1, tri.v2, tri.v3][draggingVertex.vertexIndex];
                 v.x = toFloat32(mouseX);
@@ -3858,7 +5019,7 @@
             if (e.button === 0) {
                 mouseDown = true;
                 
-                if (shapePlacementMode && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
+                if (!isAnimationMode && shapePlacementMode && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
                     if (!shapeStartPos) {
                         shapeStartPos = { x: mouseX, y: mouseY };
                     } else {
@@ -3889,7 +5050,7 @@
                     return;
                 }
                 
-                if (overlayActive && overlayImage) {
+                if (!isAnimationMode && overlayActive && overlayImage) {
                     let rect = c.getBoundingClientRect();
                     let scaleX = c.width / rect.width;
                     let scaleY = c.height / rect.height;
@@ -3942,7 +5103,7 @@
                     }
                 }
                 
-                if (!overlayActive && (currentTool === 'move' || currentTool === 'select') && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32 && models.length > 0) {
+                if (!isAnimationMode && !overlayActive && (currentTool === 'move' || currentTool === 'select') && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32 && models.length > 0) {
                     let hit = findVertexUnderMouse(mouseX, mouseY);
                     
                     if (hit) {
@@ -4140,7 +5301,7 @@
                 if (selecting) {
                     selecting = false;
                     document.getElementById('selectionRect').style.display = 'none';
-                    finalizeSelection();
+                    if (!isAnimationMode) finalizeSelection();
                     draw();
                 }
                 if (draggingVertex) {
@@ -4164,7 +5325,7 @@
             
             if (overlayActive) return;
             
-            if (currentTool === 'add') {
+            if (!isAnimationMode && currentTool === 'add') {
                 if (state === 0) {
                     points = [Vec2f(mouseX, mouseY)];
                     state = 1;
@@ -4204,7 +5365,7 @@
                     renderModelList();
                     draw();
                 }
-            } else if (currentTool === 'paint') {
+            } else if (!isAnimationMode && currentTool === 'paint') {
                 let hit = findTriangleUnderMouse(mouseX, mouseY);
                 if (hit) {
                     if (models[selectedModelIndex].triangles[hit.triIndex].color.toLowerCase() !== currentColor.toLowerCase()) {
@@ -4219,7 +5380,7 @@
                     }
                     draw();
                 }
-            } else if (currentTool === 'delete') {
+            } else if (!isAnimationMode && currentTool === 'delete') {
                 let hit = findTriangleUnderMouse(mouseX, mouseY);
                 if (hit) {
                     saveUndoState();
@@ -4237,7 +5398,7 @@
         });
 
         function cancelLastPoint() {
-            if (currentTool !== "add") return;
+            if (isAnimationMode || currentTool !== "add") return;
             if (state === 1) { 
                 points = []; 
                 state = 0; 
@@ -4272,6 +5433,288 @@
                 modal.classList.remove('active');
             }
         });
+
+        function initTimeline() {
+            // Create default tracks (start with 1 track)
+            timelineTracks = [
+                { name: 'Track 1', cells: [] }
+            ];
+            
+            renderTimeline();
+        }
+
+        function renderTimeline() {
+            const container = document.getElementById('timelineTracks');
+            if (!container) return;
+            
+            // Clear container
+            container.innerHTML = '';
+            
+            // Create time header with empty corner for alignment
+            let timeHeaderDiv = document.createElement('div');
+            timeHeaderDiv.className = 'timeline-time-header';
+            
+            let headerCorner = document.createElement('div');
+            headerCorner.className = 'header-corner';
+            timeHeaderDiv.appendChild(headerCorner);
+            
+            for (let i = 0; i < totalCells; i++) {
+                const timeMs = i * timelineInterval;
+                let headerCell = document.createElement('div');
+                headerCell.className = 'time-header-cell';
+                headerCell.title = timeMs + 'ms';
+                headerCell.textContent = timeMs + 'ms';
+                timeHeaderDiv.appendChild(headerCell);
+            }
+            container.appendChild(timeHeaderDiv);
+            
+            // Create tracks container
+            let tracksContainer = document.createElement('div');
+            tracksContainer.className = 'tracks-container';
+            
+            timelineTracks.forEach((track, trackIndex) => {
+                let trackDiv = document.createElement('div');
+                trackDiv.className = 'track';
+                trackDiv.dataset.trackIndex = trackIndex;
+                
+                let trackLabel = document.createElement('div');
+                trackLabel.className = 'track-label';
+                trackLabel.title = track.name;
+                trackLabel.textContent = track.name;
+                trackDiv.appendChild(trackLabel);
+                
+                let trackCells = document.createElement('div');
+                trackCells.className = 'track-cells';
+                trackCells.id = `track-${trackIndex}`;
+                
+                // Create cells for this track
+                for (let cellIndex = 0; cellIndex < totalCells; cellIndex++) {
+                    const timeMs = cellIndex * timelineInterval;
+                    let cell = document.createElement('div');
+                    cell.className = 'timeline-cell';
+                    cell.dataset.track = trackIndex;
+                    cell.dataset.cell = cellIndex;
+                    cell.title = timeMs + 'ms';
+                    cell.textContent = cellIndex;
+                    
+                    // Add click handler
+                    cell.addEventListener('click', function(e) {
+                        saveTimelineState();
+                        this.classList.toggle('active');
+                    });
+                    
+                    trackCells.appendChild(cell);
+                }
+                
+                trackDiv.appendChild(trackCells);
+                tracksContainer.appendChild(trackDiv);
+            });
+            
+            container.appendChild(tracksContainer);
+            
+            // Remove any fixed height styling
+            container.style.removeProperty('height');
+            
+            // Highlight current frame if in animation mode
+            if (isAnimationMode) {
+                highlightCurrentFrame();
+                updateFrameIndicator();
+            }
+        }
+        
+        document.getElementById('intervalValue').addEventListener('input', function(e) {
+            let value = parseInt(e.target.value);
+            // Ensure minimum of 10ms and step of 10ms
+            if (value < 10) value = 10;
+            // Round to nearest 10
+            value = Math.round(value / 10) * 10;
+            e.target.value = value;
+            
+            saveTimelineState(); // Save state before changing interval
+            timelineInterval = value;
+            
+            // Update time header
+            updateTimeHeader();
+            updateCellTitles();
+            updateCurrentTime();
+            
+            // If playing, restart with new interval
+            if (isPlaying) {
+                pauseAnimation();
+                playAnimation();
+            }
+        });
+
+        function updateTimeHeader() {
+            const headers = document.querySelectorAll('.time-header-cell');
+            headers.forEach((header, index) => {
+                const timeMs = index * timelineInterval;
+                header.textContent = timeMs + 'ms';
+                header.title = timeMs + 'ms';
+            });
+        }
+
+        function updateCellTitles() {
+            document.querySelectorAll('.timeline-cell').forEach(cell => {
+                const cellIndex = parseInt(cell.dataset.cell);
+                const timeMs = cellIndex * timelineInterval;
+                cell.title = timeMs + 'ms';
+            });
+        }
+
+        function updateCurrentTime() {
+            document.querySelector('.timeline-time').textContent = (currentFrame * timelineInterval) + ' ms';
+        }
+
+        var timelineUndoStack = [];
+        var timelineRedoStack = [];
+
+        function timelineRedo() {
+            if (timelineRedoStack.length === 0) return;
+            
+            // Save current state to undo stack
+            let currentState = {
+                tracks: JSON.parse(JSON.stringify(timelineTracks)),
+                interval: timelineInterval,
+                activeCells: getActiveCells()
+            };
+            timelineUndoStack.push(currentState);
+            
+            // Restore next state
+            let nextState = timelineRedoStack.pop();
+            timelineTracks = JSON.parse(JSON.stringify(nextState.tracks));
+            timelineInterval = nextState.interval;
+            
+            // Update UI
+            document.getElementById('intervalValue').value = timelineInterval;
+            renderTimeline();
+            restoreActiveCells(nextState.activeCells);
+            
+            console.log('Timeline redo', nextState);
+        }
+        
+        function getActiveCells() {
+            let activeCells = [];
+            document.querySelectorAll('.timeline-cell.active').forEach(cell => {
+                activeCells.push({
+                    track: parseInt(cell.dataset.track),
+                    cell: parseInt(cell.dataset.cell)
+                });
+            });
+            return activeCells;
+        }
+
+        // Restore active cells from state
+        function restoreActiveCells(activeCells) {
+            // Clear all active states first
+            document.querySelectorAll('.timeline-cell').forEach(cell => {
+                cell.classList.remove('active');
+            });
+            
+            // Restore saved active cells
+            activeCells.forEach(active => {
+                let cell = document.querySelector(`.timeline-cell[data-track="${active.track}"][data-cell="${active.cell}"]`);
+                if (cell) {
+                    cell.classList.add('active');
+                }
+            });
+        }
+
+        // Timeline undo function
+        function timelineUndo() {
+            if (timelineUndoStack.length === 0) return;
+            
+            // Save current state to redo stack
+            let currentState = {
+                tracks: JSON.parse(JSON.stringify(timelineTracks)),
+                interval: timelineInterval,
+                activeCells: getActiveCells()
+            };
+            timelineRedoStack.push(currentState);
+            
+            // Restore previous state
+            let previousState = timelineUndoStack.pop();
+            timelineTracks = JSON.parse(JSON.stringify(previousState.tracks));
+            timelineInterval = previousState.interval;
+            
+            // Update UI
+            document.getElementById('intervalValue').value = timelineInterval;
+            renderTimeline();
+            restoreActiveCells(previousState.activeCells);
+            
+            console.log('Timeline undo', previousState);
+        }
+
+        function saveTimelineState() {
+            let state = {
+                tracks: JSON.parse(JSON.stringify(timelineTracks)),
+                interval: timelineInterval,
+                activeCells: getActiveCells()
+            };
+            timelineUndoStack.push(state);
+            timelineRedoStack = []; // Clear redo stack on new action
+            if (timelineUndoStack.length > 50) timelineUndoStack.shift(); // Limit stack size
+            console.log('Timeline state saved', state);
+        }
+
+        // Add track button
+        document.getElementById('addTrackBtn').addEventListener('click', function() {
+            if (!isAnimationMode) return;
+            saveTimelineState(); // Save state before adding track
+            const trackNumber = timelineTracks.length + 1;
+            timelineTracks.push({ 
+                name: `Track ${trackNumber}`, 
+                cells: [] 
+            });
+            renderTimeline();
+        });
+
+        // Initialize timeline when page loads
+        initTimeline();
+
+        function updateTimelineHeight() {
+            const timelineContainer = document.querySelector('.timeline-container');
+            const timelineTracks = document.getElementById('timelineTracks');
+            
+            if (!timelineContainer || !timelineTracks || !isAnimationMode) return;
+            
+            // Get the timeline container's height
+            const containerHeight = timelineContainer.clientHeight;
+            
+            // Calculate heights of header and footer (approximate)
+            const headerHeight = 50; // Height of timeline-header + margin
+            const footerHeight = 50; // Height of timeline-footer + margin
+            const padding = 30; // Total padding (top + bottom)
+            
+            // Calculate available height for tracks
+            const availableHeight = containerHeight - headerHeight - footerHeight - padding;
+            
+            // Set the tracks container height
+            timelineTracks.style.height = availableHeight + 'px';
+            timelineTracks.style.minHeight = availableHeight + 'px';
+            timelineTracks.style.maxHeight = availableHeight + 'px';
+        }
+                // Mobile warning check
+        function checkMobileWarning() {
+            const warning = document.getElementById('mobileWarning');
+            const widthSpan = document.getElementById('currentWidth');
+            
+            if (widthSpan) {
+                widthSpan.textContent = window.innerWidth;
+            }
+            
+            if (window.innerWidth < 1024) {
+                warning.style.display = 'flex';
+            } else {
+                warning.style.display = 'none';
+            }
+        }
+        
+        // Check on load and resize
+        window.addEventListener('load', checkMobileWarning);
+
+        // Initialize timeline when page loads
+        initTimeline();
 
         renderModelList();
         updateCodeDisplay();
