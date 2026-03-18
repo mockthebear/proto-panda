@@ -817,13 +817,7 @@
             color: #9cdcfe;
             font-weight: bold;
         }
-
-        /* Make sure canvas container doesn't overlap */
-        .canvas-container {
-            position: relative;
-        }
-
-    
+   
         .create-group-btn {
             background: #ff9900;
             color: #111;
@@ -1096,7 +1090,7 @@
         .model-settings-dialog-btn.cancel:hover {
             background: #888;
         }
-        /* Overlay Control Panel */
+
         .overlay-panel {
             position: fixed;
             top: 50%;
@@ -1487,7 +1481,63 @@
             min-height: 0;
         }
 
+        .canvas-info-bar {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(20, 20, 20, 0.7);
+            color: #ff9900;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            z-index: 150;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 120px;
+            max-width: 300px;
+            backdrop-filter: blur(1px);
+            pointer-events: none;
+            /* Allow content to determine height */
+            height: auto;
+        }
+        .canvas-info-bar .info-item {
+            display: flex;
+            align-items: flex-start; 
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .canvas-info-bar .info-item:last-child {
+            white-space: normal;
+            flex-wrap: wrap;
+        }
+
+        .canvas-info-bar .info-label {
+            color: #aaa;
+            font-weight: bold;
+            min-width: 45px;
+            flex-shrink: 0;
+        }
+
+        .canvas-info-bar .info-value {
+            color: #9cdcfe;
+            font-weight: bold;
+            word-break: break-word;
+            max-width: 200px;
+        }
+
+        .group-button-container {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            z-index: 151;
+            pointer-events: auto;
+        }
+
         .canvas-container {
+            position: relative;
             width: 100%;
             display: flex;
             flex-direction: column;
@@ -1498,10 +1548,11 @@
             border: 1px solid #555;
             box-sizing: border-box;
             overflow: hidden;
-            position: relative;
             z-index: 1;
             flex-shrink: 0;
         }
+
+        
 
         .timeline-header {
             display: flex;
@@ -2242,8 +2293,7 @@
         <div class="main-content">
             <div class="canvas-container">
                 <canvas id="meuCanvas" width="1024" height="512"></canvas>
-                
-                <div class="info-bar-right">
+                <div class="canvas-info-bar">
                     <div class="info-item">
                         <span class="info-label">Pos:</span>
                         <span class="info-value" id="xCoord">0</span>
@@ -2254,12 +2304,10 @@
                         <span class="info-label">Points:</span>
                         <span class="info-value" id="pointInfo">-</span>
                     </div>
-                    <div class="info-item" id="groupButtonContainer" style="margin-top: 8px; justify-content: center; width: 100%;">
-                        <!-- Group button will be inserted here -->
-                    </div>
                 </div>
+                <div class="group-button-container" id="groupButtonContainer"></div>
             </div>
-            
+                                    
             <!-- Code output - visible only in model mode -->
             <div class="code-output-container" id="codeOutputContainer">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -2625,6 +2673,10 @@
             overlay: "🖼️"
         };
 
+        var positionPickerDragging = false;
+        var positionPickerStartPos = { x: 0, y: 0 };
+        var positionPickerCurrentPos = { x: 0, y: 0 };
+
         // Timeline variables
         var timelineTracks = [];
         var timelineInterval = 100; 
@@ -2765,7 +2817,6 @@
 
         function toFloat32(value) { return Math.fround(value); }
         function Vec2f(x, y) { return { x: toFloat32(x), y: toFloat32(y) }; }
-        function orderPointsOptimally(p1, p2, p3) { return [Vec2f(p1.x, p1.y), Vec2f(p2.x, p2.y), Vec2f(p3.x, p3.y)]; }
 
         function getInverseHexColor(hexColor) {
             const r = parseInt(hexColor.slice(1,3), 16);
@@ -3021,7 +3072,7 @@
                 shapePlacementMode = false;
                 overlayActive = false;
                 
-                setTimeout(updateTimelineHeight, 50);
+                updateTimelineHeight()
             } else {
                 toggleSwitch.classList.remove('active');
                 modelLabel.style.color = '#ff9900';
@@ -3747,65 +3798,65 @@
             
             connectionCtx.save();
             connectionCtx.strokeStyle = "#ff3333";
-            connectionCtx.lineWidth = 1.5;
+            connectionCtx.lineWidth = 1;
             connectionCtx.setLineDash([5, 3]);
             connectionCtx.strokeRect(left, top, width, height);
             connectionCtx.restore();
         }
 
-function getBoundingBox(track) {
-    if (!track) return null;
-    
-    let model = models[track.modelIndex];
-    if (!model || !model.visible) return null;
-    
-    let minX = 64, maxX = 0, minY = 32, maxY = 0;
-    let hasPoints = false;
-    
-    if (track.groupIndex !== -1 && model.pointGroups && model.pointGroups[track.groupIndex]) {
+        function getBoundingBox(track) {
+            if (!track) return null;
+            
+            let model = models[track.modelIndex];
+            if (!model || !model.visible) return null;
+            
+            let minX = 64, maxX = 0, minY = 32, maxY = 0;
+            let hasPoints = false;
+            
+            if (track.groupIndex !== -1 && model.pointGroups && model.pointGroups[track.groupIndex]) {
 
-        let group = model.pointGroups[track.groupIndex];
-        let globalIdx = 0;
-        
-        for (let i = 0; i < model.triangles.length; i++) {
-            let tri = model.triangles[i];
-            let vertices = [tri.v1, tri.v2, tri.v3];
-            for (let j = 0; j < 3; j++) {
-                let v = vertices[j];
-                if (group.pointIndices.includes(globalIdx)) {
-                    let x = Math.floor(v.x);
-                    let y = Math.floor(v.y);
-                    minX = Math.min(minX, x);
-                    maxX = Math.max(maxX, x);
-                    minY = Math.min(minY, y);
-                    maxY = Math.max(maxY, y);
-                    hasPoints = true;
+                let group = model.pointGroups[track.groupIndex];
+                let globalIdx = 0;
+                
+                for (let i = 0; i < model.triangles.length; i++) {
+                    let tri = model.triangles[i];
+                    let vertices = [tri.v1, tri.v2, tri.v3];
+                    for (let j = 0; j < 3; j++) {
+                        let v = vertices[j];
+                        if (group.pointIndices.includes(globalIdx)) {
+                            let x = Math.floor(v.x);
+                            let y = Math.floor(v.y);
+                            minX = Math.min(minX, x);
+                            maxX = Math.max(maxX, x);
+                            minY = Math.min(minY, y);
+                            maxY = Math.max(maxY, y);
+                            hasPoints = true;
+                        }
+                        globalIdx++;
+                    }
                 }
-                globalIdx++;
-            }
-        }
-    } else {
+            } else {
 
-        for (let i = 0; i < model.triangles.length; i++) {
-            let tri = model.triangles[i];
-            let vertices = [tri.v1, tri.v2, tri.v3];
-            for (let j = 0; j < 3; j++) {
-                let v = vertices[j];
-                let x = Math.floor(v.x);
-                let y = Math.floor(v.y);
-                minX = Math.min(minX, x);
-                maxX = Math.max(maxX, x);
-                minY = Math.min(minY, y);
-                maxY = Math.max(maxY, y);
-                hasPoints = true;
+                for (let i = 0; i < model.triangles.length; i++) {
+                    let tri = model.triangles[i];
+                    let vertices = [tri.v1, tri.v2, tri.v3];
+                    for (let j = 0; j < 3; j++) {
+                        let v = vertices[j];
+                        let x = Math.floor(v.x);
+                        let y = Math.floor(v.y);
+                        minX = Math.min(minX, x);
+                        maxX = Math.max(maxX, x);
+                        minY = Math.min(minY, y);
+                        maxY = Math.max(maxY, y);
+                        hasPoints = true;
+                    }
+                }
             }
+            
+            if (!hasPoints) return null;
+            
+            return { minX, maxX, minY, maxY };
         }
-    }
-    
-    if (!hasPoints) return null;
-    
-    return { minX, maxX, minY, maxY };
-}
 
         function drawTrackConnections() {
             if (!hoveredTrackInfo || !animations.length || selectedAnimationIndex < 0) return;
@@ -4144,6 +4195,8 @@ function getBoundingBox(track) {
                     }
                 }
                 ctx.restore();
+                drawActionHighlights();
+                drawPositionPickerIndicator();
             }
             
             if (!isAnimationMode && overlayActive && overlayImage) {
@@ -4220,30 +4273,58 @@ function getBoundingBox(track) {
             let pointSpan = document.getElementById('pointInfo');
             if (selectedVertices.length > 0) {
                 const indices = selectedVertices.map(s => s.globalPointIndex).sort((a,b)=>a-b);
-                pointSpan.textContent = 'Point ' + indices.join(', ');
+                pointSpan.textContent = indices.join(', ');
+                // Make sure the text wraps properly
+                pointSpan.style.whiteSpace = 'normal';
+                pointSpan.style.wordBreak = 'break-word';
             } else if (hoverPointInfo) {
-                pointSpan.textContent = 'Point ' + hoverPointInfo.globalPointIndex;
+                pointSpan.textContent = hoverPointInfo.globalPointIndex;
+                pointSpan.style.whiteSpace = 'nowrap';
             } else {
-                pointSpan.textContent = 'Point -';
+                pointSpan.textContent = '-';
+                pointSpan.style.whiteSpace = 'nowrap';
             }
 
             let container = document.getElementById('groupButtonContainer');
+            container.innerHTML = ''; // Clear existing
 
             if (!isAnimationMode && models.length > 0 && selectedVertices.length > 0 && selectedGroupIndex === -1) {
                 if (selectionFromSelectTool) {
-                    container.innerHTML = '<button class="create-group-btn" id="createGroupBtn">📁 CREATE POINT GROUP</button>';
-                    let btn = document.getElementById('createGroupBtn');
-                    if (btn) {
-                        btn.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            createPointGroupFromSelection();
-                        });
-                    }
-                } else {
-                    container.innerHTML = '';
+                    let btn = document.createElement('button');
+                    btn.className = 'create-group-btn';
+                    btn.id = 'createGroupBtn';
+                    btn.textContent = '📁 CREATE POINT GROUP';
+                    btn.style.background = '#ff9900';
+                    btn.style.color = '#111';
+                    btn.style.border = 'none';
+                    btn.style.borderRadius = '4px';
+                    btn.style.padding = '6px 12px';
+                    btn.style.fontFamily = "'Courier New', monospace";
+                    btn.style.fontWeight = 'bold';
+                    btn.style.cursor = 'pointer';
+                    btn.style.fontSize = '11px';
+                    btn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+                    btn.style.transition = 'all 0.1s ease';
+                    
+                    btn.addEventListener('mouseenter', () => {
+                        btn.style.background = '#ffaa33';
+                        btn.style.transform = 'translateY(-1px)';
+                        btn.style.boxShadow = '0 4px 8px rgba(0,0,0,0.4)';
+                    });
+                    
+                    btn.addEventListener('mouseleave', () => {
+                        btn.style.background = '#ff9900';
+                        btn.style.transform = 'translateY(0)';
+                        btn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+                    });
+                    
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        createPointGroupFromSelection();
+                    });
+                    
+                    container.appendChild(btn);
                 }
-            } else {
-                container.innerHTML = '';
             }
         }
 
@@ -4572,10 +4653,32 @@ function getBoundingBox(track) {
                             badge.addEventListener("mouseenter", function(e) {
                                 let rect = e.target.getBoundingClientRect();
                                 
+                                // Get all points at this position for connection lines
+                                let positions = posKey.split(',').map(Number);
+                                let targetX = positions[0];
+                                let targetY = positions[1];
+                                
+                                // Find all points close to this position
+                                let pointsAtPosition = [];
+                                let globalIdx = 0;
+                                for (let i = 0; i < active.triangles.length; i++) {
+                                    let tri = active.triangles[i];
+                                    let vertices = [tri.v1, tri.v2, tri.v3];
+                                    for (let j = 0; j < 3; j++) {
+                                        let v = vertices[j];
+                                        let dx = Math.abs(v.x - targetX);
+                                        let dy = Math.abs(v.y - targetY);
+                                        if (dx < 0.5 && dy < 0.5) {
+                                            pointsAtPosition.push(globalIdx);
+                                        }
+                                        globalIdx++;
+                                    }
+                                }
+                                
                                 hoveredGroupInfo = {
                                     groupIndex: gIdx,
                                     positionKey: posKey,
-                                    indices: posData.indices,
+                                    indices: pointsAtPosition,
                                     badgeX: rect.left + rect.width/2,
                                     badgeY: rect.top + rect.height/2
                                 };
@@ -4592,12 +4695,38 @@ function getBoundingBox(track) {
                                     e.stopPropagation();
                                     if (selectedModelIndex === index) {
                                         saveUndoState();
-                                        group.pointIndices = group.pointIndices.filter(idx => !posData.indices.includes(idx));
+                                        
+                                        // Get all points at this position using distance check
+                                        let positions = posKey.split(',').map(Number);
+                                        let targetX = positions[0];
+                                        let targetY = positions[1];
+                                        
+                                        // Find all points close to this position
+                                        let pointsToRemove = [];
+                                        let globalIdx = 0;
+                                        for (let i = 0; i < active.triangles.length; i++) {
+                                            let tri = active.triangles[i];
+                                            let vertices = [tri.v1, tri.v2, tri.v3];
+                                            for (let j = 0; j < 3; j++) {
+                                                let v = vertices[j];
+                                                // Check distance to the target position
+                                                let dx = Math.abs(v.x - targetX);
+                                                let dy = Math.abs(v.y - targetY);
+                                                if (dx < 0.5 && dy < 0.5) {
+                                                    pointsToRemove.push(globalIdx);
+                                                }
+                                                globalIdx++;
+                                            }
+                                        }
+                                        
+                                        // Remove these points from the group
+                                        group.pointIndices = group.pointIndices.filter(idx => !pointsToRemove.includes(idx));
                                         renderModelList();
                                         updateCodeDisplay();
                                         draw();
                                     }
                                 });
+
                             }
                             
                             pointsList.appendChild(badge);
@@ -4691,19 +4820,37 @@ function getBoundingBox(track) {
             if (models.length === 0) return null;
             var active = models[selectedModelIndex];
             if (!active) return null;
+            
             let globalIdx = 0;
+            let closestDist = 0.5; // Half a grid cell threshold
+            let closestHit = null;
+            
             for (let i = 0; i < active.triangles.length; i++) {
                 let tri = active.triangles[i];
                 let vertices = [tri.v1, tri.v2, tri.v3];
                 for (let j = 0; j < 3; j++) {
                     let v = vertices[j];
-                    if (Math.floor(v.x) === x && Math.floor(v.y) === y) {
-                        return { triIndex: i, vertexIndex: j, globalPointIndex: globalIdx };
+                    // Calculate distance in logical coordinates
+                    let dx = Math.abs(v.x - x);
+                    let dy = Math.abs(v.y - y);
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (dist < closestDist) {
+                        closestDist = dist;
+                        closestHit = {
+                            triIndex: i,
+                            vertexIndex: j,
+                            globalPointIndex: globalIdx,
+                            distance: dist,
+                            vx: v.x,
+                            vy: v.y
+                        };
                     }
                     globalIdx++;
                 }
             }
-            return null;
+            
+            return closestHit;
         }
 
         function selectVerticesInRect(start, end) {
@@ -4711,10 +4858,18 @@ function getBoundingBox(track) {
             if (models.length === 0) return;
             var active = models[selectedModelIndex];
             if (!active) return;
+            
+            // Convert to float coordinates for the rect
             let x1 = Math.min(start.x, end.x);
             let x2 = Math.max(start.x, end.x);
             let y1 = Math.min(start.y, end.y);
             let y2 = Math.max(start.y, end.y);
+            
+            // Expand the rect by 0.5 in all directions to catch nearby points
+            x1 = Math.max(0, x1 - 0.5);
+            x2 = Math.min(64, x2 + 0.5);
+            y1 = Math.max(0, y1 - 0.5);
+            y2 = Math.min(32, y2 + 0.5);
             
             let globalIdx = 0;
             for (let i = 0; i < active.triangles.length; i++) {
@@ -4722,9 +4877,8 @@ function getBoundingBox(track) {
                 let vertices = [tri.v1, tri.v2, tri.v3];
                 for (let j = 0; j < 3; j++) {
                     let v = vertices[j];
-                    let fx = Math.floor(v.x);
-                    let fy = Math.floor(v.y);
-                    if (fx >= x1 && fx < x2 && fy >= y1 && fy < y2) {
+                    // Check if point is inside the expanded rect
+                    if (v.x >= x1 && v.x <= x2 && v.y >= y1 && v.y <= y2) {
                         newSelection.push({
                             triIndex: i,
                             vertexIndex: j,
@@ -5731,6 +5885,11 @@ function getBoundingBox(track) {
                 let trackCells = document.createElement('div');
                 trackCells.className = 'track-cells';
                 
+                // Initialize cells array if it doesn't exist
+                if (!timelineTracks[trackIndex].cells) {
+                    timelineTracks[trackIndex].cells = [];
+                }
+                
                 for (let cellIndex = 0; cellIndex < totalCells; cellIndex++) {
                     const timeMs = cellIndex * timelineInterval;
                     let cell = document.createElement('div');
@@ -5739,87 +5898,117 @@ function getBoundingBox(track) {
                     cell.dataset.cell = cellIndex;
                     cell.title = timeMs + 'ms';
                     
-                    if (track.cells && track.cells[cellIndex] && track.cells[cellIndex].length > 0) {
+                    // >>>>>>> PUT THE CODE HERE - INSIDE THE CELL CREATION LOOP <<<<<<<
+                    // Check if this cell has actions (cellIndex 0 should work)
+                    if (timelineTracks[trackIndex].cells[cellIndex] && 
+                        timelineTracks[trackIndex].cells[cellIndex].length > 0) {
                         cell.classList.add('active');
-                        // Show only icons for each action in the cell, no numbers
-                        let icons = track.cells[cellIndex].map(a => animationDesc[a.type]?.icon || '⚡').join('');
-                        cell.innerHTML = `<div style="font-size: 12px; line-height: 1; position: relative; z-index: 1;">${icons}</div>`;
-                        cell.title = track.cells[cellIndex].map(a => animationDesc[a.type]?.name || a.type).join(', ');
+                        // Create a container for the icons
+                        let iconContainer = document.createElement('div');
+                        iconContainer.style.display = 'flex';
+                        iconContainer.style.flexWrap = 'wrap';
+                        iconContainer.style.justifyContent = 'center';
+                        iconContainer.style.alignItems = 'center';
+                        iconContainer.style.width = '100%';
+                        iconContainer.style.height = '100%';
+                        iconContainer.style.gap = '2px';
+                        
+                        // Add each icon individually
+                        timelineTracks[trackIndex].cells[cellIndex].forEach(action => {
+                            let iconSpan = document.createElement('span');
+                            iconSpan.style.fontSize = '12px';
+                            iconSpan.style.lineHeight = '1';
+                            iconSpan.style.display = 'inline-block';
+                            iconSpan.style.padding = '0 1px';
+                            iconSpan.textContent = animationDesc[action.type]?.icon || '⚡';
+                            iconSpan.title = animationDesc[action.type]?.name || action.type;
+                            iconContainer.appendChild(iconSpan);
+                        });
+                        
+                        cell.innerHTML = '';
+                        cell.appendChild(iconContainer);
+                        cell.title = timelineTracks[trackIndex].cells[cellIndex].map(a => animationDesc[a.type]?.name || a.type).join(', ');
                     }
+                    // >>>>>>> END OF THE CODE TO INSERT <<<<<<<
                     
                     // Handle click on cell
                     cell.addEventListener('click', function(e) {
                         e.stopPropagation();
                         
-                        if (!timelineTracks[trackIndex].cells || !timelineTracks[trackIndex].cells[cellIndex]) {
+                        // Ensure the cells array exists for this track
+                        if (!timelineTracks[trackIndex].cells) {
+                            timelineTracks[trackIndex].cells = [];
+                        }
+                        
+                        // Check if this is a valid cell index (including 0)
+                        if (cellIndex < 0 || cellIndex >= totalCells) {
+                            console.error('Invalid cell index:', cellIndex);
+                            return;
+                        }
+                        
+                        // Check if cell exists and has actions
+                        let hasActions = timelineTracks[trackIndex].cells[cellIndex] && 
+                                         timelineTracks[trackIndex].cells[cellIndex].length > 0;
+                        
+                        if (!hasActions) {
                             // Empty cell - show action type dialog
+                            // Ensure the cell array is initialized for this index
+                            if (!timelineTracks[trackIndex].cells[cellIndex]) {
+                                timelineTracks[trackIndex].cells[cellIndex] = [];
+                            }
                             showActionTypeDialog(trackIndex, cellIndex);
                         } else {
                             // Cell has actions
-                            if (timelineTracks[trackIndex].cells[cellIndex].length === 1) {
+                            let actions = timelineTracks[trackIndex].cells[cellIndex];
+                            
+                            if (actions.length === 1) {
                                 // Single action - edit directly
                                 showActionInEditor(trackIndex, cellIndex, 0);
-                            } else if (timelineTracks[trackIndex].cells[cellIndex].length > 1) {
-                                // Multiple actions - show simple selection menu
-                                let menu = document.createElement('div');
-                                menu.className = 'action-selection-menu';
-                                menu.style.position = 'fixed';
-                                menu.style.left = e.clientX + 'px';
-                                menu.style.top = e.clientY + 'px';
-                                menu.style.background = '#2d2d2d';
-                                menu.style.border = '2px solid #ff9900';
-                                menu.style.borderRadius = '6px';
-                                menu.style.padding = '8px';
-                                menu.style.zIndex = '20000';
-                                menu.style.minWidth = '180px';
-                                menu.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
+                            } else if (actions.length > 1) {
+                                // Multiple actions - check which action icon was clicked
+                                let rect = cell.getBoundingClientRect();
                                 
-                                timelineTracks[trackIndex].cells[cellIndex].forEach((action, idx) => {
-                                    let actionDef = animationDesc[action.type];
-                                    let item = document.createElement('div');
-                                    item.style.padding = '8px 12px';
-                                    item.style.margin = '4px 0';
-                                    item.style.background = '#3c3c3c';
-                                    item.style.border = '1px solid #555';
-                                    item.style.borderRadius = '4px';
-                                    item.style.cursor = 'pointer';
-                                    item.style.display = 'flex';
-                                    item.style.alignItems = 'center';
-                                    item.style.gap = '8px';
-                                    item.innerHTML = `
-                                        <span style="font-size: 16px;">${actionDef?.icon || '⚡'}</span>
-                                        <span style="flex: 1; color: #ffaa33;">${actionDef?.name || action.type}</span>
-                                    `;
-                                    
-                                    item.addEventListener('mouseenter', () => {
-                                        item.style.background = '#4a4a4a';
-                                        item.style.borderColor = '#ff9900';
-                                    });
-                                    
-                                    item.addEventListener('mouseleave', () => {
-                                        item.style.background = '#3c3c3c';
-                                        item.style.borderColor = '#555';
-                                    });
-                                    
-                                    item.addEventListener('click', () => {
-                                        showActionInEditor(trackIndex, cellIndex, idx);
-                                        menu.remove();
-                                    });
-                                    
-                                    menu.appendChild(item);
-                                });
+                                // Get mouse position relative to cell
+                                let mouseX = e.clientX - rect.left;
                                 
-                                document.body.appendChild(menu);
-                                
-                                // Close menu when clicking outside
-                                setTimeout(() => {
-                                    document.addEventListener('click', function closeMenu(e) {
-                                        if (!menu.contains(e.target)) {
-                                            menu.remove();
-                                            document.removeEventListener('click', closeMenu);
+                                // If the cell has our icon container structure, try to determine which icon was clicked
+                                if (cell.children.length > 0 && cell.children[0].children.length > 0) {
+                                    let iconContainer = cell.children[0];
+                                    let icons = iconContainer.children;
+                                    let iconWidth = rect.width / icons.length;
+                                    
+                                    // Find which icon was clicked
+                                    for (let i = 0; i < icons.length; i++) {
+                                        let iconRect = icons[i].getBoundingClientRect();
+                                        if (e.clientX >= iconRect.left && e.clientX <= iconRect.right) {
+                                            showActionInEditor(trackIndex, cellIndex, i);
+                                            return;
                                         }
-                                    });
-                                }, 100);
+                                    }
+                                    
+                                    // Fallback to width-based calculation
+                                    let iconIndex = Math.floor(mouseX / iconWidth);
+                                    if (iconIndex >= 0 && iconIndex < actions.length) {
+                                        showActionInEditor(trackIndex, cellIndex, iconIndex);
+                                    } else {
+                                        // Last resort: show selection menu
+                                        showActionSelectionMenu(e, trackIndex, cellIndex, actions);
+                                    }
+                                } else {
+                                    // Simple fallback: divide by approximate icon width
+                                    let approxIconWidth = 14;
+                                    let iconIndex = Math.floor(mouseX / approxIconWidth);
+                                    
+                                    if (iconIndex >= 0 && iconIndex < actions.length) {
+                                        showActionInEditor(trackIndex, cellIndex, iconIndex);
+                                    } else {
+                                        // Another fallback: equal division
+                                        let actionIndex = Math.floor(mouseX / (rect.width / actions.length));
+                                        if (actionIndex >= 0 && actionIndex < actions.length) {
+                                            showActionInEditor(trackIndex, cellIndex, actionIndex);
+                                        }
+                                    }
+                                }
                             }
                         }
                     });
@@ -5828,23 +6017,46 @@ function getBoundingBox(track) {
                     cell.addEventListener('mousedown', function(e) {
                         if (e.button !== 0) return; // Left click only
                         
-                        // Only start drag if cell has actions
-                        if (track.cells && track.cells[cellIndex] && track.cells[cellIndex].length > 0) {
+                        // Only start drag if cell has actions - allow dragging from playing cells
+                        if (timelineTracks[trackIndex].cells && 
+                            timelineTracks[trackIndex].cells[cellIndex] && 
+                            timelineTracks[trackIndex].cells[cellIndex].length > 0) {
                             
                             // Check if clicking on a specific action icon
                             let rect = cell.getBoundingClientRect();
-                            let actionCount = track.cells[cellIndex].length;
-                            let actionWidth = rect.width / actionCount;
-                            let actionIndex = Math.floor((e.clientX - rect.left) / actionWidth);
+                            let actionCount = timelineTracks[trackIndex].cells[cellIndex].length;
                             
-                            if (actionIndex >= 0 && actionIndex < track.cells[cellIndex].length) {
-                                draggingAction = {
-                                    trackIndex: trackIndex,
-                                    fromCellIndex: cellIndex,
-                                    actionIndex: actionIndex,
-                                    mouseOffsetX: e.clientX - rect.left - (actionIndex * actionWidth)
-                                };
+                            // If the cell has our icon container, use it for more precise detection
+                            if (cell.children.length > 0 && cell.children[0].children.length > 0) {
+                                let icons = cell.children[0].children;
+                                for (let i = 0; i < icons.length; i++) {
+                                    let iconRect = icons[i].getBoundingClientRect();
+                                    if (e.clientX >= iconRect.left && e.clientX <= iconRect.right) {
+                                        draggingAction = {
+                                            trackIndex: trackIndex,
+                                            fromCellIndex: cellIndex,
+                                            actionIndex: i,
+                                            mouseOffsetX: e.clientX - iconRect.left
+                                        };
+                                        break;
+                                    }
+                                }
+                            } else {
+                                // Fallback to width-based detection
+                                let actionWidth = rect.width / actionCount;
+                                let actionIndex = Math.floor((e.clientX - rect.left) / actionWidth);
                                 
+                                if (actionIndex >= 0 && actionIndex < timelineTracks[trackIndex].cells[cellIndex].length) {
+                                    draggingAction = {
+                                        trackIndex: trackIndex,
+                                        fromCellIndex: cellIndex,
+                                        actionIndex: actionIndex,
+                                        mouseOffsetX: e.clientX - rect.left - (actionIndex * actionWidth)
+                                    };
+                                }
+                            }
+                            
+                            if (draggingAction) {
                                 // Create drag overlay - make it a small square with just the icon
                                 dragOverlay = document.createElement('div');
                                 dragOverlay.style.position = 'fixed';
@@ -5862,7 +6074,7 @@ function getBoundingBox(track) {
                                 dragOverlay.style.boxShadow = '0 2px 8px rgba(0,0,0,0.5)';
                                 dragOverlay.style.border = '2px solid #ffaa33';
                                 dragOverlay.style.transition = 'all 0.1s ease';
-                                dragOverlay.textContent = animationDesc[track.cells[cellIndex][actionIndex].type]?.icon || '⚡';
+                                dragOverlay.textContent = animationDesc[timelineTracks[trackIndex].cells[cellIndex][draggingAction.actionIndex].type]?.icon || '⚡';
                                 document.body.appendChild(dragOverlay);
                                 
                                 // Position initially at mouse (centered)
@@ -5934,6 +6146,68 @@ function getBoundingBox(track) {
             });
         }
 
+        // Helper function to show action selection menu when multiple actions exist
+        function showActionSelectionMenu(e, trackIndex, cellIndex, actions) {
+            let menu = document.createElement('div');
+            menu.className = 'action-selection-menu';
+            menu.style.position = 'fixed';
+            menu.style.left = e.clientX + 'px';
+            menu.style.top = e.clientY + 'px';
+            menu.style.background = '#2d2d2d';
+            menu.style.border = '2px solid #ff9900';
+            menu.style.borderRadius = '6px';
+            menu.style.padding = '8px';
+            menu.style.zIndex = '20000';
+            menu.style.minWidth = '180px';
+            menu.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
+            
+            actions.forEach((action, idx) => {
+                let actionDef = animationDesc[action.type];
+                let item = document.createElement('div');
+                item.style.padding = '8px 12px';
+                item.style.margin = '4px 0';
+                item.style.background = '#3c3c3c';
+                item.style.border = '1px solid #555';
+                item.style.borderRadius = '4px';
+                item.style.cursor = 'pointer';
+                item.style.display = 'flex';
+                item.style.alignItems = 'center';
+                item.style.gap = '8px';
+                item.innerHTML = `
+                    <span style="font-size: 16px;">${actionDef?.icon || '⚡'}</span>
+                    <span style="flex: 1; color: #ffaa33;">${actionDef?.name || action.type}</span>
+                `;
+                
+                item.addEventListener('mouseenter', () => {
+                    item.style.background = '#4a4a4a';
+                    item.style.borderColor = '#ff9900';
+                });
+                
+                item.addEventListener('mouseleave', () => {
+                    item.style.background = '#3c3c3c';
+                    item.style.borderColor = '#555';
+                });
+                
+                item.addEventListener('click', () => {
+                    showActionInEditor(trackIndex, cellIndex, idx);
+                    menu.remove();
+                });
+                
+                menu.appendChild(item);
+            });
+            
+            document.body.appendChild(menu);
+            
+            // Close menu when clicking outside
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu(e) {
+                    if (!menu.contains(e.target)) {
+                        menu.remove();
+                        document.removeEventListener('click', closeMenu);
+                    }
+                });
+            }, 100);
+        }
         function updateCellTitles() {
             document.querySelectorAll('.timeline-cell').forEach(cell => {
                 const cellIndex = parseInt(cell.dataset.cell);
@@ -6897,16 +7171,47 @@ function getBoundingBox(track) {
             }
             
             if (!isAnimationMode && currentTool === 'move' && multiDragging && selectedVertices.length > 0 && mouseDown) {
-                let dx = mouseX - multiDragStart.x;
-                let dy = mouseY - multiDragStart.y;
+                let dx, dy;
+                
+                // Get the current mouse position in logical coordinates
+                let currentMouseX, currentMouseY;
+                
+                if (e.ctrlKey) {
+                    // CTRL held: free movement with float coordinates
+                    let rect = c.getBoundingClientRect();
+                    let scaleX = c.width / rect.width;
+                    let scaleY = c.height / rect.height;
+                    let physX = (e.clientX - rect.left) * scaleX;
+                    let physY = (e.clientY - rect.top) * scaleY;
+                    currentMouseX = Math.max(0, Math.min(64, physX / SCALE));
+                    currentMouseY = Math.max(0, Math.min(32, physY / SCALE));
+                } else {
+                    // No CTRL: grid movement with integer coordinates
+                    currentMouseX = mouseX;
+                    currentMouseY = mouseY;
+                }
+                
+                dx = currentMouseX - multiDragStart.x;
+                dy = currentMouseY - multiDragStart.y;
+                
                 let active = models[selectedModelIndex];
                 for (let sel of selectedVertices) {
                     let tri = active.triangles[sel.triIndex];
                     let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
-                    let newX = Math.min(63, Math.max(0, Math.round(sel.vx + dx)));
-                    let newY = Math.min(31, Math.max(0, Math.round(sel.vy + dy)));
-                    v.x = toFloat32(newX);
-                    v.y = toFloat32(newY);
+                    
+                    if (e.ctrlKey) {
+                        // Free movement with float coordinates
+                        let newX = Math.max(0, Math.min(64, sel.vx + dx));
+                        let newY = Math.max(0, Math.min(32, sel.vy + dy));
+                        v.x = toFloat32(newX);
+                        v.y = toFloat32(newY);
+                    } else {
+                        // Grid movement with integer coordinates
+                        let newX = Math.min(63, Math.max(0, Math.round(sel.vx + dx)));
+                        let newY = Math.min(31, Math.max(0, Math.round(sel.vy + dy)));
+                        v.x = toFloat32(newX);
+                        v.y = toFloat32(newY);
+                    }
                 }
                 updateCodeDisplay();
                 draw();
@@ -6915,8 +7220,25 @@ function getBoundingBox(track) {
             if (!isAnimationMode && currentTool === 'move' && mouseDown && draggingVertex && models.length > 0) {
                 let tri = models[selectedModelIndex].triangles[draggingVertex.triIndex];
                 let v = [tri.v1, tri.v2, tri.v3][draggingVertex.vertexIndex];
-                v.x = toFloat32(mouseX);
-                v.y = toFloat32(mouseY);
+                
+                if (e.ctrlKey) {
+                    // CTRL held: free movement with float coordinates
+                    let rect = c.getBoundingClientRect();
+                    let scaleX = c.width / rect.width;
+                    let scaleY = c.height / rect.height;
+                    let physX = (e.clientX - rect.left) * scaleX;
+                    let physY = (e.clientY - rect.top) * scaleY;
+                    let floatX = Math.max(0, Math.min(64, physX / SCALE));
+                    let floatY = Math.max(0, Math.min(32, physY / SCALE));
+                    
+                    v.x = toFloat32(floatX);
+                    v.y = toFloat32(floatY);
+                } else {
+                    // No CTRL: grid movement
+                    v.x = toFloat32(mouseX);
+                    v.y = toFloat32(mouseY);
+                }
+                
                 updateCodeDisplay();
                 draw();
             } else {
@@ -7034,7 +7356,7 @@ function getBoundingBox(track) {
                     let hit = findVertexUnderMouse(mouseX, mouseY);
                     
                     if (hit) {
-                        if (selectedGroupIndex !== -1 && models[selectedModelIndex]?.pointGroups?.[selectedGroupIndex] && !e.ctrlKey) {
+                        if (selectedGroupIndex !== -1 && models[selectedModelIndex]?.pointGroups?.[selectedGroupIndex] && !e.ctrlKey && !e.shiftKey) {
                             let group = models[selectedModelIndex].pointGroups[selectedGroupIndex];
                             
                             let active = models[selectedModelIndex];
@@ -7079,106 +7401,74 @@ function getBoundingBox(track) {
                         if (currentTool === 'move') {
                             if (selectedVertices.length > 0) {
                                 let isInSelection = selectedVertices.some(s => s.triIndex === hit.triIndex && s.vertexIndex === hit.vertexIndex);
-                                if (isInSelection) {
-                                    saveUndoState();
-                                    multiDragging = true;
-                                    multiDragStart = { x: mouseX, y: mouseY };
-                                    let active = models[selectedModelIndex];
-                                    for (let sel of selectedVertices) {
-                                        let tri = active.triangles[sel.triIndex];
-                                        let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
-                                        sel.vx = v.x;
-                                        sel.vy = v.y;
-                                    }
-                                } else {
-                                    selectedVertices = [];
-                                    selectionFromSelectTool = false;
-                                    saveUndoState();
-
-                                    if (!e.ctrlKey) {
-                                        let active = models[selectedModelIndex];
-                                        let pointsAtLocation = [];
-                                        let globalIdx = 0;
-                                        
-                                        for (let i = 0; i < active.triangles.length; i++) {
-                                            let tri = active.triangles[i];
-                                            let vertices = [tri.v1, tri.v2, tri.v3];
-                                            for (let j = 0; j < 3; j++) {
-                                                let v = vertices[j];
-                                                if (Math.floor(v.x) === mouseX && Math.floor(v.y) === mouseY) {
-                                                    pointsAtLocation.push({
-                                                        triIndex: i,
-                                                        vertexIndex: j,
-                                                        vx: v.x,
-                                                        vy: v.y,
-                                                        globalPointIndex: globalIdx
-                                                    });
-                                                }
-                                                globalIdx++;
-                                            }
-                                        }
-                                        
-                                        if (pointsAtLocation.length > 1) {
-                                            selectedVertices = pointsAtLocation;
-                                            selectionFromSelectTool = false;
-                                            multiDragging = true;
-                                            multiDragStart = { x: mouseX, y: mouseY };
-
-                                            for (let sel of selectedVertices) {
-                                                let tri = active.triangles[sel.triIndex];
-                                                let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
-                                                sel.vx = v.x;
-                                                sel.vy = v.y;
-                                            }
-                                        } else {
-                                            draggingVertex = hit;
-                                        }
-                                    } else {
-                                        draggingVertex = hit;
-                                    }
-                                }
-                            } else {
-                                saveUndoState();
                                 
-                                if (!e.ctrlKey) {
-                                    let active = models[selectedModelIndex];
-                                    let pointsAtLocation = [];
-                                    let globalIdx = 0;
-                                    
-                                    for (let i = 0; i < active.triangles.length; i++) {
-                                        let tri = active.triangles[i];
-                                        let vertices = [tri.v1, tri.v2, tri.v3];
-                                        for (let j = 0; j < 3; j++) {
-                                            let v = vertices[j];
-                                            if (Math.floor(v.x) === mouseX && Math.floor(v.y) === mouseY) {
-                                                pointsAtLocation.push({
-                                                    triIndex: i,
-                                                    vertexIndex: j,
-                                                    vx: v.x,
-                                                    vy: v.y,
-                                                    globalPointIndex: globalIdx
-                                                });
-                                            }
-                                            globalIdx++;
-                                        }
-                                    }
-                                    
-                                    if (pointsAtLocation.length > 1) {
-                                        selectedVertices = pointsAtLocation;
+                                if (isInSelection) {
+                                    // Clicked on a vertex that's already selected
+                                    if (e.shiftKey) {
+                                        // SHIFT + click on selected vertex: move just this single point
+                                        // Clear selection and move only this vertex
+                                        selectedVertices = [];
                                         selectionFromSelectTool = false;
+                                        saveUndoState();
+                                        draggingVertex = hit;
+                                    } else {
+                                        // Normal click: move all selected vertices together
+                                        saveUndoState();
                                         multiDragging = true;
                                         multiDragStart = { x: mouseX, y: mouseY };
-                                        
+                                        let active = models[selectedModelIndex];
                                         for (let sel of selectedVertices) {
                                             let tri = active.triangles[sel.triIndex];
                                             let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
                                             sel.vx = v.x;
                                             sel.vy = v.y;
                                         }
-                                    } else {
-                                        draggingVertex = hit;
                                     }
                                 } else {
+                                    // Clicked on a vertex not in selection
+                                    if (e.shiftKey) {
+                                        // SHIFT + click on new vertex: add to selection
+                                        let active = models[selectedModelIndex];
+                                        let v = [active.triangles[hit.triIndex].v1, 
+                                                active.triangles[hit.triIndex].v2, 
+                                                active.triangles[hit.triIndex].v3][hit.vertexIndex];
+                                        selectedVertices.push({
+                                            triIndex: hit.triIndex,
+                                            vertexIndex: hit.vertexIndex,
+                                            vx: v.x,
+                                            vy: v.y,
+                                            globalPointIndex: hit.globalPointIndex
+                                        });
+                                        selectionFromSelectTool = false;
+                                        draw();
+                                    } else {
+                                        // Normal click: clear selection and move this single vertex
+                                        selectedVertices = [];
+                                        selectionFromSelectTool = false;
+                                        saveUndoState();
+                                        draggingVertex = hit;
+                                    }
+                                }
+                            } else {
+                                // No vertices selected
+                                if (e.shiftKey) {
+                                    // SHIFT + click: add to empty selection (select the vertex)
+                                    let active = models[selectedModelIndex];
+                                    let v = [active.triangles[hit.triIndex].v1, 
+                                            active.triangles[hit.triIndex].v2, 
+                                            active.triangles[hit.triIndex].v3][hit.vertexIndex];
+                                    selectedVertices.push({
+                                        triIndex: hit.triIndex,
+                                        vertexIndex: hit.vertexIndex,
+                                        vx: v.x,
+                                        vy: v.y,
+                                        globalPointIndex: hit.globalPointIndex
+                                    });
+                                    selectionFromSelectTool = false;
+                                    draw();
+                                } else {
+                                    // Normal click: move this single vertex
+                                    saveUndoState();
                                     draggingVertex = hit;
                                 }
                             }
@@ -7202,7 +7492,8 @@ function getBoundingBox(track) {
                         }
                         e.preventDefault();
                     } else {
-                        if (selectedVertices.length > 0 && currentTool === 'move') {
+                        // Clicked on empty space
+                        if (selectedVertices.length > 0 && currentTool === 'move' && !e.shiftKey) {
                             selectedVertices = [];
                             selectionFromSelectTool = false;
                             draw();
@@ -7381,16 +7672,18 @@ function startPositionPicker(trackIndex, cellIndex, actionIndex, fieldName, call
                 e.preventDefault();
                 e.stopPropagation();
                 
-                // Get clicked position
+                // Get clicked position as float (no floor)
                 let rect = c.getBoundingClientRect();
                 let scaleX = c.width / rect.width;
                 let scaleY = c.height / rect.height;
                 let physX = (e.clientX - rect.left) * scaleX;
                 let physY = (e.clientY - rect.top) * scaleY;
-                let gridX = Math.min(63, Math.max(0, Math.floor(physX / SCALE)));
-                let gridY = Math.min(31, Math.max(0, Math.floor(physY / SCALE)));
                 
-                // Call callback with position
+                // Convert to float coordinates in logical space (0-64, 0-32)
+                let gridX = Math.max(0, Math.min(64, physX / SCALE));
+                let gridY = Math.max(0, Math.min(32, physY / SCALE));
+                
+                // Call callback with float position
                 pendingPositionField.callback(gridX, gridY);
                 
                 // Clean up
@@ -7560,11 +7853,12 @@ function startPositionPicker(trackIndex, cellIndex, actionIndex, fieldName, call
                 dragOverlay.style.left = (e.clientX - 12) + 'px';
                 dragOverlay.style.top = (e.clientY - 12) + 'px';
                 
-                // Check which cell we're over
+                // Check which cell we're over - allow playing cells now
                 let elements = document.elementsFromPoint(e.clientX, e.clientY);
                 let targetCell = null;
                 for (let el of elements) {
-                    if (el.classList && el.classList.contains('timeline-cell') && !el.classList.contains('playing')) {
+                    // Remove the !el.classList.contains('playing') condition
+                    if (el.classList && el.classList.contains('timeline-cell')) {
                         targetCell = el;
                         break;
                     }
@@ -7585,11 +7879,12 @@ function startPositionPicker(trackIndex, cellIndex, actionIndex, fieldName, call
         // Handle drag drop
         document.addEventListener('mouseup', function(e) {
             if (draggingAction && dragOverlay) {
-                // Find target cell
+                // Find target cell - allow playing cells now
                 let elements = document.elementsFromPoint(e.clientX, e.clientY);
                 let targetCell = null;
                 for (let el of elements) {
-                    if (el.classList && el.classList.contains('timeline-cell') && !el.classList.contains('playing')) {
+                    // Remove the !el.classList.contains('playing') condition
+                    if (el.classList && el.classList.contains('timeline-cell')) {
                         targetCell = el;
                         break;
                     }
@@ -7599,33 +7894,55 @@ function startPositionPicker(trackIndex, cellIndex, actionIndex, fieldName, call
                     let targetTrack = parseInt(targetCell.dataset.track);
                     let targetCellIndex = parseInt(targetCell.dataset.cell);
                     
-                    // Check if target cell is different from source and empty
+                    // Check if target cell is different from source
                     if (!(targetTrack === draggingAction.trackIndex && targetCellIndex === draggingAction.fromCellIndex)) {
-                        if (!timelineTracks[targetTrack].cells || !timelineTracks[targetTrack].cells[targetCellIndex]) {
-                            // Move action
-                            saveTimelineState();
-                            
-                            let action = timelineTracks[draggingAction.trackIndex].cells[draggingAction.fromCellIndex][draggingAction.actionIndex];
-                            
-                            // Remove from source
-                            timelineTracks[draggingAction.trackIndex].cells[draggingAction.fromCellIndex].splice(draggingAction.actionIndex, 1);
-                            if (timelineTracks[draggingAction.trackIndex].cells[draggingAction.fromCellIndex].length === 0) {
-                                delete timelineTracks[draggingAction.trackIndex].cells[draggingAction.fromCellIndex];
-                            }
-                            
-                            // Add to target
-                            if (!timelineTracks[targetTrack].cells) timelineTracks[targetTrack].cells = [];
-                            if (!timelineTracks[targetTrack].cells[targetCellIndex]) timelineTracks[targetTrack].cells[targetCellIndex] = [];
-                            timelineTracks[targetTrack].cells[targetCellIndex].push(action);
-                            
-                            saveTimelineToAnimation();
-                            renderTimeline();
+                        // Ensure target track cells array exists
+                        if (!timelineTracks[targetTrack]) {
+                            console.error('Target track does not exist');
+                            return;
                         }
+                        if (!timelineTracks[targetTrack].cells) {
+                            timelineTracks[targetTrack].cells = [];
+                        }
+                        if (!timelineTracks[targetTrack].cells[targetCellIndex]) {
+                            timelineTracks[targetTrack].cells[targetCellIndex] = [];
+                        }
+                        
+                        // Move action
+                        saveTimelineState();
+                        
+                        // Get the action from source
+                        let sourceTrack = timelineTracks[draggingAction.trackIndex];
+                        if (!sourceTrack.cells || !sourceTrack.cells[draggingAction.fromCellIndex]) {
+                            console.error('Source cell does not exist');
+                            return;
+                        }
+                        
+                        let action = sourceTrack.cells[draggingAction.fromCellIndex][draggingAction.actionIndex];
+                        if (!action) {
+                            console.error('Action does not exist');
+                            return;
+                        }
+                        
+                        // Remove from source
+                        sourceTrack.cells[draggingAction.fromCellIndex].splice(draggingAction.actionIndex, 1);
+                        if (sourceTrack.cells[draggingAction.fromCellIndex].length === 0) {
+                            delete sourceTrack.cells[draggingAction.fromCellIndex];
+                        }
+                        
+                        // Add to target
+                        timelineTracks[targetTrack].cells[targetCellIndex].push(action);
+                        
+                        saveTimelineToAnimation();
+                        renderTimeline();
                     }
                 }
                 
-                dragOverlay.remove();
-                dragOverlay = null;
+                // Clean up drag overlay
+                if (dragOverlay) {
+                    dragOverlay.remove();
+                    dragOverlay = null;
+                }
                 draggingAction = null;
                 document.querySelectorAll('.timeline-cell.drag-target').forEach(c => {
                     c.classList.remove('drag-target');
@@ -7636,207 +7953,207 @@ function startPositionPicker(trackIndex, cellIndex, actionIndex, fieldName, call
         });
 
         // ===========================================
-// ACTION EDITOR PANEL FUNCTIONS
-// ===========================================
+        // ACTION EDITOR PANEL FUNCTIONS
+        // ===========================================
 
-function showActionInEditor(trackIndex, cellIndex, actionIndex) {
-    if (!timelineTracks[trackIndex] || !timelineTracks[trackIndex].cells || 
-        !timelineTracks[trackIndex].cells[cellIndex] || 
-        !timelineTracks[trackIndex].cells[cellIndex][actionIndex]) {
-        return;
-    }
-    
-    let action = timelineTracks[trackIndex].cells[cellIndex][actionIndex];
-    let actionDef = animationDesc[action.type];
-    
-    if (!actionDef) return;
-    
-    // Remove highlight from previously selected cell
-    document.querySelectorAll('.timeline-cell.selected-action').forEach(cell => {
-        cell.classList.remove('selected-action');
-    });
-    
-    // Highlight the new selected cell
-    let selectedCell = document.querySelector(`.timeline-cell[data-track="${trackIndex}"][data-cell="${cellIndex}"]`);
-    if (selectedCell) {
-        selectedCell.classList.add('selected-action');
-    }
-    
-    currentEditingAction = { trackIndex, cellIndex, actionIndex };
-    
-    // Show the action controls
-    let controls = document.getElementById('actionControls');
-    let paramsDiv = document.getElementById('actionParams');
-    controls.style.display = 'flex';
-    controls.classList.add('editing');
-    
-    // Set label
-    document.getElementById('editingActionLabel').textContent = actionDef.icon + ' ' + actionDef.name;
-    
-    // Generate parameter fields
-    paramsDiv.innerHTML = '';
-    
-    // Group related fields
-    let centerFields = actionDef.fields.filter(f => f.name.includes('center'));
-    let translateFields = actionDef.fields.filter(f => f.name === 'x' || f.name === 'y');
-    let speedFields = actionDef.fields.filter(f => f.name.includes('speed'));
-    let scaleFields = actionDef.fields.filter(f => f.name.includes('scale'));
-    let angleFields = actionDef.fields.filter(f => f.name === 'angle' || f.name === 'rotate_speed');
-    let otherFields = actionDef.fields.filter(f => 
-        !f.name.includes('center') && 
-        f.name !== 'x' && f.name !== 'y' && 
-        !f.name.includes('speed') && 
-        !f.name.includes('scale') &&
-        f.name !== 'angle' && f.name !== 'rotate_speed'
-    );
-    
-    // Handle center fields as a group (centerx + centery)
-    if (centerFields.length === 2) {
-        let centerX = action.parameters[centerFields[0].name];
-        let centerY = action.parameters[centerFields[1].name];
-        let displayX = centerX !== null && centerX !== undefined ? centerX : '';
-        let displayY = centerY !== null && centerY !== undefined ? centerY : '';
-        
-        let fieldContainer = document.createElement('div');
-        fieldContainer.className = 'param-field';
-        fieldContainer.style.minWidth = '180px';
-        fieldContainer.innerHTML = `
-            <span class="param-label">center:</span>
-            <div style="display: flex; gap: 4px;">
-                <input type="number" 
-                       id="edit_param_center_x" 
-                       value="${displayX}" 
-                       placeholder="x"
-                       min="0" max="64" step="1"
-                       style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-                <input type="number" 
-                       id="edit_param_center_y" 
-                       value="${displayY}" 
-                       placeholder="y"
-                       min="0" max="32" step="1"
-                       style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-            </div>
-            <button class="pick-pos-btn-inline" data-field="center" style="background: #ff9900; color: #111; border: none; border-radius: 3px; padding: 4px 6px; cursor: pointer; font-size: 11px; margin-left: 4px;" title="Pick position on canvas">🎯</button>
-        `;
-        paramsDiv.appendChild(fieldContainer);
-    }
-    
-    // Handle translate fields (x and y) as a group with position picker
-    if (translateFields.length === 2) {
-        let xVal = action.parameters['x'] !== undefined ? action.parameters['x'] : '';
-        let yVal = action.parameters['y'] !== undefined ? action.parameters['y'] : '';
-        
-        let fieldContainer = document.createElement('div');
-        fieldContainer.className = 'param-field';
-        fieldContainer.style.minWidth = '180px';
-        fieldContainer.innerHTML = `
-            <span class="param-label">offset:</span>
-            <div style="display: flex; gap: 4px;">
-                <input type="number" 
-                       id="edit_param_translate_x" 
-                       value="${xVal}" 
-                       placeholder="x"
-                       min="-64" max="64" step="1"
-                       style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-                <input type="number" 
-                       id="edit_param_translate_y" 
-                       value="${yVal}" 
-                       placeholder="y"
-                       min="-64" max="64" step="1"
-                       style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-            </div>
-            <button class="pick-pos-btn-inline" data-field="translate" style="background: #ff9900; color: #111; border: none; border-radius: 3px; padding: 4px 6px; cursor: pointer; font-size: 11px; margin-left: 4px;" title="Pick position on canvas">🎯</button>
-        `;
-        paramsDiv.appendChild(fieldContainer);
-    }
-    
-    // Handle speed fields (speedx and speedy) as a group
-    if (speedFields.length === 2) {
-        let speedX = action.parameters['speedx'] !== undefined ? action.parameters['speedx'] : '';
-        let speedY = action.parameters['speedy'] !== undefined ? action.parameters['speedy'] : '';
-        
-        let fieldContainer = document.createElement('div');
-        fieldContainer.className = 'param-field';
-        fieldContainer.style.minWidth = '180px';
-        fieldContainer.innerHTML = `
-            <span class="param-label">speed:</span>
-            <div style="display: flex; gap: 4px;">
-                <input type="number" 
-                       id="edit_param_speed_x" 
-                       value="${speedX}" 
-                       placeholder="x"
-                       min="-100" max="100" step="1"
-                       style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-                <input type="number" 
-                       id="edit_param_speed_y" 
-                       value="${speedY}" 
-                       placeholder="y"
-                       min="-100" max="100" step="1"
-                       style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-            </div>
-            <span class="param-unit">px/s</span>
-        `;
-        paramsDiv.appendChild(fieldContainer);
-    }
-    
-    // Handle scale fields (scalex and scaley) as a group
-    if (scaleFields.length === 2) {
-        let scaleX = action.parameters['scalex'] !== undefined ? action.parameters['scalex'] : '';
-        let scaleY = action.parameters['scaley'] !== undefined ? action.parameters['scaley'] : '';
-        
-        let fieldContainer = document.createElement('div');
-        fieldContainer.className = 'param-field';
-        fieldContainer.style.minWidth = '150px';
-        fieldContainer.innerHTML = `
-            <span class="param-label">scale:</span>
-            <div style="display: flex; gap: 4px;">
-                <input type="number" 
-                       id="edit_param_scale_x" 
-                       value="${scaleX}" 
-                       placeholder="x"
-                       min="0.1" max="10" step="0.1"
-                       style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-                <input type="number" 
-                       id="edit_param_scale_y" 
-                       value="${scaleY}" 
-                       placeholder="y"
-                       min="0.1" max="10" step="0.1"
-                       style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-            </div>
-        `;
-        paramsDiv.appendChild(fieldContainer);
-    }
-    
-    // Handle angle fields with proper units
-    angleFields.forEach(field => {
-        let currentValue = action.parameters[field.name];
-        let displayValue = currentValue !== null && currentValue !== undefined ? currentValue : '';
-        
-        let fieldContainer = document.createElement('div');
-        fieldContainer.className = 'param-field';
-        
-        let unit = '';
-        if (field.name === 'angle') {
-            unit = '<span class="param-unit">degrees</span>';
-        } else if (field.name === 'rotate_speed') {
-            unit = '<span class="param-unit">°/s</span>';
+    function showActionInEditor(trackIndex, cellIndex, actionIndex) {
+        if (!timelineTracks[trackIndex] || !timelineTracks[trackIndex].cells || 
+            !timelineTracks[trackIndex].cells[cellIndex] || 
+            !timelineTracks[trackIndex].cells[cellIndex][actionIndex]) {
+            return;
         }
         
-        fieldContainer.innerHTML = `
-            <span class="param-label">${field.name === 'rotate_speed' ? 'speed' : field.name}:</span>
-            <input type="${field.type}" 
-                   id="edit_param_${field.name}" 
-                   value="${displayValue}" 
-                   ${field.min !== undefined ? `min="${field.min}"` : ''}
-                   ${field.max !== undefined ? `max="${field.max}"` : ''}
-                   ${field.step !== undefined ? `step="${field.step}"` : ''}
-                   style="width: 60px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-            ${unit}
-        `;
+        let action = timelineTracks[trackIndex].cells[cellIndex][actionIndex];
+        let actionDef = animationDesc[action.type];
         
-        paramsDiv.appendChild(fieldContainer);
-    });
-    
+        if (!actionDef) return;
+        
+        // Remove highlight from previously selected cell
+        document.querySelectorAll('.timeline-cell.selected-action').forEach(cell => {
+            cell.classList.remove('selected-action');
+        });
+        
+        // Highlight the new selected cell
+        let selectedCell = document.querySelector(`.timeline-cell[data-track="${trackIndex}"][data-cell="${cellIndex}"]`);
+        if (selectedCell) {
+            selectedCell.classList.add('selected-action');
+        }
+        
+        currentEditingAction = { trackIndex, cellIndex, actionIndex };
+        
+        // Show the action controls
+        let controls = document.getElementById('actionControls');
+        let paramsDiv = document.getElementById('actionParams');
+        controls.style.display = 'flex';
+        controls.classList.add('editing');
+        
+        // Set label
+        document.getElementById('editingActionLabel').textContent = actionDef.icon + ' ' + actionDef.name;
+        
+        // Generate parameter fields
+        paramsDiv.innerHTML = '';
+        
+        // Group related fields
+        let centerFields = actionDef.fields.filter(f => f.name.includes('center'));
+        let translateFields = actionDef.fields.filter(f => f.name === 'x' || f.name === 'y');
+        let speedFields = actionDef.fields.filter(f => f.name.includes('speed'));
+        let scaleFields = actionDef.fields.filter(f => f.name.includes('scale'));
+        let angleFields = actionDef.fields.filter(f => f.name === 'angle' || f.name === 'rotate_speed');
+        let otherFields = actionDef.fields.filter(f => 
+            !f.name.includes('center') && 
+            f.name !== 'x' && f.name !== 'y' && 
+            !f.name.includes('speed') && 
+            !f.name.includes('scale') &&
+            f.name !== 'angle' && f.name !== 'rotate_speed'
+        );
+        
+        // Handle center fields as a group (centerx + centery)
+        if (centerFields.length === 2) {
+            let centerX = action.parameters[centerFields[0].name];
+            let centerY = action.parameters[centerFields[1].name];
+            let displayX = centerX !== null && centerX !== undefined ? centerX : '';
+            let displayY = centerY !== null && centerY !== undefined ? centerY : '';
+            
+            let fieldContainer = document.createElement('div');
+            fieldContainer.className = 'param-field';
+            fieldContainer.style.minWidth = '180px';
+            fieldContainer.innerHTML = `
+                <span class="param-label">center:</span>
+                <div style="display: flex; gap: 4px;">
+                    <input type="number" 
+                        id="edit_param_center_x" 
+                        value="${displayX}" 
+                        placeholder="x"
+                        min="0" max="64" step="1"
+                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                    <input type="number" 
+                        id="edit_param_center_y" 
+                        value="${displayY}" 
+                        placeholder="y"
+                        min="0" max="32" step="1"
+                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                </div>
+                <button class="pick-pos-btn-inline" data-field="center" style="background: #ff9900; color: #111; border: none; border-radius: 3px; padding: 4px 6px; cursor: pointer; font-size: 11px; margin-left: 4px;" title="Pick position on canvas">🎯</button>
+            `;
+            paramsDiv.appendChild(fieldContainer);
+        }
+        
+        // Handle translate fields (x and y) as a group with position picker
+        if (translateFields.length === 2) {
+            let xVal = action.parameters['x'] !== undefined ? action.parameters['x'] : '';
+            let yVal = action.parameters['y'] !== undefined ? action.parameters['y'] : '';
+            
+            let fieldContainer = document.createElement('div');
+            fieldContainer.className = 'param-field';
+            fieldContainer.style.minWidth = '180px';
+            fieldContainer.innerHTML = `
+                <span class="param-label">offset:</span>
+                <div style="display: flex; gap: 4px;">
+                    <input type="number" 
+                        id="edit_param_translate_x" 
+                        value="${xVal}" 
+                        placeholder="x"
+                        min="-64" max="64" step="1"
+                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                    <input type="number" 
+                        id="edit_param_translate_y" 
+                        value="${yVal}" 
+                        placeholder="y"
+                        min="-64" max="64" step="1"
+                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                </div>
+                <button class="pick-pos-btn-inline" data-field="translate" style="background: #ff9900; color: #111; border: none; border-radius: 3px; padding: 4px 6px; cursor: pointer; font-size: 11px; margin-left: 4px;" title="Pick position on canvas">🎯</button>
+            `;
+            paramsDiv.appendChild(fieldContainer);
+        }
+        
+        // Handle speed fields (speedx and speedy) as a group
+        if (speedFields.length === 2) {
+            let speedX = action.parameters['speedx'] !== undefined ? action.parameters['speedx'] : '';
+            let speedY = action.parameters['speedy'] !== undefined ? action.parameters['speedy'] : '';
+            
+            let fieldContainer = document.createElement('div');
+            fieldContainer.className = 'param-field';
+            fieldContainer.style.minWidth = '180px';
+            fieldContainer.innerHTML = `
+                <span class="param-label">speed:</span>
+                <div style="display: flex; gap: 4px;">
+                    <input type="number" 
+                        id="edit_param_speed_x" 
+                        value="${speedX}" 
+                        placeholder="x"
+                        min="-100" max="100" step="1"
+                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                    <input type="number" 
+                        id="edit_param_speed_y" 
+                        value="${speedY}" 
+                        placeholder="y"
+                        min="-100" max="100" step="1"
+                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                </div>
+                <span class="param-unit">px/s</span>
+            `;
+            paramsDiv.appendChild(fieldContainer);
+        }
+        
+        // Handle scale fields (scalex and scaley) as a group
+        if (scaleFields.length === 2) {
+            let scaleX = action.parameters['scalex'] !== undefined ? action.parameters['scalex'] : '';
+            let scaleY = action.parameters['scaley'] !== undefined ? action.parameters['scaley'] : '';
+            
+            let fieldContainer = document.createElement('div');
+            fieldContainer.className = 'param-field';
+            fieldContainer.style.minWidth = '150px';
+            fieldContainer.innerHTML = `
+                <span class="param-label">scale:</span>
+                <div style="display: flex; gap: 4px;">
+                    <input type="number" 
+                        id="edit_param_scale_x" 
+                        value="${scaleX}" 
+                        placeholder="x"
+                        min="0.1" max="10" step="0.1"
+                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                    <input type="number" 
+                        id="edit_param_scale_y" 
+                        value="${scaleY}" 
+                        placeholder="y"
+                        min="0.1" max="10" step="0.1"
+                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                </div>
+            `;
+            paramsDiv.appendChild(fieldContainer);
+        }
+        
+        // Handle angle fields with proper units
+        angleFields.forEach(field => {
+            let currentValue = action.parameters[field.name];
+            let displayValue = currentValue !== null && currentValue !== undefined ? currentValue : '';
+            
+            let fieldContainer = document.createElement('div');
+            fieldContainer.className = 'param-field';
+            
+            let unit = '';
+            if (field.name === 'angle') {
+                unit = '<span class="param-unit">degrees</span>';
+            } else if (field.name === 'rotate_speed') {
+                unit = '<span class="param-unit">°/s</span>';
+            }
+            
+            fieldContainer.innerHTML = `
+                <span class="param-label">${field.name === 'rotate_speed' ? 'speed' : field.name}:</span>
+                <input type="${field.type}" 
+                    id="edit_param_${field.name}" 
+                    value="${displayValue}" 
+                    ${field.min !== undefined ? `min="${field.min}"` : ''}
+                    ${field.max !== undefined ? `max="${field.max}"` : ''}
+                    ${field.step !== undefined ? `step="${field.step}"` : ''}
+                    style="width: 60px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                ${unit}
+            `;
+            
+            paramsDiv.appendChild(fieldContainer);
+        });
+        
     // Handle any remaining fields
     otherFields.forEach(field => {
         let currentValue = action.parameters[field.name];
@@ -7892,6 +8209,8 @@ function showActionInEditor(trackIndex, cellIndex, actionIndex) {
             });
         });
     }, 100);
+
+    draw(); 
 }
 
 
@@ -7914,259 +8233,281 @@ function showActionInEditor(trackIndex, cellIndex, actionIndex) {
         draw();
     }
 
-    function saveActionChangesInline() {
-        if (!currentEditingAction) return;
-        
-        let { trackIndex, cellIndex, actionIndex } = currentEditingAction;
-        let action = timelineTracks[trackIndex].cells[cellIndex][actionIndex];
-        let actionDef = animationDesc[action.type];
-        
-        // Get the track to find which model this is for
-        let track = animations[selectedAnimationIndex]?.tracks[trackIndex];
-        
-        // Collect updated parameters
-        let parameters = {};
-        
-        // Handle center fields (centerx and centery)
-        let centerXInput = document.getElementById('edit_param_center_x');
-        let centerYInput = document.getElementById('edit_param_center_y');
-        if (centerXInput && centerYInput) {
-            let xVal = parseFloat(centerXInput.value);
-            let yVal = parseFloat(centerYInput.value);
+        function saveActionChangesInline() {
+            if (!currentEditingAction) return;
             
-            // If values are empty or NaN, use model center as default
-            if (isNaN(xVal) && track) {
-                let center = calculateModelCenter(track.modelIndex);
-                xVal = center.x;
-                centerXInput.value = center.x;
-            }
-            if (isNaN(yVal) && track) {
-                let center = calculateModelCenter(track.modelIndex);
-                yVal = center.y;
-                centerYInput.value = center.y;
-            }
+            let { trackIndex, cellIndex, actionIndex } = currentEditingAction;
+            let action = timelineTracks[trackIndex].cells[cellIndex][actionIndex];
+            let actionDef = animationDesc[action.type];
             
-            if (!isNaN(xVal)) parameters['centerx'] = xVal;
-            if (!isNaN(yVal)) parameters['centery'] = yVal;
-        }
-        
-        // Handle translate fields (x and y)
-        let translateXInput = document.getElementById('edit_param_translate_x');
-        let translateYInput = document.getElementById('edit_param_translate_y');
-        if (translateXInput && translateYInput) {
-            let xVal = parseFloat(translateXInput.value);
-            let yVal = parseFloat(translateYInput.value);
-            if (!isNaN(xVal)) parameters['x'] = xVal;
-            if (!isNaN(yVal)) parameters['y'] = yVal;
-        }
-        
-        // Handle speed fields (speedx and speedy)
-        let speedXInput = document.getElementById('edit_param_speed_x');
-        let speedYInput = document.getElementById('edit_param_speed_y');
-        if (speedXInput && speedYInput) {
-            let xVal = parseFloat(speedXInput.value);
-            let yVal = parseFloat(speedYInput.value);
-            if (!isNaN(xVal)) parameters['speedx'] = xVal;
-            if (!isNaN(yVal)) parameters['speedy'] = yVal;
-        }
-        
-        // Handle scale fields (scalex and scaley)
-        let scaleXInput = document.getElementById('edit_param_scale_x');
-        let scaleYInput = document.getElementById('edit_param_scale_y');
-        if (scaleXInput && scaleYInput) {
-            let xVal = parseFloat(scaleXInput.value);
-            let yVal = parseFloat(scaleYInput.value);
-            if (!isNaN(xVal)) parameters['scalex'] = xVal;
-            if (!isNaN(yVal)) parameters['scaley'] = yVal;
-        }
-        
-        // Handle angle fields
-        let angleInput = document.getElementById('edit_param_angle');
-        if (angleInput) {
-            let val = parseFloat(angleInput.value);
-            if (!isNaN(val)) parameters['angle'] = val;
-        }
-        
-        let rotateSpeedInput = document.getElementById('edit_param_rotate_speed');
-        if (rotateSpeedInput) {
-            let val = parseFloat(rotateSpeedInput.value);
-            if (!isNaN(val)) parameters['rotate_speed'] = val;
-        }
-        
-        // Handle any other fields
-        actionDef.fields.forEach(field => {
-            // Skip fields we already handled
-            if (field.name === 'centerx' || field.name === 'centery' || 
-                field.name === 'x' || field.name === 'y' ||
-                field.name === 'speedx' || field.name === 'speedy' ||
-                field.name === 'scalex' || field.name === 'scaley' ||
-                field.name === 'angle' || field.name === 'rotate_speed') {
-                return;
+            // Get the track to find which model this is for
+            let track = animations[selectedAnimationIndex]?.tracks[trackIndex];
+            
+            // Collect updated parameters
+            let parameters = {};
+            
+            // Handle center fields (centerx and centery)
+            let centerXInput = document.getElementById('edit_param_center_x');
+            let centerYInput = document.getElementById('edit_param_center_y');
+            if (centerXInput && centerYInput) {
+                let xVal = parseFloat(centerXInput.value);
+                let yVal = parseFloat(centerYInput.value);
+                
+                // If values are empty or NaN, use model center as default
+                if (isNaN(xVal) && track) {
+                    let center = calculateModelCenter(track.modelIndex);
+                    xVal = center.x;
+                    centerXInput.value = center.x;
+                }
+                if (isNaN(yVal) && track) {
+                    let center = calculateModelCenter(track.modelIndex);
+                    yVal = center.y;
+                    centerYInput.value = center.y;
+                }
+                
+                if (!isNaN(xVal)) parameters['centerx'] = xVal;
+                if (!isNaN(yVal)) parameters['centery'] = yVal;
             }
             
-            let input = document.getElementById(`edit_param_${field.name}`);
-            if (input) {
-                let value = input.value;
-                if (value === '' && field.optional) {
-                    parameters[field.name] = null;
-                } else {
-                    if (field.type === 'number') {
-                        parameters[field.name] = parseFloat(value) || field.default;
+            // Handle translate fields (x and y)
+            let translateXInput = document.getElementById('edit_param_translate_x');
+            let translateYInput = document.getElementById('edit_param_translate_y');
+            if (translateXInput && translateYInput) {
+                let xVal = parseFloat(translateXInput.value);
+                let yVal = parseFloat(translateYInput.value);
+                if (!isNaN(xVal)) parameters['x'] = xVal;
+                if (!isNaN(yVal)) parameters['y'] = yVal;
+            }
+            
+            // Handle speed fields (speedx and speedy)
+            let speedXInput = document.getElementById('edit_param_speed_x');
+            let speedYInput = document.getElementById('edit_param_speed_y');
+            if (speedXInput && speedYInput) {
+                let xVal = parseFloat(speedXInput.value);
+                let yVal = parseFloat(speedYInput.value);
+                if (!isNaN(xVal)) parameters['speedx'] = xVal;
+                if (!isNaN(yVal)) parameters['speedy'] = yVal;
+            }
+            
+            // Handle scale fields (scalex and scaley)
+            let scaleXInput = document.getElementById('edit_param_scale_x');
+            let scaleYInput = document.getElementById('edit_param_scale_y');
+            if (scaleXInput && scaleYInput) {
+                let xVal = parseFloat(scaleXInput.value);
+                let yVal = parseFloat(scaleYInput.value);
+                if (!isNaN(xVal)) parameters['scalex'] = xVal;
+                if (!isNaN(yVal)) parameters['scaley'] = yVal;
+            }
+            
+            // Handle angle fields
+            let angleInput = document.getElementById('edit_param_angle');
+            if (angleInput) {
+                let val = parseFloat(angleInput.value);
+                if (!isNaN(val)) parameters['angle'] = val;
+            }
+            
+            let rotateSpeedInput = document.getElementById('edit_param_rotate_speed');
+            if (rotateSpeedInput) {
+                let val = parseFloat(rotateSpeedInput.value);
+                if (!isNaN(val)) parameters['rotate_speed'] = val;
+            }
+            
+            // Handle any other fields
+            actionDef.fields.forEach(field => {
+                // Skip fields we already handled
+                if (field.name === 'centerx' || field.name === 'centery' || 
+                    field.name === 'x' || field.name === 'y' ||
+                    field.name === 'speedx' || field.name === 'speedy' ||
+                    field.name === 'scalex' || field.name === 'scaley' ||
+                    field.name === 'angle' || field.name === 'rotate_speed') {
+                    return;
+                }
+                
+                let input = document.getElementById(`edit_param_${field.name}`);
+                if (input) {
+                    let value = input.value;
+                    if (value === '' && field.optional) {
+                        parameters[field.name] = null;
                     } else {
-                        parameters[field.name] = value;
+                        if (field.type === 'number') {
+                            parameters[field.name] = parseFloat(value) || field.default;
+                        } else {
+                            parameters[field.name] = value;
+                        }
                     }
                 }
-            }
-        });
-        
-        saveTimelineState();
-        action.parameters = parameters;
-        saveTimelineToAnimation();
-        
-        // Update cell display
-        let cell = document.querySelector(`.timeline-cell[data-track="${trackIndex}"][data-cell="${cellIndex}"]`);
-        if (cell) {
-            let icons = timelineTracks[trackIndex].cells[cellIndex].map(a => animationDesc[a.type]?.icon || '⚡').join('');
-            cell.innerHTML = `<div style="font-size: 12px; line-height: 1;">${icons}</div>`;
-            cell.title = timelineTracks[trackIndex].cells[cellIndex].map(a => animationDesc[a.type]?.name || a.type).join(', ');
-        }
-        
-        // Redraw to update markers
-        draw();
-    }
-
-    function closeActionEditor() {
-        document.getElementById('actionEditorPanel').style.display = 'none';
-        currentEditingAction = null;
-    }
-
-function startPositionPickerForEditInline(fieldType) {
-    if (!currentEditingAction) return;
-    
-    // If there's already an active picker, cancel it first
-    if (positionPickerActive) {
-        cancelPositionPicker();
-    }
-    
-    positionPickerActive = true;
-    pendingPositionField = { fieldType };
-    
-    c.style.cursor = 'crosshair';
-    
-    let instruction = document.createElement('div');
-    instruction.id = 'positionPickerInstruction';
-    instruction.style.position = 'fixed';
-    instruction.style.top = '20px';
-    instruction.style.left = '50%';
-    instruction.style.transform = 'translateX(-50%)';
-    instruction.style.background = '#2d2d2d';
-    instruction.style.border = '2px solid #ff9900';
-    instruction.style.borderRadius = '8px';
-    instruction.style.padding = '8px 16px';
-    instruction.style.color = '#fff';
-    instruction.style.fontFamily = 'Courier New, monospace';
-    instruction.style.zIndex = '20000';
-    instruction.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
-    instruction.style.fontSize = '12px';
-    instruction.style.display = 'flex';
-    instruction.style.alignItems = 'center';
-    instruction.style.gap = '10px';
-    
-    if (fieldType === 'center') {
-        instruction.innerHTML = '🎯 Click on canvas to set center position - <button id="cancelPickerBtn" style="background:#666; color:#fff; border:none; border-radius:3px; padding:2px 8px; cursor:pointer;">ESC</button>';
-    } else if (fieldType === 'translate') {
-        instruction.innerHTML = '🎯 Click on canvas to set translate position - <button id="cancelPickerBtn" style="background:#666; color:#fff; border:none; border-radius:3px; padding:2px 8px; cursor:pointer;">ESC</button>';
-    }
-    
-    document.body.appendChild(instruction);
-    
-    // Add cancel button handler
-    document.getElementById('cancelPickerBtn').addEventListener('click', function(e) {
-        e.stopPropagation();
-        cancelPositionPicker();
-    });
-    
-    let clickHandler = function(e) {
-        if (!positionPickerActive) return;
-        
-        // Check if click is on the canvas
-        if (e.target === c || c.contains(e.target)) {
-            // Click on canvas - set position
-            e.stopPropagation();
-            e.preventDefault();
+            });
             
-            let rect = c.getBoundingClientRect();
-            let scaleX = c.width / rect.width;
-            let scaleY = c.height / rect.height;
-            let physX = (e.clientX - rect.left) * scaleX;
-            let physY = (e.clientY - rect.top) * scaleY;
-            let gridX = Math.min(63, Math.max(0, Math.floor(physX / SCALE)));
-            let gridY = Math.min(31, Math.max(0, Math.floor(physY / SCALE)));
+            saveTimelineState();
+            action.parameters = parameters;
+            saveTimelineToAnimation();
+            
+            // Update cell display
+            let cell = document.querySelector(`.timeline-cell[data-track="${trackIndex}"][data-cell="${cellIndex}"]`);
+            if (cell) {
+                let icons = timelineTracks[trackIndex].cells[cellIndex].map(a => animationDesc[a.type]?.icon || '⚡').join('');
+                cell.innerHTML = `<div style="font-size: 12px; line-height: 1;">${icons}</div>`;
+                cell.title = timelineTracks[trackIndex].cells[cellIndex].map(a => animationDesc[a.type]?.name || a.type).join(', ');
+            }
+            
+            // Redraw to update markers
+            draw();
+        }
+
+        function closeActionEditor() {
+            document.getElementById('actionEditorPanel').style.display = 'none';
+            currentEditingAction = null;
+        }
+
+
+        function startPositionPickerForEditInline(fieldType) {
+            if (!currentEditingAction) return;
+            
+            // If there's already an active picker, cancel it first
+            if (positionPickerActive) {
+                cancelPositionPicker();
+            }
+            
+            positionPickerActive = true;
+            pendingPositionField = { fieldType };
+            
+            c.style.cursor = 'crosshair';
+            
+            let instruction = document.createElement('div');
+            instruction.id = 'positionPickerInstruction';
+            instruction.style.position = 'fixed';
+            instruction.style.top = '20px';
+            instruction.style.left = '50%';
+            instruction.style.transform = 'translateX(-50%)';
+            instruction.style.background = '#2d2d2d';
+            instruction.style.border = '2px solid #ff9900';
+            instruction.style.borderRadius = '8px';
+            instruction.style.padding = '12px 24px';
+            instruction.style.color = '#fff';
+            instruction.style.fontFamily = 'Courier New, monospace';
+            instruction.style.zIndex = '20000';
+            instruction.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
+            instruction.style.fontSize = '14px';
+            instruction.style.display = 'flex';
+            instruction.style.alignItems = 'center';
+            instruction.style.gap = '15px';
             
             if (fieldType === 'center') {
-                // Set center X and Y
-                let xInput = document.getElementById('edit_param_center_x');
-                let yInput = document.getElementById('edit_param_center_y');
-                if (xInput && yInput) {
-                    xInput.value = gridX;
-                    yInput.value = gridY;
-                    saveActionChangesInline();
-                }
+                instruction.innerHTML = '🎯 Click and drag on canvas to set center position<br><small style="color:#aaa;">Hold CTRL for free movement (no grid snap)</small> - <button id="cancelPickerBtn" style="background:#666; color:#fff; border:none; border-radius:3px; padding:4px 12px; cursor:pointer; font-size:12px;">ESC</button>';
             } else if (fieldType === 'translate') {
-                // Set translate X and Y
-                let xInput = document.getElementById('edit_param_translate_x');
-                let yInput = document.getElementById('edit_param_translate_y');
-                if (xInput && yInput) {
-                    xInput.value = gridX;
-                    yInput.value = gridY;
-                    saveActionChangesInline();
-                }
+                instruction.innerHTML = '🎯 Click and drag on canvas to set translate position<br><small style="color:#aaa;">Hold CTRL for free movement (no grid snap)</small> - <button id="cancelPickerBtn" style="background:#666; color:#fff; border:none; border-radius:3px; padding:4px 12px; cursor:pointer; font-size:12px;">ESC</button>';
             }
             
-            // Don't cancel - stay in picking mode until ESC
-            // Just update the position and keep listening
-        } else {
-            // Click outside canvas - cancel picking mode
-            cancelPositionPicker();
+            document.body.appendChild(instruction);
+            
+            // Add cancel button handler
+            document.getElementById('cancelPickerBtn').addEventListener('click', function(e) {
+                e.stopPropagation();
+                cancelPositionPicker();
+            });
+            
+            // Add drag handlers to canvas
+            c.addEventListener('mousedown', startPositionPickerDrag);
+            c.addEventListener('mousemove', updatePositionPickerDrag);
+            c.addEventListener('mouseup', endPositionPickerDrag);
+            
+            // Store handlers for cleanup
+            pendingPositionField.mousedownHandler = startPositionPickerDrag;
+            pendingPositionField.mousemoveHandler = updatePositionPickerDrag;
+            pendingPositionField.mouseupHandler = endPositionPickerDrag;
+            
+            let keyHandler = function(e) {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelPositionPicker();
+                }
+            };
+            
+            document.addEventListener('keydown', keyHandler);
+            pendingPositionField.keyHandler = keyHandler;
         }
-    };
-    
-    let keyHandler = function(e) {
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            cancelPositionPicker();
-        }
-    };
-    
-    // Use capturing to ensure we get the event before other handlers
-    document.addEventListener('click', clickHandler, true);
-    document.addEventListener('keydown', keyHandler);
-    
-    // Store handlers for cleanup
-    pendingPositionField.clickHandler = clickHandler;
-    pendingPositionField.keyHandler = keyHandler;
-    pendingPositionField.useCapture = true;
-}
 
-function cancelPositionPicker() {
-    if (!positionPickerActive) return;
-    
-    positionPickerActive = false;
-    c.style.cursor = 'default';
-    
-    if (pendingPositionField) {
-        if (pendingPositionField.clickHandler) {
-            document.removeEventListener('click', pendingPositionField.clickHandler, true);
+        function drawPositionPickerIndicator() {
+            if (!positionPickerActive || !positionPickerDragging || !pendingPositionField) return;
+            
+            ctx.save();
+            
+            // Draw line from start to current position
+            let startX = positionPickerStartPos.x * SCALE + SCALE/2;
+            let startY = positionPickerStartPos.y * SCALE + SCALE/2;
+            let currentX = positionPickerCurrentPos.x * SCALE + SCALE/2;
+            let currentY = positionPickerCurrentPos.y * SCALE + SCALE/2;
+            
+            // Draw dashed line
+            ctx.strokeStyle = "#ff9900";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(currentX, currentY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw start point
+            ctx.fillStyle = "#ff9900";
+            ctx.shadowColor = "#ff9900";
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(startX, startY, 6, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Draw current point (with different color)
+            ctx.fillStyle = "#ffffff";
+            ctx.shadowColor = "#ffffff";
+            ctx.beginPath();
+            ctx.arc(currentX, currentY, 8, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Draw inner dot
+            ctx.fillStyle = "#ff9900";
+            ctx.shadowBlur = 5;
+            ctx.beginPath();
+            ctx.arc(currentX, currentY, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Show coordinates
+            ctx.shadowBlur = 4;
+            ctx.font = "bold 12px 'Courier New'";
+            ctx.fillStyle = "#ffffff";
+            ctx.textAlign = "left";
+            ctx.fillText(`(${positionPickerCurrentPos.x.toFixed(1)}, ${positionPickerCurrentPos.y.toFixed(1)})`, currentX + 15, currentY - 15);
+            
+            ctx.restore();
         }
-        if (pendingPositionField.keyHandler) {
-            document.removeEventListener('keydown', pendingPositionField.keyHandler);
+
+        // Update cancelPositionPicker to clean up drag handlers
+        function cancelPositionPicker() {
+            if (!positionPickerActive) return;
+            
+            positionPickerActive = false;
+            positionPickerDragging = false;
+            c.style.cursor = 'default';
+            
+            if (pendingPositionField) {
+                // Remove drag handlers
+                if (pendingPositionField.mousedownHandler) {
+                    c.removeEventListener('mousedown', pendingPositionField.mousedownHandler);
+                }
+                if (pendingPositionField.mousemoveHandler) {
+                    c.removeEventListener('mousemove', pendingPositionField.mousemoveHandler);
+                }
+                if (pendingPositionField.mouseupHandler) {
+                    c.removeEventListener('mouseup', pendingPositionField.mouseupHandler);
+                }
+                if (pendingPositionField.keyHandler) {
+                    document.removeEventListener('keydown', pendingPositionField.keyHandler);
+                }
+                pendingPositionField = null;
+            }
+            
+            let instruction = document.getElementById('positionPickerInstruction');
+            if (instruction) instruction.remove();
         }
-        pendingPositionField = null;
-    }
-    
-    let instruction = document.getElementById('positionPickerInstruction');
-    if (instruction) instruction.remove();
-}
 
 
 // ===========================================
@@ -8214,29 +8555,315 @@ document.addEventListener('mouseup', function() {
     }
 });
 
-function calculateModelCenter(modelIndex) {
-    if (modelIndex < 0 || modelIndex >= models.length) return { x: 32, y: 16 }; // Default to center
-    
-    let model = models[modelIndex];
-    if (!model.triangles || model.triangles.length === 0) return { x: 32, y: 16 };
-    
-    let minX = 64, maxX = 0, minY = 32, maxY = 0;
-    
-    model.triangles.forEach(tri => {
-        let vertices = [tri.v1, tri.v2, tri.v3];
-        vertices.forEach(v => {
-            minX = Math.min(minX, Math.floor(v.x));
-            maxX = Math.max(maxX, Math.floor(v.x));
-            minY = Math.min(minY, Math.floor(v.y));
-            maxY = Math.max(maxY, Math.floor(v.y));
-        });
-    });
-    
-    return {
-        x: Math.floor((minX + maxX) / 2),
-        y: Math.floor((minY + maxY) / 2)
-    };
-}
+        function calculateModelCenter(modelIndex) {
+            if (modelIndex < 0 || modelIndex >= models.length) return { x: 32.0, y: 16.0 }; 
+            
+            let model = models[modelIndex];
+            if (!model.triangles || model.triangles.length === 0) return { x: 32.0, y: 16.0 };
+            
+            let sumX = 0;
+            let sumY = 0;
+            let count = 0;
+            
+            model.triangles.forEach(tri => {
+                let vertices = [tri.v1, tri.v2, tri.v3];
+                vertices.forEach(v => {
+                    sumX += v.x;
+                    sumY += v.y;
+                    count++;
+                });
+            });
+            
+            return {
+                x: sumX / count,
+                y: sumY / count
+            };
+        }
+
+
+        function drawActionHighlights() {
+            if (!currentEditingAction || !isAnimationMode) return;
+            
+            let { trackIndex, cellIndex, actionIndex } = currentEditingAction;
+            
+            // Get the track and action
+            if (selectedAnimationIndex < 0 || selectedAnimationIndex >= animations.length) return;
+            let anim = animations[selectedAnimationIndex];
+            if (!anim.tracks || trackIndex >= anim.tracks.length) return;
+            
+            let track = anim.tracks[trackIndex];
+            let action = timelineTracks[trackIndex]?.cells[cellIndex]?.[actionIndex];
+            if (!action) return;
+            
+            let model = models[track.modelIndex];
+            if (!model || !model.visible) return;
+            
+            // Save context state
+            ctx.save();
+            
+            // Highlight based on track type (whole model or point group)
+            if (track.groupIndex !== -1 && model.pointGroups && model.pointGroups[track.groupIndex]) {
+                // It's a point group - highlight all points in the group
+                let group = model.pointGroups[track.groupIndex];
+                let globalIdx = 0;
+                
+                ctx.strokeStyle = "#4CAF50";
+                ctx.lineWidth = 3;
+                ctx.shadowColor = "#4CAF50";
+                ctx.shadowBlur = 10;
+                
+                for (let i = 0; i < model.triangles.length; i++) {
+                    let tri = model.triangles[i];
+                    let vertices = [tri.v1, tri.v2, tri.v3];
+                    for (let j = 0; j < 3; j++) {
+                        let v = vertices[j];
+                        if (group.pointIndices.includes(globalIdx)) {
+                            let x = Math.floor(v.x) * SCALE + SCALE/2;
+                            let y = Math.floor(v.y) * SCALE + SCALE/2;
+                            
+                            // Draw highlight circle
+                            ctx.beginPath();
+                            ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                            ctx.stroke();
+                            
+                            // Draw inner fill
+                            ctx.fillStyle = "rgba(76, 175, 80, 0.3)";
+                            ctx.beginPath();
+                            ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                            ctx.fill();
+                        }
+                        globalIdx++;
+                    }
+                }
+            } else {
+                // It's a whole model - highlight bounding box and all points
+                let points = new Set();
+                let minX = 64, maxX = 0, minY = 32, maxY = 0;
+                
+                for (let i = 0; i < model.triangles.length; i++) {
+                    let tri = model.triangles[i];
+                    let vertices = [tri.v1, tri.v2, tri.v3];
+                    for (let j = 0; j < 3; j++) {
+                        let v = vertices[j];
+                        let x = Math.floor(v.x);
+                        let y = Math.floor(v.y);
+                        points.add({x, y});
+                        minX = Math.min(minX, x);
+                        maxX = Math.max(maxX, x);
+                        minY = Math.min(minY, y);
+                        maxY = Math.max(maxY, y);
+                    }
+                }
+                
+                // Draw bounding box
+                ctx.strokeStyle = "#ff9900";
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(minX * SCALE, minY * SCALE, (maxX - minX + 1) * SCALE, (maxY - minY + 1) * SCALE);
+                ctx.setLineDash([]);
+                
+                // Highlight all points
+                ctx.shadowColor = "#ff9900";
+                ctx.shadowBlur = 10;
+                points.forEach(point => {
+                    let x = point.x * SCALE + SCALE/2;
+                    let y = point.y * SCALE + SCALE/2;
+                    
+                    ctx.strokeStyle = "#ff9900";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = "rgba(255, 153, 0, 0.2)";
+                    ctx.beginPath();
+                    ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                    ctx.fill();
+                });
+            }
+            
+            // If action has position parameters, highlight them
+            let actionDef = animationDesc[action.type];
+            if (actionDef && action.parameters) {
+                // Highlight center position if it exists
+                if (action.parameters.centerx !== undefined && action.parameters.centery !== undefined) {
+                    let x = action.parameters.centerx * SCALE + SCALE/2;
+                    let y = action.parameters.centery * SCALE + SCALE/2;
+                    
+                    ctx.strokeStyle = "#ff3333";
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = "#ff3333";
+                    ctx.beginPath();
+                    ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = "rgba(255, 51, 51, 0.3)";
+                    ctx.beginPath();
+                    ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // Draw "C" label
+                    ctx.fillStyle = "#ff3333";
+                    ctx.font = "bold 12px 'Courier New'";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.shadowBlur = 4;
+                    ctx.fillText("C", x, y);
+                }
+                
+                // Highlight translate position if it exists
+                if (action.parameters.x !== undefined && action.parameters.y !== undefined) {
+                    let x = action.parameters.x * SCALE + SCALE/2;
+                    let y = action.parameters.y * SCALE + SCALE/2;
+                    
+                    ctx.strokeStyle = "#33ff33";
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = "#33ff33";
+                    ctx.beginPath();
+                    ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = "rgba(51, 255, 51, 0.3)";
+                    ctx.beginPath();
+                    ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // Draw "T" label
+                    ctx.fillStyle = "#33ff33";
+                    ctx.font = "bold 12px 'Courier New'";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.shadowBlur = 4;
+                    ctx.fillText("T", x, y);
+                }
+            }
+            
+            ctx.restore();
+        }
+        
+        function startPositionPickerDrag(e) {
+            if (!positionPickerActive || !pendingPositionField) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            positionPickerDragging = true;
+            
+            // Get initial position
+            let rect = c.getBoundingClientRect();
+            let scaleX = c.width / rect.width;
+            let scaleY = c.height / rect.height;
+            let physX = (e.clientX - rect.left) * scaleX;
+            let physY = (e.clientY - rect.top) * scaleY;
+            
+            // Convert to logical coordinates
+            let gridX = physX / SCALE;
+            let gridY = physY / SCALE;
+            
+            // Apply constraints
+            gridX = Math.max(0, Math.min(64, gridX));
+            gridY = Math.max(0, Math.min(32, gridY));
+            
+            positionPickerStartPos = { x: gridX, y: gridY };
+            positionPickerCurrentPos = { x: gridX, y: gridY };
+            
+            // Update the field immediately
+            updatePositionPickerField(gridX, gridY, e.ctrlKey);
+            
+            // Change cursor to grabbing
+            c.style.cursor = 'grabbing';
+        }
+
+        function updatePositionPickerDrag(e) {
+            if (!positionPickerDragging || !positionPickerActive || !pendingPositionField) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Get current position
+            let rect = c.getBoundingClientRect();
+            let scaleX = c.width / rect.width;
+            let scaleY = c.height / rect.height;
+            let physX = (e.clientX - rect.left) * scaleX;
+            let physY = (e.clientY - rect.top) * scaleY;
+            
+            // Convert to logical coordinates
+            let gridX = physX / SCALE;
+            let gridY = physY / SCALE;
+            
+            // Apply constraints
+            gridX = Math.max(0, Math.min(64, gridX));
+            gridY = Math.max(0, Math.min(32, gridY));
+            
+            positionPickerCurrentPos = { x: gridX, y: gridY };
+            
+            // Update the field with current position
+            updatePositionPickerField(gridX, gridY, e.ctrlKey);
+        }
+
+        function updatePositionPickerField(x, y, ctrlKey) {
+            if (!pendingPositionField) return;
+            
+            let fieldType = pendingPositionField.fieldType;
+            
+            if (fieldType === 'center') {
+                let xInput = document.getElementById('edit_param_center_x');
+                let yInput = document.getElementById('edit_param_center_y');
+                if (xInput && yInput) {
+                    if (ctrlKey) {
+                        // No grid snap - use raw float with 1 decimal precision
+                        xInput.value = x.toFixed(1);
+                        yInput.value = y.toFixed(1);
+                    } else {
+                        // Grid snap to nearest integer
+                        xInput.value = Math.round(x);
+                        yInput.value = Math.round(y);
+                    }
+                    saveActionChangesInline();
+                }
+            } else if (fieldType === 'translate') {
+                let xInput = document.getElementById('edit_param_translate_x');
+                let yInput = document.getElementById('edit_param_translate_y');
+                if (xInput && yInput) {
+                    if (ctrlKey) {
+                        // No grid snap - use raw float with 1 decimal precision
+                        xInput.value = x.toFixed(1);
+                        yInput.value = y.toFixed(1);
+                    } else {
+                        // Grid snap to nearest integer
+                        xInput.value = Math.round(x);
+                        yInput.value = Math.round(y);
+                    }
+                    saveActionChangesInline();
+                }
+            }
+        }
+
+        function endPositionPickerDrag(e) {
+            if (positionPickerDragging) {
+                positionPickerDragging = false;
+                c.style.cursor = 'crosshair';
+                
+                // Don't cancel - stay in picking mode until ESC
+                // Just update one final time
+                if (e && positionPickerActive && pendingPositionField) {
+                    let rect = c.getBoundingClientRect();
+                    let scaleX = c.width / rect.width;
+                    let scaleY = c.height / rect.height;
+                    let physX = (e.clientX - rect.left) * scaleX;
+                    let physY = (e.clientY - rect.top) * scaleY;
+                    
+                    let gridX = physX / SCALE;
+                    let gridY = physY / SCALE;
+                    
+                    gridX = Math.max(0, Math.min(64, gridX));
+                    gridY = Math.max(0, Math.min(32, gridY));
+                    
+                    updatePositionPickerField(gridX, gridY, e.ctrlKey);
+                }
+            }
+        }
+
         // Initial render
         renderModelList();
         updateCodeDisplay();
