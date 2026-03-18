@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <style>
+<style>
         body {
             margin: 0;
             padding: 0;
@@ -15,14 +15,13 @@
             overflow: hidden;
         }
 
-        /* MAIN LAYOUT */
+        
         .main-layout {
             display: flex;
             flex: 1;
             position: relative;
         }
 
-        /* LEFT PANEL - with logo at top */
         .left-panel {
             width: 80px;
             background: #2d2d2d;
@@ -38,7 +37,7 @@
             z-index: 100;
         }
 
-        /* Logo container at the very top */
+        
         .logo-container {
             width: 100%;
             display: flex;
@@ -57,7 +56,7 @@
             image-rendering: pixelated;
         }
 
-        /* Save/Load buttons at top of tool bar */
+        
         .top-tool-buttons {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -89,7 +88,10 @@
             border-color: #777;
         }
 
-        .top-tool-icon:hover::after {
+        
+        .tool-icon:hover::after,
+        .top-tool-icon:hover::after,
+        .action-palette-item:hover::after {
             content: attr(data-tooltip);
             position: absolute;
             left: 110%;
@@ -107,7 +109,7 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.8);
         }
 
-        /* Tools section - hidden in animation mode */
+        
         .tools-section {
             width: 100%;
             display: flex;
@@ -167,23 +169,7 @@
             background: #4a4a4a;
             border-color: #777;
         }
-        .tool-icon:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            left: 110%;
-            top: 50%;
-            transform: translateY(-50%);
-            background: #111;
-            color: #fff;
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-            white-space: nowrap;
-            z-index: 10000;
-            border: 1px solid #ff9900;
-            pointer-events: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.8);
-        }
+
         .color-picker-container {
             display: flex;
             flex-direction: column;
@@ -377,7 +363,7 @@
             transform: scale(1.05);
         }
 
-        /* Mode toggle between sections */
+        
         .mode-toggle-container {
             display: flex;
             align-items: center;
@@ -448,7 +434,7 @@
             border: 1px solid #444;
         }
 
-        /* Model list container */
+        
         .model-list {
             display: flex;
             flex-direction: column;
@@ -725,7 +711,7 @@
             font-size: 12px;
         }
 
-        /* Stats section at bottom of models */
+        
         .stats-section {
             background: #2d2d2d;
             border-radius: 4px;
@@ -744,7 +730,7 @@
             font-weight: bold;
         }
 
-        /* MAIN CONTENT */
+        
         .main-content {
             flex: 1;
             display: flex;
@@ -784,7 +770,7 @@
         
         .info-bar-right {
             position: absolute;
-            right: 300px; /* Position near the right panel (width 280px + padding) */
+            right: 300px; 
             top: 20px;
             background: #1e1e1e;
             color: #ff9900;
@@ -843,8 +829,6 @@
             box-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
     
-        
-        /* Code output - hidden in animation mode */
         .code-output-container {
             margin-top: 10px;
             background: #1e1e1e;
@@ -1241,7 +1225,6 @@
             width: 100%;
         }
 
-        /* Shapes Window */
         .shapes-window {
             position: fixed;
             top: 50%;
@@ -1356,7 +1339,6 @@
             z-index: 9999;
         }
         
-        /* Logo navigation modal */
         .logo-modal {
             position: fixed;
             top: 50%;
@@ -1445,7 +1427,7 @@
             box-sizing: border-box;
         }
 
-        /* Timeline - only visible in animation mode */
+
         .timeline-container {
             margin-top: 10px;
             background: #1e1e1e;
@@ -1499,7 +1481,6 @@
             max-width: 300px;
             backdrop-filter: blur(1px);
             pointer-events: none;
-            /* Allow content to determine height */
             height: auto;
         }
         .canvas-info-bar .info-item {
@@ -1938,43 +1919,6 @@
             border: 1px solid #444;
         }
 
-        /* Enhanced scrollbars */
-        .section-content::-webkit-scrollbar,
-        .model-list::-webkit-scrollbar,
-        .animation-list::-webkit-scrollbar,
-        .timeline-tracks::-webkit-scrollbar,
-        .code-output::-webkit-scrollbar,
-        .overlay-panel-content::-webkit-scrollbar,
-        .model-collapse-content::-webkit-scrollbar {
-            width: 14px;
-            height: 14px;
-        }
-
-        .section-content::-webkit-scrollbar-track,
-        .model-list::-webkit-scrollbar-track,
-        .animation-list::-webkit-scrollbar-track,
-        .timeline-tracks::-webkit-scrollbar-track,
-        .code-output::-webkit-scrollbar-track,
-        .overlay-panel-content::-webkit-scrollbar-track,
-        .model-collapse-content::-webkit-scrollbar-track {
-            background: #2d2d2d;
-            border-radius: 7px;
-            border: 1px solid #444;
-        }
-
-        .section-content::-webkit-scrollbar-thumb,
-        .model-list::-webkit-scrollbar-thumb,
-        .animation-list::-webkit-scrollbar-thumb,
-        .timeline-tracks::-webkit-scrollbar-thumb,
-        .code-output::-webkit-scrollbar-thumb,
-        .overlay-panel-content::-webkit-scrollbar-thumb,
-        .model-collapse-content::-webkit-scrollbar-thumb {
-            background: #ff9900;
-            border-radius: 7px;
-            border: 2px solid #2d2d2d;
-            min-height: 40px;
-        }
-
         .section-content::-webkit-scrollbar-thumb:hover,
         .model-list::-webkit-scrollbar-thumb:hover,
         .animation-list::-webkit-scrollbar-thumb:hover,
@@ -1983,16 +1927,6 @@
         .overlay-panel-content::-webkit-scrollbar-thumb:hover,
         .model-collapse-content::-webkit-scrollbar-thumb:hover {
             background: #ffaa33;
-        }
-
-        .section-content::-webkit-scrollbar-corner,
-        .model-list::-webkit-scrollbar-corner,
-        .animation-list::-webkit-scrollbar-corner,
-        .timeline-tracks::-webkit-scrollbar-corner,
-        .code-output::-webkit-scrollbar-corner,
-        .overlay-panel-content::-webkit-scrollbar-corner,
-        .model-collapse-content::-webkit-scrollbar-corner {
-            background: #2d2d2d;
         }
 
         .section-content,
@@ -2175,6 +2109,73 @@
             width: calc(100% - 16px);
             margin-left: 0;
         }
+
+
+        .action-palette-item {
+            width: 32px;
+            height: 32px;
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            font-size: 16px;
+            color: #ccc;
+            transition: all 0.1s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .action-palette-item:hover {
+            background: #4a4a4a;
+            border-color: #777;
+        }
+
+        .action-palette-item:active {
+            cursor: grabbing;
+        }
+
+        .action-palette-item.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+
+        .timeline-control-buttons .timeline-btn {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #3c3c3c;
+        }
+
+        .timeline-control-buttons .timeline-btn:hover {
+            background: #4a4a4a;
+            border-color: #ff9900;
+        }
+
+        .timeline-cell.drag-over {
+            background: #5a5a5a !important;
+            border: 2px solid #ff9900 !important;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255,153,0,0.5);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+
+        .timeline-cell.drag-target {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255,153,0,0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255,153,0,0); }
+            100% { box-shadow: 0 0 0 0 rgba(255,153,0,0); }
+        }
     </style>
 </head>
 <body>
@@ -2235,11 +2236,9 @@
 
             <!-- Animation tools section - visible only in animation mode -->
             <div class="animation-tools-section" id="animationToolsSection">
-                <div class="panel-section-label">ANIM TOOLS</div>
-                <div class="tool-grid">
-                    <div class="tool-icon" id="toolPlayPause" data-tooltip="Play/Pause (P)">▶️</div>
-                    <div class="tool-icon" id="toolStep" data-tooltip="Step forward (Right Arrow)">⏯️</div>
-                    <div class="tool-icon" id="toolStop" data-tooltip="Stop (S)">⏹️</div>
+                <div class="panel-section-label">ACTIONS</div>
+                <div class="tool-grid" id="actionPalette">
+                    <!-- Action icons will be populated by JavaScript -->
                 </div>
                 
                 <div class="tool-separator"></div>
@@ -2320,7 +2319,15 @@
             <!-- Timeline - visible only in animation mode -->
             <div class="timeline-container" id="timelineContainer">
                 <div class="timeline-header">
-                    <h3>🎬 TIMELINE</h3>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h3>🎬 TIMELINE</h3>
+                        <!-- Animation control buttons moved here -->
+                        <div class="timeline-control-buttons" style="display: flex; gap: 5px; margin-left: 10px;">
+                            <div class="timeline-btn" id="toolPlayPause" data-tooltip="Play/Pause (P)">▶️</div>
+                            <div class="timeline-btn" id="toolStep" data-tooltip="Step forward (Right Arrow)">⏯️</div>
+                            <div class="timeline-btn" id="toolStop" data-tooltip="Stop (S)">⏹️</div>
+                        </div>
+                    </div>
                     <div style="display: flex; align-items: center; gap: 20px; flex: 1; justify-content: center;">
                         <!-- Action Editor Controls (visible when editing) -->
                         <div id="actionControls" style="display: none; background: #2d2d2d; border: 1px solid #ff9900; border-radius: 4px; padding: 5px 15px; align-items: center; gap: 20px;">
@@ -2572,13 +2579,13 @@
         // Mode state
         var isAnimationMode = false;
         var savedPointsData = null;
-        var savedVisibilityState = []; // Store original visibility when entering animation mode
+        var savedVisibilityState = []; 
 
-        // Undo/Redo stacks
+        // Undo/Redo 
         var undoStack = [];
         var redoStack = [];
 
-        // Models data
+   
         var models = [];
         var selectedModelIndex = 0;
 
@@ -2610,10 +2617,10 @@
         var selecting = false;
         var selectionStart = { x: 0, y: 0 };
         var selectionEnd = { x: 0, y: 0 };
-        var selectedVertices = []; // array of { triIndex, vertexIndex, vx, vy, globalPointIndex }
+        var selectedVertices = [];
         var multiDragStart = null;
         var multiDragging = false;
-        var selectionFromSelectTool = false; // Tracks if selection came from select tool
+        var selectionFromSelectTool = false; 
 
         // Hover point index
         var hoverPointInfo = null;
@@ -2624,18 +2631,10 @@
         var oscillationTimer = null;
         var oscillationPhase = 0;
         var oscillationSpeed = 0.3;
-
-        // Selected point group index (for the active model)
-        var selectedGroupIndex = -1; // -1 means no group selected
-
-        // Hover state for group badges
+        var selectedGroupIndex = -1; 
         var hoveredGroupInfo = null; 
-        var hoveredTrackInfo = null; // For track label hover connections
-
-        // Confirmation dialog state
+        var hoveredTrackInfo = null; 
         var pendingGroupDelete = null;
-
-        // Name dialog state
         var pendingModelName = null;
 
         // Settings dialog state
@@ -2783,33 +2782,139 @@
 
         var actionFunctions = {
             "move": function(targetObject, parameters, dt) {
+                // Move over time - will implement later
                 console.log("move action", targetObject, parameters, dt);
             },
             
             "reset": function(targetObject, parameters) {
                 console.log("reset action", targetObject, parameters);
+                
+                if (!savedPointsData) return;
+                
+                let target = targetObject.target;
+                
+                if (target.type === TargetType.MODEL) {
+                    // Reset entire model
+                    let model = models[target.modelIndex];
+                    let savedModel = savedPointsData[target.modelIndex];
+                    
+                    if (savedModel) {
+                        model.triangles = JSON.parse(JSON.stringify(savedModel.triangles));
+                    }
+                } else if (target.type === TargetType.POINT_GROUP) {
+                    // Reset specific point group
+                    let model = models[target.modelIndex];
+                    let savedModel = savedPointsData[target.modelIndex];
+                    let group = model.pointGroups[target.groupIndex];
+                    
+                    if (savedModel && group) {
+                        // Get all original positions for points in this group
+                        let originalPositions = [];
+                        let globalIdx = 0;
+                        
+                        // First, collect original positions from saved data
+                        for (let i = 0; i < savedModel.triangles.length; i++) {
+                            let tri = savedModel.triangles[i];
+                            let vertices = [tri.v1, tri.v2, tri.v3];
+                            for (let j = 0; j < 3; j++) {
+                                if (group.pointIndices.includes(globalIdx)) {
+                                    originalPositions.push({
+                                        triIndex: i,
+                                        vertexIndex: j,
+                                        x: vertices[j].x,
+                                        y: vertices[j].y
+                                    });
+                                }
+                                globalIdx++;
+                            }
+                        }
+                        
+                        // Now apply original positions to current model
+                        globalIdx = 0;
+                        for (let i = 0; i < model.triangles.length; i++) {
+                            let tri = model.triangles[i];
+                            let vertices = [tri.v1, tri.v2, tri.v3];
+                            for (let j = 0; j < 3; j++) {
+                                let posIndex = originalPositions.findIndex(p => 
+                                    p.triIndex === i && p.vertexIndex === j
+                                );
+                                if (posIndex >= 0) {
+                                    vertices[j].x = originalPositions[posIndex].x;
+                                    vertices[j].y = originalPositions[posIndex].y;
+                                }
+                                globalIdx++;
+                            }
+                        }
+                    }
+                }
+                
+                draw();
             },
             
             "translate": function(targetObject, parameters) {
                 console.log("translate action", targetObject, parameters);
+                
+                let target = targetObject.target;
+                let dx = parameters.x || 0;
+                let dy = parameters.y || 0;
+                
+                if (target.type === TargetType.MODEL) {
+                    // Translate entire model
+                    let model = models[target.modelIndex];
+                    
+                    for (let i = 0; i < model.triangles.length; i++) {
+                        let tri = model.triangles[i];
+                        tri.v1.x = toFloat32(Math.max(0, Math.min(64, tri.v1.x + dx)));
+                        tri.v1.y = toFloat32(Math.max(0, Math.min(32, tri.v1.y + dy)));
+                        tri.v2.x = toFloat32(Math.max(0, Math.min(64, tri.v2.x + dx)));
+                        tri.v2.y = toFloat32(Math.max(0, Math.min(32, tri.v2.y + dy)));
+                        tri.v3.x = toFloat32(Math.max(0, Math.min(64, tri.v3.x + dx)));
+                        tri.v3.y = toFloat32(Math.max(0, Math.min(32, tri.v3.y + dy)));
+                    }
+                } else if (target.type === TargetType.POINT_GROUP) {
+                    // Translate specific point group
+                    let model = models[target.modelIndex];
+                    let group = model.pointGroups[target.groupIndex];
+                    
+                    if (group) {
+                        let globalIdx = 0;
+                        for (let i = 0; i < model.triangles.length; i++) {
+                            let tri = model.triangles[i];
+                            let vertices = [tri.v1, tri.v2, tri.v3];
+                            for (let j = 0; j < 3; j++) {
+                                if (group.pointIndices.includes(globalIdx)) {
+                                    vertices[j].x = toFloat32(Math.max(0, Math.min(64, vertices[j].x + dx)));
+                                    vertices[j].y = toFloat32(Math.max(0, Math.min(32, vertices[j].y + dy)));
+                                }
+                                globalIdx++;
+                            }
+                        }
+                    }
+                }
+                
+                draw();
             },
             
             "rotate": function(targetObject, parameters) {
                 console.log("rotate action", targetObject, parameters);
+                // Will implement later
             },
             
             "scale": function(targetObject, parameters) {
                 console.log("scale action", targetObject, parameters);
+                // Will implement later
             },
             
             "spin": function(targetObject, parameters, dt) {
                 console.log("spin action", targetObject, parameters, dt);
+                // Will implement later
             },
             
             "grow": function(targetObject, parameters, dt) {
                 console.log("grow action", targetObject, parameters, dt);
+                // Will implement later
             }
-        }
+        };
 
         // ===========================================
         // UTILITY FUNCTIONS
@@ -3148,6 +3253,36 @@
         // ===========================================
         // ANIMATION CONTROL FUNCTIONS
         // ===========================================
+        function processCurrentFrame() {
+            if (!isAnimationMode || selectedAnimationIndex < 0) return;
+            
+            let anim = animations[selectedAnimationIndex];
+            
+            // Process each track at the current frame for non-instant actions
+            anim.tracks.forEach((track, trackIndex) => {
+                if (!track.actions || !track.actions[currentFrame]) return;
+                
+                let cellActions = track.actions[currentFrame];
+                if (!cellActions || cellActions.length === 0) return;
+                
+                // Create target object
+                let target = {
+                    type: track.groupIndex === -1 ? TargetType.MODEL : TargetType.POINT_GROUP,
+                    modelIndex: track.modelIndex,
+                    groupIndex: track.groupIndex
+                };
+                
+                // Process each action in this cell
+                cellActions.forEach(action => {
+                    let actionFunc = actionFunctions[action.type];
+                    if (actionFunc && !animationDesc[action.type].instant) {
+                        // Only process non-instant actions here
+                        // Instant actions are handled by computeCumulativeState
+                        actionFunc({ target: target }, action.parameters, timelineInterval / 1000); // dt in seconds
+                    }
+                });
+            });
+        }
 
         function playAnimation() {
             if (!isAnimationMode) return;
@@ -3157,16 +3292,18 @@
                 return;
             }
             
-            // If we're already at the last frame, reset to beginning if repeat is on
-            if (currentFrame >= totalCells - 1) {
-                if (repeatAnimation) {
-                    currentFrame = 0;
-                    highlightCurrentFrame();
-                    updateFrameIndicator();
-                } else {
-                    // Already at the end, nothing to play
-                    return;
-                }
+            // If we're already at the last frame and repeat is off, nothing to play
+            if (!repeatAnimation && currentFrame >= totalCells - 1) {
+                return;
+            }
+            
+            // If we're at the last frame and repeat is on, reset to beginning
+            if (repeatAnimation && currentFrame >= totalCells - 1) {
+                currentFrame = 0;
+                highlightCurrentFrame();
+                updateFrameIndicator();
+                processCurrentFrame();
+                draw();
             }
             
             isPlaying = true;
@@ -3184,6 +3321,12 @@
                     currentFrame++;
                     highlightCurrentFrame();
                     updateFrameIndicator();
+                    
+                    // Compute cumulative state up to current frame
+                    computeCumulativeState(currentFrame);
+                    
+                    // Also process current frame actions
+                    processCurrentFrame();
                     draw();
                 } else {
                     // Reached the end
@@ -3192,10 +3335,17 @@
                         currentFrame = 0;
                         highlightCurrentFrame();
                         updateFrameIndicator();
+                        
+                        // Compute cumulative state up to current frame
+                        computeCumulativeState(currentFrame);
+                        
+                        // Also process current frame actions
+                        processCurrentFrame();
                         draw();
                     } else {
-                        // Stop at the end
-                        stopAnimation();
+                        // Stop at the end but KEEP the last frame displayed
+                        pauseAnimation();
+                        // Don't change currentFrame - keep it at the last frame
                     }
                 }
             }, timelineInterval);
@@ -3212,6 +3362,10 @@
                 clearInterval(animationTimer);
                 animationTimer = null;
             }
+            
+            // Don't change currentFrame - keep showing current frame
+            // Just ensure the current frame is still highlighted
+            highlightCurrentFrame();
         }
 
         function buttonStopAnimation() {
@@ -3219,6 +3373,7 @@
             clearPlayingHighlight();
             stopAnimation()
         }
+
         function stopAnimation() {
             if (!isAnimationMode) return;
             
@@ -3231,10 +3386,27 @@
                 animationTimer = null;
             }
             
-            
-            // Just ensure the current frame is highlighted
+            // Reset to first frame
+            clearPlayingHighlight();
+            currentFrame = 0;
             highlightCurrentFrame();
             updateFrameIndicator();
+            
+            // Reset all models to their original positions
+            if (savedPointsData) {
+                models.forEach((model, index) => {
+                    if (savedPointsData[index]) {
+                        // Deep restore triangles
+                        model.triangles = JSON.parse(JSON.stringify(savedPointsData[index].triangles));
+                        // Deep restore point groups (if needed, though they don't contain positions)
+                        model.pointGroups = JSON.parse(JSON.stringify(savedPointsData[index].pointGroups || []));
+                    }
+                });
+            }
+            
+            // Process frame 0 to ensure everything is reset
+            processCurrentFrame();
+            draw();
         }
 
         function stepForward() {
@@ -3254,7 +3426,12 @@
             
             highlightCurrentFrame();
             updateFrameIndicator();
-            draw();
+            
+            // Compute cumulative state up to current frame
+            computeCumulativeState(currentFrame);
+            
+            // Also process current frame actions (for any non-instant actions we might add later)
+            processCurrentFrame();
         }
 
         function stepBackward() {
@@ -3274,7 +3451,12 @@
             
             highlightCurrentFrame();
             updateFrameIndicator();
-            draw();
+            
+            // Compute cumulative state up to current frame
+            computeCumulativeState(currentFrame);
+            
+            // Also process current frame actions
+            processCurrentFrame();
         }
 
         function clearPlayingHighlight() {
@@ -3732,34 +3914,42 @@
             }
             
             if (action.parameters.x !== undefined && action.parameters.y !== undefined && translateButton) {
-                let translateX = action.parameters.x;
-                let translateY = action.parameters.y;
-
-                let endX = canvasRect.left + translateX * SCALE + SCALE/2;
-                let endY = canvasRect.top + translateY * SCALE + SCALE/2;
+                let offsetX = action.parameters.x;
+                let offsetY = action.parameters.y;
                 
-                let btnRect = translateButton.getBoundingClientRect();
-                let startX = btnRect.left + btnRect.width / 2;
-                let startY = btnRect.top + btnRect.height / 2;
-
-                connectionCtx.beginPath();
-                connectionCtx.strokeStyle = "#ff3333";
-                connectionCtx.lineWidth = 1.5;
-                connectionCtx.setLineDash([4, 2]);
-                connectionCtx.moveTo(startX, startY);
-                connectionCtx.lineTo(endX, endY);
-                connectionCtx.stroke();
-                
-
-                connectionCtx.fillStyle = "#ff3333";
-                connectionCtx.beginPath();
-                connectionCtx.arc(endX, endY, 4, 0, 2 * Math.PI);
-                connectionCtx.fill();
-                
-
+                // Calculate target position using top-left corner + offset
                 let bounds = getBoundingBox(track);
                 if (bounds) {
+                    let targetX = bounds.minX + offsetX;
+                    let targetY = bounds.minY + offsetY;
+                    
+                    // Clamp to canvas bounds
+                    targetX = Math.max(0, Math.min(64, targetX));
+                    targetY = Math.max(0, Math.min(32, targetY));
+                    
+                    let endX = canvasRect.left + targetX * SCALE + SCALE/2;
+                    let endY = canvasRect.top + targetY * SCALE + SCALE/2;
+                    
+                    let btnRect = translateButton.getBoundingClientRect();
+                    let startX = btnRect.left + btnRect.width / 2;
+                    let startY = btnRect.top + btnRect.height / 2;
 
+                    // Draw line from button to target position
+                    connectionCtx.beginPath();
+                    connectionCtx.strokeStyle = "#ff3333";
+                    connectionCtx.lineWidth = 1.5;
+                    connectionCtx.setLineDash([4, 2]);
+                    connectionCtx.moveTo(startX, startY);
+                    connectionCtx.lineTo(endX, endY);
+                    connectionCtx.stroke();
+                    
+                    // Draw target point
+                    connectionCtx.fillStyle = "#ff3333";
+                    connectionCtx.beginPath();
+                    connectionCtx.arc(endX, endY, 4, 0, 2 * Math.PI);
+                    connectionCtx.fill();
+                    
+                    // Draw line from model bounds top-left to target position
                     let topLeftX = canvasRect.left + bounds.minX * SCALE + SCALE/2;
                     let topLeftY = canvasRect.top + bounds.minY * SCALE + SCALE/2;
                     
@@ -3770,11 +3960,6 @@
                     connectionCtx.moveTo(topLeftX, topLeftY);
                     connectionCtx.lineTo(endX, endY);
                     connectionCtx.stroke();
-                    
-                    connectionCtx.fillStyle = "#ff9900";
-                    connectionCtx.beginPath();
-                    connectionCtx.arc(topLeftX, topLeftY, 3, 0, 2 * Math.PI);
-                    connectionCtx.fill();
                 }
             }
             
@@ -3917,7 +4102,7 @@
                     connectionCtx.fill();
                 });
             } else {
-                // It's a whole model - draw lines to all vertices
+                
                 let points = new Set();
                 
                 for (let i = 0; i < model.triangles.length; i++) {
@@ -4274,7 +4459,6 @@
             if (selectedVertices.length > 0) {
                 const indices = selectedVertices.map(s => s.globalPointIndex).sort((a,b)=>a-b);
                 pointSpan.textContent = indices.join(', ');
-                // Make sure the text wraps properly
                 pointSpan.style.whiteSpace = 'normal';
                 pointSpan.style.wordBreak = 'break-word';
             } else if (hoverPointInfo) {
@@ -4286,7 +4470,7 @@
             }
 
             let container = document.getElementById('groupButtonContainer');
-            container.innerHTML = ''; // Clear existing
+            container.innerHTML = ''; 
 
             if (!isAnimationMode && models.length > 0 && selectedVertices.length > 0 && selectedGroupIndex === -1) {
                 if (selectionFromSelectTool) {
@@ -4701,7 +4885,7 @@
                                         let targetX = positions[0];
                                         let targetY = positions[1];
                                         
-                                        // Find all points close to this position
+ 
                                         let pointsToRemove = [];
                                         let globalIdx = 0;
                                         for (let i = 0; i < active.triangles.length; i++) {
@@ -4709,7 +4893,7 @@
                                             let vertices = [tri.v1, tri.v2, tri.v3];
                                             for (let j = 0; j < 3; j++) {
                                                 let v = vertices[j];
-                                                // Check distance to the target position
+                                                
                                                 let dx = Math.abs(v.x - targetX);
                                                 let dy = Math.abs(v.y - targetY);
                                                 if (dx < 0.5 && dy < 0.5) {
@@ -4719,7 +4903,7 @@
                                             }
                                         }
                                         
-                                        // Remove these points from the group
+
                                         group.pointIndices = group.pointIndices.filter(idx => !pointsToRemove.includes(idx));
                                         renderModelList();
                                         updateCodeDisplay();
@@ -5243,8 +5427,7 @@
             anim.totalSteps = 2;
             animations.push(anim);
             selectedAnimationIndex = animations.length - 1;
-            
-            // If we're in animation mode, update visibility (new animation has no tracks, so hide all)
+
             if (isAnimationMode) {
                 models.forEach(model => {
                     model.visible = false;
@@ -5292,6 +5475,18 @@
             // Update visibility based on tracks
             if (isAnimationMode) {
                 updateVisibilityForAnimation(animIndex);
+                
+                // Reset to original positions first
+                if (savedPointsData) {
+                    models.forEach((model, index) => {
+                        if (savedPointsData[index]) {
+                            model.triangles = JSON.parse(JSON.stringify(savedPointsData[index].triangles));
+                        }
+                    });
+                }
+                
+                // Then compute cumulative state for current frame
+                computeCumulativeState(currentFrame);
             }
             
             renderTimeline();
@@ -5317,8 +5512,9 @@
         }
 
         function showAddTrackDialog() {
+      
             if (selectedAnimationIndex < 0) {
-                alert('Please select an animation first');
+                showAnimationNameDialog();
                 return;
             }
             
@@ -5590,11 +5786,11 @@
             
             document.body.appendChild(dialog);
             
-            // Add click handlers for each action type
+            
             document.querySelectorAll('.action-type-button').forEach(btn => {
                 btn.addEventListener('click', function() {
                     let type = this.dataset.type;
-                    // Create action with default parameters immediately
+
                     createActionWithDefaults(type, trackIndex, cellIndex);
                     dialog.remove();
                 });
@@ -5668,10 +5864,24 @@
             // Save to animation
             saveTimelineToAnimation();
             
+            // Show the state BEFORE this new action (cumulative up to previous frame)
+            if (cellIndex > 0) {
+                computeCumulativeState(cellIndex - 1);
+            } else {
+                // For frame 0, reset to original positions
+                if (savedPointsData) {
+                    models.forEach((model, index) => {
+                        if (savedPointsData[index]) {
+                            model.triangles = JSON.parse(JSON.stringify(savedPointsData[index].triangles));
+                        }
+                    });
+                    draw();
+                }
+            }
+            
             // Open editor for the newly created action
             showActionInEditor(trackIndex, cellIndex, timelineTracks[trackIndex].cells[cellIndex].length - 1);
         }
-
 
         function showActionParametersDialog(type, trackIndex, cellIndex) {
             let actionDef = animationDesc[type];
@@ -5779,6 +5989,7 @@
         // RENDER TIMELINE
         // ===========================================
 
+ 
         function renderTimeline() {
             const container = document.getElementById('timelineTracks');
             if (!container) return;
@@ -5898,8 +6109,44 @@
                     cell.dataset.cell = cellIndex;
                     cell.title = timeMs + 'ms';
                     
-                    // >>>>>>> PUT THE CODE HERE - INSIDE THE CELL CREATION LOOP <<<<<<<
-                    // Check if this cell has actions (cellIndex 0 should work)
+                    // Make cell droppable
+                    cell.setAttribute('droppable', 'true');
+                    
+                    // Drag and drop event handlers
+                    cell.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        this.style.background = '#5a5a5a';
+                        this.style.border = '2px solid #ff9900';
+                        this.style.transform = 'scale(1.05)';
+                        this.style.zIndex = '10';
+                    });
+                    
+                    cell.addEventListener('dragleave', function() {
+                        this.style.background = '';
+                        this.style.border = '';
+                        this.style.transform = '';
+                        this.style.zIndex = '';
+                    });
+                    
+                    cell.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        this.style.background = '';
+                        this.style.border = '';
+                        this.style.transform = '';
+                        this.style.zIndex = '';
+                        
+                        const actionType = e.dataTransfer.getData('text/plain');
+                        if (!actionType) return;
+                        
+                        const trackIndex = parseInt(this.dataset.track);
+                        const cellIndex = parseInt(this.dataset.cell);
+                        
+                        // Create action with default parameters
+                        createActionWithDefaults(actionType, trackIndex, cellIndex);
+                    });
+                    
+                    // Check if this cell has actions
                     if (timelineTracks[trackIndex].cells[cellIndex] && 
                         timelineTracks[trackIndex].cells[cellIndex].length > 0) {
                         cell.classList.add('active');
@@ -5929,7 +6176,6 @@
                         cell.appendChild(iconContainer);
                         cell.title = timelineTracks[trackIndex].cells[cellIndex].map(a => animationDesc[a.type]?.name || a.type).join(', ');
                     }
-                    // >>>>>>> END OF THE CODE TO INSERT <<<<<<<
                     
                     // Handle click on cell
                     cell.addEventListener('click', function(e) {
@@ -5946,9 +6192,25 @@
                             return;
                         }
                         
+                        // Compute cumulative state up to the PREVIOUS frame
+                        // This shows the result before applying this cell's actions
+                        if (cellIndex > 0) {
+                            computeCumulativeState(cellIndex - 1);
+                        } else {
+                            // For frame 0, reset to original positions
+                            if (savedPointsData) {
+                                models.forEach((model, index) => {
+                                    if (savedPointsData[index]) {
+                                        model.triangles = JSON.parse(JSON.stringify(savedPointsData[index].triangles));
+                                    }
+                                });
+                                draw();
+                            }
+                        }
+                        
                         // Check if cell exists and has actions
                         let hasActions = timelineTracks[trackIndex].cells[cellIndex] && 
-                                         timelineTracks[trackIndex].cells[cellIndex].length > 0;
+                                        timelineTracks[trackIndex].cells[cellIndex].length > 0;
                         
                         if (!hasActions) {
                             // Empty cell - show action type dialog
@@ -6012,12 +6274,11 @@
                             }
                         }
                     });
-                    
-                    // Handle drag start on action
+
                     cell.addEventListener('mousedown', function(e) {
                         if (e.button !== 0) return; // Left click only
                         
-                        // Only start drag if cell has actions - allow dragging from playing cells
+                        // Only start drag if cell has actions
                         if (timelineTracks[trackIndex].cells && 
                             timelineTracks[trackIndex].cells[cellIndex] && 
                             timelineTracks[trackIndex].cells[cellIndex].length > 0) {
@@ -6057,7 +6318,7 @@
                             }
                             
                             if (draggingAction) {
-                                // Create drag overlay - make it a small square with just the icon
+                                
                                 dragOverlay = document.createElement('div');
                                 dragOverlay.style.position = 'fixed';
                                 dragOverlay.style.width = '24px';
@@ -6068,16 +6329,15 @@
                                 dragOverlay.style.display = 'flex';
                                 dragOverlay.style.alignItems = 'center';
                                 dragOverlay.style.justifyContent = 'center';
-                                dragOverlay.style.fontSize = '16px';
+                                dragOverlay.style.fontSize = '20px';
                                 dragOverlay.style.pointerEvents = 'none';
                                 dragOverlay.style.zIndex = '20000';
                                 dragOverlay.style.boxShadow = '0 2px 8px rgba(0,0,0,0.5)';
                                 dragOverlay.style.border = '2px solid #ffaa33';
                                 dragOverlay.style.transition = 'all 0.1s ease';
-                                dragOverlay.textContent = animationDesc[timelineTracks[trackIndex].cells[cellIndex][draggingAction.actionIndex].type]?.icon || '⚡';
+                                dragOverlay.textContent = animationDesc[timelineTracks[trackIndex].cells[cellIndex][draggingAction.actionIndex].type]?.icon || '?';
                                 document.body.appendChild(dragOverlay);
                                 
-                                // Position initially at mouse (centered)
                                 dragOverlay.style.left = (e.clientX - 12) + 'px';
                                 dragOverlay.style.top = (e.clientY - 12) + 'px';
                                 
@@ -6126,7 +6386,7 @@
                 updateFrameIndicator();
             }
         }
-        
+
         function updateTimeHeader() {
             const headers = document.querySelectorAll('.time-header-cell');
             headers.forEach((header, index) => {
@@ -6287,14 +6547,14 @@
                 modelsToSave = models;
             }
             
-            // Prepare animations data in the correct format
+            
             let modelAnimations = animations.map(anim => ({
                 name: anim.name,
                 interval: anim.interval,
                 repeat: anim.repeat || false,
-                visibility: anim.tracks.map(track => track.name), // Array of track/group names to show
+                visibility: anim.tracks.map(track => track.name), 
                 actions: anim.tracks.map(track => {
-                    // Convert track actions to the correct format [null, {action}, null, etc.]
+                    // change actions to the correct format [null, {action}, null, etc.]
                     let actionArray = [];
                     for (let i = 0; i < (anim.totalSteps || 2); i++) {
                         if (track.actions && track.actions[i] && track.actions[i].length > 0) {
@@ -6909,7 +7169,11 @@
             e.preventDefault();
             e.stopPropagation();
             if (!isAnimationMode) return;
-            showAddTrackDialog();
+            if (selectedAnimationIndex < 0) {
+                showAnimationNameDialog();
+            }else{
+                showAddTrackDialog();
+            }
         });
 
         // Logo modal
@@ -6933,6 +7197,15 @@
                 !modal.contains(e.target) && 
                 !logo.contains(e.target)) {
                 modal.classList.remove('active');
+            }
+            
+            // Cancel position picker if clicking outside canvas and controls
+            if (positionPickerActive && 
+                !c.contains(e.target) && 
+                !e.target.closest('.pick-pos-btn-inline') &&
+                !e.target.closest('.pick-position-btn') &&
+                !e.target.closest('#positionPickerInstruction')) {
+                cancelPositionPicker();
             }
         });
 
@@ -7403,16 +7676,12 @@
                                 let isInSelection = selectedVertices.some(s => s.triIndex === hit.triIndex && s.vertexIndex === hit.vertexIndex);
                                 
                                 if (isInSelection) {
-                                    // Clicked on a vertex that's already selected
                                     if (e.shiftKey) {
-                                        // SHIFT + click on selected vertex: move just this single point
-                                        // Clear selection and move only this vertex
                                         selectedVertices = [];
                                         selectionFromSelectTool = false;
                                         saveUndoState();
                                         draggingVertex = hit;
                                     } else {
-                                        // Normal click: move all selected vertices together
                                         saveUndoState();
                                         multiDragging = true;
                                         multiDragStart = { x: mouseX, y: mouseY };
@@ -7425,9 +7694,9 @@
                                         }
                                     }
                                 } else {
-                                    // Clicked on a vertex not in selection
+                                    
                                     if (e.shiftKey) {
-                                        // SHIFT + click on new vertex: add to selection
+
                                         let active = models[selectedModelIndex];
                                         let v = [active.triangles[hit.triIndex].v1, 
                                                 active.triangles[hit.triIndex].v2, 
@@ -7442,7 +7711,7 @@
                                         selectionFromSelectTool = false;
                                         draw();
                                     } else {
-                                        // Normal click: clear selection and move this single vertex
+                                        
                                         selectedVertices = [];
                                         selectionFromSelectTool = false;
                                         saveUndoState();
@@ -7450,9 +7719,9 @@
                                     }
                                 }
                             } else {
-                                // No vertices selected
+
                                 if (e.shiftKey) {
-                                    // SHIFT + click: add to empty selection (select the vertex)
+       
                                     let active = models[selectedModelIndex];
                                     let v = [active.triangles[hit.triIndex].v1, 
                                             active.triangles[hit.triIndex].v2, 
@@ -7467,7 +7736,7 @@
                                     selectionFromSelectTool = false;
                                     draw();
                                 } else {
-                                    // Normal click: move this single vertex
+                                    
                                     saveUndoState();
                                     draggingVertex = hit;
                                 }
@@ -7609,12 +7878,12 @@
                 }
             }
         });
-        /////////////////////////////////////////MOVING STUFF
+
         var draggingAction = null; // { trackIndex, fromCellIndex, actionIndex, mouseOffsetX }
         var dragOverlay = null; // The floating element showing the dragged action
         var positionPickerActive = false; // Whether we're in position picking mode
         var pendingPositionField = null; // { trackIndex, cellIndex, actionIndex, fieldName, callback }
-function startPositionPicker(trackIndex, cellIndex, actionIndex, fieldName, callback) {
+        function startPositionPicker(trackIndex, cellIndex, actionIndex, fieldName, callback) {
             positionPickerActive = true;
             pendingPositionField = {
                 trackIndex, cellIndex, actionIndex, fieldName, callback
@@ -7956,282 +8225,316 @@ function startPositionPicker(trackIndex, cellIndex, actionIndex, fieldName, call
         // ACTION EDITOR PANEL FUNCTIONS
         // ===========================================
 
-    function showActionInEditor(trackIndex, cellIndex, actionIndex) {
-        if (!timelineTracks[trackIndex] || !timelineTracks[trackIndex].cells || 
-            !timelineTracks[trackIndex].cells[cellIndex] || 
-            !timelineTracks[trackIndex].cells[cellIndex][actionIndex]) {
-            return;
-        }
-        
-        let action = timelineTracks[trackIndex].cells[cellIndex][actionIndex];
-        let actionDef = animationDesc[action.type];
-        
-        if (!actionDef) return;
-        
-        // Remove highlight from previously selected cell
-        document.querySelectorAll('.timeline-cell.selected-action').forEach(cell => {
-            cell.classList.remove('selected-action');
-        });
-        
-        // Highlight the new selected cell
-        let selectedCell = document.querySelector(`.timeline-cell[data-track="${trackIndex}"][data-cell="${cellIndex}"]`);
-        if (selectedCell) {
-            selectedCell.classList.add('selected-action');
-        }
-        
-        currentEditingAction = { trackIndex, cellIndex, actionIndex };
-        
-        // Show the action controls
-        let controls = document.getElementById('actionControls');
-        let paramsDiv = document.getElementById('actionParams');
-        controls.style.display = 'flex';
-        controls.classList.add('editing');
-        
-        // Set label
-        document.getElementById('editingActionLabel').textContent = actionDef.icon + ' ' + actionDef.name;
-        
-        // Generate parameter fields
-        paramsDiv.innerHTML = '';
-        
-        // Group related fields
-        let centerFields = actionDef.fields.filter(f => f.name.includes('center'));
-        let translateFields = actionDef.fields.filter(f => f.name === 'x' || f.name === 'y');
-        let speedFields = actionDef.fields.filter(f => f.name.includes('speed'));
-        let scaleFields = actionDef.fields.filter(f => f.name.includes('scale'));
-        let angleFields = actionDef.fields.filter(f => f.name === 'angle' || f.name === 'rotate_speed');
-        let otherFields = actionDef.fields.filter(f => 
-            !f.name.includes('center') && 
-            f.name !== 'x' && f.name !== 'y' && 
-            !f.name.includes('speed') && 
-            !f.name.includes('scale') &&
-            f.name !== 'angle' && f.name !== 'rotate_speed'
-        );
-        
-        // Handle center fields as a group (centerx + centery)
-        if (centerFields.length === 2) {
-            let centerX = action.parameters[centerFields[0].name];
-            let centerY = action.parameters[centerFields[1].name];
-            let displayX = centerX !== null && centerX !== undefined ? centerX : '';
-            let displayY = centerY !== null && centerY !== undefined ? centerY : '';
-            
-            let fieldContainer = document.createElement('div');
-            fieldContainer.className = 'param-field';
-            fieldContainer.style.minWidth = '180px';
-            fieldContainer.innerHTML = `
-                <span class="param-label">center:</span>
-                <div style="display: flex; gap: 4px;">
-                    <input type="number" 
-                        id="edit_param_center_x" 
-                        value="${displayX}" 
-                        placeholder="x"
-                        min="0" max="64" step="1"
-                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-                    <input type="number" 
-                        id="edit_param_center_y" 
-                        value="${displayY}" 
-                        placeholder="y"
-                        min="0" max="32" step="1"
-                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-                </div>
-                <button class="pick-pos-btn-inline" data-field="center" style="background: #ff9900; color: #111; border: none; border-radius: 3px; padding: 4px 6px; cursor: pointer; font-size: 11px; margin-left: 4px;" title="Pick position on canvas">🎯</button>
-            `;
-            paramsDiv.appendChild(fieldContainer);
-        }
-        
-        // Handle translate fields (x and y) as a group with position picker
-        if (translateFields.length === 2) {
-            let xVal = action.parameters['x'] !== undefined ? action.parameters['x'] : '';
-            let yVal = action.parameters['y'] !== undefined ? action.parameters['y'] : '';
-            
-            let fieldContainer = document.createElement('div');
-            fieldContainer.className = 'param-field';
-            fieldContainer.style.minWidth = '180px';
-            fieldContainer.innerHTML = `
-                <span class="param-label">offset:</span>
-                <div style="display: flex; gap: 4px;">
-                    <input type="number" 
-                        id="edit_param_translate_x" 
-                        value="${xVal}" 
-                        placeholder="x"
-                        min="-64" max="64" step="1"
-                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-                    <input type="number" 
-                        id="edit_param_translate_y" 
-                        value="${yVal}" 
-                        placeholder="y"
-                        min="-64" max="64" step="1"
-                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-                </div>
-                <button class="pick-pos-btn-inline" data-field="translate" style="background: #ff9900; color: #111; border: none; border-radius: 3px; padding: 4px 6px; cursor: pointer; font-size: 11px; margin-left: 4px;" title="Pick position on canvas">🎯</button>
-            `;
-            paramsDiv.appendChild(fieldContainer);
-        }
-        
-        // Handle speed fields (speedx and speedy) as a group
-        if (speedFields.length === 2) {
-            let speedX = action.parameters['speedx'] !== undefined ? action.parameters['speedx'] : '';
-            let speedY = action.parameters['speedy'] !== undefined ? action.parameters['speedy'] : '';
-            
-            let fieldContainer = document.createElement('div');
-            fieldContainer.className = 'param-field';
-            fieldContainer.style.minWidth = '180px';
-            fieldContainer.innerHTML = `
-                <span class="param-label">speed:</span>
-                <div style="display: flex; gap: 4px;">
-                    <input type="number" 
-                        id="edit_param_speed_x" 
-                        value="${speedX}" 
-                        placeholder="x"
-                        min="-100" max="100" step="1"
-                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-                    <input type="number" 
-                        id="edit_param_speed_y" 
-                        value="${speedY}" 
-                        placeholder="y"
-                        min="-100" max="100" step="1"
-                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-                </div>
-                <span class="param-unit">px/s</span>
-            `;
-            paramsDiv.appendChild(fieldContainer);
-        }
-        
-        // Handle scale fields (scalex and scaley) as a group
-        if (scaleFields.length === 2) {
-            let scaleX = action.parameters['scalex'] !== undefined ? action.parameters['scalex'] : '';
-            let scaleY = action.parameters['scaley'] !== undefined ? action.parameters['scaley'] : '';
-            
-            let fieldContainer = document.createElement('div');
-            fieldContainer.className = 'param-field';
-            fieldContainer.style.minWidth = '150px';
-            fieldContainer.innerHTML = `
-                <span class="param-label">scale:</span>
-                <div style="display: flex; gap: 4px;">
-                    <input type="number" 
-                        id="edit_param_scale_x" 
-                        value="${scaleX}" 
-                        placeholder="x"
-                        min="0.1" max="10" step="0.1"
-                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-                    <input type="number" 
-                        id="edit_param_scale_y" 
-                        value="${scaleY}" 
-                        placeholder="y"
-                        min="0.1" max="10" step="0.1"
-                        style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-                </div>
-            `;
-            paramsDiv.appendChild(fieldContainer);
-        }
-        
-        // Handle angle fields with proper units
-        angleFields.forEach(field => {
-            let currentValue = action.parameters[field.name];
-            let displayValue = currentValue !== null && currentValue !== undefined ? currentValue : '';
-            
-            let fieldContainer = document.createElement('div');
-            fieldContainer.className = 'param-field';
-            
-            let unit = '';
-            if (field.name === 'angle') {
-                unit = '<span class="param-unit">degrees</span>';
-            } else if (field.name === 'rotate_speed') {
-                unit = '<span class="param-unit">°/s</span>';
+        function showActionInEditor(trackIndex, cellIndex, actionIndex) {
+            if (!timelineTracks[trackIndex] || !timelineTracks[trackIndex].cells || 
+                !timelineTracks[trackIndex].cells[cellIndex] || 
+                !timelineTracks[trackIndex].cells[cellIndex][actionIndex]) {
+                return;
             }
             
-            fieldContainer.innerHTML = `
-                <span class="param-label">${field.name === 'rotate_speed' ? 'speed' : field.name}:</span>
-                <input type="${field.type}" 
-                    id="edit_param_${field.name}" 
-                    value="${displayValue}" 
-                    ${field.min !== undefined ? `min="${field.min}"` : ''}
-                    ${field.max !== undefined ? `max="${field.max}"` : ''}
-                    ${field.step !== undefined ? `step="${field.step}"` : ''}
-                    style="width: 60px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-                ${unit}
-            `;
-            
-            paramsDiv.appendChild(fieldContainer);
-        });
-        
-    // Handle any remaining fields
-    otherFields.forEach(field => {
-        let currentValue = action.parameters[field.name];
-        let displayValue = currentValue !== null && currentValue !== undefined ? currentValue : '';
-        
-        let fieldContainer = document.createElement('div');
-        fieldContainer.className = 'param-field';
-        
-        let unit = field.unit ? `<span class="param-unit">${field.unit}</span>` : '';
-        fieldContainer.innerHTML = `
-            <span class="param-label">${field.name}:</span>
-            <input type="${field.type}" 
-                   id="edit_param_${field.name}" 
-                   value="${displayValue}" 
-                   ${field.min !== undefined ? `min="${field.min}"` : ''}
-                   ${field.max !== undefined ? `max="${field.max}"` : ''}
-                   ${field.step !== undefined ? `step="${field.step}"` : ''}
-                   style="width: 50px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
-            ${unit}
-        `;
-        
-        paramsDiv.appendChild(fieldContainer);
-    });
-    
-    // Add position picker handlers for inline buttons
-    document.querySelectorAll('.pick-pos-btn-inline').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            let fieldType = this.dataset.field;
-            startPositionPickerForEditInline(fieldType);
-        });
-    });
-    
-    // Setup delete button
-    document.getElementById('deleteInlineAction').onclick = function() {
-        if (confirm('Delete this action?')) {
-            saveTimelineState();
-            timelineTracks[trackIndex].cells[cellIndex].splice(actionIndex, 1);
-            if (timelineTracks[trackIndex].cells[cellIndex].length === 0) {
-                delete timelineTracks[trackIndex].cells[cellIndex];
+            // Compute cumulative state up to the PREVIOUS frame
+            // This shows the state before this action is applied
+            if (cellIndex > 0) {
+                computeCumulativeState(cellIndex - 1);
+            } else {
+                // For frame 0, reset to original positions
+                if (savedPointsData) {
+                    models.forEach((model, index) => {
+                        if (savedPointsData[index]) {
+                            model.triangles = JSON.parse(JSON.stringify(savedPointsData[index].triangles));
+                        }
+                    });
+                    draw();
+                }
             }
-            saveTimelineToAnimation();
-            renderTimeline();
-            closeInlineEditor();
-        }
-    };
-    
-    // Auto-save on input changes
-    setTimeout(() => {
-        document.querySelectorAll('#actionParams input').forEach(input => {
-            input.addEventListener('input', function() {
-                saveActionChangesInline();
+            
+            let action = timelineTracks[trackIndex].cells[cellIndex][actionIndex];
+            let actionDef = animationDesc[action.type];
+            
+            if (!actionDef) return;
+            
+            // Remove highlight from previously selected cell
+            document.querySelectorAll('.timeline-cell.selected-action').forEach(cell => {
+                cell.classList.remove('selected-action');
             });
-        });
-    }, 100);
+            
+            // Highlight the new selected cell
+            let selectedCell = document.querySelector(`.timeline-cell[data-track="${trackIndex}"][data-cell="${cellIndex}"]`);
+            if (selectedCell) {
+                selectedCell.classList.add('selected-action');
+            }
+            
+            currentEditingAction = { trackIndex, cellIndex, actionIndex };
+            
+            // Show the action controls
+            let controls = document.getElementById('actionControls');
+            let paramsDiv = document.getElementById('actionParams');
+            controls.style.display = 'flex';
+            controls.classList.add('editing');
+            
+            // Set label
+            document.getElementById('editingActionLabel').textContent = actionDef.icon + ' ' + actionDef.name;
+    
+            
+            // Generate parameter fields
+            paramsDiv.innerHTML = '';
+            
+            // Group related fields
+            let centerFields = actionDef.fields.filter(f => f.name.includes('center'));
+            let translateFields = actionDef.fields.filter(f => f.name === 'x' || f.name === 'y');
+            let speedFields = actionDef.fields.filter(f => f.name.includes('speed'));
+            let scaleFields = actionDef.fields.filter(f => f.name.includes('scale'));
+            let angleFields = actionDef.fields.filter(f => f.name === 'angle' || f.name === 'rotate_speed');
+            let otherFields = actionDef.fields.filter(f => 
+                !f.name.includes('center') && 
+                f.name !== 'x' && f.name !== 'y' && 
+                !f.name.includes('speed') && 
+                !f.name.includes('scale') &&
+                f.name !== 'angle' && f.name !== 'rotate_speed'
+            );
+            
+            // Handle center fields as a group (centerx + centery)
+            if (centerFields.length === 2) {
+                let centerX = action.parameters[centerFields[0].name];
+                let centerY = action.parameters[centerFields[1].name];
+                let displayX = centerX !== null && centerX !== undefined ? centerX : '';
+                let displayY = centerY !== null && centerY !== undefined ? centerY : '';
+                
+                let fieldContainer = document.createElement('div');
+                fieldContainer.className = 'param-field';
+                fieldContainer.style.minWidth = '180px';
+                fieldContainer.innerHTML = `
+                    <span class="param-label">center:</span>
+                    <div style="display: flex; gap: 4px;">
+                        <input type="number" 
+                            id="edit_param_center_x" 
+                            value="${displayX}" 
+                            placeholder="x"
+                            min="0" max="64" step="1"
+                            style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                        <input type="number" 
+                            id="edit_param_center_y" 
+                            value="${displayY}" 
+                            placeholder="y"
+                            min="0" max="32" step="1"
+                            style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                    </div>
+                    <button class="pick-pos-btn-inline" data-field="center" style="background: #ff9900; color: #111; border: none; border-radius: 3px; padding: 4px 6px; cursor: pointer; font-size: 11px; margin-left: 4px;" title="Pick position on canvas">🎯</button>
+                `;
+                paramsDiv.appendChild(fieldContainer);
+            }
+            
+            // Handle translate fields (x and y) as a group with position picker
+            if (translateFields.length === 2) {
+                let xVal = action.parameters['x'] !== undefined ? action.parameters['x'] : '';
+                let yVal = action.parameters['y'] !== undefined ? action.parameters['y'] : '';
+                
+                let fieldContainer = document.createElement('div');
+                fieldContainer.className = 'param-field';
+                fieldContainer.style.minWidth = '180px';
+                fieldContainer.innerHTML = `
+                    <span class="param-label">offset:</span>
+                    <div style="display: flex; gap: 4px;">
+                        <input type="number" 
+                            id="edit_param_translate_x" 
+                            value="${xVal}" 
+                            placeholder="x"
+                            min="-64" max="64" step="1"
+                            style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                        <input type="number" 
+                            id="edit_param_translate_y" 
+                            value="${yVal}" 
+                            placeholder="y"
+                            min="-64" max="64" step="1"
+                            style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                    </div>
+                    <button class="pick-pos-btn-inline" data-field="translate" style="background: #ff9900; color: #111; border: none; border-radius: 3px; padding: 4px 6px; cursor: pointer; font-size: 11px; margin-left: 4px;" title="Pick target position - calculates offset">🎯</button>
+                `;
+                paramsDiv.appendChild(fieldContainer);
+            }
+            
+            // Handle speed fields (speedx and speedy) as a group
+            if (speedFields.length === 2) {
+                let speedX = action.parameters['speedx'] !== undefined ? action.parameters['speedx'] : '';
+                let speedY = action.parameters['speedy'] !== undefined ? action.parameters['speedy'] : '';
+                
+                let fieldContainer = document.createElement('div');
+                fieldContainer.className = 'param-field';
+                fieldContainer.style.minWidth = '180px';
+                fieldContainer.innerHTML = `
+                    <span class="param-label">speed:</span>
+                    <div style="display: flex; gap: 4px;">
+                        <input type="number" 
+                            id="edit_param_speed_x" 
+                            value="${speedX}" 
+                            placeholder="x"
+                            min="-100" max="100" step="1"
+                            style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                        <input type="number" 
+                            id="edit_param_speed_y" 
+                            value="${speedY}" 
+                            placeholder="y"
+                            min="-100" max="100" step="1"
+                            style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                    </div>
+                    <span class="param-unit">px/s</span>
+                `;
+                paramsDiv.appendChild(fieldContainer);
+            }
+            
+            // Handle scale fields (scalex and scaley) as a group
+            if (scaleFields.length === 2) {
+                let scaleX = action.parameters['scalex'] !== undefined ? action.parameters['scalex'] : '';
+                let scaleY = action.parameters['scaley'] !== undefined ? action.parameters['scaley'] : '';
+                
+                let fieldContainer = document.createElement('div');
+                fieldContainer.className = 'param-field';
+                fieldContainer.style.minWidth = '150px';
+                fieldContainer.innerHTML = `
+                    <span class="param-label">scale:</span>
+                    <div style="display: flex; gap: 4px;">
+                        <input type="number" 
+                            id="edit_param_scale_x" 
+                            value="${scaleX}" 
+                            placeholder="x"
+                            min="0.1" max="10" step="0.1"
+                            style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                        <input type="number" 
+                            id="edit_param_scale_y" 
+                            value="${scaleY}" 
+                            placeholder="y"
+                            min="0.1" max="10" step="0.1"
+                            style="width: 45px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                    </div>
+                `;
+                paramsDiv.appendChild(fieldContainer);
+            }
+            
+            // Handle angle fields with proper units
+            angleFields.forEach(field => {
+                let currentValue = action.parameters[field.name];
+                let displayValue = currentValue !== null && currentValue !== undefined ? currentValue : '';
+                
+                let fieldContainer = document.createElement('div');
+                fieldContainer.className = 'param-field';
+                
+                let unit = '';
+                if (field.name === 'angle') {
+                    unit = '<span class="param-unit">degrees</span>';
+                } else if (field.name === 'rotate_speed') {
+                    unit = '<span class="param-unit">°/s</span>';
+                }
+                
+                fieldContainer.innerHTML = `
+                    <span class="param-label">${field.name === 'rotate_speed' ? 'speed' : field.name}:</span>
+                    <input type="${field.type}" 
+                        id="edit_param_${field.name}" 
+                        value="${displayValue}" 
+                        ${field.min !== undefined ? `min="${field.min}"` : ''}
+                        ${field.max !== undefined ? `max="${field.max}"` : ''}
+                        ${field.step !== undefined ? `step="${field.step}"` : ''}
+                        style="width: 60px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                    ${unit}
+                `;
+                
+                paramsDiv.appendChild(fieldContainer);
+            });
+            
+            // Handle any remaining fields
+            otherFields.forEach(field => {
+                let currentValue = action.parameters[field.name];
+                let displayValue = currentValue !== null && currentValue !== undefined ? currentValue : '';
+                
+                let fieldContainer = document.createElement('div');
+                fieldContainer.className = 'param-field';
+                
+                let unit = field.unit ? `<span class="param-unit">${field.unit}</span>` : '';
+                fieldContainer.innerHTML = `
+                    <span class="param-label">${field.name}:</span>
+                    <input type="${field.type}" 
+                           id="edit_param_${field.name}" 
+                           value="${displayValue}" 
+                           ${field.min !== undefined ? `min="${field.min}"` : ''}
+                           ${field.max !== undefined ? `max="${field.max}"` : ''}
+                           ${field.step !== undefined ? `step="${field.step}"` : ''}
+                           style="width: 50px; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 3px; font-size: 11px;">
+                    ${unit}
+                `;
+                
+                paramsDiv.appendChild(fieldContainer);
+            });
+            
+            // Add position picker handlers for inline buttons
+            document.querySelectorAll('.pick-pos-btn-inline').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    let fieldType = this.dataset.field;
+                    startPositionPickerForEditInline(fieldType);
+                });
+            });
+            
+            // Setup delete button - IMPORTANT: Remove old listeners and add new one
+            let deleteBtn = document.getElementById('deleteInlineAction');
+            
+            // Remove all previous event listeners by cloning and replacing
+            let newDeleteBtn = deleteBtn.cloneNode(true);
+            deleteBtn.parentNode.replaceChild(newDeleteBtn, deleteBtn);
+            
+            // Add new click handler
+            newDeleteBtn.addEventListener('click', function() {
+                if (confirm('Delete this action?')) {
+                    saveTimelineState();
 
-    draw(); 
-}
+                    if (positionPickerActive) {
+                        cancelPositionPicker();
+                    }
+                    
+                    // Remove the action
+                    timelineTracks[trackIndex].cells[cellIndex].splice(actionIndex, 1);
+                    
+                    // If no actions left in this cell, remove the cell array
+                    if (timelineTracks[trackIndex].cells[cellIndex].length === 0) {
+                        delete timelineTracks[trackIndex].cells[cellIndex];
+                    }
+                    
+                    saveTimelineToAnimation();
+                    renderTimeline();
+                    closeInlineEditor();
+                }
+            });
+            
+            // Auto-save on input changes
+            setTimeout(() => {
+                document.querySelectorAll('#actionParams input').forEach(input => {
+                    // Remove old listeners and add new ones
+                    let newInput = input.cloneNode(true);
+                    input.parentNode.replaceChild(newInput, input);
+                    
+                    newInput.addEventListener('input', function() {
+                        saveActionChangesInline();
+                    });
+                });
+            }, 100);
 
+            draw();
+        }
 
-
-    function closeInlineEditor() {
-        document.getElementById('actionControls').style.display = 'none';
-        document.getElementById('actionControls').classList.remove('editing');
-        
-        // Remove highlight from selected cell
-        document.querySelectorAll('.timeline-cell.selected-action').forEach(cell => {
-            cell.classList.remove('selected-action');
-        });
-        
-        // Clear the connection canvas
-        connectionCtx.clearRect(0, 0, connectionCanvas.width, connectionCanvas.height);
-        
-        currentEditingAction = null;
-        
-        // Redraw to remove any lingering markers
-        draw();
-    }
+        function closeInlineEditor() {
+            document.getElementById('actionControls').style.display = 'none';
+            document.getElementById('actionControls').classList.remove('editing');
+            
+            document.querySelectorAll('.timeline-cell.selected-action').forEach(cell => {
+                cell.classList.remove('selected-action');
+            });
+            
+            // Clear the connection canvas
+            connectionCtx.clearRect(0, 0, connectionCanvas.width, connectionCanvas.height);
+            
+            currentEditingAction = null;
+            
+            // Redraw to remove any lingering markers
+            draw();
+        }
 
         function saveActionChangesInline() {
             if (!currentEditingAction) return;
@@ -8359,7 +8662,6 @@ function startPositionPicker(trackIndex, cellIndex, actionIndex, fieldName, call
             currentEditingAction = null;
         }
 
-
         function startPositionPickerForEditInline(fieldType) {
             if (!currentEditingAction) return;
             
@@ -8395,23 +8697,36 @@ function startPositionPicker(trackIndex, cellIndex, actionIndex, fieldName, call
             if (fieldType === 'center') {
                 instruction.innerHTML = '🎯 Click and drag on canvas to set center position<br><small style="color:#aaa;">Hold CTRL for free movement (no grid snap)</small> - <button id="cancelPickerBtn" style="background:#666; color:#fff; border:none; border-radius:3px; padding:4px 12px; cursor:pointer; font-size:12px;">ESC</button>';
             } else if (fieldType === 'translate') {
-                instruction.innerHTML = '🎯 Click and drag on canvas to set translate position<br><small style="color:#aaa;">Hold CTRL for free movement (no grid snap)</small> - <button id="cancelPickerBtn" style="background:#666; color:#fff; border:none; border-radius:3px; padding:4px 12px; cursor:pointer; font-size:12px;">ESC</button>';
+                // Calculate current target top-left corner to use as reference for offset
+                let { trackIndex, cellIndex, actionIndex } = currentEditingAction;
+                let track = animations[selectedAnimationIndex]?.tracks[trackIndex];
+                if (track) {
+                    let bounds;
+                    if (track.groupIndex === -1) {
+                        bounds = getModelBounds(models[track.modelIndex]);
+                    } else {
+                        bounds = getPointGroupBounds(models[track.modelIndex], models[track.modelIndex].pointGroups[track.groupIndex]);
+                    }
+                    if (bounds) {
+                        // Use top-left corner as reference
+                        pendingPositionField.referenceX = bounds.minX;
+                        pendingPositionField.referenceY = bounds.minY;
+                    }
+                }
+                instruction.innerHTML = '🎯 Click and drag on canvas to set target position<br><small style="color:#aaa;">Offset from top-left corner will be saved (click on current top-left for 0,0)</small> - <button id="cancelPickerBtn" style="background:#666; color:#fff; border:none; border-radius:3px; padding:4px 12px; cursor:pointer; font-size:12px;">ESC</button>';
             }
             
             document.body.appendChild(instruction);
             
-            // Add cancel button handler
             document.getElementById('cancelPickerBtn').addEventListener('click', function(e) {
                 e.stopPropagation();
                 cancelPositionPicker();
             });
             
-            // Add drag handlers to canvas
             c.addEventListener('mousedown', startPositionPickerDrag);
             c.addEventListener('mousemove', updatePositionPickerDrag);
             c.addEventListener('mouseup', endPositionPickerDrag);
             
-            // Store handlers for cleanup
             pendingPositionField.mousedownHandler = startPositionPickerDrag;
             pendingPositionField.mousemoveHandler = updatePositionPickerDrag;
             pendingPositionField.mouseupHandler = endPositionPickerDrag;
@@ -8426,7 +8741,7 @@ function startPositionPicker(trackIndex, cellIndex, actionIndex, fieldName, call
             document.addEventListener('keydown', keyHandler);
             pendingPositionField.keyHandler = keyHandler;
         }
-
+        
         function drawPositionPickerIndicator() {
             if (!positionPickerActive || !positionPickerDragging || !pendingPositionField) return;
             
@@ -8480,7 +8795,6 @@ function startPositionPicker(trackIndex, cellIndex, actionIndex, fieldName, call
             ctx.restore();
         }
 
-        // Update cancelPositionPicker to clean up drag handlers
         function cancelPositionPicker() {
             if (!positionPickerActive) return;
             
@@ -8510,50 +8824,50 @@ function startPositionPicker(trackIndex, cellIndex, actionIndex, fieldName, call
         }
 
 
-// ===========================================
-// INITIALIZE ACTION EDITOR CLOSE BUTTON
-// ===========================================
+        // ===========================================
+        // INITIALIZE ACTION EDITOR CLOSE BUTTON
+        // ===========================================
 
-document.getElementById('actionEditorClose').addEventListener('click', closeActionEditor);
+        document.getElementById('actionEditorClose').addEventListener('click', closeActionEditor);
 
-// Make action editor draggable
-let actionEditorHeader = document.getElementById('actionEditorHeader');
-let actionEditorPanel = document.getElementById('actionEditorPanel');
-let actionEditorDragging = false;
-let actionEditorDragOffset = { x: 0, y: 0 };
+        // Make action editor draggable
+        let actionEditorHeader = document.getElementById('actionEditorHeader');
+        let actionEditorPanel = document.getElementById('actionEditorPanel');
+        let actionEditorDragging = false;
+        let actionEditorDragOffset = { x: 0, y: 0 };
 
-actionEditorHeader.addEventListener('mousedown', function(e) {
-    if (e.target.classList.contains('overlay-panel-close')) return;
-    actionEditorDragging = true;
-    let rect = actionEditorPanel.getBoundingClientRect();
-    actionEditorDragOffset = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-    };
-    actionEditorPanel.style.cursor = 'grabbing';
-});
+        actionEditorHeader.addEventListener('mousedown', function(e) {
+            if (e.target.classList.contains('overlay-panel-close')) return;
+            actionEditorDragging = true;
+            let rect = actionEditorPanel.getBoundingClientRect();
+            actionEditorDragOffset = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+            actionEditorPanel.style.cursor = 'grabbing';
+        });
 
-document.addEventListener('mousemove', function(e) {
-    if (!actionEditorDragging) return;
-    
-    let newLeft = e.clientX - actionEditorDragOffset.x;
-    let newTop = e.clientY - actionEditorDragOffset.y;
-    
-    // Keep within window bounds
-    newLeft = Math.max(10, Math.min(window.innerWidth - actionEditorPanel.offsetWidth - 10, newLeft));
-    newTop = Math.max(10, Math.min(window.innerHeight - actionEditorPanel.offsetHeight - 10, newTop));
-    
-    actionEditorPanel.style.left = newLeft + 'px';
-    actionEditorPanel.style.top = newTop + 'px';
-    actionEditorPanel.style.transform = 'none';
-});
+        document.addEventListener('mousemove', function(e) {
+            if (!actionEditorDragging) return;
+            
+            let newLeft = e.clientX - actionEditorDragOffset.x;
+            let newTop = e.clientY - actionEditorDragOffset.y;
+            
+            // Keep within window bounds
+            newLeft = Math.max(10, Math.min(window.innerWidth - actionEditorPanel.offsetWidth - 10, newLeft));
+            newTop = Math.max(10, Math.min(window.innerHeight - actionEditorPanel.offsetHeight - 10, newTop));
+            
+            actionEditorPanel.style.left = newLeft + 'px';
+            actionEditorPanel.style.top = newTop + 'px';
+            actionEditorPanel.style.transform = 'none';
+        });
 
-document.addEventListener('mouseup', function() {
-    if (actionEditorDragging) {
-        actionEditorDragging = false;
-        actionEditorPanel.style.cursor = 'default';
-    }
-});
+        document.addEventListener('mouseup', function() {
+            if (actionEditorDragging) {
+                actionEditorDragging = false;
+                actionEditorPanel.style.cursor = 'default';
+            }
+        });
 
         function calculateModelCenter(modelIndex) {
             if (modelIndex < 0 || modelIndex >= models.length) return { x: 32.0, y: 16.0 }; 
@@ -8636,7 +8950,7 @@ document.addEventListener('mouseup', function() {
                     }
                 }
             } else {
-                // It's a whole model - highlight bounding box and all points
+                
                 let points = new Set();
                 let minX = 64, maxX = 0, minY = 32, maxY = 0;
                 
@@ -8655,14 +8969,14 @@ document.addEventListener('mouseup', function() {
                     }
                 }
                 
-                // Draw bounding box
+                // bounding box
                 ctx.strokeStyle = "#ff9900";
                 ctx.lineWidth = 2;
                 ctx.setLineDash([5, 5]);
                 ctx.strokeRect(minX * SCALE, minY * SCALE, (maxX - minX + 1) * SCALE, (maxY - minY + 1) * SCALE);
                 ctx.setLineDash([]);
                 
-                // Highlight all points
+                // highlight all points
                 ctx.shadowColor = "#ff9900";
                 ctx.shadowBlur = 10;
                 points.forEach(point => {
@@ -8749,28 +9063,25 @@ document.addEventListener('mouseup', function() {
             
             positionPickerDragging = true;
             
-            // Get initial position
+
             let rect = c.getBoundingClientRect();
             let scaleX = c.width / rect.width;
             let scaleY = c.height / rect.height;
             let physX = (e.clientX - rect.left) * scaleX;
             let physY = (e.clientY - rect.top) * scaleY;
             
-            // Convert to logical coordinates
+           
             let gridX = physX / SCALE;
             let gridY = physY / SCALE;
-            
-            // Apply constraints
+        
             gridX = Math.max(0, Math.min(64, gridX));
             gridY = Math.max(0, Math.min(32, gridY));
             
             positionPickerStartPos = { x: gridX, y: gridY };
             positionPickerCurrentPos = { x: gridX, y: gridY };
             
-            // Update the field immediately
             updatePositionPickerField(gridX, gridY, e.ctrlKey);
             
-            // Change cursor to grabbing
             c.style.cursor = 'grabbing';
         }
 
@@ -8780,24 +9091,22 @@ document.addEventListener('mouseup', function() {
             e.preventDefault();
             e.stopPropagation();
             
-            // Get current position
+
             let rect = c.getBoundingClientRect();
             let scaleX = c.width / rect.width;
             let scaleY = c.height / rect.height;
             let physX = (e.clientX - rect.left) * scaleX;
             let physY = (e.clientY - rect.top) * scaleY;
             
-            // Convert to logical coordinates
             let gridX = physX / SCALE;
             let gridY = physY / SCALE;
             
-            // Apply constraints
+
             gridX = Math.max(0, Math.min(64, gridX));
             gridY = Math.max(0, Math.min(32, gridY));
             
             positionPickerCurrentPos = { x: gridX, y: gridY };
             
-            // Update the field with current position
             updatePositionPickerField(gridX, gridY, e.ctrlKey);
         }
 
@@ -8815,24 +9124,28 @@ document.addEventListener('mouseup', function() {
                         xInput.value = x.toFixed(1);
                         yInput.value = y.toFixed(1);
                     } else {
-                        // Grid snap to nearest integer
-                        xInput.value = Math.round(x);
-                        yInput.value = Math.round(y);
+
+                        xInput.value = Math.floor(x);
+                        yInput.value = Math.floor(y);
                     }
                     saveActionChangesInline();
                 }
             } else if (fieldType === 'translate') {
                 let xInput = document.getElementById('edit_param_translate_x');
                 let yInput = document.getElementById('edit_param_translate_y');
-                if (xInput && yInput) {
+                if (xInput && yInput && pendingPositionField.referenceX !== undefined && pendingPositionField.referenceY !== undefined) {
+                    // Calculate offset from reference position (top-left corner)
+                    let offsetX = x - pendingPositionField.referenceX;
+                    let offsetY = y - pendingPositionField.referenceY;
+                    
                     if (ctrlKey) {
                         // No grid snap - use raw float with 1 decimal precision
-                        xInput.value = x.toFixed(1);
-                        yInput.value = y.toFixed(1);
+                        xInput.value = offsetX.toFixed(1);
+                        yInput.value = offsetY.toFixed(1);
                     } else {
-                        // Grid snap to nearest integer
-                        xInput.value = Math.round(x);
-                        yInput.value = Math.round(y);
+
+                        xInput.value = Math.floor(offsetX);
+                        yInput.value = Math.floor(offsetY);
                     }
                     saveActionChangesInline();
                 }
@@ -8844,8 +9157,7 @@ document.addEventListener('mouseup', function() {
                 positionPickerDragging = false;
                 c.style.cursor = 'crosshair';
                 
-                // Don't cancel - stay in picking mode until ESC
-                // Just update one final time
+                
                 if (e && positionPickerActive && pendingPositionField) {
                     let rect = c.getBoundingClientRect();
                     let scaleX = c.width / rect.width;
@@ -8863,6 +9175,222 @@ document.addEventListener('mouseup', function() {
                 }
             }
         }
+        // Populate action palette in animation mode
+        function populateActionPalette() {
+            const palette = document.getElementById('actionPalette');
+            if (!palette) return;
+            
+            palette.innerHTML = '';
+            
+            // Create draggable icons for each action type
+            for (let [type, def] of Object.entries(animationDesc)) {
+                let item = document.createElement('div');
+                item.className = 'action-palette-item';
+                item.setAttribute('data-action-type', type);
+                item.setAttribute('data-tooltip', def.name);
+                item.textContent = def.icon;
+                item.draggable = true;
+                item.style.cursor = 'grab';
+                
+                // Handle drag start
+                item.addEventListener('dragstart', function(e) {
+                    e.dataTransfer.setData('text/plain', type);
+                    e.dataTransfer.effectAllowed = 'move';
+                    this.classList.add('dragging');
+                    this.style.opacity = '0.5';
+                    this.style.cursor = 'grabbing';
+                    
+                    // Create custom drag image
+                    let dragIcon = document.createElement('div');
+                    dragIcon.style.width = '32px';
+                    dragIcon.style.height = '32px';
+                    dragIcon.style.background = '#ff9900';
+                    dragIcon.style.borderRadius = '4px';
+                    dragIcon.style.display = 'flex';
+                    dragIcon.style.alignItems = 'center';
+                    dragIcon.style.justifyContent = 'center';
+                    dragIcon.style.fontSize = '16px';
+                    dragIcon.style.color = '#111';
+                    dragIcon.style.boxShadow = '0 2px 8px rgba(0,0,0,0.5)';
+                    dragIcon.style.border = '2px solid #ffaa33';
+                    dragIcon.textContent = def.icon;
+                    document.body.appendChild(dragIcon);
+                    e.dataTransfer.setDragImage(dragIcon, 16, 16);
+                    
+                    // Clean up drag icon after a short delay
+                    setTimeout(() => {
+                        if (dragIcon.parentNode) dragIcon.remove();
+                    }, 100);
+                    
+                    // Highlight all timeline cells to show they're droppable
+                    document.querySelectorAll('.timeline-cell').forEach(cell => {
+                        cell.style.boxShadow = 'inset 0 0 0 2px #ff9900';
+                        cell.style.transition = 'all 0.2s ease';
+                    });
+                });
+                
+                item.addEventListener('drag', function(e) {
+                    // Keep the original item visible but semi-transparent
+                    this.style.opacity = '0.5';
+                });
+                
+                item.addEventListener('dragend', function(e) {
+                    this.classList.remove('dragging');
+                    this.style.opacity = '1';
+                    this.style.cursor = 'grab';
+                    
+                    // Remove highlight from all timeline cells
+                    document.querySelectorAll('.timeline-cell').forEach(cell => {
+                        cell.style.boxShadow = '';
+                        cell.style.transition = '';
+                    });
+                    
+                    // Check if drop was successful
+                    if (e.dataTransfer.dropEffect === 'none') {
+                        // Drag was cancelled or dropped outside valid target
+                        console.log('Drag cancelled');
+                    }
+                });
+                
+                // Also make them clickable to create action in first empty cell
+                item.addEventListener('click', function(e) {
+                    if (e.button !== 0) return; // Left click only
+                    
+                    // Find the first empty cell in the first track
+                    if (timelineTracks.length > 0 && totalCells > 0) {
+                        // Try to find first empty cell in first track
+                        for (let cellIndex = 0; cellIndex < totalCells; cellIndex++) {
+                            if (!timelineTracks[0].cells || 
+                                !timelineTracks[0].cells[cellIndex] || 
+                                timelineTracks[0].cells[cellIndex].length === 0) {
+                                
+                                // Create action in this empty cell
+                                createActionWithDefaults(type, 0, cellIndex);
+                                
+                                // Flash the cell to show where it was placed
+                                let targetCell = document.querySelector(`.timeline-cell[data-track="0"][data-cell="${cellIndex}"]`);
+                                if (targetCell) {
+                                    targetCell.style.background = '#ff9900';
+                                    targetCell.style.transition = 'all 0.3s ease';
+                                    setTimeout(() => {
+                                        targetCell.style.background = '';
+                                    }, 300);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                });
+                
+                palette.appendChild(item);
+            }
+        }
+
+
+        function getModelBounds(model) {
+            if (!model || !model.triangles || model.triangles.length === 0) return null;
+            
+            let minX = 64, maxX = 0, minY = 32, maxY = 0;
+            let hasPoints = false;
+            
+            for (let i = 0; i < model.triangles.length; i++) {
+                let tri = model.triangles[i];
+                let vertices = [tri.v1, tri.v2, tri.v3];
+                for (let j = 0; j < 3; j++) {
+                    let v = vertices[j];
+                    minX = Math.min(minX, v.x);
+                    maxX = Math.max(maxX, v.x);
+                    minY = Math.min(minY, v.y);
+                    maxY = Math.max(maxY, v.y);
+                    hasPoints = true;
+                }
+            }
+            
+            if (!hasPoints) return null;
+            
+            return { minX, maxX, minY, maxY };
+        }
+
+        function getPointGroupBounds(model, group) {
+            if (!model || !group || !group.pointIndices || group.pointIndices.length === 0) return null;
+            
+            let minX = 64, maxX = 0, minY = 32, maxY = 0;
+            let hasPoints = false;
+            let globalIdx = 0;
+            
+            for (let i = 0; i < model.triangles.length; i++) {
+                let tri = model.triangles[i];
+                let vertices = [tri.v1, tri.v2, tri.v3];
+                for (let j = 0; j < 3; j++) {
+                    if (group.pointIndices.includes(globalIdx)) {
+                        let v = vertices[j];
+                        minX = Math.min(minX, v.x);
+                        maxX = Math.max(maxX, v.x);
+                        minY = Math.min(minY, v.y);
+                        maxY = Math.max(maxY, v.y);
+                        hasPoints = true;
+                    }
+                    globalIdx++;
+                }
+            }
+            
+            if (!hasPoints) return null;
+            
+            return { minX, maxX, minY, maxY };
+        }
+
+        // ===========================================
+        // CUMULATIVE ANIMATION FUNCTIONS
+        // ===========================================
+
+        function computeCumulativeState(frame) {
+            if (!isAnimationMode || selectedAnimationIndex < 0 || !savedPointsData) return;
+            
+            // Start from original positions
+            models.forEach((model, modelIndex) => {
+                if (savedPointsData[modelIndex]) {
+                    model.triangles = JSON.parse(JSON.stringify(savedPointsData[modelIndex].triangles));
+                }
+            });
+            
+            let anim = animations[selectedAnimationIndex];
+            
+            // Apply all actions from frame 0 up to the target frame
+            for (let f = 0; f <= frame; f++) {
+                anim.tracks.forEach((track, trackIndex) => {
+                    if (!track.actions || !track.actions[f]) return;
+                    
+                    let cellActions = track.actions[f];
+                    if (!cellActions || cellActions.length === 0) return;
+                    
+                    // Create target object
+                    let target = {
+                        type: track.groupIndex === -1 ? TargetType.MODEL : TargetType.POINT_GROUP,
+                        modelIndex: track.modelIndex,
+                        groupIndex: track.groupIndex
+                    };
+                    
+                    // Process each action in this cell in order
+                    cellActions.forEach(action => {
+                        let actionFunc = actionFunctions[action.type];
+                        if (actionFunc) {
+                            // For instant actions, apply them
+                            if (animationDesc[action.type].instant) {
+                                actionFunc({ target: target }, action.parameters);
+                            } else {
+                                // For over-time actions, we'll need to handle them differently later
+                                console.log("Over-time action not yet implemented:", action.type);
+                            }
+                        }
+                    });
+                });
+            }
+            
+            draw();
+        }
+
+        // Also call it on page load
+        setTimeout(populateActionPalette, 200);
 
         // Initial render
         renderModelList();
@@ -8873,8 +9401,6 @@ document.addEventListener('mouseup', function() {
         draw();
         document.getElementById('toolMovePoints').classList.add('active');
         currentTool = 'move';
-
-        // Mobile warning
         window.addEventListener('load', checkMobileWarning);
         window.addEventListener('resize', checkMobileWarning);
 
