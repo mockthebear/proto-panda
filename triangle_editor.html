@@ -287,20 +287,50 @@
 
 
         .right-panel {
-            width: 280px;
-            background: #1a1a1a;
-            border-left: 2px solid #555;
-            padding: 0; 
-            color: #eee;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            z-index: 150;
             position: relative;
-            box-shadow: -4px 0 8px rgba(0,0,0,0.5);
-            height: 100%;
+            transition: width 0.3s ease, min-width 0.3s ease;
+            overflow: hidden;
+            z-index: 10;
         }
 
+        .right-panel.collapsed {
+            width: 32px !important;
+            min-width: 32px !important;
+        }
+
+        .right-panel.collapsed .models-section,
+        .right-panel.collapsed .animations-section,
+        .right-panel.collapsed .mode-toggle-container {
+            display: none;
+        }
+
+        .collapse-button {
+            position: absolute;
+            top: 30%;
+            left: 1%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 128px;
+            background: #555;
+            border: 1px solid #111;
+            border-radius: 4px; /* Square with slightly rounded corners */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            color: #ffaa33;
+            font-size: 8px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+
+        .collapse-button:hover {
+            background: #ffaa33;
+            color: #000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+        }
 
         .models-section {
             height: 50%;
@@ -740,7 +770,9 @@
             min-width: 0;
             z-index: 1;
             position: relative;
+            transition: margin-right 0.3s ease;
         }
+
         .canvas-container {
             width: 100%;
             display: flex;
@@ -2559,7 +2591,7 @@
         function resizeConnectionCanvas() {
             connectionCanvas.width = window.innerWidth;
             connectionCanvas.height = window.innerHeight;
-            drawConnectionLines();
+            drawCoordinateMarkers();
         }
         window.addEventListener('resize', resizeConnectionCanvas);
         resizeConnectionCanvas();
@@ -2569,6 +2601,7 @@
         const LOGIC_WIDTH = 64;
         const LOGIC_HEIGHT = 32;
         const SCALE = 16;
+        var canvasScale = 1;
 
         var mouseX = -1;
         var mouseY = -1;
@@ -2699,6 +2732,89 @@
             MODEL: 'model',
             POINT_GROUP: 'pointgroup'
         };
+
+
+        var isRightPanelCollapsed = false;
+        var rightPanelWidth = 280; 
+
+
+        function getCanvasScale() {
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            const leftPanelWidth = 80;
+            const currentRightPanelWidth = isRightPanelCollapsed ? 32 : 280;
+            const horizontalPadding = 40; // Extra padding for safety
+            const availableWidth = windowWidth - leftPanelWidth - currentRightPanelWidth - horizontalPadding;
+            const availableHeight = windowHeight - 100; // Approximate header/footer space
+            const originalWidth = 768;
+            const originalHeight = 384;
+            const scaleX = availableWidth / originalWidth;
+            const scaleY = availableHeight / originalHeight;
+            let newScale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1x
+            newScale = Math.max(0.1, newScale);
+            newScale = Math.round(newScale * 100) / 100;
+            return newScale;
+        }
+
+        function updateCanvasScale() {
+            const canvas = document.getElementById('meuCanvas');
+            const container = document.querySelector('.canvas-container');
+            if (!canvas || !container) return;
+            
+            // Calculate new scale
+            const newScale = getCanvasScale();
+  
+            // Apply CSS scaling
+            canvas.style.width = `${1024 * newScale}px`;
+            canvas.style.height = `${512 * newScale}px`;
+            
+            // Update mouse coordinate conversion to account for scaling
+            canvasScale = newScale;
+            
+            // Force redraw to ensure everything is crisp
+            draw();
+        }
+
+
+        function toggleRightPanel() {
+            const rightPanel = document.querySelector('.right-panel');
+            if (!rightPanel) return;
+            
+            isRightPanelCollapsed = !isRightPanelCollapsed;
+            
+            if (isRightPanelCollapsed) {
+                rightPanel.classList.add('collapsed');
+                // Store the original width if not already stored
+                if (rightPanelWidth === 280) {
+                    rightPanelWidth = rightPanel.offsetWidth;
+                }
+            } else {
+                rightPanel.classList.remove('collapsed');
+            }
+            
+            // Update canvas scale to account for new panel width
+            updateCanvasScale();
+            
+            // Force a redraw of connection lines
+            drawCoordinateMarkers();
+        }
+
+        function createCollapseButton() {
+            const rightPanel = document.querySelector('.right-panel');
+            if (!rightPanel) return;
+            
+            // Create collapse button
+            const collapseBtn = document.createElement('div');
+            collapseBtn.className = 'collapse-button';
+            collapseBtn.innerHTML = '◀';
+            collapseBtn.title = isRightPanelCollapsed ? 'Expand panel' : 'Collapse panel';
+            
+            // Add click handler
+            collapseBtn.addEventListener('click', toggleRightPanel);
+            
+            // Add to right panel
+            rightPanel.appendChild(collapseBtn);
+        }
 
         // ===========================================
         // ANIMATION ACTION DEFINITIONS
@@ -2852,7 +2968,7 @@
             },
             
             "translate": function(targetObject, parameters) {
-                console.log("translate action", targetObject, parameters);
+                //console.log("translate action", targetObject, parameters);
                 
                 let target = targetObject.target;
                 let dx = parameters.x || 0;
@@ -3225,7 +3341,11 @@
                 renderModelList();
                 updateCodeDisplay();
             }
-            
+            setTimeout(() => {
+                updateCanvasScale();
+                drawCoordinateMarkers();
+            }, 50);
+                    
             draw();
         }
 
@@ -3284,6 +3404,70 @@
             });
         }
 
+        function fastForwardToFrame(targetFrame) {
+            resetModels()
+            
+            // Apply all actions from all tracks from frame 0 to targetFrame-1
+            for (let f = 0; f < targetFrame; f++) {
+                animations[selectedAnimationIndex]?.tracks.forEach(t => {
+                    if (!t.actions || !t.actions[f]) return;
+                    
+                    let cellActions = t.actions[f];
+                    if (!cellActions || cellActions.length === 0) return;
+                    
+                    let target = {
+                        type: t.groupIndex === -1 ? TargetType.MODEL : TargetType.POINT_GROUP,
+                        modelIndex: t.modelIndex,
+                        groupIndex: t.groupIndex
+                    };
+                    
+                    cellActions.forEach(prevAction => {
+                        let actionFunc = actionFunctions[prevAction.type];
+                        if (actionFunc && animationDesc[prevAction.type].instant) {
+                            actionFunc({ target: target }, prevAction.parameters);
+                        }
+                    });
+                });
+            }
+        }
+        var prevUpdateIs = -1;
+        function updateCurrentAnimation(){
+            if (prevUpdateIs == currentFrame){
+                return
+            }
+            prevUpdateIs = currentFrame
+            let anim = animations[selectedAnimationIndex];
+            var f = currentFrame
+            anim.tracks.forEach((track, trackIndex) => {
+                if (!track.actions || !track.actions[f]) return;
+                    
+                let cellActions = track.actions[f];
+                if (!cellActions || cellActions.length === 0) return;
+                    
+                    // Create target object
+                let target = {
+                    type: track.groupIndex === -1 ? TargetType.MODEL : TargetType.POINT_GROUP,
+                    modelIndex: track.modelIndex,
+                    groupIndex: track.groupIndex
+                };
+                    
+                // Process each action in this cell in order
+                cellActions.forEach(action => {
+                    let actionFunc = actionFunctions[action.type];
+                    if (actionFunc) {
+                        // For instant actions, apply them
+                        if (animationDesc[action.type].instant) {
+                            actionFunc({ target: target }, action.parameters);
+                        } else {
+                            // For over-time actions, we'll need to handle them differently later
+                            console.log("Over-time action not yet implemented:", action.type);
+                        }
+                    }
+                });
+            });
+        }
+        
+
         function playAnimation() {
             if (!isAnimationMode) return;
             
@@ -3305,7 +3489,8 @@
                 processCurrentFrame();
                 draw();
             }
-            
+            resetModels()
+
             isPlaying = true;
             document.getElementById('toolPlayPause').textContent = '⏸️';
             document.getElementById('toolPlayPause').setAttribute('data-tooltip', 'Pause (P)');
@@ -3313,39 +3498,24 @@
             animationTimer = setInterval(() => {
                 if (!isPlaying) return;
                 
-                // Move to next frame
                 clearPlayingHighlight();
+                highlightCurrentFrame();
+                updateFrameIndicator();
+
+                updateCurrentAnimation();
+
+                processCurrentFrame();
+                draw();
                 
-                if (currentFrame < totalCells - 1) {
+                if (currentFrame < totalCells) {
                     // Normal step forward
                     currentFrame++;
-                    highlightCurrentFrame();
-                    updateFrameIndicator();
-                    
-                    // Compute cumulative state up to current frame
-                    computeCumulativeState(currentFrame);
-                    
-                    // Also process current frame actions
-                    processCurrentFrame();
-                    draw();
                 } else {
-                    // Reached the end
                     if (repeatAnimation) {
-                        // Loop back to beginning
+
                         currentFrame = 0;
-                        highlightCurrentFrame();
-                        updateFrameIndicator();
-                        
-                        // Compute cumulative state up to current frame
-                        computeCumulativeState(currentFrame);
-                        
-                        // Also process current frame actions
-                        processCurrentFrame();
-                        draw();
                     } else {
-                        // Stop at the end but KEEP the last frame displayed
                         pauseAnimation();
-                        // Don't change currentFrame - keep it at the last frame
                     }
                 }
             }, timelineInterval);
@@ -3374,6 +3544,18 @@
             stopAnimation()
         }
 
+        function resetModels(){
+            currentFrame = 0;
+            if (savedPointsData) {
+                models.forEach((model, index) => {
+                    if (savedPointsData[index]) {
+                        model.triangles = JSON.parse(JSON.stringify(savedPointsData[index].triangles));
+                        model.pointGroups = JSON.parse(JSON.stringify(savedPointsData[index].pointGroups || []));
+                    }
+                });
+            }
+        }
+
         function stopAnimation() {
             if (!isAnimationMode) return;
             
@@ -3393,16 +3575,9 @@
             updateFrameIndicator();
             
             // Reset all models to their original positions
-            if (savedPointsData) {
-                models.forEach((model, index) => {
-                    if (savedPointsData[index]) {
-                        // Deep restore triangles
-                        model.triangles = JSON.parse(JSON.stringify(savedPointsData[index].triangles));
-                        // Deep restore point groups (if needed, though they don't contain positions)
-                        model.pointGroups = JSON.parse(JSON.stringify(savedPointsData[index].pointGroups || []));
-                    }
-                });
-            }
+            
+            resetModels();
+            
             
             // Process frame 0 to ensure everything is reset
             processCurrentFrame();
@@ -3428,7 +3603,7 @@
             updateFrameIndicator();
             
             // Compute cumulative state up to current frame
-            computeCumulativeState(currentFrame);
+            updateCurrentAnimation();
             
             // Also process current frame actions (for any non-instant actions we might add later)
             processCurrentFrame();
@@ -3439,21 +3614,15 @@
             
             clearPlayingHighlight();
             
+            
             if (currentFrame > 0) {
                 currentFrame--;
-            } else {
-                // If we're at first frame and repeat is on, go to last
-                if (repeatAnimation) {
-                    currentFrame = totalCells - 1;
-                }
-                // Otherwise stay at first frame (do nothing)
             }
-            
+            //forw
             highlightCurrentFrame();
             updateFrameIndicator();
             
-            // Compute cumulative state up to current frame
-            computeCumulativeState(currentFrame);
+            fastForwardToFrame(currentFrame);
             
             // Also process current frame actions
             processCurrentFrame();
@@ -3808,61 +3977,9 @@
             return `rgb(${255-data[0]}, ${255-data[1]}, ${255-data[2]})`;
         }
 
-        function drawConnectionLines() {
-            connectionCtx.clearRect(0, 0, connectionCanvas.width, connectionCanvas.height);
-            
-            // Draw group badge connections
-            if (hoveredGroupInfo && models.length && models[selectedModelIndex] && models[selectedModelIndex].pointGroups) {
-                let group = models[selectedModelIndex].pointGroups[hoveredGroupInfo.groupIndex];
-                if (group && group.pointIndices) {
-                    connectionCtx.save();
-                    connectionCtx.strokeStyle = "#ff9900";
-                    connectionCtx.lineWidth = 2;
-                    connectionCtx.setLineDash([5, 5]);
-                    connectionCtx.shadowColor = "#000";
-                    connectionCtx.shadowBlur = 4;
-                    connectionCtx.shadowOffsetX = 1;
-                    connectionCtx.shadowOffsetY = 1;
-
-                    let canvasRect = c.getBoundingClientRect();
-                    
-                    let [x, y] = hoveredGroupInfo.positionKey.split(',').map(Number);
-                    
-                    let endX = canvasRect.left + x * SCALE + SCALE/2;
-                    let endY = canvasRect.top + y * SCALE + SCALE/2;
-                    
-                    connectionCtx.beginPath();
-                    connectionCtx.moveTo(hoveredGroupInfo.badgeX, hoveredGroupInfo.badgeY);
-                    connectionCtx.lineTo(endX, endY);
-                    connectionCtx.stroke();
-                    
-                    connectionCtx.fillStyle = "#ff9900";
-                    connectionCtx.shadowColor = "#000";
-                    connectionCtx.shadowBlur = 4;
-                    connectionCtx.beginPath();
-                    connectionCtx.arc(endX, endY, 8, 0, 2 * Math.PI);
-                    connectionCtx.fill();
-                    
-                    if (hoveredGroupInfo.indices.length > 1) {
-                        connectionCtx.fillStyle = "#000000";
-                        connectionCtx.shadowBlur = 0;
-                        connectionCtx.font = "bold 10px 'Courier New'";
-                        connectionCtx.textAlign = "center";
-                        connectionCtx.textBaseline = "middle";
-                        connectionCtx.fillText(hoveredGroupInfo.indices.length, endX, endY);
-                    }
-                    
-                    connectionCtx.restore();
-                }
-            }
-
-            drawTrackConnections();
-            
-            drawCoordinateMarkers();
-        }
-
         function drawCoordinateMarkers() {
             if (!isAnimationMode || !currentEditingAction) return;
+            connectionCtx.clearRect(0, 0, connectionCanvas.width, connectionCanvas.height);
             
             let { trackIndex, cellIndex, actionIndex } = currentEditingAction;
             let action = timelineTracks[trackIndex].cells[cellIndex][actionIndex];
@@ -3875,101 +3992,99 @@
             if (!model || !model.visible) return;
             
             let canvasRect = c.getBoundingClientRect();
-            
-            connectionCtx.save();
-            connectionCtx.shadowColor = "#000";
-            connectionCtx.shadowBlur = 4;
-            connectionCtx.shadowOffsetX = 1;
-            connectionCtx.shadowOffsetY = 1;
-            
+                        
             let actionControls = document.getElementById('actionControls');
             if (!actionControls || actionControls.style.display !== 'flex') return;
 
             let centerButton = document.querySelector('.pick-pos-btn-inline[data-field="center"]');
             let translateButton = document.querySelector('.pick-pos-btn-inline[data-field="translate"]');
             
-            if (action.parameters.centerx !== undefined && action.parameters.centery !== undefined && centerButton) {
-                let centerX = action.parameters.centerx;
-                let centerY = action.parameters.centery;
+            // Handle translate position markers
+            if (action.parameters.x !== undefined && action.parameters.y !== undefined && translateButton) {
+                // Get ORIGINAL bounding box from saved state
+                let originalBounds = null;
+
+                if (model) {
+                    let minX = 64, maxX = 0, minY = 32, maxY = 0;
+          
+                    if (track.groupIndex !== -1 && model.pointGroups && model.pointGroups[track.groupIndex]) {
+                        // Point group bounds
+                        let group = model.pointGroups[track.groupIndex];
+                        let globalIdx = 0;
+                        for (let i = 0; i < model.triangles.length; i++) {
+                            let tri = model.triangles[i];
+                            let vertices = [tri.v1, tri.v2, tri.v3];
+                            for (let j = 0; j < 3; j++) {
+                                if (group.pointIndices.includes(globalIdx)) {
+                                    let v = vertices[j];
+                                    minX = Math.min(minX, v.x);
+                                    maxX = Math.max(maxX, v.x);
+                                    minY = Math.min(minY, v.y);
+                                    maxY = Math.max(maxY, v.y);
+                                }
+                                globalIdx++;
+                            }
+                        }
+                    } else {
+                        // Model bounds
+
+                        for (let i = 0; i < model.triangles.length; i++) {
+                            let tri = model.triangles[i];
+                            let vertices = [tri.v1, tri.v2, tri.v3];
+                            for (let j = 0; j < 3; j++) {
+                                let v = vertices[j];
+                                minX = Math.min(minX, v.x);
+                                maxX = Math.max(maxX, v.x);
+                                minY = Math.min(minY, v.y);
+                                maxY = Math.max(maxY, v.y);
+                            }
+                        }
+                    }
+                    
+                    if (minX <= maxX && minY <= maxY) {
+                        originalBounds = { minX, maxX, minY, maxY };
+                    }
+
+                }
                 
-                let endX = canvasRect.left + centerX * SCALE + SCALE/2;
-                let endY = canvasRect.top + centerY * SCALE + SCALE/2;
-                
-                let btnRect = centerButton.getBoundingClientRect();
+                let btnRect = translateButton.getBoundingClientRect();
                 let startX = btnRect.left + btnRect.width / 2;
                 let startY = btnRect.top + btnRect.height / 2;
                 
-                connectionCtx.beginPath();
-                connectionCtx.strokeStyle = "#ff3333";
-                connectionCtx.lineWidth = 1.5;
-                connectionCtx.setLineDash([4, 2]);
-                connectionCtx.moveTo(startX, startY);
-                connectionCtx.lineTo(endX, endY);
-                connectionCtx.stroke();
-                
-                connectionCtx.fillStyle = "#ff3333";
-                connectionCtx.beginPath();
-                connectionCtx.arc(endX, endY, 4, 0, 2 * Math.PI);
-                connectionCtx.fill();
-            }
-            
-            if (action.parameters.x !== undefined && action.parameters.y !== undefined && translateButton) {
-                let offsetX = action.parameters.x;
-                let offsetY = action.parameters.y;
-                
-                // Calculate target position using top-left corner + offset
-                let bounds = getBoundingBox(track);
-                if (bounds) {
-                    let targetX = bounds.minX + offsetX;
-                    let targetY = bounds.minY + offsetY;
+                // Draw ORIGINAL top-left corner marker
+                if (originalBounds) {
+                    let originalTopLeftX = canvasRect.left + (originalBounds.minX- action.parameters.x) * SCALE + SCALE/2;
+                    let originalTopLeftY = canvasRect.top + (originalBounds.minY-+ action.parameters.y) * SCALE + SCALE/2;
                     
-                    // Clamp to canvas bounds
-                    targetX = Math.max(0, Math.min(64, targetX));
-                    targetY = Math.max(0, Math.min(32, targetY));
+                    // Draw RED dotted line from button to CURRENT target position
+                    // Calculate CURRENT target position: ORIGINAL top-left + offset
+                    let targetX = originalBounds.minX;
+                    let targetY = originalBounds.minY;
                     
-                    let endX = canvasRect.left + targetX * SCALE + SCALE/2;
-                    let endY = canvasRect.top + targetY * SCALE + SCALE/2;
+                    let currentEndX = canvasRect.left + targetX * SCALE + SCALE/2;
+                    let currentEndY = canvasRect.top + targetY * SCALE + SCALE/2;
                     
-                    let btnRect = translateButton.getBoundingClientRect();
-                    let startX = btnRect.left + btnRect.width / 2;
-                    let startY = btnRect.top + btnRect.height / 2;
-
-                    // Draw line from button to target position
-                    connectionCtx.beginPath();
-                    connectionCtx.strokeStyle = "#ff3333";
-                    connectionCtx.lineWidth = 1.5;
-                    connectionCtx.setLineDash([4, 2]);
-                    connectionCtx.moveTo(startX, startY);
-                    connectionCtx.lineTo(endX, endY);
-                    connectionCtx.stroke();
-                    
-                    // Draw target point
+                    // Draw current target point (red with white border)
                     connectionCtx.fillStyle = "#ff3333";
                     connectionCtx.beginPath();
-                    connectionCtx.arc(endX, endY, 4, 0, 2 * Math.PI);
+                    connectionCtx.arc(currentEndX, currentEndY, 6, 0, 2 * Math.PI);
                     connectionCtx.fill();
-                    
-                    // Draw line from model bounds top-left to target position
-                    let topLeftX = canvasRect.left + bounds.minX * SCALE + SCALE/2;
-                    let topLeftY = canvasRect.top + bounds.minY * SCALE + SCALE/2;
-                    
-                    connectionCtx.beginPath();
-                    connectionCtx.strokeStyle = "#ff9900";
+                    connectionCtx.strokeStyle = "#ffffff";
                     connectionCtx.lineWidth = 2;
-                    connectionCtx.setLineDash([5, 3]);
-                    connectionCtx.moveTo(topLeftX, topLeftY);
-                    connectionCtx.lineTo(endX, endY);
+                    connectionCtx.beginPath();
+                    connectionCtx.arc(currentEndX, currentEndY, 6, 0, 2 * Math.PI);
                     connectionCtx.stroke();
+                    drawBoundingBox(originalBounds);
                 }
             }
             
-            drawBoundingBox(track);
+            // Draw bounding box in red to show current selection
+            
             
             connectionCtx.restore();
         }
 
-        function drawBoundingBox(track) {
-            let bounds = getBoundingBox(track);
+        function drawBoundingBox(bounds) {
             if (!bounds) return;
             
             let canvasRect = c.getBoundingClientRect();
@@ -3986,154 +4101,6 @@
             connectionCtx.lineWidth = 1;
             connectionCtx.setLineDash([5, 3]);
             connectionCtx.strokeRect(left, top, width, height);
-            connectionCtx.restore();
-        }
-
-        function getBoundingBox(track) {
-            if (!track) return null;
-            
-            let model = models[track.modelIndex];
-            if (!model || !model.visible) return null;
-            
-            let minX = 64, maxX = 0, minY = 32, maxY = 0;
-            let hasPoints = false;
-            
-            if (track.groupIndex !== -1 && model.pointGroups && model.pointGroups[track.groupIndex]) {
-
-                let group = model.pointGroups[track.groupIndex];
-                let globalIdx = 0;
-                
-                for (let i = 0; i < model.triangles.length; i++) {
-                    let tri = model.triangles[i];
-                    let vertices = [tri.v1, tri.v2, tri.v3];
-                    for (let j = 0; j < 3; j++) {
-                        let v = vertices[j];
-                        if (group.pointIndices.includes(globalIdx)) {
-                            let x = Math.floor(v.x);
-                            let y = Math.floor(v.y);
-                            minX = Math.min(minX, x);
-                            maxX = Math.max(maxX, x);
-                            minY = Math.min(minY, y);
-                            maxY = Math.max(maxY, y);
-                            hasPoints = true;
-                        }
-                        globalIdx++;
-                    }
-                }
-            } else {
-
-                for (let i = 0; i < model.triangles.length; i++) {
-                    let tri = model.triangles[i];
-                    let vertices = [tri.v1, tri.v2, tri.v3];
-                    for (let j = 0; j < 3; j++) {
-                        let v = vertices[j];
-                        let x = Math.floor(v.x);
-                        let y = Math.floor(v.y);
-                        minX = Math.min(minX, x);
-                        maxX = Math.max(maxX, x);
-                        minY = Math.min(minY, y);
-                        maxY = Math.max(maxY, y);
-                        hasPoints = true;
-                    }
-                }
-            }
-            
-            if (!hasPoints) return null;
-            
-            return { minX, maxX, minY, maxY };
-        }
-
-        function drawTrackConnections() {
-            if (!hoveredTrackInfo || !animations.length || selectedAnimationIndex < 0) return;
-            
-            let anim = animations[selectedAnimationIndex];
-            let track = anim.tracks[hoveredTrackInfo.trackIndex];
-            if (!track) return;
-            
-            let model = models[track.modelIndex];
-            if (!model) return;
-            
-            connectionCtx.save();
-            connectionCtx.strokeStyle = "#ff9900";
-            connectionCtx.lineWidth = 2;
-            connectionCtx.setLineDash([5, 5]);
-            connectionCtx.shadowColor = "#000";
-            connectionCtx.shadowBlur = 4;
-            connectionCtx.shadowOffsetX = 1;
-            connectionCtx.shadowOffsetY = 1;
-
-            let canvasRect = c.getBoundingClientRect();
-            
-     
-            if (track.groupIndex !== -1 && model.pointGroups && model.pointGroups[track.groupIndex]) {
-                let group = model.pointGroups[track.groupIndex];
-                let points = new Set();
-                
-     
-                let globalIdx = 0;
-                for (let i = 0; i < model.triangles.length; i++) {
-                    let tri = model.triangles[i];
-                    let vertices = [tri.v1, tri.v2, tri.v3];
-                    for (let j = 0; j < 3; j++) {
-                        let v = vertices[j];
-                        if (group.pointIndices.includes(globalIdx)) {
-                            let posKey = Math.floor(v.x) + "," + Math.floor(v.y);
-                            points.add(posKey);
-                        }
-                        globalIdx++;
-                    }
-                }
-                
-                // Draw lines to each point in the group
-                points.forEach(posKey => {
-                    let [x, y] = posKey.split(',').map(Number);
-                    
-                    let endX = canvasRect.left + x * SCALE + SCALE/2;
-                    let endY = canvasRect.top + y * SCALE + SCALE/2;
-                    
-                    connectionCtx.beginPath();
-                    connectionCtx.moveTo(hoveredTrackInfo.labelX, hoveredTrackInfo.labelY);
-                    connectionCtx.lineTo(endX, endY);
-                    connectionCtx.stroke();
-                    
-                    connectionCtx.fillStyle = "#ff9900";
-                    connectionCtx.beginPath();
-                    connectionCtx.arc(endX, endY, 6, 0, 2 * Math.PI);
-                    connectionCtx.fill();
-                });
-            } else {
-                
-                let points = new Set();
-                
-                for (let i = 0; i < model.triangles.length; i++) {
-                    let tri = model.triangles[i];
-                    let vertices = [tri.v1, tri.v2, tri.v3];
-                    for (let j = 0; j < 3; j++) {
-                        let v = vertices[j];
-                        let posKey = Math.floor(v.x) + "," + Math.floor(v.y);
-                        points.add(posKey);
-                    }
-                }
-                
-                // Draw lines to each vertex
-                points.forEach(posKey => {
-                    let [x, y] = posKey.split(',').map(Number);
-                    
-                    let endX = canvasRect.left + x * SCALE + SCALE/2;
-                    let endY = canvasRect.top + y * SCALE + SCALE/2;
-                    
-                    connectionCtx.beginPath();
-                    connectionCtx.moveTo(hoveredTrackInfo.labelX, hoveredTrackInfo.labelY);
-                    connectionCtx.lineTo(endX, endY);
-                    connectionCtx.stroke();
-                    
-                    connectionCtx.fillStyle = "#ff9900";
-                    connectionCtx.beginPath();
-                    connectionCtx.arc(endX, endY, 6, 0, 2 * Math.PI);
-                    connectionCtx.fill();
-                });
-            }
-            
             connectionCtx.restore();
         }
 
@@ -4193,13 +4160,20 @@
                 }
             }
 
-            hoverPointInfo = null;
+            // Draw all points with appropriate colors
             if (showPoints && modelsToDraw.length > 0 && modelsToDraw[selectedModelIndex] && modelsToDraw[selectedModelIndex].visible) {
                 let active = modelsToDraw[selectedModelIndex];
                 let groupIndices = new Set();
                 if (!isAnimationMode && selectedGroupIndex !== -1 && active.pointGroups?.[selectedGroupIndex]) {
                     active.pointGroups[selectedGroupIndex].pointIndices.forEach(idx => groupIndices.add(idx));
                 }
+                
+                // Create a set of hovered point indices for quick lookup
+                let hoveredIndices = new Set();
+                if (hoverPointInfo && hoverPointInfo.globalPointIndices) {
+                    hoverPointInfo.globalPointIndices.forEach(idx => hoveredIndices.add(idx));
+                }
+                
                 let globalIdx = 0;
                 for (let i = 0; i < active.triangles.length; i++) {
                     let tri = active.triangles[i];
@@ -4208,15 +4182,21 @@
                         let v = vertices[j];
                         let isSel = !isAnimationMode && selectedVertices.some(s => s.triIndex === i && s.vertexIndex === j);
                         let isGroup = !isAnimationMode && groupIndices.has(globalIdx);
+                        let isHovered = hoveredIndices.has(globalIdx);
+                        
                         if (!isSel) {
-                            drawPoint(v.x, v.y, "#FFA500", false, isGroup);
-                        }
-                        if (mouseX >=0 && mouseY >=0 && Math.floor(v.x) === mouseX && Math.floor(v.y) === mouseY) {
-                            hoverPointInfo = { globalPointIndex: globalIdx };
+                            if (isHovered) {
+                                // Paint hovered points blue
+                                drawPoint(v.x, v.y, "#0066ff", false, isGroup);
+                            } else {
+                                drawPoint(v.x, v.y, "#FFA500", false, isGroup);
+                            }
                         }
                         globalIdx++;
                     }
                 }
+                
+                // Draw selected points (they take precedence over hover)
                 if (!isAnimationMode) {
                     for (let sel of selectedVertices) {
                         let tri = active.triangles[sel.triIndex];
@@ -4419,15 +4399,13 @@
             let selRect = document.getElementById('selectionRect');
             if (!isAnimationMode && selecting && (currentTool === 'move' || currentTool === 'select')) {
                 let rect = c.getBoundingClientRect();
-                let scaleX = c.width / rect.width;
-                let scaleY = c.height / rect.height;
                 let startPhys = {
-                    x: rect.left + selectionStart.x * SCALE * scaleX,
-                    y: rect.top + selectionStart.y * SCALE * scaleY
+                    x: rect.left + selectionStart.x * SCALE * canvasScale,
+                    y: rect.top + selectionStart.y * SCALE * canvasScale
                 };
                 let endPhys = {
-                    x: rect.left + mouseX * SCALE * scaleX,
-                    y: rect.top + mouseY * SCALE * scaleY
+                    x: rect.left + mouseX * SCALE * canvasScale,
+                    y: rect.top + mouseY * SCALE * canvasScale
                 };
                 let left = Math.min(startPhys.x, endPhys.x);
                 let top = Math.min(startPhys.y, endPhys.y);
@@ -4443,10 +4421,9 @@
             }
             
             updateOverlayPanel();
-            drawConnectionLines();
+            drawCoordinateMarkers();
             updateTotalTriangles();
         }
-
         // ===========================================
         // UI UPDATE FUNCTIONS
         // ===========================================
@@ -4461,9 +4438,11 @@
                 pointSpan.textContent = indices.join(', ');
                 pointSpan.style.whiteSpace = 'normal';
                 pointSpan.style.wordBreak = 'break-word';
-            } else if (hoverPointInfo) {
-                pointSpan.textContent = hoverPointInfo.globalPointIndex;
-                pointSpan.style.whiteSpace = 'nowrap';
+             } else if (hoverPointInfo && hoverPointInfo.globalPointIndices) {
+                const indices = hoverPointInfo.globalPointIndices.sort((a,b)=>a-b);
+                pointSpan.textContent =indices.join(', ');
+                pointSpan.style.whiteSpace = 'normal';
+                pointSpan.style.wordBreak = 'break-word';
             } else {
                 pointSpan.textContent = '-';
                 pointSpan.style.whiteSpace = 'nowrap';
@@ -4866,7 +4845,7 @@
                                     badgeX: rect.left + rect.width/2,
                                     badgeY: rect.top + rect.height/2
                                 };
-                                drawConnectionLines();
+                                drawCoordinateMarkers();
                             });
                             
                             badge.addEventListener("mouseleave", function() {
@@ -4998,6 +4977,34 @@
                 }
             }
             return null;
+        }
+
+        function findVerticesAtPosition(x, y) {
+            if (models.length === 0 || selectedModelIndex < 0) return [];
+            
+            let activeModel = models[selectedModelIndex];
+            let vertices = [];
+            let globalIdx = 0;
+            
+            for (let i = 0; i < activeModel.triangles.length; i++) {
+                let tri = activeModel.triangles[i];
+                let verts = [tri.v1, tri.v2, tri.v3];
+                for (let j = 0; j < 3; j++) {
+                    let v = verts[j];
+                    // Check if this vertex is at the same position (within 0.5 tolerance for float coordinates)
+                    if (Math.abs(v.x - x) < 0.5 && Math.abs(v.y - y) < 0.5) {
+                        vertices.push({
+                            triIndex: i,
+                            vertexIndex: j,
+                            globalPointIndex: globalIdx,
+                            v: v
+                        });
+                    }
+                    globalIdx++;
+                }
+            }
+            
+            return vertices;
         }
 
         function findVertexUnderMouse(x, y) {
@@ -5486,7 +5493,7 @@
                 }
                 
                 // Then compute cumulative state for current frame
-                computeCumulativeState(currentFrame);
+        
             }
             
             renderTimeline();
@@ -5512,7 +5519,7 @@
         }
 
         function showAddTrackDialog() {
-      
+            // If no animation selected, create one first
             if (selectedAnimationIndex < 0) {
                 showAnimationNameDialog();
                 return;
@@ -5550,6 +5557,19 @@
             
             document.body.appendChild(dialog);
             
+            // Focus the select element but also add Enter key handler
+            let select = document.getElementById('trackTargetSelect');
+            select.focus();
+            
+            // Add Enter key handler to the dialog
+            dialog.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    document.getElementById('trackTargetCreate').click();
+                }
+            });
+            
             document.getElementById('trackTargetCreate').addEventListener('click', function() {
                 let select = document.getElementById('trackTargetSelect');
                 let targetIndex = parseInt(select.value);
@@ -5563,6 +5583,7 @@
                 dialog.remove();
             });
         }
+
 
         function addTrackToCurrentAnimation(targetModelIndex, targetGroupIndex, targetName) {
             if (selectedAnimationIndex < 0) {
@@ -5738,81 +5759,7 @@
         // ACTION SELECTION DIALOGS
         // ===========================================
 
-        function showActionTypeDialog(trackIndex, cellIndex) {
-            pendingCellAction = { trackIndex, cellIndex };
-            
-            let dialog = document.createElement('div');
-            dialog.className = 'model-settings-dialog active';
-            dialog.id = 'actionTypeDialog';
-            dialog.style.minWidth = '350px';
-            dialog.style.maxWidth = '500px';
-            
-            let actionsHtml = '';
-            
-            // Generate buttons for each action type in animationDesc
-            for (let [type, def] of Object.entries(animationDesc)) {
-                actionsHtml += `
-                    <div class="action-type-button" data-type="${type}" style="
-                        background: #3c3c3c;
-                        border: 1px solid #555;
-                        border-radius: 6px;
-                        padding: 12px;
-                        margin-bottom: 8px;
-                        display: flex;
-                        align-items: center;
-                        gap: 12px;
-                        cursor: pointer;
-                        transition: all 0.1s ease;
-                    ">
-                        <div style="font-size: 24px; min-width: 40px; text-align: center;">${def.icon}</div>
-                        <div style="flex: 1;">
-                            <div style="font-weight: bold; color: #ffaa33;">${def.name}</div>
-                            <div style="font-size: 11px; color: #aaa;">${def.description}</div>
-                        </div>
-                        <div style="color: #9cdcfe; font-size: 11px;">${def.instant ? '⚡ Instant' : '⏱️ Over time'}</div>
-                    </div>
-                `;
-            }
-            
-            dialog.innerHTML = `
-                <h3>🎬 Select Action Type</h3>
-                <div style="max-height: 400px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;">
-                    ${actionsHtml}
-                </div>
-                <div class="model-settings-dialog-buttons">
-                    <button class="model-settings-dialog-btn cancel" id="actionTypeCancel">CANCEL</button>
-                </div>
-            `;
-            
-            document.body.appendChild(dialog);
-            
-            
-            document.querySelectorAll('.action-type-button').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    let type = this.dataset.type;
-
-                    createActionWithDefaults(type, trackIndex, cellIndex);
-                    dialog.remove();
-                });
-                
-                // Add hover effect
-                btn.addEventListener('mouseenter', function() {
-                    this.style.background = '#4a4a4a';
-                    this.style.borderColor = '#ff9900';
-                });
-                btn.addEventListener('mouseleave', function() {
-                    this.style.background = '#3c3c3c';
-                    this.style.borderColor = '#555';
-                });
-            });
-            
-            document.getElementById('actionTypeCancel').addEventListener('click', function() {
-                pendingCellAction = null;
-                dialog.remove();
-            });
-        }
-
-        
+ 
         function createActionWithDefaults(type, trackIndex, cellIndex) {
             saveTimelineState();
             
@@ -5864,20 +5811,7 @@
             // Save to animation
             saveTimelineToAnimation();
             
-            // Show the state BEFORE this new action (cumulative up to previous frame)
-            if (cellIndex > 0) {
-                computeCumulativeState(cellIndex - 1);
-            } else {
-                // For frame 0, reset to original positions
-                if (savedPointsData) {
-                    models.forEach((model, index) => {
-                        if (savedPointsData[index]) {
-                            model.triangles = JSON.parse(JSON.stringify(savedPointsData[index].triangles));
-                        }
-                    });
-                    draw();
-                }
-            }
+            resetModels()
             
             // Open editor for the newly created action
             showActionInEditor(trackIndex, cellIndex, timelineTracks[trackIndex].cells[cellIndex].length - 1);
@@ -6081,7 +6015,7 @@
                                 labelX: e.target.getBoundingClientRect().left + e.target.offsetWidth/2,
                                 labelY: e.target.getBoundingClientRect().top + e.target.offsetHeight/2
                             };
-                            drawConnectionLines();
+                            drawCoordinateMarkers();
                         }
                     }
                 });
@@ -6178,6 +6112,8 @@
                     }
                     
                     // Handle click on cell
+                    // In renderTimeline() function, replace the cell click handler with this:
+
                     cell.addEventListener('click', function(e) {
                         e.stopPropagation();
                         
@@ -6192,34 +6128,21 @@
                             return;
                         }
                         
-                        // Compute cumulative state up to the PREVIOUS frame
-                        // This shows the result before applying this cell's actions
-                        if (cellIndex > 0) {
-                            computeCumulativeState(cellIndex - 1);
-                        } else {
-                            // For frame 0, reset to original positions
-                            if (savedPointsData) {
-                                models.forEach((model, index) => {
-                                    if (savedPointsData[index]) {
-                                        model.triangles = JSON.parse(JSON.stringify(savedPointsData[index].triangles));
-                                    }
-                                });
-                                draw();
-                            }
+                        // Close any open editor if we're clicking on a different cell
+                        if (currentEditingAction && 
+                            (currentEditingAction.trackIndex !== trackIndex || 
+                            currentEditingAction.cellIndex !== cellIndex)) {
+                            closeInlineEditor();
                         }
+                        
+                        // Compute cumulative state up to and including THIS frame
+                        fastForwardToFrame(cellIndex);
                         
                         // Check if cell exists and has actions
                         let hasActions = timelineTracks[trackIndex].cells[cellIndex] && 
                                         timelineTracks[trackIndex].cells[cellIndex].length > 0;
                         
-                        if (!hasActions) {
-                            // Empty cell - show action type dialog
-                            // Ensure the cell array is initialized for this index
-                            if (!timelineTracks[trackIndex].cells[cellIndex]) {
-                                timelineTracks[trackIndex].cells[cellIndex] = [];
-                            }
-                            showActionTypeDialog(trackIndex, cellIndex);
-                        } else {
+                        if (hasActions) {
                             // Cell has actions
                             let actions = timelineTracks[trackIndex].cells[cellIndex];
                             
@@ -6230,14 +6153,10 @@
                                 // Multiple actions - check which action icon was clicked
                                 let rect = cell.getBoundingClientRect();
                                 
-                                // Get mouse position relative to cell
-                                let mouseX = e.clientX - rect.left;
-                                
                                 // If the cell has our icon container structure, try to determine which icon was clicked
                                 if (cell.children.length > 0 && cell.children[0].children.length > 0) {
                                     let iconContainer = cell.children[0];
                                     let icons = iconContainer.children;
-                                    let iconWidth = rect.width / icons.length;
                                     
                                     // Find which icon was clicked
                                     for (let i = 0; i < icons.length; i++) {
@@ -6249,29 +6168,21 @@
                                     }
                                     
                                     // Fallback to width-based calculation
-                                    let iconIndex = Math.floor(mouseX / iconWidth);
+                                    let iconWidth = rect.width / icons.length;
+                                    let iconIndex = Math.floor((e.clientX - rect.left) / iconWidth);
                                     if (iconIndex >= 0 && iconIndex < actions.length) {
                                         showActionInEditor(trackIndex, cellIndex, iconIndex);
-                                    } else {
-                                        // Last resort: show selection menu
-                                        showActionSelectionMenu(e, trackIndex, cellIndex, actions);
-                                    }
-                                } else {
-                                    // Simple fallback: divide by approximate icon width
-                                    let approxIconWidth = 14;
-                                    let iconIndex = Math.floor(mouseX / approxIconWidth);
-                                    
-                                    if (iconIndex >= 0 && iconIndex < actions.length) {
-                                        showActionInEditor(trackIndex, cellIndex, iconIndex);
-                                    } else {
-                                        // Another fallback: equal division
-                                        let actionIndex = Math.floor(mouseX / (rect.width / actions.length));
-                                        if (actionIndex >= 0 && actionIndex < actions.length) {
-                                            showActionInEditor(trackIndex, cellIndex, actionIndex);
-                                        }
                                     }
                                 }
                             }
+                        } else {
+                            // Empty cell - just navigate to this frame without creating any action
+                            clearPlayingHighlight();
+                            currentFrame = cellIndex;
+                            highlightCurrentFrame();
+                            updateFrameIndicator();
+                            processCurrentFrame();
+                            draw();
                         }
                     });
 
@@ -6534,15 +6445,8 @@
             let modelsToSave;
             
             if (isAnimationMode && savedPointsData) {
-                modelsToSave = models.map((model, index) => {
-                    let savedModel = {
-                        name: model.name,
-                        visible: model.visible,
-                        triangles: savedPointsData[index] ? JSON.parse(JSON.stringify(savedPointsData[index].triangles)) : [],
-                        pointGroups: savedPointsData[index] ? JSON.parse(JSON.stringify(savedPointsData[index].pointGroups)) : []
-                    };
-                    return savedModel;
-                });
+                resetModels()
+                modelsToSave = models
             } else {
                 modelsToSave = models;
             }
@@ -7366,17 +7270,34 @@
             }
         });
 
-        // Canvas mouse events
         c.addEventListener('mousemove', function(e) {
             var rect = c.getBoundingClientRect();
             var scaleX = c.width / rect.width;
             var scaleY = c.height / rect.height;
+            
             var physX = (e.clientX - rect.left) * scaleX;
             var physY = (e.clientY - rect.top) * scaleY;
+            
             mouseX = Math.min(63, Math.max(0, Math.floor(physX / SCALE)));
             mouseY = Math.min(31, Math.max(0, Math.floor(physY / SCALE)));
+            
             lastMouseX = mouseX;
             lastMouseY = mouseY;
+            
+            // Find vertices at current mouse position for hover effect
+            if (!isAnimationMode && models.length > 0 && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
+                let verticesAtPos = findVerticesAtPosition(mouseX, mouseY);
+                if (verticesAtPos.length > 0) {
+                    hoverPointInfo = {
+                        globalPointIndices: verticesAtPos.map(v => v.globalPointIndex),
+                        vertices: verticesAtPos // Store full vertex info for drawing
+                    };
+                } else {
+                    hoverPointInfo = null;
+                }
+            } else {
+                hoverPointInfo = null;
+            }
             
             if (!isAnimationMode && overlayActive && overlayImage && mouseDown) {
                 if (overlayControls.dragging) {
@@ -7446,11 +7367,9 @@
             if (!isAnimationMode && currentTool === 'move' && multiDragging && selectedVertices.length > 0 && mouseDown) {
                 let dx, dy;
                 
-                // Get the current mouse position in logical coordinates
                 let currentMouseX, currentMouseY;
                 
                 if (e.ctrlKey) {
-                    // CTRL held: free movement with float coordinates
                     let rect = c.getBoundingClientRect();
                     let scaleX = c.width / rect.width;
                     let scaleY = c.height / rect.height;
@@ -7459,7 +7378,6 @@
                     currentMouseX = Math.max(0, Math.min(64, physX / SCALE));
                     currentMouseY = Math.max(0, Math.min(32, physY / SCALE));
                 } else {
-                    // No CTRL: grid movement with integer coordinates
                     currentMouseX = mouseX;
                     currentMouseY = mouseY;
                 }
@@ -7473,13 +7391,11 @@
                     let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
                     
                     if (e.ctrlKey) {
-                        // Free movement with float coordinates
                         let newX = Math.max(0, Math.min(64, sel.vx + dx));
                         let newY = Math.max(0, Math.min(32, sel.vy + dy));
                         v.x = toFloat32(newX);
                         v.y = toFloat32(newY);
                     } else {
-                        // Grid movement with integer coordinates
                         let newX = Math.min(63, Math.max(0, Math.round(sel.vx + dx)));
                         let newY = Math.min(31, Math.max(0, Math.round(sel.vy + dy)));
                         v.x = toFloat32(newX);
@@ -7491,26 +7407,46 @@
             }
             
             if (!isAnimationMode && currentTool === 'move' && mouseDown && draggingVertex && models.length > 0) {
-                let tri = models[selectedModelIndex].triangles[draggingVertex.triIndex];
-                let v = [tri.v1, tri.v2, tri.v3][draggingVertex.vertexIndex];
+                let firstVertex = draggingVertex[0];
+                let firstTri = models[selectedModelIndex].triangles[firstVertex.triIndex];
+                let firstV = [firstTri.v1, firstTri.v2, firstTri.v3][firstVertex.vertexIndex];
                 
+                let oldX = firstV.x;
+                let oldY = firstV.y;
+                
+                let newX, newY;
                 if (e.ctrlKey) {
-                    // CTRL held: free movement with float coordinates
                     let rect = c.getBoundingClientRect();
                     let scaleX = c.width / rect.width;
                     let scaleY = c.height / rect.height;
                     let physX = (e.clientX - rect.left) * scaleX;
                     let physY = (e.clientY - rect.top) * scaleY;
-                    let floatX = Math.max(0, Math.min(64, physX / SCALE));
-                    let floatY = Math.max(0, Math.min(32, physY / SCALE));
-                    
-                    v.x = toFloat32(floatX);
-                    v.y = toFloat32(floatY);
+                    newX = Math.max(0, Math.min(64, physX / SCALE));
+                    newY = Math.max(0, Math.min(32, physY / SCALE));
                 } else {
-                    // No CTRL: grid movement
-                    v.x = toFloat32(mouseX);
-                    v.y = toFloat32(mouseY);
+                    newX = mouseX;
+                    newY = mouseY;
                 }
+                
+                let dx = newX - firstV.x;
+                let dy = newY - firstV.y;
+                
+                if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
+                    didDrag = true;
+                }
+                
+                draggingVertex.forEach(vertexInfo => {
+                    let tri = models[selectedModelIndex].triangles[vertexInfo.triIndex];
+                    let v = [tri.v1, tri.v2, tri.v3][vertexInfo.vertexIndex];
+                    
+                    if (e.ctrlKey) {
+                        v.x = toFloat32(Math.max(0, Math.min(64, v.x + dx)));
+                        v.y = toFloat32(Math.max(0, Math.min(32, v.y + dy)));
+                    } else {
+                        v.x = toFloat32(Math.min(63, Math.max(0, newX)));
+                        v.y = toFloat32(Math.min(31, Math.max(0, newY)));
+                    }
+                });
                 
                 updateCodeDisplay();
                 draw();
@@ -7647,6 +7583,7 @@
                                     globalIdx++;
                                 }
                             }
+
                             
                             saveUndoState();
                             
@@ -7738,7 +7675,7 @@
                                 } else {
                                     
                                     saveUndoState();
-                                    draggingVertex = hit;
+                                    draggingVertex = findVerticesAtPosition(mouseX, mouseY);;
                                 }
                             }
                         } else if (currentTool === 'select') {
@@ -7923,14 +7860,34 @@
         }
 
         function cancelPositionPicker() {
+            if (!positionPickerActive) return;
+            
+            let { trackIndex, cellIndex, actionIndex } = currentEditingAction;
+            //fastForwardToFrame(cellIndex+1, true);
+            //draw();
+            
+            
             positionPickerActive = false;
+            positionPickerDragging = false;
+            c.style.cursor = 'default';
+            
             if (pendingPositionField) {
-                if (pendingPositionField.escHandler) {
-                    document.removeEventListener('keydown', pendingPositionField.escHandler);
+                // Remove drag handlers
+                if (pendingPositionField.mousedownHandler) {
+                    c.removeEventListener('mousedown', pendingPositionField.mousedownHandler);
+                }
+                if (pendingPositionField.mousemoveHandler) {
+                    c.removeEventListener('mousemove', pendingPositionField.mousemoveHandler);
+                }
+                if (pendingPositionField.mouseupHandler) {
+                    c.removeEventListener('mouseup', pendingPositionField.mouseupHandler);
+                }
+                if (pendingPositionField.keyHandler) {
+                    document.removeEventListener('keydown', pendingPositionField.keyHandler);
                 }
                 pendingPositionField = null;
             }
-            c.style.cursor = 'default';
+            
             let instruction = document.getElementById('positionPickerInstruction');
             if (instruction) instruction.remove();
         }
@@ -7952,9 +7909,7 @@
                 let gridX = Math.max(0, Math.min(64, physX / SCALE));
                 let gridY = Math.max(0, Math.min(32, physY / SCALE));
                 
-                // Call callback with float position
-                pendingPositionField.callback(gridX, gridY);
-                
+
                 // Clean up
                 cancelPositionPicker();
             }
@@ -8232,21 +8187,9 @@
                 return;
             }
             
-            // Compute cumulative state up to the PREVIOUS frame
-            // This shows the state before this action is applied
-            if (cellIndex > 0) {
-                computeCumulativeState(cellIndex - 1);
-            } else {
-                // For frame 0, reset to original positions
-                if (savedPointsData) {
-                    models.forEach((model, index) => {
-                        if (savedPointsData[index]) {
-                            model.triangles = JSON.parse(JSON.stringify(savedPointsData[index].triangles));
-                        }
-                    });
-                    draw();
-                }
-            }
+            // Compute cumulative state up to and including THIS frame
+            // This shows the state after this action is applied
+            fastForwardToFrame(cellIndex);
             
             let action = timelineTracks[trackIndex].cells[cellIndex][actionIndex];
             let actionDef = animationDesc[action.type];
@@ -8274,7 +8217,6 @@
             
             // Set label
             document.getElementById('editingActionLabel').textContent = actionDef.icon + ' ' + actionDef.name;
-    
             
             // Generate parameter fields
             paramsDiv.innerHTML = '';
@@ -8495,11 +8437,18 @@
                     // If no actions left in this cell, remove the cell array
                     if (timelineTracks[trackIndex].cells[cellIndex].length === 0) {
                         delete timelineTracks[trackIndex].cells[cellIndex];
+                        // Close the editor since the cell is now empty
+                        closeInlineEditor();
                     }
                     
                     saveTimelineToAnimation();
                     renderTimeline();
-                    closeInlineEditor();
+                    
+                    // If we didn't close the editor above (cell still has actions), 
+                    // but the current editing action was deleted, close it
+                    if (!closeInlineEditor.called) {
+                        closeInlineEditor();
+                    }
                 }
             });
             
@@ -8653,8 +8602,7 @@
                 cell.title = timelineTracks[trackIndex].cells[cellIndex].map(a => animationDesc[a.type]?.name || a.type).join(', ');
             }
             
-            // Redraw to update markers
-            draw();
+    
         }
 
         function closeActionEditor() {
@@ -8665,13 +8613,28 @@
         function startPositionPickerForEditInline(fieldType) {
             if (!currentEditingAction) return;
             
-            // If there's already an active picker, cancel it first
             if (positionPickerActive) {
                 cancelPositionPicker();
             }
             
+            let { trackIndex, cellIndex, actionIndex } = currentEditingAction;
+            let track = animations[selectedAnimationIndex]?.tracks[trackIndex];
+        
+                    
+            if (track) {
+                fastForwardToFrame(cellIndex);
+            }
+            
+
+            
             positionPickerActive = true;
-            pendingPositionField = { fieldType };
+            pendingPositionField = { 
+                fieldType,
+                trackIndex,
+                cellIndex,
+                actionIndex,
+                track
+            };
             
             c.style.cursor = 'crosshair';
             
@@ -8697,23 +8660,42 @@
             if (fieldType === 'center') {
                 instruction.innerHTML = '🎯 Click and drag on canvas to set center position<br><small style="color:#aaa;">Hold CTRL for free movement (no grid snap)</small> - <button id="cancelPickerBtn" style="background:#666; color:#fff; border:none; border-radius:3px; padding:4px 12px; cursor:pointer; font-size:12px;">ESC</button>';
             } else if (fieldType === 'translate') {
-                // Calculate current target top-left corner to use as reference for offset
-                let { trackIndex, cellIndex, actionIndex } = currentEditingAction;
-                let track = animations[selectedAnimationIndex]?.tracks[trackIndex];
+                // Calculate the CURRENT position of the target (after all previous frames)
+                // BUT WITHOUT applying the current action's offset
                 if (track) {
+                    // Start from original state
+                    let { trackIndex, cellIndex, actionIndex } = currentEditingAction;
+                    fastForwardToFrame(cellIndex, true);
+                    
+                    
+                    // Now get the bounds from this cumulative state (before applying current action)
                     let bounds;
-                    if (track.groupIndex === -1) {
-                        bounds = getModelBounds(models[track.modelIndex]);
+                    if (track.groupIndex !== -1 && models[track.modelIndex].pointGroups && 
+                        models[track.modelIndex].pointGroups[track.groupIndex]) {
+                        bounds = getPointGroupBounds(models[track.modelIndex], 
+                            models[track.modelIndex].pointGroups[track.groupIndex]);
                     } else {
-                        bounds = getPointGroupBounds(models[track.modelIndex], models[track.modelIndex].pointGroups[track.groupIndex]);
+                        bounds = getModelBounds(models[track.modelIndex]);
                     }
+                    
                     if (bounds) {
-                        // Use top-left corner as reference
-                        pendingPositionField.referenceX = bounds.minX;
-                        pendingPositionField.referenceY = bounds.minY;
+                        // Store the current top-left corner (before this action)
+                        pendingPositionField.currentMinX = bounds.minX;
+                        pendingPositionField.currentMinY = bounds.minY;
+                        
+                        // Also store the current action's offset if it exists, so we can remove it from preview
+                        let currentAction = timelineTracks[trackIndex]?.cells[cellIndex]?.[actionIndex];
+                        if (currentAction && currentAction.parameters) {
+                            pendingPositionField.currentOffsetX = currentAction.parameters.x || 0;
+                            pendingPositionField.currentOffsetY = currentAction.parameters.y || 0;
+                        } else {
+                            pendingPositionField.currentOffsetX = 0;
+                            pendingPositionField.currentOffsetY = 0;
+                        }
                     }
                 }
-                instruction.innerHTML = '🎯 Click and drag on canvas to set target position<br><small style="color:#aaa;">Offset from top-left corner will be saved (click on current top-left for 0,0)</small> - <button id="cancelPickerBtn" style="background:#666; color:#fff; border:none; border-radius:3px; padding:4px 12px; cursor:pointer; font-size:12px;">ESC</button>';
+                
+                instruction.innerHTML = '🎯 Click and drag on canvas to set target position - <button id="cancelPickerBtn" style="background:#666; color:#fff; border:none; border-radius:3px; padding:4px 12px; cursor:pointer; font-size:12px;">ESC</button>';
             }
             
             document.body.appendChild(instruction);
@@ -8727,10 +8709,6 @@
             c.addEventListener('mousemove', updatePositionPickerDrag);
             c.addEventListener('mouseup', endPositionPickerDrag);
             
-            pendingPositionField.mousedownHandler = startPositionPickerDrag;
-            pendingPositionField.mousemoveHandler = updatePositionPickerDrag;
-            pendingPositionField.mouseupHandler = endPositionPickerDrag;
-            
             let keyHandler = function(e) {
                 if (e.key === 'Escape') {
                     e.preventDefault();
@@ -8741,7 +8719,6 @@
             document.addEventListener('keydown', keyHandler);
             pendingPositionField.keyHandler = keyHandler;
         }
-        
         function drawPositionPickerIndicator() {
             if (!positionPickerActive || !positionPickerDragging || !pendingPositionField) return;
             
@@ -8794,35 +8771,6 @@
             
             ctx.restore();
         }
-
-        function cancelPositionPicker() {
-            if (!positionPickerActive) return;
-            
-            positionPickerActive = false;
-            positionPickerDragging = false;
-            c.style.cursor = 'default';
-            
-            if (pendingPositionField) {
-                // Remove drag handlers
-                if (pendingPositionField.mousedownHandler) {
-                    c.removeEventListener('mousedown', pendingPositionField.mousedownHandler);
-                }
-                if (pendingPositionField.mousemoveHandler) {
-                    c.removeEventListener('mousemove', pendingPositionField.mousemoveHandler);
-                }
-                if (pendingPositionField.mouseupHandler) {
-                    c.removeEventListener('mouseup', pendingPositionField.mouseupHandler);
-                }
-                if (pendingPositionField.keyHandler) {
-                    document.removeEventListener('keydown', pendingPositionField.keyHandler);
-                }
-                pendingPositionField = null;
-            }
-            
-            let instruction = document.getElementById('positionPickerInstruction');
-            if (instruction) instruction.remove();
-        }
-
 
         // ===========================================
         // INITIALIZE ACTION EDITOR CLOSE BUTTON
@@ -9063,6 +9011,8 @@
             
             positionPickerDragging = true;
             
+            let { trackIndex, cellIndex, actionIndex } = currentEditingAction;
+            fastForwardToFrame(cellIndex, true);
 
             let rect = c.getBoundingClientRect();
             let scaleX = c.width / rect.width;
@@ -9070,18 +9020,19 @@
             let physX = (e.clientX - rect.left) * scaleX;
             let physY = (e.clientY - rect.top) * scaleY;
             
-           
             let gridX = physX / SCALE;
             let gridY = physY / SCALE;
-        
+            
             gridX = Math.max(0, Math.min(64, gridX));
             gridY = Math.max(0, Math.min(32, gridY));
             
             positionPickerStartPos = { x: gridX, y: gridY };
             positionPickerCurrentPos = { x: gridX, y: gridY };
             
-            updatePositionPickerField(gridX, gridY, e.ctrlKey);
-            
+            // Apply the initial position
+           
+            applyLiveActionPreview(trackIndex, cellIndex, actionIndex);
+
             c.style.cursor = 'grabbing';
         }
 
@@ -9090,8 +9041,10 @@
             
             e.preventDefault();
             e.stopPropagation();
-            
 
+            let { trackIndex, cellIndex, actionIndex } = currentEditingAction;
+            fastForwardToFrame(cellIndex, true);
+            
             let rect = c.getBoundingClientRect();
             let scaleX = c.width / rect.width;
             let scaleY = c.height / rect.height;
@@ -9101,55 +9054,77 @@
             let gridX = physX / SCALE;
             let gridY = physY / SCALE;
             
-
             gridX = Math.max(0, Math.min(64, gridX));
             gridY = Math.max(0, Math.min(32, gridY));
             
             positionPickerCurrentPos = { x: gridX, y: gridY };
-            
+            //
             updatePositionPickerField(gridX, gridY, e.ctrlKey);
+            saveActionChangesInline();
+            
+            applyLiveActionPreview(trackIndex, cellIndex, actionIndex);
+      
         }
+
 
         function updatePositionPickerField(x, y, ctrlKey) {
             if (!pendingPositionField) return;
             
             let fieldType = pendingPositionField.fieldType;
+            let { trackIndex, cellIndex, actionIndex } = pendingPositionField;
             
             if (fieldType === 'center') {
                 let xInput = document.getElementById('edit_param_center_x');
                 let yInput = document.getElementById('edit_param_center_y');
                 if (xInput && yInput) {
+                    let valueX, valueY;
+                    
                     if (ctrlKey) {
-                        // No grid snap - use raw float with 1 decimal precision
-                        xInput.value = x.toFixed(1);
-                        yInput.value = y.toFixed(1);
+                        valueX = x.toFixed(1);
+                        valueY = y.toFixed(1);
                     } else {
-
-                        xInput.value = Math.floor(x);
-                        yInput.value = Math.floor(y);
+                        valueX = Math.floor(x);
+                        valueY = Math.floor(y);
                     }
-                    saveActionChangesInline();
+                    
+                    xInput.value = valueX;
+                    yInput.value = valueY;
+
                 }
             } else if (fieldType === 'translate') {
                 let xInput = document.getElementById('edit_param_translate_x');
                 let yInput = document.getElementById('edit_param_translate_y');
-                if (xInput && yInput && pendingPositionField.referenceX !== undefined && pendingPositionField.referenceY !== undefined) {
-                    // Calculate offset from reference position (top-left corner)
-                    let offsetX = x - pendingPositionField.referenceX;
-                    let offsetY = y - pendingPositionField.referenceY;
+                if (xInput && yInput && pendingPositionField.currentMinX !== undefined && pendingPositionField.currentMinY !== undefined) {
+                    // The user clicks on where they want the top-left corner to go
+                    let targetX = x;
+                    let targetY = y;
+                    
+                    // The new offset should move the current top-left to the target position
+                    let offsetX = targetX - pendingPositionField.currentMinX;
+                    let offsetY = targetY - pendingPositionField.currentMinY;
+                    
+                    let valueX, valueY;
                     
                     if (ctrlKey) {
-                        // No grid snap - use raw float with 1 decimal precision
-                        xInput.value = offsetX.toFixed(1);
-                        yInput.value = offsetY.toFixed(1);
+                        valueX = offsetX.toFixed(1);
+                        valueY = offsetY.toFixed(1);
                     } else {
-
-                        xInput.value = Math.floor(offsetX);
-                        yInput.value = Math.floor(offsetY);
+                        valueX = Math.floor(offsetX);
+                        valueY = Math.floor(offsetY);
                     }
-                    saveActionChangesInline();
+                    
+                    xInput.value = valueX;
+                    yInput.value = valueY;
+        
                 }
             }
+        }
+ 
+
+        function applyLiveActionPreview(trackIndex, cellIndex, actionIndex, newParameters) {
+            if (!isAnimationMode || selectedAnimationIndex < 0 || !pendingPositionField) return;
+            fastForwardToFrame(cellIndex+1, true);   
+            draw();
         }
 
         function endPositionPickerDrag(e) {
@@ -9157,7 +9132,7 @@
                 positionPickerDragging = false;
                 c.style.cursor = 'crosshair';
                 
-                
+                // Final update with the end position
                 if (e && positionPickerActive && pendingPositionField) {
                     let rect = c.getBoundingClientRect();
                     let scaleX = c.width / rect.width;
@@ -9171,7 +9146,8 @@
                     gridX = Math.max(0, Math.min(64, gridX));
                     gridY = Math.max(0, Math.min(32, gridY));
                     
-                    updatePositionPickerField(gridX, gridY, e.ctrlKey);
+
+                    saveActionChangesInline();
                 }
             }
         }
@@ -9347,44 +9323,13 @@
             if (!isAnimationMode || selectedAnimationIndex < 0 || !savedPointsData) return;
             
             // Start from original positions
-            models.forEach((model, modelIndex) => {
-                if (savedPointsData[modelIndex]) {
-                    model.triangles = JSON.parse(JSON.stringify(savedPointsData[modelIndex].triangles));
-                }
-            });
+            //models.forEach((model, modelIndex) => {
+            //    if (savedPointsData[modelIndex]) {
+            //        model.triangles = JSON.parse(JSON.stringify(savedPointsData[modelIndex].triangles));
+            //    }
+            //});
             
-            let anim = animations[selectedAnimationIndex];
             
-            // Apply all actions from frame 0 up to the target frame
-            for (let f = 0; f <= frame; f++) {
-                anim.tracks.forEach((track, trackIndex) => {
-                    if (!track.actions || !track.actions[f]) return;
-                    
-                    let cellActions = track.actions[f];
-                    if (!cellActions || cellActions.length === 0) return;
-                    
-                    // Create target object
-                    let target = {
-                        type: track.groupIndex === -1 ? TargetType.MODEL : TargetType.POINT_GROUP,
-                        modelIndex: track.modelIndex,
-                        groupIndex: track.groupIndex
-                    };
-                    
-                    // Process each action in this cell in order
-                    cellActions.forEach(action => {
-                        let actionFunc = actionFunctions[action.type];
-                        if (actionFunc) {
-                            // For instant actions, apply them
-                            if (animationDesc[action.type].instant) {
-                                actionFunc({ target: target }, action.parameters);
-                            } else {
-                                // For over-time actions, we'll need to handle them differently later
-                                console.log("Over-time action not yet implemented:", action.type);
-                            }
-                        }
-                    });
-                });
-            }
             
             draw();
         }
@@ -9401,8 +9346,34 @@
         draw();
         document.getElementById('toolMovePoints').classList.add('active');
         currentTool = 'move';
-        window.addEventListener('load', checkMobileWarning);
-        window.addEventListener('resize', checkMobileWarning);
+
+        const resizeObserver = new ResizeObserver(() => {
+            updateCanvasScale();
+        });
+
+        window.addEventListener('load', function() {
+            const container = document.querySelector('.canvas-container');
+            if (container) {
+                resizeObserver.observe(container);
+            }
+            createCollapseButton();
+            checkMobileWarning();
+            updateCanvasScale();
+        });
+
+        window.addEventListener('resize', function() {
+            updateCanvasScale();
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('meuCanvas');
+            if (canvas) {
+                canvas.style.width = '1024px';
+                canvas.style.height = '512px';
+                canvas.style.maxWidth = '100%';
+                canvas.style.objectFit = 'contain';
+            }
+        });
 
     </script>
 </body>
