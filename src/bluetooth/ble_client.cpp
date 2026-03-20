@@ -95,23 +95,28 @@ bool BleManager::connectToServer(){
       
       
       pClient->setClientCallbacks(device->m_callbacks, false);
-      pClient->setConnectionParams(12, 12, 0, 150);
+      pClient->setConnectionParams(24, 24, 0, 150);
       pClient->setConnectTimeout(5 * 1000);
+      
+      
 
-        if (!pClient->connect(advDevice)) {
-            NimBLEDevice::deleteClient(pClient);
-            Serial.printf("Failed to connect, deleted client 1\n");
-            return false;
-        }
+      if (!pClient->connect(advDevice, true, false, false)) {
+          NimBLEDevice::deleteClient(pClient);
+          Serial.printf("Failed to connect, deleted client 1\n");
+          return false;
+      }
+      
     }
 
     if (!pClient->isConnected()) {
-      if (!pClient->connect(advDevice)) {
+      if (!pClient->connect(advDevice, true, false, false)) {
           Serial.printf("Failed to connect 2\n");
           return false;
       }
     }
 
+    pClient->exchangeMTU();
+    
     Serial.printf("Connected to: %s RSSI: %d, MTU %d\n", pClient->getPeerAddress().toString().c_str(), pClient->getRssi(), pClient->getMTU());
     
     
