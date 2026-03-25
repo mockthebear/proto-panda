@@ -1607,7 +1607,8 @@
             transform: scale(1.05);
             z-index: 10;
             position: relative;
-            transition: all 0.2s ease;
+            transition: width 0.05s ease-out, min-width 0.05s ease-out;
+            will-change: width;
         }
 
         .timeline-cell.selected-action::after {
@@ -1769,6 +1770,8 @@
             position: relative;
         }
 
+
+
         .timeline-time-header {
             display: flex;
             background: #3c3c3c;
@@ -1793,6 +1796,7 @@
 
         .time-header-cell {
             width: 40px;
+            min-width: 40px;
             height: 30px;
             flex-shrink: 0;
             display: flex;
@@ -1804,6 +1808,7 @@
             border-right: 1px solid #555;
             background: #3c3c3c;
         }
+
 
         .time-header-cell:last-child {
             border-right: none;
@@ -1831,6 +1836,7 @@
 
         .track-label {
             width: 80px;
+            min-width: 80px;
             height: 40px;
             display: flex;
             align-items: center;
@@ -1855,12 +1861,12 @@
 
         .timeline-cell {
             width: 40px;
+            min-width: 40px;
             height: 40px;
             background: #4a4a4a;
             border-right: 1px solid #666;
             flex-shrink: 0;
             cursor: pointer;
-            transition: all 0.1s ease;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -2711,8 +2717,11 @@
 
         // Timeline variables
         var timelineTracks = [];
-        var timelineInterval = 100; 
-        var totalCells = 2; // Start with 2 cells
+        var timelineInterval = 10; 
+        var startingCells = 60; // Start with 2 cells
+        var timelineZoomLevel = 1;
+        var timelineMinZoom = 0.5;
+        var timelineMaxZoom = 3;
 
         // Animation state
         var isPlaying = false;
@@ -2736,6 +2745,8 @@
 
         var isRightPanelCollapsed = false;
         var rightPanelWidth = 280; 
+
+        
 
 
         function getCanvasScale() {
@@ -3506,17 +3517,19 @@
 
                 processCurrentFrame();
                 draw();
-                
+
                 if (currentFrame < totalCells) {
                     // Normal step forward
                     currentFrame++;
+                    forceScrollToFrame(currentFrame);
                 } else {
                     if (repeatAnimation) {
-
                         currentFrame = 0;
                     } else {
+                        currentFrame = currentFrame -1;
                         pauseAnimation();
                     }
+                    forceScrollToFrame(currentFrame);
                 }
             }, timelineInterval);
         }
@@ -3533,9 +3546,19 @@
                 animationTimer = null;
             }
             
+            forceScrollToFrame(currentFrame);
             // Don't change currentFrame - keep showing current frame
             // Just ensure the current frame is still highlighted
+
+            clearPlayingHighlight();
             highlightCurrentFrame();
+            updateFrameIndicator();
+
+            updateCurrentAnimation();
+
+            processCurrentFrame();
+            draw();
+                
         }
 
         function buttonStopAnimation() {
@@ -3598,6 +3621,7 @@
                 }
                 // Otherwise stay at last frame (do nothing)
             }
+            forceScrollToFrame(currentFrame);
             
             highlightCurrentFrame();
             updateFrameIndicator();
@@ -5342,9 +5366,9 @@
         function createAnimation(name) {
             return {
                 name: name,
-                interval: 100,
+                interval: 16,
                 tracks: [],
-                totalSteps: 2,
+                totalSteps: startingCells,
                 repeat: false
             };
         }
@@ -5431,7 +5455,7 @@
 
         function createNewAnimation(name) {
             let anim = createAnimation(name);
-            anim.totalSteps = 2;
+            anim.totalSteps = startingCells;
             animations.push(anim);
             selectedAnimationIndex = animations.length - 1;
 
@@ -5477,7 +5501,7 @@
                 cells: track.actions || []
             }));
             
-            totalCells = anim.totalSteps || 2;
+            totalCells = anim.totalSteps || startingCells;
             
             // Update visibility based on tracks
             if (isAnimationMode) {
@@ -5750,7 +5774,7 @@
         function updateTotalFrames() {
             let total = 0;
             animations.forEach(anim => {
-                total += anim.totalSteps || 2;
+                total += anim.totalSteps || startingCells;
             });
             document.getElementById('totalFrames').textContent = total;
         }
@@ -5928,6 +5952,10 @@
             const container = document.getElementById('timelineTracks');
             if (!container) return;
             
+            // Store current zoom level and scroll position before rerender
+            const savedZoomLevel = timelineZoomLevel;
+            const savedScrollLeft = container.scrollLeft;
+            
             container.innerHTML = '';
             
             // Create time header
@@ -5968,22 +5996,9 @@
             plusHeaderCell.style.cursor = 'pointer';
             plusHeaderCell.style.background = '#ff9900';
             plusHeaderCell.style.color = '#111';
-            plusHeaderCell.title = 'Add frame';
+            plusHeaderCell.title = 'Add frames (seconds)';
             plusHeaderCell.addEventListener('click', function() {
-                let newTotal = totalCells + 1;
-                
-                if (selectedAnimationIndex >= 0) {
-                    animations[selectedAnimationIndex].totalSteps = newTotal;
-                }
-                
-                totalCells = newTotal;
-                
-                timelineTracks.forEach(t => {
-                    if (!t.cells) t.cells = [];
-                });
-                
-                renderTimeline();
-                updateTotalFrames();
+                showAddFramesDialog();
             });
             timeHeaderDiv.appendChild(plusHeaderCell);
             
@@ -6267,22 +6282,9 @@
                 plusCell.style.cursor = 'pointer';
                 plusCell.innerHTML = '<span style="font-size: 16px; font-weight: bold;">+</span>';
                 plusCell.style.color = '#ff9900';
-                plusCell.title = 'Add new frame';
+                plusCell.title = 'Add frames (seconds)';
                 plusCell.addEventListener('click', function() {
-                    let newTotal = totalCells + 1;
-                    
-                    if (selectedAnimationIndex >= 0) {
-                        animations[selectedAnimationIndex].totalSteps = newTotal;
-                    }
-                    
-                    totalCells = newTotal;
-                    
-                    timelineTracks.forEach(t => {
-                        if (!t.cells) t.cells = [];
-                    });
-                    
-                    renderTimeline();
-                    updateTotalFrames();
+                    showAddFramesDialog();
                 });
                 trackCells.appendChild(plusCell);
                 
@@ -6296,6 +6298,148 @@
                 highlightCurrentFrame();
                 updateFrameIndicator();
             }
+            // Restore zoom level after re-render
+            if (savedZoomLevel > 0 && savedZoomLevel !== 1) {
+                timelineZoomLevel = savedZoomLevel;
+                
+                // Apply zoom to all elements
+                const cells = container.querySelectorAll('.timeline-cell');
+                cells.forEach(cell => {
+                    cell.style.width = `${40 * timelineZoomLevel}px`;
+                });
+                
+                const headerCells = container.querySelectorAll('.time-header-cell');
+                headerCells.forEach(cell => {
+                    cell.style.width = `${40 * timelineZoomLevel}px`;
+                });
+                
+                const headerCorner = container.querySelector('.header-corner');
+                if (headerCorner) {
+                    headerCorner.style.width = `${80 * timelineZoomLevel}px`;
+                }
+                
+                const trackLabels = container.querySelectorAll('.track-label');
+                trackLabels.forEach(label => {
+                    label.style.width = `${80 * timelineZoomLevel}px`;
+                });
+                
+                // Restore scroll position
+                container.scrollLeft = savedScrollLeft;
+            }
+        }
+
+
+        function showAddFramesDialog() {
+            let dialog = document.createElement('div');
+            dialog.className = 'model-settings-dialog active';
+            dialog.id = 'addFramesDialog';
+            dialog.style.minWidth = '300px';
+            
+            let currentIntervalMs = timelineInterval;
+            let framesPerSecond = 1000 / currentIntervalMs;
+            
+            dialog.innerHTML = `
+                <h3>⏱️ Add Frames (in seconds)</h3>
+                <div class="settings-row">
+                    <label>Current interval: ${currentIntervalMs} ms (${framesPerSecond.toFixed(1)} fps)</label>
+                </div>
+                <div class="settings-row">
+                    <label>Add time (seconds):</label>
+                    <input type="number" id="addSecondsInput" value="1" min="0.1" step="0.1" style="width: 100%; padding: 8px; background: #1e1e1e; border: 1px solid #555; color: #fff; border-radius: 4px;">
+                    <small style="color: #aaa;">This will add ${Math.round(1000 / currentIntervalMs)} frames per second</small>
+                </div>
+                <div class="settings-row">
+                    <label>Preview:</label>
+                    <div id="framesPreview" style="color: #ff9900; font-weight: bold; text-align: center; padding: 8px; background: #1e1e1e; border-radius: 4px;">
+                        0 frames will be added
+                    </div>
+                </div>
+                <div class="model-settings-dialog-buttons">
+                    <button class="model-settings-dialog-btn cancel" id="addFramesCancel">CANCEL</button>
+                    <button class="model-settings-dialog-btn save" id="addFramesConfirm">ADD FRAMES</button>
+                </div>
+            `;
+            
+            document.body.appendChild(dialog);
+            
+            let secondsInput = document.getElementById('addSecondsInput');
+            let previewDiv = document.getElementById('framesPreview');
+            
+            function updatePreview() {
+                let seconds = parseFloat(secondsInput.value);
+                if (isNaN(seconds) || seconds <= 0) seconds = 0;
+                let framesToAdd = Math.round(seconds * (1000 / currentIntervalMs));
+                previewDiv.textContent = `${framesToAdd} frame${framesToAdd !== 1 ? 's' : ''} will be added (${seconds} second${seconds !== 1 ? 's' : ''} at ${framesPerSecond.toFixed(1)} fps)`;
+            }
+            
+            secondsInput.addEventListener('input', updatePreview);
+            updatePreview();
+            
+            // Add Enter key handler
+            secondsInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('addFramesConfirm').click();
+                }
+            });
+            
+            document.getElementById('addFramesConfirm').addEventListener('click', function() {
+                let seconds = parseFloat(secondsInput.value);
+                if (isNaN(seconds) || seconds <= 0) {
+                    seconds = 0;
+                }
+                
+                let framesToAdd = Math.round(seconds * (1000 / timelineInterval));
+                
+                if (framesToAdd <= 0) {
+                    dialog.remove();
+                    return;
+                }
+                
+                // Save current state for undo
+                saveTimelineState();
+                
+                let newTotal = totalCells + framesToAdd;
+                
+                if (selectedAnimationIndex >= 0) {
+                    animations[selectedAnimationIndex].totalSteps = newTotal;
+                }
+                
+                totalCells = newTotal;
+                
+                // Initialize empty cells for all tracks up to the new total
+                timelineTracks.forEach(t => {
+                    if (!t.cells) t.cells = [];
+                    // Ensure cells array has the right length (sparse array is fine)
+                });
+                
+                renderTimeline();
+                updateTotalFrames();
+                
+                // Show feedback
+                let feedback = document.createElement('div');
+                feedback.textContent = `✓ Added ${framesToAdd} frame${framesToAdd !== 1 ? 's' : ''} (${seconds} second${seconds !== 1 ? 's' : ''})`;
+                feedback.style.position = 'fixed';
+                feedback.style.bottom = '20px';
+                feedback.style.right = '20px';
+                feedback.style.background = '#4CAF50';
+                feedback.style.color = '#111';
+                feedback.style.padding = '8px 16px';
+                feedback.style.borderRadius = '4px';
+                feedback.style.fontFamily = 'Courier New, monospace';
+                feedback.style.fontSize = '12px';
+                feedback.style.fontWeight = 'bold';
+                feedback.style.zIndex = '20000';
+                feedback.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+                document.body.appendChild(feedback);
+                setTimeout(() => feedback.remove(), 2000);
+                
+                dialog.remove();
+            });
+            
+            document.getElementById('addFramesCancel').addEventListener('click', function() {
+                dialog.remove();
+            });
         }
 
         function updateTimeHeader() {
@@ -6460,7 +6604,7 @@
                 actions: anim.tracks.map(track => {
                     // change actions to the correct format [null, {action}, null, etc.]
                     let actionArray = [];
-                    for (let i = 0; i < (anim.totalSteps || 2); i++) {
+                    for (let i = 0; i < (anim.totalSteps || totalCells); i++) {
                         if (track.actions && track.actions[i] && track.actions[i].length > 0) {
                             // If there are multiple actions in one cell, we need to decide how to handle
                             // For now, just take the first one
@@ -6645,7 +6789,7 @@
                                         return {
                                             name: anim.name,
                                             interval: anim.interval || 100,
-                                            totalSteps: anim.actions ? Math.max(...anim.actions.map(a => a.length)) || 2 : 2,
+                                            totalSteps: anim.actions ? Math.max(...anim.actions.map(a => a.length)) || startingCells : startingCells,
                                             repeat: anim.repeat || false,
                                             tracks: tracks
                                         };
@@ -9334,6 +9478,132 @@
             draw();
         }
 
+        function forceScrollToFrame(frameIndex) {
+            const timelineContainer = document.getElementById('timelineTracks');
+            if (!timelineContainer) return;
+            
+            // Find the cell for this specific frame
+            const targetCell = document.querySelector(`.timeline-cell[data-cell="${frameIndex}"]`);
+            if (!targetCell) return;
+            
+            // Calculate scroll position to center the cell
+            const cellOffsetLeft = targetCell.offsetLeft;
+            const cellWidth = targetCell.offsetWidth;
+            const containerWidth = timelineContainer.clientWidth;
+            const targetScroll = cellOffsetLeft - (containerWidth / 2) + (cellWidth / 2);
+            
+            // Scroll to position
+            timelineContainer.scrollTo({
+                left: Math.max(0, targetScroll),
+                behavior: 'smooth'
+            });
+        }
+
+        function calculateMinZoomLevel() {
+            const timelineTracks = document.getElementById('timelineTracks');
+            if (!timelineTracks) return timelineMinZoom;
+            
+            // Get the container width (client width, not including scrollbar)
+            const containerWidth = timelineTracks.clientWidth;
+            
+
+            const baseCellWidth = 40;
+            const totalCellsWithPlus = totalCells + 5; 
+            const totalBaseWidth = totalCellsWithPlus * baseCellWidth;
+            
+            // Calculate zoom needed to fit all cells
+            // Add a small buffer (10px) to avoid edge clipping
+            const neededZoom = (containerWidth - 10) / totalBaseWidth;
+            
+            // Clamp between 0.2 and 1 (can't zoom beyond 1x for readability)
+            const minZoom = Math.min(1, Math.max(0.2, neededZoom));
+            
+            return minZoom;
+        }
+
+        function setupTimelineWheelZoom() {
+            const timelineTracks = document.getElementById('timelineTracks');
+            if (!timelineTracks) return;
+            
+            timelineTracks.addEventListener('wheel', function(e) {
+                // Only zoom if mouse is inside timeline area and Ctrl key is pressed
+                const rect = timelineTracks.getBoundingClientRect();
+                const isInside = e.clientX >= rect.left && e.clientX <= rect.right &&
+                                e.clientY >= rect.top && e.clientY <= rect.bottom;
+                
+                if (!isInside) return;
+                
+                // Check if Ctrl key is pressed for zoom
+                if (!e.ctrlKey) return;
+                
+                e.preventDefault();
+                
+                // Calculate zoom delta
+                const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                let newZoom = timelineZoomLevel + delta;
+                
+                // Clamp zoom level
+                const currentMinZoom = calculateMinZoomLevel();
+                timelineMinZoom = currentMinZoom;
+
+                newZoom = Math.max(timelineMinZoom, Math.min(timelineMaxZoom, newZoom));
+                
+                if (newZoom === timelineZoomLevel) return;
+                
+                // Store current scroll position
+                const currentScrollLeft = timelineTracks.scrollLeft;
+                
+                // Get the mouse X position relative to the timeline content (not the container)
+                // This is the key: we need the position in the scrollable content coordinate space
+                const mouseXInContent = currentScrollLeft + (e.clientX - rect.left);
+                
+                // Calculate the ratio of where the mouse is within the scrollable content
+                // This ratio should remain constant after zoom
+                const totalWidthBefore = timelineTracks.scrollWidth;
+                const ratio = totalWidthBefore > 0 ? mouseXInContent / totalWidthBefore : 0.5;
+                
+                // Apply zoom to all elements
+                const cells = timelineTracks.querySelectorAll('.timeline-cell');
+                cells.forEach(cell => {
+                    cell.style.width = `${40 * newZoom}px`;
+                    cell.style.minWidth = `${40 * newZoom}px`;
+                });
+                
+                const headerCells = timelineTracks.querySelectorAll('.time-header-cell');
+                headerCells.forEach(cell => {
+                    cell.style.width = `${40 * newZoom}px`;
+                    cell.style.minWidth = `${40 * newZoom}px`;
+                });
+                
+                const headerCorner = timelineTracks.querySelector('.header-corner');
+                if (headerCorner) {
+                    headerCorner.style.width = `${80 * newZoom}px`;
+                    headerCorner.style.minWidth = `${80 * newZoom}px`;
+                }
+                
+                const trackLabels = timelineTracks.querySelectorAll('.track-label');
+                trackLabels.forEach(label => {
+                    label.style.width = `${80 * newZoom}px`;
+                    label.style.minWidth = `${80 * newZoom}px`;
+                });
+                
+                // Update the zoom level
+                timelineZoomLevel = newZoom;
+                
+                // Calculate new scroll position to keep the mouse position at the same ratio
+                const totalWidthAfter = timelineTracks.scrollWidth;
+                const newMouseXInContent = ratio * totalWidthAfter;
+                
+                // Convert back to scroll position
+                let newScrollLeft = newMouseXInContent - (e.clientX - rect.left);
+                
+                // Clamp to valid range
+                newScrollLeft = Math.max(0, Math.min(totalWidthAfter - timelineTracks.clientWidth, newScrollLeft));
+                
+                // Apply the new scroll position
+                timelineTracks.scrollLeft = newScrollLeft;
+            });
+        }
         // Also call it on page load
         setTimeout(populateActionPalette, 200);
 
@@ -9374,6 +9644,8 @@
                 canvas.style.objectFit = 'contain';
             }
         });
+
+        setupTimelineWheelZoom();
 
     </script>
 </body>
