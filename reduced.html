@@ -1796,6 +1796,12 @@
     border-bottom: 1px solid #2a2a2a;
     min-height: 32px;
     width: 100%;
+    transition: background 0.1s ease, border-left 0.1s ease;
+}
+
+.timeline-row.selected {
+    background: #2a2a2a !important;
+    border-left: 3px solid #ff9900 !important;
 }
 
 .timeline-label {
@@ -2932,6 +2938,7 @@
         var currentEditingTrack = null;
         var currentEditingAnimation = null;
         let currentHoveredModelIndex = -1;
+        var selectedTimelineId  = -1;
 
         var hoveredGroupBadge = null;
         var hoveredGroupPoints = [];
@@ -2939,12 +2946,27 @@
         var copiedKeyframe = null;
         var copyModeActive = false;
 
-            
+        var snapInterval = 50;
+
+        
+        // Pick mode state
+        var pickModeActive = false;
+        var pickModeCallback = null;
+        var pickModeOriginalX = 0;
+        var pickModeOriginalY = 0;
+        var pickModeTargetInput = null;
+        var isPreviewMode  = false;
+        var pendingUndoForPickMode = false;
+                    
         
 
         // ===========================================
         // UTILITY FUNCTIONS
         // ===========================================
+
+        function snapTime(time) {
+            return Math.round(time / snapInterval) * snapInterval;
+        }
 
         function toFloat32(value) { return Math.fround(value); }
         function Vec2f(x, y) { return { x: toFloat32(x), y: toFloat32(y) }; }
@@ -3494,6 +3516,10 @@
             anim.tracks.forEach((track) => {
                 const row = document.createElement('div');
                 row.className = 'timeline-row';
+                if (selectedTimelineId === track.id) {
+                    row.style.background = '#2a2a2a';
+                    row.style.borderLeft = '3px solid #ff9900';
+                }
                 row.style.display = 'flex';
                 row.style.alignItems = 'stretch';
                 row.style.borderBottom = '1px solid #2a2a2a';
@@ -3597,41 +3623,135 @@
         function setupDragAndDrop() {
             document.querySelectorAll('.compact-tool').forEach(tool => {
                 tool.setAttribute('draggable', 'true');
+                
+                let clickTimer = null;
+                let hasMoved = false;
+                
                 tool.ondragstart = (e) => {
-                    e.dataTransfer.setData('text/plain', tool.getAttribute('data-action'));
+                    const action = tool.getAttribute('data-action');
+                    const config = animationActionTypes[action];
+                    e.dataTransfer.setData('text/plain', action);
                     e.dataTransfer.effectAllowed = 'copy';
                     tool.style.opacity = '0.5';
                     
-                    // Create initial ball at cursor
+                    // Clear any pending click timer
+                    if (clickTimer) {
+                        clearTimeout(clickTimer);
+                        clickTimer = null;
+                    }
+                    hasMoved = false;
+                    
+                    // Use external transparent image to hide default drag image
+                    const img = new Image();
+                    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg"%3E%3C/svg%3E';
+                    e.dataTransfer.setDragImage(img, 0, 0);
+                    
+                    // Create or update ball with tool color
                     let dragBall = document.getElementById('dragFeedbackBall');
                     if (!dragBall) {
                         dragBall = document.createElement('div');
                         dragBall.id = 'dragFeedbackBall';
-                        dragBall.style.cssText = `
-                            position: fixed;
-                            width: 20px;
-                            height: 20px;
-                            background: #ff9900;
-                            border-radius: 50%;
-                            pointer-events: none;
-                            z-index: 10000;
-                            box-shadow: 0 0 10px #ff9900;
-                        `;
                         document.body.appendChild(dragBall);
                     }
+                    
+                    dragBall.style.cssText = `
+                        position: fixed;
+                        width: 20px;
+                        height: 20px;
+                        background: ${config.color};
+                        border-radius: 50%;
+                        pointer-events: none;
+                        z-index: 10000;
+                        box-shadow: 0 0 10px ${config.color};
+                        transition: all 0.05s ease;
+                        display: block;
+                    `;
                 };
+                
                 tool.ondragend = (e) => {
                     tool.style.opacity = '1';
                     const dragBall = document.getElementById('dragFeedbackBall');
                     if (dragBall) {
                         dragBall.remove();
                     }
+                    const timeTooltip = document.getElementById('dragTimeTooltip');
+                    if (timeTooltip) {
+                        timeTooltip.remove();
+                    }
+                    
+                    // If no movement and timer exists, it was a click
+                    if (!hasMoved && clickTimer) {
+                        clearTimeout(clickTimer);
+                        clickTimer = null;
+                        
+                        // Check if a timeline is selected
+                        if (selectedTimelineId && isAnimationMode) {
+                            const action = tool.getAttribute('data-action');
+                            const config = animationActionTypes[action];
+                            if (config) {
+                                // Add keyframe at current playhead position
+                                addKeyframeToSelectedTimeline(action, config);
+                            }
+                        }
+                    }
+                };
+                
+                // Track movement to distinguish click from drag
+                tool.onmousedown = (e) => {
+                    hasMoved = false;
+                    clickTimer = setTimeout(() => {
+                        // Timer expired, this is a click (not a drag)
+                        if (selectedTimelineId && isAnimationMode) {
+                            const action = tool.getAttribute('data-action');
+                            const config = animationActionTypes[action];
+                            if (config) {
+                                addKeyframeToSelectedTimeline(action, config);
+                            }
+                        }
+                        clickTimer = null;
+                    }, 20);
+                };
+                
+                tool.onmousemove = () => {
+                    hasMoved = true;
+                };
+                
+                tool.onmouseup = () => {
+                    if (clickTimer) {
+                        clearTimeout(clickTimer);
+                        clickTimer = null;
+                    }
                 };
             });
-        }
+        } 
+   
+
+
         function attachTimelineEventsForAnimation() {
             // Helper function to get time from mouse event
-            
+            document.querySelectorAll('.timeline-row').forEach(row => {
+                row.style.cursor = 'pointer';
+                
+                row.onclick = (e) => {
+                    // Don't select if clicking on delete button or keyframe marker
+                    if (e.target.classList.contains('timeline-delete-btn') || e.target.classList.contains('keyframe-marker')) {
+                        return;
+                    }
+                    
+                    // Remove highlight from all rows
+                    document.querySelectorAll('.timeline-row').forEach(r => {
+                        r.style.background = '';
+                        r.style.borderLeft = '';
+                    });
+                    
+                    // Highlight selected row
+                    selectedTimelineId = row.getAttribute('data-track-id');
+                    row.style.background = '#2a2a2a';
+                    row.style.borderLeft = '3px solid #ff9900';
+                    
+                    e.stopPropagation();
+                };
+            });
             // Delete track buttons
             document.querySelectorAll('.timeline-delete-btn').forEach(btn => {
                 btn.onclick = (e) => {
@@ -3767,55 +3887,138 @@
                     }
                     
                     // Normal keyframe dialog
-                    //showKeyframeDialogForTrack(trackId, time);
+         
                 };
                 
+
+                // In attachTimelineEventsForAnimation, update canvas drag handlers:
+
                 canvas.ondragover = (e) => { 
                     e.preventDefault(); 
                     e.dataTransfer.dropEffect = 'copy';
                     
-                    // Create or update drag feedback ball
+                    const row = canvas.closest('.timeline-row');
+                    if (!row) return;
+                    
+                    const rowRect = row.getBoundingClientRect();
+                    const action = e.dataTransfer.getData('text/plain');
+                    const config = animationActionTypes[action];
+                    const anim = getSelectedAnimation();
+                    
+                    if (!anim) return;
+                    
                     let dragBall = document.getElementById('dragFeedbackBall');
                     if (!dragBall) {
                         dragBall = document.createElement('div');
                         dragBall.id = 'dragFeedbackBall';
-                        dragBall.style.cssText = `
-                            position: fixed;
-                            width: 16px;
-                            height: 16px;
-                            background: #ff9900;
-                            border-radius: 50%;
-                            pointer-events: none;
-                            z-index: 10000;
-                            box-shadow: 0 0 10px #ff9900;
-                            transition: transform 0.05s ease;
-                        `;
                         document.body.appendChild(dragBall);
                     }
                     
-                    // Position ball at mouse
-                    dragBall.style.left = (e.clientX - 10) + 'px';
-                    dragBall.style.top = (e.clientY - 10) + 'px';
-                    dragBall.style.transform = 'scale(1)';
+                    const rawTime = getMouseTimeFromEvent(e, canvas);
+                    let snappedTime = rawTime;
+                    let displayTime = rawTime;
+                    
+                    // Snap to snapInterval if Ctrl is NOT held
+                    if (!e.ctrlKey && rawTime !== null) {
+                        snappedTime = snapTime(rawTime);
+                        displayTime = snappedTime;
+                    }
+                    
+                    // Calculate the pixel position for the snapped time
+                    let pixelX = e.clientX - 10;
+                    if (snappedTime !== null && anim) {
+                        const rulerCanvas = document.getElementById('timelineRulerCanvas');
+                        const totalWidth = rulerCanvas ? rulerCanvas.width : 2000;
+                        const percent = snappedTime / anim.duration;
+                        const snappedPixelX = (percent * totalWidth);
+                        
+                        const canvasRect = canvas.getBoundingClientRect();
+                        const scrollContainer = document.querySelector('.ruler-track-container');
+                        const scrollLeft = scrollContainer ? scrollContainer.scrollLeft : 0;
+                        
+                        pixelX = canvasRect.left + snappedPixelX - scrollLeft - 10;
+                    }
+                    
+                    const ballY = rowRect.top + (rowRect.height / 2) - 10;
+                    
+                    dragBall.style.cssText = `
+                        position: fixed;
+                        width: 20px;
+                        height: 20px;
+                        background: ${config ? config.color : '#ff9900'};
+                        border-radius: 50%;
+                        pointer-events: none;
+                        z-index: 10000;
+                        box-shadow: 0 0 10px ${config ? config.color : '#ff9900'};
+                        left: ${pixelX}px;
+                        top: ${ballY}px;
+                        transition: left 0.05s ease, top 0.05s ease;
+                        display: block;
+                    `;
+                    
+                    let timeTooltip = document.getElementById('dragTimeTooltip');
+                    if (!timeTooltip) {
+                        timeTooltip = document.createElement('div');
+                        timeTooltip.id = 'dragTimeTooltip';
+                        timeTooltip.style.cssText = `
+                            position: fixed;
+                            background: rgba(0,0,0,0.85);
+                            color: #ff9900;
+                            padding: 2px 6px;
+                            border-radius: 4px;
+                            font-size: 10px;
+                            font-family: monospace;
+                            pointer-events: none;
+                            z-index: 10001;
+                            white-space: nowrap;
+                            border: 1px solid #ff9900;
+                        `;
+                        document.body.appendChild(timeTooltip);
+                    }
+                    
+                    timeTooltip.style.left = (pixelX + 25) + 'px';
+                    timeTooltip.style.top = (ballY - 5) + 'px';
+                    
+                    if (displayTime !== null) {
+                        if (displayTime >= 1000) {
+                            timeTooltip.textContent = (displayTime / 1000).toFixed(1) + 's';
+                        } else {
+                            timeTooltip.textContent = displayTime + 'ms';
+                        }
+                    } else {
+                        timeTooltip.textContent = '--';
+                    }
+                    
+                    timeTooltip.style.display = 'block';
+                    
+                    canvas._snappedTime = snappedTime;
                 };
+
 
                 canvas.ondragleave = (e) => {
                     const dragBall = document.getElementById('dragFeedbackBall');
                     if (dragBall) {
-                        dragBall.style.transform = 'scale(0)';
+                        dragBall.style.display = 'none';
+                    }
+                    const timeTooltip = document.getElementById('dragTimeTooltip');
+                    if (timeTooltip) {
+                        timeTooltip.style.display = 'none';
                     }
                 };
 
                 canvas.ondrop = (e) => {
                     e.preventDefault();
                     
-                    // Remove drag ball
                     const dragBall = document.getElementById('dragFeedbackBall');
-                    if (dragBall) {
-                        dragBall.remove();
+                    if (dragBall) dragBall.remove();
+                    const timeTooltip = document.getElementById('dragTimeTooltip');
+                    if (timeTooltip) timeTooltip.remove();
+                    
+                    let time = canvas._snappedTime;
+                    if (e.ctrlKey) {
+                        time = getMouseTimeFromEvent(e, canvas);
                     }
                     
-                    const time = getMouseTimeFromEvent(e, canvas);
                     if (time === null) return;
                     
                     const trackId = canvas.getAttribute('data-track-id');
@@ -3832,9 +4035,6 @@
                         params[field.name] = field.default;
                     });
                     
-                    const newKeyframeTime = time;
-                    const newKeyframeAction = action;
-                    
                     track.keyframes.push({ time, action, params });
                     track.keyframes.sort((a, b) => a.time - b.time);
                     
@@ -3845,14 +4045,13 @@
                     
                     setTimeout(() => {
                         const newKeyframeIndex = track.keyframes.findIndex(kf => 
-                            Math.abs(kf.time - newKeyframeTime) < 0.1 && kf.action === newKeyframeAction
+                            Math.abs(kf.time - time) < 0.1 && kf.action === action
                         );
                         if (newKeyframeIndex !== -1) {
                             showKeyframeEditor(anim, track, newKeyframeIndex);
                         }
                     }, 50);
                 };
-
 
             });
             
@@ -4038,6 +4237,7 @@
             });
         }      
         
+
         function onTimelineDragEnd() {
             if (timelineDragState.active) {
                 saveUndoState();
@@ -4048,6 +4248,13 @@
                 }
                 timelineDragState.active = false;
             }
+            
+            // Remove time tooltip
+            const timeTooltip = document.getElementById('dragTimeTooltip');
+            if (timeTooltip) {
+                timeTooltip.remove();
+            }
+            
             document.removeEventListener('mousemove', onTimelineDrag);
             document.removeEventListener('mouseup', onTimelineDragEnd);
             
@@ -4056,12 +4263,22 @@
             draw();
         }
 
+
         document.addEventListener('dragend', function() {
             const dragBall = document.getElementById('dragFeedbackBall');
             if (dragBall) {
                 dragBall.remove();
             }
+            const timeTooltip = document.getElementById('dragTimeTooltip');
+            if (timeTooltip) {
+                timeTooltip.remove();
+            }
+            // Reset any dragged tool opacity
+            document.querySelectorAll('.compact-tool').forEach(tool => {
+                tool.style.opacity = '1';
+            });
         });
+
 
         function onTimelineDrag(e) {
             if (!timelineDragState.active) return;
@@ -4080,6 +4297,12 @@
             const mouseX = e.clientX - canvasRect.left + scrollLeft;
             const percent = Math.min(1, Math.max(0, mouseX / totalWidth));
             let newTime = percent * anim.duration;
+            
+            // Snap to snapInterval unless Ctrl is held
+            if (!e.ctrlKey) {
+                newTime = snapTime(newTime);
+            }
+            
             newTime = Math.max(0, Math.min(anim.duration, newTime));
             
             // Update keyframe time
@@ -4092,6 +4315,39 @@
                 timelineDragState.marker.style.left = `${newPixelX}px`;
             }
             
+            // Create or update time tooltip for keyframe drag
+            let timeTooltip = document.getElementById('dragTimeTooltip');
+            if (!timeTooltip) {
+                timeTooltip = document.createElement('div');
+                timeTooltip.id = 'dragTimeTooltip';
+                timeTooltip.style.cssText = `
+                    position: fixed;
+                    background: rgba(0,0,0,0.85);
+                    color: #ff9900;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-size: 10px;
+                    font-family: monospace;
+                    pointer-events: none;
+                    z-index: 10001;
+                    white-space: nowrap;
+                    border: 1px solid #ff9900;
+                `;
+                document.body.appendChild(timeTooltip);
+            }
+            
+            // Position tooltip near mouse cursor
+            timeTooltip.style.left = (e.clientX + 15) + 'px';
+            timeTooltip.style.top = (e.clientY - 20) + 'px';
+            
+            // Format time display
+            if (newTime >= 1000) {
+                timeTooltip.textContent = (newTime / 1000).toFixed(1) + 's';
+            } else {
+                timeTooltip.textContent = Math.round(newTime) + 'ms';
+            }
+            timeTooltip.style.display = 'block';
+            
             // Update the editor if it's open for this keyframe
             if (currentEditingKeyframe && currentEditingKeyframe.track && 
                 currentEditingKeyframe.track.id === track.id) {
@@ -4099,11 +4355,6 @@
                 const timeInput = document.getElementById('editKeyframeTime');
                 if (timeInput) {
                     timeInput.value = Math.round(newTime);
-                }
-                
-                const timeSpan = document.querySelector('#keyframeEditorContent div:first-child span:last-child');
-                if (timeSpan) {
-                    timeSpan.textContent = `@ ${Math.round(newTime)}ms`;
                 }
             }
             
@@ -4126,345 +4377,7 @@
             draw();
         }
 
-        function onTimelineDrag(e) {
-            if (!timelineDragState.active) return;
-            const anim = getSelectedAnimation();
-            const track = anim?.tracks.find(t => t.id === timelineDragState.trackId);
-            if (!track) return;
-            
-            const rulerCanvas = document.getElementById('timelineRulerCanvas');
-            if (!rulerCanvas) return;
-            
-            // Get current scroll position
-            const scrollContainer = document.querySelector('.ruler-track-container');
-            const currentScrollLeft = scrollContainer ? scrollContainer.scrollLeft : 0;
-            
-            // Calculate delta in screen pixels, then convert to time
-            const deltaX = e.clientX - timelineDragState.startX;
-            
-            // Convert delta to percentage of total width
-            const deltaPercent = deltaX / rulerCanvas.width;
-            
-            // Calculate new time
-            let newTime = timelineDragState.startTime + (deltaPercent * anim.duration);
-            newTime = Math.max(0, Math.min(anim.duration, newTime));
-            
-            // Update keyframe time
-            track.keyframes[timelineDragState.kfIdx].time = newTime;
-            track.keyframes.sort((a, b) => a.time - b.time);
-            
-            // Update marker position in real-time
-            const newPercent = (newTime / anim.duration) * 100;
-            if (timelineDragState.marker) {
-                timelineDragState.marker.style.left = `${Math.min(100, Math.max(0, newPercent))}%`;
-            }
-            
-            // Update the editor if it's open for this keyframe
-            if (currentEditingKeyframe && currentEditingKeyframe.track && 
-                currentEditingKeyframe.track.id === track.id) {
-                
-                const timeInput = document.getElementById('editKeyframeTime');
-                if (timeInput) {
-                    timeInput.value = Math.round(newTime);
-                }
-                
-                const timeSpan = document.querySelector('#keyframeEditorContent div:first-child span:last-child');
-                if (timeSpan) {
-                    timeSpan.textContent = `@ ${Math.round(newTime)}ms`;
-                }
-            }
-            
-            // Update the keyframe index if it changed after sorting
-            const newKfIdx = track.keyframes.findIndex(k => Math.abs(k.time - newTime) < 0.1);
-            if (newKfIdx !== -1 && newKfIdx !== timelineDragState.kfIdx) {
-                timelineDragState.kfIdx = newKfIdx;
-                if (timelineDragState.marker) {
-                    timelineDragState.marker.setAttribute('data-kf-idx', newKfIdx);
-                }
-                if (currentEditingKeyframe) {
-                    currentEditingKeyframe.keyframeIndex = newKfIdx;
-                }
-            }
-            
-            updateTimelineStats();
-            
-            // Apply animation preview while dragging
-            applyAnimationAtTime(newTime);
-            draw();
-        }
-
-        function showKeyframeDialogForTrack(trackId, presetTime) {
-            const dialog = document.getElementById('keyframeDialog');
-            if (!dialog) return;
-            
-            const actionSelect = document.getElementById('keyframeActionType');
-            const paramsDiv = document.getElementById('keyframeParams');
-
-            dialog.onkeydown = (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    newCreateBtn.click();
-                } else if (e.key === 'Escape') {
-                    e.preventDefault();
-                    dialog.classList.remove('active');
-                }
-            };
-                        
-            // Populate action select ONLY from config
-            actionSelect.innerHTML = '';
-            for (const [key, config] of Object.entries(animationActionTypes)) {
-                const option = document.createElement('option');
-                option.value = key;
-                option.textContent = `${config.icon} ${config.name}`;
-                option.style.color = config.color;
-                option.style.backgroundColor = '#2d2d2d';
-                option.style.padding = '4px';
-                actionSelect.appendChild(option);
-            }
-            
-            function updateParamsUI() {
-                const type = actionSelect.value;
-                const config = animationActionTypes[type];
-                if (!config) return;
-                
-                paramsDiv.innerHTML = '';
-                
-                // Add description
-                const desc = document.createElement('div');
-                desc.textContent = config.description;
-                desc.style.fontSize = '10px';
-                desc.style.color = '#888';
-                desc.style.marginBottom = '12px';
-                desc.style.padding = '4px';
-                desc.style.background = '#1e1e1e';
-                desc.style.borderRadius = '3px';
-                paramsDiv.appendChild(desc);
-                
-                // If no fields (reset), show message but NO checkbox
-                if (config.fields.length === 0) {
-                    const noFieldsMsg = document.createElement('div');
-                    noFieldsMsg.textContent = '✨ No parameters needed - this action will reset the target';
-                    noFieldsMsg.style.fontSize = '10px';
-                    noFieldsMsg.style.color = config.color;
-                    noFieldsMsg.style.textAlign = 'center';
-                    noFieldsMsg.style.padding = '8px';
-                    noFieldsMsg.style.background = '#1e1e1e';
-                    noFieldsMsg.style.borderRadius = '3px';
-                    paramsDiv.appendChild(noFieldsMsg);
-                    return;
-                }
-                
-                // Add fields from config
-                config.fields.forEach(field => {
-                    const fieldDiv = document.createElement('div');
-                    fieldDiv.style.marginBottom = '12px';
-                    
-                    const label = document.createElement('label');
-                    label.textContent = field.label || field.name;
-                    label.style.display = 'block';
-                    label.style.fontSize = '10px';
-                    label.style.color = config.color;
-                    label.style.fontWeight = 'bold';
-                    label.style.marginBottom = '4px';
-                    
-                    let input;
-                    if (field.type === 'color') {
-                        input = document.createElement('input');
-                        input.type = 'color';
-                        input.value = field.default;
-                        input.style.width = '50px';
-                        input.style.height = '30px';
-                        input.style.cursor = 'pointer';
-                    } else if (field.type === 'checkbox') {
-                        input = document.createElement('input');
-                        input.type = 'checkbox';
-                        input.checked = field.default;
-                        input.style.marginRight = '8px';
-                        input.style.accentColor = config.color;
-                        input.style.cursor = 'pointer';
-                    } else if (field.type === 'number') {
-                        input = document.createElement('input');
-                        input.type = 'number';
-                        input.value = field.default;
-                        input.step = field.step || 1;
-                        if (field.min !== undefined) input.min = field.min;
-                        if (field.max !== undefined) input.max = field.max;
-                        input.style.width = '100%';
-                    } else {
-                        input = document.createElement('input');
-                        input.type = 'text';
-                        input.value = field.default;
-                        input.style.width = '100%';
-                    }
-                    
-                    input.id = `param_${field.name}`;
-                    input.style.padding = '6px';
-                    input.style.background = '#1e1e1e';
-                    input.style.border = `1px solid ${config.color}`;
-                    input.style.color = '#fff';
-                    input.style.borderRadius = '4px';
-                    input.style.fontFamily = 'monospace';
-                    
-                    if (field.type === 'checkbox') {
-                        const wrapper = document.createElement('div');
-                        wrapper.style.display = 'flex';
-                        wrapper.style.alignItems = 'center';
-                        wrapper.appendChild(input);
-                        const labelSpan = document.createElement('span');
-                        labelSpan.textContent = field.label;
-                        labelSpan.style.marginLeft = '8px';
-                        labelSpan.style.fontSize = '11px';
-                        labelSpan.style.color = config.color;
-                        wrapper.appendChild(labelSpan);
-                        fieldDiv.appendChild(wrapper);
-                    } else {
-                        fieldDiv.appendChild(label);
-                        fieldDiv.appendChild(input);
-                    }
-                    
-                    if (field.unit && field.type !== 'checkbox') {
-                        const unitSpan = document.createElement('span');
-                        unitSpan.textContent = field.unit;
-                        unitSpan.style.marginLeft = '8px';
-                        unitSpan.style.fontSize = '10px';
-                        unitSpan.style.color = '#888';
-                        fieldDiv.appendChild(unitSpan);
-                    }
-                    
-                    paramsDiv.appendChild(fieldDiv);
-                });
-                
-                // Add INSTANT checkbox
-                const instantCheckboxDiv = document.createElement('div');
-                instantCheckboxDiv.style.marginTop = '12px';
-                instantCheckboxDiv.style.marginBottom = '8px';
-                instantCheckboxDiv.style.display = 'flex';
-                instantCheckboxDiv.style.alignItems = 'center';
-                instantCheckboxDiv.style.gap = '8px';
-                instantCheckboxDiv.style.padding = '4px 0';
-
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = 'instantCheckbox';
-                checkbox.style.margin = '0';
-                checkbox.style.cursor = 'pointer';
-                checkbox.style.accentColor = config.color;
-                checkbox.style.width = '14px';
-                checkbox.style.height = '14px';
-
-                const checkboxLabel = document.createElement('label');
-                checkboxLabel.htmlFor = 'instantCheckbox';
-                checkboxLabel.textContent = 'Instant (no interpolation)';
-                checkboxLabel.style.color = '#ccc';
-                checkboxLabel.style.fontSize = '10px';
-                checkboxLabel.style.cursor = 'pointer';
-                checkboxLabel.style.userSelect = 'none';
-
-                instantCheckboxDiv.appendChild(checkbox);
-                instantCheckboxDiv.appendChild(checkboxLabel);
-                paramsDiv.appendChild(instantCheckboxDiv);
-                
-                // Add note for optional fields
-                const hasOptional = config.fields.some(f => f.optional);
-                if (hasOptional) {
-                    const note = document.createElement('div');
-                    note.textContent = '💡 Optional fields use default values if empty';
-                    note.style.fontSize = '9px';
-                    note.style.color = '#666';
-                    note.style.marginTop = '8px';
-                    note.style.textAlign = 'center';
-                    paramsDiv.appendChild(note);
-                }
-            }
-            
-            updateParamsUI();
-            actionSelect.onchange = updateParamsUI;
-            
-            const createHandler = () => {
-                const anim = getSelectedAnimation();
-                const track = anim?.tracks.find(t => t.id === trackId);
-                if (!track) return;
-                
-                const action = actionSelect.value;
-                const config = animationActionTypes[action];
-                if (!config) return;
-                
-                let params = {};
-                
-                // Only collect params if there are fields
-                if (config.fields.length > 0) {
-                    config.fields.forEach(field => {
-                        const input = document.getElementById(`param_${field.name}`);
-                        if (input) {
-                            if (field.type === 'number') {
-                                let value = parseFloat(input.value);
-                                if (isNaN(value)) {
-                                    value = field.default;
-                                }
-                                if (field.min !== undefined && value < field.min) value = field.min;
-                                if (field.max !== undefined && value > field.max) value = field.max;
-                                params[field.name] = value;
-                            } else if (field.type === 'checkbox') {
-                                params[field.name] = input.checked;
-                            } else if (field.type === 'color') {
-                                params[field.name] = input.value;
-                            } else {
-                                params[field.name] = input.value || field.default;
-                            }
-                        } else if (field.default !== undefined) {
-                            params[field.name] = field.default;
-                        }
-                    });
-                }
-                
-                // Get instant checkbox value (only for non-reset actions)
-                let isInstant = false;
-                if (config.fields.length > 0) {
-                    const instantCheckbox = document.getElementById('instantCheckbox');
-                    if (instantCheckbox) {
-                        isInstant = instantCheckbox.checked;
-                    }
-                }
-                
-                // Check if this exact keyframe already exists at this time
-                const existingAtTime = track.keyframes.find(kf => Math.abs(kf.time - presetTime) < 0.1 && kf.action === action);
-                if (existingAtTime) {
-                    if (!confirm(`A ${action} keyframe already exists at this time. Replace it?`)) {
-                        return;
-                    }
-                    track.keyframes = track.keyframes.filter(kf => !(Math.abs(kf.time - presetTime) < 0.1 && kf.action === action));
-                }
-                
-                // Add instant flag to keyframe
-                const keyframeData = { time: presetTime, action, params };
-                if (isInstant) {
-                    keyframeData.instant = true;
-                }
-                
-                track.keyframes.push(keyframeData);
-                track.keyframes.sort((a, b) => a.time - b.time);
-                renderTimelineForAnimation();
-                applyAnimationAtTime(currentAnimationTime);
-                updateModelVisibilityForAnimation();
-                draw();
-                dialog.classList.remove('active');
-            };
-            
-            // Remove any existing listeners and add new ones
-            const createBtn = document.getElementById('keyframeDialogCreate');
-            const cancelBtn = document.getElementById('keyframeDialogCancel');
-            
-            const newCreateBtn = createBtn.cloneNode(true);
-            const newCancelBtn = cancelBtn.cloneNode(true);
-            createBtn.parentNode.replaceChild(newCreateBtn, createBtn);
-            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-            
-            newCreateBtn.onclick = createHandler;
-            newCancelBtn.onclick = () => dialog.classList.remove('active');
-            
-            dialog.classList.add('active');
-        }
-
+      
         function createTrackFromTarget(type, modelIndex, groupIndex = -1) {
             saveUndoState();
             const anim = getSelectedAnimation();
@@ -4585,16 +4498,43 @@
                 const accumulated = {
                     translate: { x: 0, y: 0 },
                     rotate: { angle: 0, useModelCenter: false, centerX: 32, centerY: 16 },
-                    scale: { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 }
+                    scale: { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 },
+                    visibility: { visible: true }
                 };
                 
-                const transformTypes = ['translate', 'rotate', 'scale'];
+                const transformTypes = ['translate', 'rotate', 'scale', 'visibility', 'reset'];
                 const fixedCenter = { x: 32, y: 16 };
+                let needsReset = false;
                 
                 transformTypes.forEach(type => {
                     // Get keyframes of this type
                     const typeKeyframes = sortedKeyframes.filter(kf => kf.action === type);
                     if (typeKeyframes.length === 0) return;
+                    
+                    // For reset - always instant
+                    if (type === 'reset') {
+                        // Find the last reset keyframe before or at current time
+                        for (let i = typeKeyframes.length - 1; i >= 0; i--) {
+                            if (typeKeyframes[i].time <= time) {
+                                needsReset = true;
+                                break;
+                            }
+                        }
+                        return;
+                    }
+                    
+                    // For visibility - always instant
+                    if (type === 'visibility') {
+                        let lastVisible = true;
+                        for (let i = typeKeyframes.length - 1; i >= 0; i--) {
+                            if (typeKeyframes[i].time <= time) {
+                                lastVisible = typeKeyframes[i].params.visible;
+                                break;
+                            }
+                        }
+                        accumulated[type] = { visible: lastVisible };
+                        return;
+                    }
                     
                     // Check if we're at an exact instant keyframe
                     const exactInstant = typeKeyframes.find(kf => Math.abs(kf.time - time) < 0.1 && kf.instant === true);
@@ -4791,10 +4731,17 @@
                     };
                 }
                 
-                // Apply transforms: Scale -> Rotate -> Translate
+                // Apply transforms: Scale -> Rotate -> Translate (or reset if needed)
                 targetPoints.forEach(tp => {
                     let x = tp.originalPoint ? tp.originalPoint.x : tp.point.x;
                     let y = tp.originalPoint ? tp.originalPoint.y : tp.point.y;
+                    
+                    // If reset is needed, just use original points and skip transforms
+                    if (needsReset) {
+                        tp.point.x = x;
+                        tp.point.y = y;
+                        return;
+                    }
                     
                     // Apply scale
                     const scale = accumulated.scale;
@@ -4839,10 +4786,16 @@
                     tp.point.x = x;
                     tp.point.y = y;
                 });
+                
+                // Apply visibility to the model
+                if (accumulated.visibility && track.type === 'model') {
+                    model.visible = accumulated.visibility.visible;
+                }
             });
             
             draw();
         }
+
 
         // ===========================================
         // PLAYBACK CONTROLS
@@ -5243,9 +5196,6 @@
             
             container.innerHTML = '';
             for (const [key, config] of Object.entries(animationActionTypes)) {
-                // Skip 'reset' if you don't want it in the tools
-      
-                
                 const tool = document.createElement('div');
                 tool.className = 'compact-tool';
                 tool.setAttribute('draggable', 'true');
@@ -5264,7 +5214,8 @@
             
             setupDragAndDrop();
         }
-
+            
+   
         function initAnimationSystem() {
             // Generate compact tools from config
             generateCompactTools();
@@ -5835,7 +5786,25 @@
                 // ANIMATION MODE - Show all visible models, highlight hovered model
                 models.forEach((model, idx) => {
                     if (!model.visible) return;
+
+                    let modelVisible = true;
+                    const anim = getSelectedAnimation();
+                    if (anim) {
+                        anim.tracks.forEach(track => {
+                            if (track.modelIndex === idx && track.keyframes.length > 0) {
+                                // Find the last visibility keyframe before current time
+                                const visKeyframes = track.keyframes.filter(kf => 
+                                    kf.action === 'visibility' && kf.time <= currentAnimationTime
+                                );
+                                if (visKeyframes.length > 0) {
+                                    modelVisible = visKeyframes[visKeyframes.length - 1].params.visible;
+                                }
+                            }
+                        });
+                    }
                     
+                    if (!modelVisible) return;
+
                     // Draw triangles (always show them)
                     model.triangles.forEach(function(tri) {
                         let fillColor = tri.color;
@@ -7933,6 +7902,32 @@
                 !logo.contains(e.target)) {
                 modal.classList.remove('active');
             }
+            if (pickModeActive) {
+                // Check if the click target is the canvas or a canvas-related element
+                const isCanvas = e.target === c || e.target.closest('#meuCanvas');
+                const isPickButton = e.target.closest('#pickTranslateBtn') || e.target.closest('#pickCenterBtn');
+                
+                // Don't cancel if clicking on the pick button or canvas
+                if (!isCanvas && !isPickButton) {
+                    // Clicked outside canvas - cancel pick mode
+                    console.log("Pick mode cancelled by outside click");
+                    pickModeActive = false;
+                    pickModeCallback = null;
+                    if (window._finalizePick) {
+                        window._finalizePick();
+                        window._finalizePick = null;
+                    }
+                    document.body.style.cursor = '';
+                    const instruction = document.getElementById('pickInstruction');
+                    if (instruction) instruction.remove();
+                    // Restore time if needed
+                    if (window._pendingRestore) {
+                        window._pendingRestore();
+                        window._pendingRestore = null;
+                    }
+                }
+            }
+
         });
 
         document.addEventListener('keydown', function(e) {
@@ -7940,6 +7935,20 @@
                 if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
                     return;
                 }
+                return;
+            }
+
+            if ((e.key === 'Escape' || e.key === 'Enter') && pickModeActive) {
+                e.preventDefault();
+                if (window._finalizePick) {
+                    window._finalizePick();
+                    window._finalizePick = null;
+                }
+                pickModeActive = false;
+                pickModeCallback = null;
+                document.body.style.cursor = '';
+                const instruction = document.getElementById('pickInstruction');
+                if (instruction) instruction.remove();
                 return;
             }
 
@@ -8297,6 +8306,15 @@
             }
             
             if (!isAnimationMode && currentTool === 'move' && mouseDown && draggingVertex && models.length > 0) {
+
+                if (!multiDragStart) {
+                    multiDragStart = { x: mouseX, y: mouseY };
+                    for (let point of draggingVertex) {
+                        point.vx = point.v.x;
+                        point.vy = point.v.y;
+                    }
+                }
+                
                 let firstVertex = draggingVertex[0];
                 let firstTri = models[selectedModelIndex].triangles[firstVertex.triIndex];
                 let firstV = [firstTri.v1, firstTri.v2, firstTri.v3][firstVertex.vertexIndex];
@@ -8366,6 +8384,48 @@
         c.addEventListener('contextmenu', e => e.preventDefault());
 
         c.addEventListener('mousedown', function(e) {
+            // PICK MODE - MUST BE FIRST
+            if (pickModeActive) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                let isDragging = false;
+                
+                const updatePickPosition = (clientX, clientY) => {
+                    const rect = c.getBoundingClientRect();
+                    const scaleX = c.width / rect.width;
+                    const scaleY = c.height / rect.height;
+                    const physX = (clientX - rect.left) * scaleX;
+                    const physY = (clientY - rect.top) * scaleY;
+                    const gridX = Math.min(63, Math.max(0, Math.floor(physX / SCALE)));
+                    const gridY = Math.min(31, Math.max(0, Math.floor(physY / SCALE)));
+                    
+                    if (pickModeCallback) {
+                        pickModeCallback(gridX, gridY);
+                    }
+                };
+                
+                updatePickPosition(e.clientX, e.clientY);
+                isDragging = true;
+                
+                const onMouseMove = (moveEvent) => {
+                    if (isDragging) {
+                        updatePickPosition(moveEvent.clientX, moveEvent.clientY);
+                    }
+                };
+                
+                const onMouseUp = () => {
+                    isDragging = false;
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                    console.log("Mouse up, pick mode still active");
+                };
+                
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+                return;
+            }
+            
             if (e.button === 2) { e.preventDefault(); cancelLastPoint(); return; }
             if (e.button === 0) {
                 mouseDown = true;
@@ -8529,7 +8589,6 @@
                                 
                                 if (groupPoints.length > 0) {
                                     saveUndoState();
-                                    // Store the original positions of all group points
                                     multiDragStart = { x: mouseX, y: mouseY };
                                     draggingVertex = groupPoints;
                                     for (let point of groupPoints) {
@@ -8603,7 +8662,15 @@
                                     draw();
                                 } else {
                                     saveUndoState();
+                                    // Get ALL vertices at this exact position (overlapping points)
                                     draggingVertex = findVerticesAtPosition(mouseX, mouseY);
+                                    if (draggingVertex && draggingVertex.length > 0) {
+                                        multiDragStart = { x: mouseX, y: mouseY };
+                                        for (let point of draggingVertex) {
+                                            point.vx = point.v.x;
+                                            point.vy = point.v.y;
+                                        }
+                                    }
                                 }
                             }
                         } else if (currentTool === 'select') {
@@ -8641,6 +8708,7 @@
             }
         });
 
+
         window.addEventListener('mouseup', function(e) {
             if (e.button === 0) {
                 mouseDown = false;
@@ -8652,12 +8720,14 @@
                 }
                 if (draggingVertex) {
                     draggingVertex = null;
+                    multiDragStart = null;
                     updateCodeDisplay();
                     updateOriginalModelData();
                     draw();
                 }
                 if (multiDragging) {
                     multiDragging = false;
+                    multiDragStart = null;
                     updateCodeDisplay();
                     draw();
                 }
@@ -8772,7 +8842,8 @@ const animationActionTypes = {
         icon: "↺",
         color: "#9E9E9E",
         fields: [],
-        useModelCenter: false
+        useModelCenter: false,
+        isInstant: true
     },
     "translate": {
         name: "Translate",
@@ -8811,6 +8882,17 @@ const animationActionTypes = {
             { name: "useModelCenter", label: "Always use model center", default: false, type: "checkbox" }
         ],
         useModelCenter: true
+    },
+    "visibility": {
+        name: "Visibility",
+        description: "Show or hide the target",
+        icon: "👁️",
+        color: "#9C27B0",
+        fields: [
+            { name: "visible", label: "Visible", default: true, type: "checkbox" }
+        ],
+        useModelCenter: false,
+        isInstant: findTriangleUnderMouse
     }
 };
 
@@ -9030,24 +9112,30 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
             let html = `
                 <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                     <span style="color: ${config.color};">${config.icon} ${config.name.toUpperCase()}</span>
-                    <button id="copyKeyframeBtn" style="background: #4CAF50; color: white; border: none; border-radius: 3px; padding: 2px 8px; cursor: pointer; font-size: 10px; font-weight: bold;">📋 COPY</button>
+                    <button id="copyKeyframeBtn" style="background: #4CAF50; color: white; border: none; border-radius: 3px; padding: 2px 8px; cursor: pointer; font-size: 10px; font-weight: bold;">COPY</button>
                 </div>
                 <div class="param-row">
                     <div class="param-label">TIME (ms)</div>
-                    <input type="number" id="editKeyframeTime" value="${Math.round(kf.time)}" min="0" max="${animation.duration}" step="10">
+                    <input type="number" id="editKeyframeTime" value="${Math.round(kf.time)}" min="0" max="${animation.duration}" step="${snapInterval}">
                 </div>
             `;
             
             // Add parameters based on action type
             if (kf.action === 'translate') {
                 html += `
-                    <div class="param-row">
-                        <div class="param-label">X OFFSET</div>
-                        <input type="number" id="editParamX" value="${kf.params.x || 0}" step="1">
-                    </div>
-                    <div class="param-row">
-                        <div class="param-label">Y OFFSET</div>
-                        <input type="number" id="editParamY" value="${kf.params.y || 0}" step="1">
+                    <div style="margin-top: 12px;">
+                        <div style="font-size: 10px; color: ${config.color}; font-weight: bold; margin-bottom: 6px;">OFFSET</div>
+                        <div style="display: flex; gap: 12px;">
+                            <div style="flex: 1;">
+                                <div style="font-size: 9px; color: #aaa; margin-bottom: 2px;">X</div>
+                                <input type="number" id="editParamX" value="${kf.params.x || 0}" step="1" style="width: 100%; padding: 6px; background: #1e1e1e; border: 1px solid ${config.color}; color: #fff; border-radius: 4px; font-family: monospace;">
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-size: 9px; color: #aaa; margin-bottom: 2px;">Y</div>
+                                <input type="number" id="editParamY" value="${kf.params.y || 0}" step="1" style="width: 100%; padding: 6px; background: #1e1e1e; border: 1px solid ${config.color}; color: #fff; border-radius: 4px; font-family: monospace;">
+                            </div>
+                        </div>
+                        <button id="pickTranslateBtn" style="background: ${config.color}; color: #111; border: none; border-radius: 4px; padding: 4px 8px; font-size: 9px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px; transition: all 0.1s ease;">PICK FROM CANVAS</button>
                     </div>
                 `;
             } else if (kf.action === 'rotate') {
@@ -9056,13 +9144,19 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
                         <div class="param-label">ANGLE (°)</div>
                         <input type="number" id="editParamAngle" value="${kf.params.angle || 0}" step="15">
                     </div>
-                    <div class="param-row">
-                        <div class="param-label">CENTER X (optional)</div>
-                        <input type="number" id="editParamCenterX" value="${kf.params.centerX !== undefined ? kf.params.centerX : ''}" step="1" placeholder="auto">
-                    </div>
-                    <div class="param-row">
-                        <div class="param-label">CENTER Y (optional)</div>
-                        <input type="number" id="editParamCenterY" value="${kf.params.centerY !== undefined ? kf.params.centerY : ''}" step="1" placeholder="auto">
+                    <div style="margin-top: 8px;">
+                        <div style="font-size: 10px; color: ${config.color}; font-weight: bold; margin-bottom: 6px;">CENTER</div>
+                        <div style="display: flex; gap: 12px;">
+                            <div style="flex: 1;">
+                                <div style="font-size: 9px; color: #aaa; margin-bottom: 2px;">X</div>
+                                <input type="number" id="editParamCenterX" value="${kf.params.centerX !== undefined ? kf.params.centerX : ''}" step="1" placeholder="auto" style="width: 100%; padding: 6px; background: #1e1e1e; border: 1px solid ${config.color}; color: #fff; border-radius: 4px; font-family: monospace;">
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-size: 9px; color: #aaa; margin-bottom: 2px;">Y</div>
+                                <input type="number" id="editParamCenterY" value="${kf.params.centerY !== undefined ? kf.params.centerY : ''}" step="1" placeholder="auto" style="width: 100%; padding: 6px; background: #1e1e1e; border: 1px solid ${config.color}; color: #fff; border-radius: 4px; font-family: monospace;">
+                            </div>
+                        </div>
+                        <button id="pickCenterBtn" style="background: ${config.color}; color: #111; border: none; border-radius: 4px; padding: 4px 8px; font-size: 9px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px; transition: all 0.1s ease;">PICK CENTER FROM CANVAS</button>
                     </div>
                     <div class="instant-checkbox">
                         <input type="checkbox" id="editUseModelCenter" ${kf.params.useModelCenter ? 'checked' : ''}>
@@ -9092,16 +9186,45 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
                         <label for="editUseModelCenter">Always use model center</label>
                     </div>
                 `;
+            } else if (kf.action === 'visibility') {
+                const isVisible = kf.params.visible !== false;
+                html += `
+                    <div class="param-row">
+                        <div class="param-label">STATE</div>
+                        <div style="display: flex; gap: 12px; margin-top: 4px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="radio" name="visibilityState" value="visible" ${isVisible ? 'checked' : ''} style="accent-color: ${config.color};">
+                                <span style="color: #4CAF50;">SHOW</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="radio" name="visibilityState" value="hidden" ${!isVisible ? 'checked' : ''} style="accent-color: ${config.color};">
+                                <span style="color: #ff6666;">HIDE</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px; padding: 6px; background: #1e1e1e; border-radius: 4px; font-size: 9px; color: #888; text-align: center;">
+                        This action is always instant (snaps at exact time)
+                    </div>
+                `;
+            } else if (kf.action === 'reset') {
+                html += `
+                    <div style="margin-top: 8px; padding: 6px; background: #1e1e1e; border-radius: 4px; font-size: 9px; color: #888; text-align: center;">
+                        This action resets the target to its original state
+                    </div>
+                `;
             }
             
-            // Add instant checkbox and delete button
-            html += `
-                <div class="instant-checkbox">
-                    <input type="checkbox" id="editInstant" ${kf.instant ? 'checked' : ''}>
-                    <label for="editInstant">⚡ INSTANT (no interpolation)</label>
-                </div>
-                <button class="delete-btn" id="deleteKeyframeBtn">🗑️ DELETE KEYFRAME</button>
-            `;
+            // Add instant checkbox and delete button (skip for visibility and reset)
+            if (kf.action !== 'visibility' && kf.action !== 'reset') {
+                html += `
+                    <div class="instant-checkbox">
+                        <input type="checkbox" id="editInstant" ${kf.instant ? 'checked' : ''}>
+                        <label for="editInstant">INSTANT (no interpolation)</label>
+                    </div>
+                `;
+            }
+            
+            html += `<button class="delete-btn" id="deleteKeyframeBtn">DELETE KEYFRAME</button>`;
             
             content.innerHTML = html;
             editor.style.display = 'block';
@@ -9152,14 +9275,21 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
                     if (centerY !== undefined && centerY !== '') newKf.params.centerY = parseFloat(centerY);
                     else delete newKf.params.centerY;
                     newKf.params.useModelCenter = useModelCenter || false;
+                } else if (newKf.action === 'visibility') {
+                    const radioSelected = document.querySelector('input[name="visibilityState"]:checked');
+                    if (radioSelected) {
+                        newKf.params.visible = radioSelected.value === 'visible';
+                    }
                 }
                 
-                // Update instant flag
-                const isInstant = document.getElementById('editInstant')?.checked;
-                if (isInstant) {
-                    newKf.instant = true;
-                } else {
-                    delete newKf.instant;
+                // Update instant flag (skip for visibility and reset)
+                if (newKf.action !== 'visibility' && newKf.action !== 'reset') {
+                    const isInstant = document.getElementById('editInstant')?.checked;
+                    if (isInstant) {
+                        newKf.instant = true;
+                    } else {
+                        delete newKf.instant;
+                    }
                 }
                 
                 // Re-sort keyframes
@@ -9183,13 +9313,11 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
             // Add input event listeners for auto-save
             document.getElementById('editKeyframeTime')?.addEventListener('input', () => {
                 autoSave();
-                // Update the marker position in real-time
                 const newTime = parseInt(document.getElementById('editKeyframeTime')?.value);
                 if (!isNaN(newTime)) {
                     const rulerCanvas = document.getElementById('timelineRulerCanvas');
                     const totalWidth = rulerCanvas ? rulerCanvas.width : 2000;
                     const pixelX = (newTime / animation.duration) * totalWidth;
-                    // Find and update the marker position
                     const markers = document.querySelectorAll('.keyframe-marker');
                     markers.forEach(marker => {
                         const trackId = marker.getAttribute('data-track-id');
@@ -9209,24 +9337,157 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
             document.getElementById('editParamCenterX')?.addEventListener('input', autoSave);
             document.getElementById('editParamCenterY')?.addEventListener('input', autoSave);
             document.getElementById('editUseModelCenter')?.addEventListener('change', autoSave);
-            document.getElementById('editInstant')?.addEventListener('change', autoSave);
+            
+
+   
+
+            const pickTranslateBtn = document.getElementById('pickTranslateBtn');
+            if (pickTranslateBtn) {
+                pickTranslateBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("Pick translate button clicked");
+                    
+                    // Store current time
+                    const savedTime = currentAnimationTime;
+                    
+                    // Move to the keyframe time to see the model's actual position
+                    currentAnimationTime = kf.time;
+                    updatePlayheadPosition();
+                    applyAnimationAtTime(currentAnimationTime);
+                    draw();
+                    
+                    // Get the model's current bounding box (WITHOUT the current keyframe's offset applied)
+                    // We need the position that results from ALL keyframes including this one
+                    const model = models[track.modelIndex];
+                    let currentBounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+                    
+                    if (model && model.triangles.length > 0) {
+                        for (let tri of model.triangles) {
+                            currentBounds.minX = Math.min(currentBounds.minX, tri.v1.x, tri.v2.x, tri.v3.x);
+                            currentBounds.maxX = Math.max(currentBounds.maxX, tri.v1.x, tri.v2.x, tri.v3.x);
+                            currentBounds.minY = Math.min(currentBounds.minY, tri.v1.y, tri.v2.y, tri.v3.y);
+                            currentBounds.maxY = Math.max(currentBounds.maxY, tri.v1.y, tri.v2.y, tri.v3.y);
+                        }
+                    }
+                    
+                    // Store the ORIGINAL keyframe values as base reference
+                    const originalOffsetX = kf.params.x || 0;
+                    const originalOffsetY = kf.params.y || 0;
+                    
+                    // Calculate the model's base reference point (what its min corner would be without this keyframe's offset)
+                    const baseRefX = currentBounds.minX - originalOffsetX;
+                    const baseRefY = currentBounds.minY - originalOffsetY;
+                    
+                    console.log("Original offset:", originalOffsetX, originalOffsetY);
+                    console.log("Current bounds min:", currentBounds.minX, currentBounds.minY);
+                    console.log("Base ref:", baseRefX, baseRefY);
+                    
+                    // Store for use in callback (these should NOT change during drag)
+                    const pickBaseRef = { x: baseRefX, y: baseRefY };
+                    const pickSavedTime = savedTime;
+                    
+                    // Track if we've made changes
+                    let hasChanges = false;
+                    
+                    // Define the pick callback
+                    const pickCallback = (canvasX, canvasY) => {
+                        // Calculate new offset: picked position - base reference
+                        const newOffsetX = canvasX - pickBaseRef.x;
+                        const newOffsetY = canvasY - pickBaseRef.y;
+                        
+                        // Update input fields
+                        const xInput = document.getElementById('editParamX');
+                        const yInput = document.getElementById('editParamY');
+                        if (xInput) xInput.value = Math.round(newOffsetX);
+                        if (yInput) yInput.value = Math.round(newOffsetY);
+                        
+                        // Update the keyframe
+                        const newKf = track.keyframes[keyframeIndex];
+                        if (newKf) {
+                            newKf.params.x = Math.round(newOffsetX);
+                            newKf.params.y = Math.round(newOffsetY);
+                            currentEditingKeyframe.kf = newKf;
+                            
+                            // Mark that we have changes
+                            hasChanges = true;
+                            
+                            // Update UI
+                            renderTimelineForAnimation();
+                            applyAnimationAtTime(currentAnimationTime);
+                            draw();
+                            highlightKeyframe(track.id, keyframeIndex);
+                        }
+                    };
+                    
+                    // Function to finalize and save
+                    const finalizePick = () => {
+                        if (hasChanges) {
+                            // Save to undo stack
+                            saveUndoState();
+                            console.log("Saved pick changes to undo stack");
+                        }
+                        
+                        // Restore original time
+                        currentAnimationTime = pickSavedTime;
+                        updatePlayheadPosition();
+                        applyAnimationAtTime(currentAnimationTime);
+                        draw();
+                    };
+                    
+                    // Store finalize function to be called on exit
+                    window._finalizePick = finalizePick;
+                    
+                    // Activate pick mode
+                    activatePickMode(pickCallback, 0, 0, null);
+                };
+            }
+
+
+
+
+            const pickCenterBtn = document.getElementById('pickCenterBtn');
+            if (pickCenterBtn) {
+                pickCenterBtn.onclick = () => {
+                    console.log("Pick center button clicked");
+                    activatePickMode(
+                        (canvasX, canvasY) => {
+                            console.log("Picked center:", canvasX, canvasY);
+                            // For center, just set the coordinates directly
+                            const centerXInput = document.getElementById('editParamCenterX');
+                            const centerYInput = document.getElementById('editParamCenterY');
+                            if (centerXInput) centerXInput.value = Math.round(canvasX);
+                            if (centerYInput) centerYInput.value = Math.round(canvasY);
+                            autoSave();
+                        },
+                        0, 0, null
+                    );
+                };
+            }
+            
+            // For visibility, add radio button listeners
+            if (kf.action === 'visibility') {
+                document.querySelectorAll('input[name="visibilityState"]').forEach(radio => {
+                    radio.addEventListener('change', autoSave);
+                });
+            } else {
+                document.getElementById('editInstant')?.addEventListener('change', autoSave);
+            }
             
             // Copy button handler
             document.getElementById('copyKeyframeBtn')?.addEventListener('click', () => {
                 copiedKeyframe = JSON.parse(JSON.stringify(kf));
                 console.log("Keyframe copied:", copiedKeyframe);
                 
-                // Show feedback
                 const btn = document.getElementById('copyKeyframeBtn');
                 const originalText = btn.textContent;
-                btn.textContent = '✓ COPIED!';
+                btn.textContent = 'COPIED!';
                 btn.style.background = '#4CAF50';
                 setTimeout(() => {
                     btn.textContent = originalText;
                     btn.style.background = '#4CAF50';
                 }, 1000);
                 
-                // Flash the editor border
                 const editorDiv = document.getElementById('keyframeEditor');
                 const originalBorder = editorDiv.style.border;
                 editorDiv.style.border = '2px solid #4CAF50';
@@ -9242,7 +9503,8 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
             document.getElementById('deleteKeyframeBtn').onclick = () => {
                 if (currentEditingKeyframe) {
                     saveUndoState();
-                    track.keyframes.splice(currentEditingKeyframe.keyframeIndex, 1);
+                    const { track, keyframeIndex } = currentEditingKeyframe;
+                    track.keyframes.splice(keyframeIndex, 1);
                     renderTimelineForAnimation();
                     applyAnimationAtTime(currentAnimationTime);
                     draw();
@@ -9259,6 +9521,7 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
                 clearKeyframeHighlight();
             };
         }
+
 
         function updateModelVisibilityForAnimation() {
             if (!isAnimationMode) return;
@@ -9331,6 +9594,83 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
             }
         }
 
+
+        function addKeyframeToSelectedTimeline(action, config) {
+            const anim = getSelectedAnimation();
+            if (!anim) {
+                alert('Please create an animation first');
+                return;
+            }
+            
+            const track = anim.tracks.find(t => t.id === selectedTimelineId);
+            if (!track) return;
+            
+            // Get current playhead time (snapped to snapInterval)
+            let time = currentAnimationTime;
+            //time = snapTime(time);
+            
+            // Check if a keyframe with same action already exists at this time
+            const existing = track.keyframes.find(kf => 
+                Math.abs(kf.time - time) < 0.1 && kf.action === action
+            );
+            
+            if (existing) {
+                if (confirm(`A ${action} keyframe already exists at this time. Replace it?`)) {
+                    track.keyframes = track.keyframes.filter(kf => 
+                        !(Math.abs(kf.time - time) < 0.1 && kf.action === action)
+                    );
+                } else {
+                    return;
+                }
+            }
+            
+            // Build default params from config
+            let params = {};
+            if (config.fields) {
+                config.fields.forEach(field => {
+                    params[field.name] = field.default;
+                });
+            }
+            
+            // Check if this action is always instant (reset, visibility)
+            const isAlwaysInstant = (action === 'reset' || action === 'visibility');
+            
+            const keyframeData = { time, action, params };
+            if (isAlwaysInstant) {
+                keyframeData.instant = true;
+            }
+            
+            track.keyframes.push(keyframeData);
+            track.keyframes.sort((a, b) => a.time - b.time);
+            
+            renderTimelineForAnimation();
+            applyAnimationAtTime(currentAnimationTime);
+            draw();
+            
+            // Open editor for the new keyframe
+            setTimeout(() => {
+                const newKeyframeIndex = track.keyframes.findIndex(kf => 
+                    Math.abs(kf.time - time) < 0.1 && kf.action === action
+                );
+                if (newKeyframeIndex !== -1) {
+                    showKeyframeEditor(anim, track, newKeyframeIndex);
+                }
+            }, 50);
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
             // ===========================================
         // INITIALIZE
@@ -9400,6 +9740,45 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
             }
         }
 
+
+        function activatePickMode(callback, originalX, originalY, targetInput) {
+
+            pickModeActive = true;
+            pickModeCallback = callback;
+            pickModeOriginalX = originalX;
+            pickModeOriginalY = originalY;
+            pickModeTargetInput = targetInput;
+            
+            // Change cursor
+            document.body.style.cursor = 'crosshair';
+            
+            // Remove any existing instruction
+            const existingInstruction = document.getElementById('pickInstruction');
+            if (existingInstruction) existingInstruction.remove();
+            
+            // Show instruction message
+            const instruction = document.createElement('div');
+            instruction.id = 'pickInstruction';
+            instruction.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #ff9900;
+                color: #111;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-family: monospace;
+                font-size: 12px;
+                font-weight: bold;
+                z-index: 10000;
+                pointer-events: none;
+                white-space: nowrap;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            `;
+            instruction.textContent = 'Click and drag on canvas to pick position (release to finish)';
+            document.body.appendChild(instruction);
+        }
         // Call this after the DOM is loaded
         setTimeout(makeCanvasResizable, 100);
 
