@@ -783,6 +783,15 @@
             border: 1px solid #555;
             box-sizing: border-box;
             position: relative;
+            resize: vertical;
+            overflow: auto;
+            min-height: 200px;
+            max-height: 80vh;
+        }
+
+        .canvas-container::-webkit-resizer {
+            background: #ff9900;
+            border-radius: 2px;
         }
 
         .canvas-info-bar {
@@ -1773,6 +1782,14 @@
     width: 100%;
 }
 
+#timelineRulerCanvas {
+    display: block;
+    width: 100%;
+    height: 28px;
+    background: #2d2d2d;
+    cursor: pointer;
+}
+
 .timeline-row {
     display: flex;
     align-items: stretch;
@@ -2492,6 +2509,12 @@
                     </div>
                     <span class="color-label">PIXEL</span>
                 </div>
+                <div class="toggle-item">
+                    <div class="toggle-box" id="toggleBoundingBoxesBtn" title="Toggle bounding boxes">
+                        <div style="font-size: 14px;">⬚</div>
+                    </div>
+                    <span class="color-label">BOUNDS</span>
+                </div>
             </div>
         </div>
         
@@ -2511,9 +2534,8 @@
                     </div>
                 </div>
                 <div class="keyframe-editor" id="keyframeEditor" style="display: none; position: absolute; top: 80px; left: 15px; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(4px); border: 1px solid #ff9900; border-radius: 6px; padding: 10px; min-width: 200px; z-index: 100; font-family: 'Courier New', monospace; font-size: 11px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #ff9900; padding-bottom: 4px;">
-                        <span style="color: #ff9900; font-weight: bold;">✏️ KEYFRAME EDITOR</span>
-                        <button id="closeKeyframeEditor" style="background: none; border: none; color: #aaa; cursor: pointer; font-size: 16px;">×</button>
+                    <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 8px;">
+                        <button id="closeKeyframeEditor" style="background: none; border: none; color: #aaa; cursor: pointer; font-size: 16px; padding: 0 4px;">×</button>
                     </div>
                     <div id="keyframeEditorContent">
                         <div style="color: #888; text-align: center; padding: 10px;">Click a keyframe to edit</div>
@@ -2547,38 +2569,21 @@
                     
                     <!-- Compact tools on the right -->
                     <div class="timeline-tools-compact">
-                        <div class="compact-tool" draggable="true" data-action="move" title="Drag to add MOVE keyframe">
-                            <span class="compact-icon">✏️</span>
-                            <span class="compact-name">MOVE</span>
-                        </div>
-                        <div class="compact-tool" draggable="true" data-action="rotate" title="Drag to add ROTATE keyframe">
-                            <span class="compact-icon">🔄</span>
-                            <span class="compact-name">ROT</span>
-                        </div>
-                        <div class="compact-tool" draggable="true" data-action="scale" title="Drag to add SCALE keyframe">
-                            <span class="compact-icon">🔍</span>
-                            <span class="compact-name">SCALE</span>
-                        </div>
-                        <div class="compact-tool" draggable="true" data-action="color" title="Drag to add COLOR keyframe">
-                            <span class="compact-icon">🎨</span>
-                            <span class="compact-name">COLOR</span>
-                        </div>
+                        
                     </div>
                 </div>
                 
-                <!-- Ruler with spacer - BUTTON LEFT, TEXT RIGHT -->
+                <!-- Ruler with spacer for model names -->
                 <div class="ruler-wrapper" style="display: flex; align-items: stretch; width: 100%;">
                     <div class="ruler-label-space" style="width: 160px; flex-shrink: 0; background: #2d2d2d; border-right: 1px solid #444; display: flex; align-items: center; justify-content: space-between; padding: 0 8px;">
                         <button class="add-timeline-btn-inline" id="addTimelineBtnInline" style="background: #ff9900; border: none; border-radius: 3px; width: 28px; height: 28px; cursor: pointer; font-size: 16px; font-weight: bold; color: #111; transition: all 0.1s;">+</button>
                         <span style="color: #ff9900; font-size: 10px; font-weight: bold;">TRACKS</span>
                     </div>
-                    <div class="ruler-track-container" style="flex: 1; overflow-x: auto; overflow-y: visible; background: #2d2d2d;">
-                        <div class="timeline-ruler" id="timelineRuler" style="background: #2d2d2d; border-bottom: 1px solid #444; position: relative;">
-                            <div class="ruler-track" id="rulerTrack" style="position: relative; height: 28px; min-width: 2000px; width: 100%;"></div>
-                        </div>
+                    <div class="ruler-track-container" style="flex: 1; overflow-x: auto; overflow-y: visible; background: #2d2d2d; position: relative;">
+                        <canvas id="timelineRulerCanvas" style="display: block; width: 100%; height: 28px; background: #2d2d2d; border-bottom: 1px solid #444;"></canvas>
                     </div>
                 </div>
-                
+                                
                 <!-- Timelines Container - scrollable -->
                 <div class="timelines-container" id="timelinesContainer" style="flex: 1; overflow-y: auto; overflow-x: hidden; background: #1a1a1a; min-height: 0; width: 100%;">
                     <div class="empty-timelines-message">No tracks. Click + to add a track, then drag tools to add keyframes.</div>
@@ -2858,6 +2863,7 @@
         var showCircles = false;
         var showPixelated = true;
         var draggingVertex = null;
+        var showBoundingBoxes = false;
         var currentColor = "#ffffff";
 
         // Selection state
@@ -2925,8 +2931,15 @@
         var currentEditingKeyframe = null;
         var currentEditingTrack = null;
         var currentEditingAnimation = null;
+        let currentHoveredModelIndex = -1;
 
-       
+        var hoveredGroupBadge = null;
+        var hoveredGroupPoints = [];
+
+        var copiedKeyframe = null;
+        var copyModeActive = false;
+
+            
         
 
         // ===========================================
@@ -3012,12 +3025,6 @@
             selectedAnimationId = previousState.selectedAnimationId;
             currentAnimationTime = previousState.currentAnimationTime;
             
-            // Restore mode if needed
-            if (previousState.isAnimationMode !== isAnimationMode) {
-                // Handle mode toggle if needed
-                console.warn("Mode changed in undo, might need manual fix");
-            }
-            
             // Reset UI state
             points = [];
             state = 0;
@@ -3039,6 +3046,24 @@
                 clearInterval(oscillationTimer);
                 oscillationTimer = null;
             }
+            
+            // Update original model data
+            window._originalModelsData = models.map(m => ({
+                triangles: JSON.parse(JSON.stringify(m.triangles)),
+                pointGroups: JSON.parse(JSON.stringify(m.pointGroups || []))
+            }));
+            
+            window._originalPointsData = {};
+            models.forEach((model, modelIdx) => {
+                const points = [];
+                for (let i = 0; i < model.triangles.length; i++) {
+                    const tri = model.triangles[i];
+                    points.push({ x: tri.v1.x, y: tri.v1.y });
+                    points.push({ x: tri.v2.x, y: tri.v2.y });
+                    points.push({ x: tri.v3.x, y: tri.v3.y });
+                }
+                window._originalPointsData[modelIdx] = points;
+            });
             
             // Update UI based on mode
             if (isAnimationMode) {
@@ -3097,6 +3122,24 @@
                 oscillationTimer = null;
             }
             
+            // Update original model data
+            window._originalModelsData = models.map(m => ({
+                triangles: JSON.parse(JSON.stringify(m.triangles)),
+                pointGroups: JSON.parse(JSON.stringify(m.pointGroups || []))
+            }));
+            
+            window._originalPointsData = {};
+            models.forEach((model, modelIdx) => {
+                const points = [];
+                for (let i = 0; i < model.triangles.length; i++) {
+                    const tri = model.triangles[i];
+                    points.push({ x: tri.v1.x, y: tri.v1.y });
+                    points.push({ x: tri.v2.x, y: tri.v2.y });
+                    points.push({ x: tri.v3.x, y: tri.v3.y });
+                }
+                window._originalPointsData[modelIdx] = points;
+            });
+            
             // Update UI based on mode
             if (isAnimationMode) {
                 renderAnimationList();
@@ -3108,7 +3151,7 @@
             }
             
             draw();
-        }
+        }     
         // ===========================================
         // MODE TOGGLE FUNCTIONS
         // ===========================================
@@ -3269,9 +3312,23 @@
             const container = document.querySelector('.canvas-container');
             if (!canvas || !container) return;
             
-            const newScale = getCanvasScale();
-            canvas.style.width = `${1024 * newScale}px`;
-            canvas.style.height = `${512 * newScale}px`;
+            // Get available space
+            const containerWidth = container.clientWidth - 10; // subtract padding
+            const containerHeight = container.clientHeight - 10;
+            
+            // Original canvas dimensions
+            const originalWidth = 1024;
+            const originalHeight = 512;
+            
+            // Calculate scale to fit within container while maintaining aspect ratio
+            const scaleX = containerWidth / originalWidth;
+            const scaleY = containerHeight / originalHeight;
+            let newScale = Math.min(scaleX, scaleY, 1);
+            newScale = Math.max(0.1, newScale);
+            newScale = Math.round(newScale * 100) / 100;
+            
+            canvas.style.width = `${originalWidth * newScale}px`;
+            canvas.style.height = `${originalHeight * newScale}px`;
             canvasScale = newScale;
             draw();
         }
@@ -3370,6 +3427,8 @@
             }
             renderAnimationsList();
             renderTimelineForAnimation();
+            updateModelVisibilityForAnimation();
+            draw();
         }
 
         function selectAnimation(animId) {
@@ -3407,7 +3466,7 @@
         }
 
         // ===========================================
-        // TIMELINE RENDERING (per animation)
+        // TIMELINE RENDERING 
         // ===========================================
 
         let timelineDragState = { active: false, trackId: null, kfIdx: null, startX: 0, startTime: 0, canvasWidth: 0 };
@@ -3427,6 +3486,10 @@
             }
             
             container.innerHTML = '';
+            
+            // Get the ruler canvas for width reference
+            const rulerCanvas = document.getElementById('timelineRulerCanvas');
+            const totalWidth = rulerCanvas ? rulerCanvas.width : 2000;
             
             anim.tracks.forEach((track) => {
                 const row = document.createElement('div');
@@ -3468,11 +3531,12 @@
                 canvas.style.height = '32px';
                 canvas.style.background = '#1a1a1a';
                 canvas.style.cursor = 'crosshair';
+                canvas.style.minWidth = `${totalWidth}px`; // Set minimum width to match ruler
                 canvas.setAttribute('data-track-id', track.id);
                 
-                // Add keyframe markers
+                // Add keyframe markers using pixel positioning
                 (track.keyframes || []).forEach((kf, kfIdx) => {
-                    const percent = (kf.time / anim.duration) * 100;
+                    const pixelX = (kf.time / anim.duration) * totalWidth;
                     const config = animationActionTypes[kf.action];
                     const markerColor = config ? config.color : '#ff9900';
                     
@@ -3490,7 +3554,7 @@
                     marker.style.borderRadius = '50%';
                     marker.style.transform = 'translate(-50%, -50%)';
                     marker.style.top = '50%';
-                    marker.style.left = `${Math.min(100, Math.max(0, percent))}%`;
+                    marker.style.left = `${pixelX}px`;
                     marker.style.cursor = 'grab';
                     marker.style.zIndex = '10';
                     
@@ -3514,8 +3578,8 @@
                 playhead.style.pointerEvents = 'none';
                 playhead.style.zIndex = '20';
                 playhead.style.boxShadow = '0 0 3px #ff9900';
-                const percent = (currentAnimationTime / anim.duration) * 100;
-                playhead.style.left = `${Math.min(100, Math.max(0, percent))}%`;
+                const pixelX = (currentAnimationTime / anim.duration) * totalWidth;
+                playhead.style.left = `${pixelX}px`;
                 canvas.appendChild(playhead);
                 
                 row.appendChild(label);
@@ -3523,23 +3587,63 @@
                 container.appendChild(row);
             });
             
-            // IMPORTANT: Attach events AFTER all markers are added to the DOM
+            syncRulerScroll();
             attachTimelineEventsForAnimation();
             updateTimelineStats();
+            updateModelVisibilityForAnimation();
             updateRuler(anim.duration);
         }
 
+        function setupDragAndDrop() {
+            document.querySelectorAll('.compact-tool').forEach(tool => {
+                tool.setAttribute('draggable', 'true');
+                tool.ondragstart = (e) => {
+                    e.dataTransfer.setData('text/plain', tool.getAttribute('data-action'));
+                    e.dataTransfer.effectAllowed = 'copy';
+                    tool.style.opacity = '0.5';
+                    
+                    // Create initial ball at cursor
+                    let dragBall = document.getElementById('dragFeedbackBall');
+                    if (!dragBall) {
+                        dragBall = document.createElement('div');
+                        dragBall.id = 'dragFeedbackBall';
+                        dragBall.style.cssText = `
+                            position: fixed;
+                            width: 20px;
+                            height: 20px;
+                            background: #ff9900;
+                            border-radius: 50%;
+                            pointer-events: none;
+                            z-index: 10000;
+                            box-shadow: 0 0 10px #ff9900;
+                        `;
+                        document.body.appendChild(dragBall);
+                    }
+                };
+                tool.ondragend = (e) => {
+                    tool.style.opacity = '1';
+                    const dragBall = document.getElementById('dragFeedbackBall');
+                    if (dragBall) {
+                        dragBall.remove();
+                    }
+                };
+            });
+        }
         function attachTimelineEventsForAnimation() {
+            // Helper function to get time from mouse event
+            
             // Delete track buttons
             document.querySelectorAll('.timeline-delete-btn').forEach(btn => {
                 btn.onclick = (e) => {
                     e.stopPropagation();
+                    saveUndoState();
                     const trackId = btn.getAttribute('data-track-id');
                     const anim = getSelectedAnimation();
                     if (anim) {
                         anim.tracks = anim.tracks.filter(t => t.id !== trackId);
                         renderTimelineForAnimation();
                         applyAnimationAtTime(currentAnimationTime);
+                        updateModelVisibilityForAnimation();
                         draw();
                     }
                 };
@@ -3556,13 +3660,13 @@
                 canvas.addEventListener('mousedown', (e) => {
                     if (e.target.classList.contains('keyframe-marker')) return;
                     
-                    const rect = canvas.getBoundingClientRect();
-                    const percent = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+                    const time = getMouseTimeFromEvent(e, canvas);
+                    if (time === null) return;
+                    
                     const anim = getSelectedAnimation();
                     if (!anim) return;
                     
-                    const newTime = Math.floor(percent * anim.duration);
-                    currentAnimationTime = Math.min(anim.duration, Math.max(0, newTime));
+                    currentAnimationTime = Math.min(anim.duration, Math.max(0, time));
                     updatePlayheadPosition();
                     applyAnimationAtTime(currentAnimationTime);
                     draw();
@@ -3576,15 +3680,13 @@
                 canvas.addEventListener('mousemove', (e) => {
                     if (!isDraggingPlayhead) return;
                     
-                    const rect = canvas.getBoundingClientRect();
-                    const deltaX = e.clientX - dragStartX;
-                    const deltaPercent = deltaX / rect.width;
+                    const time = getMouseTimeFromEvent(e, canvas);
+                    if (time === null) return;
+                    
                     const anim = getSelectedAnimation();
                     if (!anim) return;
                     
-                    let newTime = dragStartTime + (deltaPercent * anim.duration);
-                    newTime = Math.min(anim.duration, Math.max(0, newTime));
-                    currentAnimationTime = newTime;
+                    currentAnimationTime = Math.min(anim.duration, Math.max(0, time));
                     updatePlayheadPosition();
                     
                     const timeDisplay = document.getElementById('timelineCurrentTime');
@@ -3594,22 +3696,128 @@
                     draw();
                 });
                 
+                // In attachTimelineEventsForAnimation, add this after the canvas.onclick handler:
+
                 canvas.onclick = (e) => {
                     if (e.target.classList.contains('keyframe-marker')) return;
+                    
+                    const time = getMouseTimeFromEvent(e, canvas);
+                    if (time === null) return;
+                    
                     const trackId = canvas.getAttribute('data-track-id');
                     const anim = getSelectedAnimation();
                     const track = anim?.tracks.find(t => t.id === trackId);
                     if (!track) return;
                     
-                    const rect = canvas.getBoundingClientRect();
-                    const percent = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-                    const time = Math.floor(percent * anim.duration);
-                    showKeyframeDialogForTrack(trackId, time);
+                    // Check if we're in paste mode
+                    if (copyModeActive && copiedKeyframe) {
+                        e.preventDefault();
+                        
+                        // Create a copy of the keyframe with new time
+                        const newKeyframe = JSON.parse(JSON.stringify(copiedKeyframe));
+                        newKeyframe.time = time;
+                        
+                        // Check if a keyframe with same action already exists at this time
+                        const existing = track.keyframes.find(kf => 
+                            Math.abs(kf.time - time) < 0.1 && kf.action === newKeyframe.action
+                        );
+                        
+                        if (existing) {
+                            if (confirm(`A ${newKeyframe.action} keyframe already exists at this time. Replace it?`)) {
+                                track.keyframes = track.keyframes.filter(kf => 
+                                    !(Math.abs(kf.time - time) < 0.1 && kf.action === newKeyframe.action)
+                                );
+                                track.keyframes.push(newKeyframe);
+                            }
+                        } else {
+                            track.keyframes.push(newKeyframe);
+                        }
+                        
+                        track.keyframes.sort((a, b) => a.time - b.time);
+                        renderTimelineForAnimation();
+                        applyAnimationAtTime(currentAnimationTime);
+                        draw();
+                        
+                        // Exit paste mode
+                        copyModeActive = false;
+                        document.body.style.cursor = '';
+                        
+                        // Show success feedback
+                        const feedback = document.createElement('div');
+                        feedback.style.cssText = `
+                            position: fixed;
+                            bottom: 20px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            background: #4CAF50;
+                            color: white;
+                            padding: 8px 16px;
+                            border-radius: 4px;
+                            font-family: monospace;
+                            font-size: 12px;
+                            z-index: 10000;
+                            pointer-events: none;
+                            animation: fadeOut 1.5s forwards;
+                        `;
+                        feedback.textContent = '✓ Keyframe pasted!';
+                        document.body.appendChild(feedback);
+                        setTimeout(() => feedback.remove(), 1500);
+                        
+                        return;
+                    }
+                    
+                    // Normal keyframe dialog
+                    //showKeyframeDialogForTrack(trackId, time);
                 };
                 
-                canvas.ondragover = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; };
+                canvas.ondragover = (e) => { 
+                    e.preventDefault(); 
+                    e.dataTransfer.dropEffect = 'copy';
+                    
+                    // Create or update drag feedback ball
+                    let dragBall = document.getElementById('dragFeedbackBall');
+                    if (!dragBall) {
+                        dragBall = document.createElement('div');
+                        dragBall.id = 'dragFeedbackBall';
+                        dragBall.style.cssText = `
+                            position: fixed;
+                            width: 16px;
+                            height: 16px;
+                            background: #ff9900;
+                            border-radius: 50%;
+                            pointer-events: none;
+                            z-index: 10000;
+                            box-shadow: 0 0 10px #ff9900;
+                            transition: transform 0.05s ease;
+                        `;
+                        document.body.appendChild(dragBall);
+                    }
+                    
+                    // Position ball at mouse
+                    dragBall.style.left = (e.clientX - 10) + 'px';
+                    dragBall.style.top = (e.clientY - 10) + 'px';
+                    dragBall.style.transform = 'scale(1)';
+                };
+
+                canvas.ondragleave = (e) => {
+                    const dragBall = document.getElementById('dragFeedbackBall');
+                    if (dragBall) {
+                        dragBall.style.transform = 'scale(0)';
+                    }
+                };
+
                 canvas.ondrop = (e) => {
                     e.preventDefault();
+                    
+                    // Remove drag ball
+                    const dragBall = document.getElementById('dragFeedbackBall');
+                    if (dragBall) {
+                        dragBall.remove();
+                    }
+                    
+                    const time = getMouseTimeFromEvent(e, canvas);
+                    if (time === null) return;
+                    
                     const trackId = canvas.getAttribute('data-track-id');
                     const anim = getSelectedAnimation();
                     const track = anim?.tracks.find(t => t.id === trackId);
@@ -3619,16 +3827,11 @@
                     const config = animationActionTypes[action];
                     if (!config) return;
                     
-                    const rect = canvas.getBoundingClientRect();
-                    const percent = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-                    const time = Math.floor(percent * anim.duration);
-                    
                     let params = {};
                     config.fields.forEach(field => {
                         params[field.name] = field.default;
                     });
                     
-                    // Store the time and action to find the new keyframe after render
                     const newKeyframeTime = time;
                     const newKeyframeAction = action;
                     
@@ -3637,34 +3840,64 @@
                     
                     renderTimelineForAnimation();
                     applyAnimationAtTime(currentAnimationTime);
+                    updateModelVisibilityForAnimation();
                     draw();
                     
-                    // Find the newly added keyframe after render
                     setTimeout(() => {
-                        // Find the keyframe we just added
                         const newKeyframeIndex = track.keyframes.findIndex(kf => 
                             Math.abs(kf.time - newKeyframeTime) < 0.1 && kf.action === newKeyframeAction
                         );
-                        
                         if (newKeyframeIndex !== -1) {
-                            console.log("Opening editor for new keyframe");
                             showKeyframeEditor(anim, track, newKeyframeIndex);
-                        } else {
-                            console.log("Could not find new keyframe");
                         }
-                    }, 50); // Small delay to ensure DOM is updated
+                    }, 50);
                 };
+
+
             });
             
-            // Keyframe events - attach to each marker
+            document.addEventListener('mouseup', () => {
+                if (isDraggingPlayhead) {
+                    saveUndoState();
+                    isDraggingPlayhead = false;
+                    applyAnimationAtTime(currentAnimationTime);
+                    draw();
+                }
+            });
+
+
+
+            const timelinesContainer = document.getElementById('timelinesContainer');
+            if (timelinesContainer) {
+                // Remove existing listener to avoid duplicates
+                if (window.timelineMouseMoveHandler) {
+                    timelinesContainer.removeEventListener('mousemove', window.timelineMouseMoveHandler);
+                    timelinesContainer.removeEventListener('mouseleave', window.timelineMouseLeaveHandler);
+                }
+                
+                window.timelineMouseMoveHandler = function(e) {
+                    if (!isAnimationMode) return;
+                    highlightModelUnderMouse(e);
+                };
+                
+                window.timelineMouseLeaveHandler = function() {
+                    if (currentHoveredModelIndex !== -1) {
+                        currentHoveredModelIndex = -1;
+                        draw();
+                    }
+                };
+                
+                timelinesContainer.addEventListener('mousemove', window.timelineMouseMoveHandler);
+                timelinesContainer.addEventListener('mouseleave', window.timelineMouseLeaveHandler);
+            }
+            
+            // Keyframe events
             document.querySelectorAll('.keyframe-marker').forEach(marker => {
-                // Remove any existing listeners to avoid duplicates
                 const newMarker = marker.cloneNode(true);
                 marker.parentNode.replaceChild(newMarker, marker);
-             
+                
                 newMarker.onmousedown = (e) => {
                     e.stopPropagation();
-                    console.log("Keyframe mousedown");
                     const trackId = newMarker.getAttribute('data-track-id');
                     const kfIdx = parseInt(newMarker.getAttribute('data-kf-idx'));
                     const anim = getSelectedAnimation();
@@ -3675,7 +3908,6 @@
                     if (currentEditingKeyframe && 
                         (currentEditingKeyframe.track.id !== track.id || 
                         currentEditingKeyframe.keyframeIndex !== kfIdx)) {
-                        console.log("Switching editor to dragged keyframe");
                         showKeyframeEditor(anim, track, kfIdx);
                     }
                     
@@ -3687,12 +3919,13 @@
                         const deltaX = Math.abs(moveEvent.clientX - startX);
                         const deltaY = Math.abs(moveEvent.clientY - startY);
                         
-                        // If mouse moved more than 3 pixels, start dragging
                         if (deltaX > 3 || deltaY > 3) {
                             hasMoved = true;
                             
                             const canvas = newMarker.parentElement;
                             const rect = canvas.getBoundingClientRect();
+                            const scrollContainer = document.querySelector('.ruler-track-container');
+                            const scrollLeft = scrollContainer ? scrollContainer.scrollLeft : 0;
                             
                             timelineDragState = {
                                 active: true,
@@ -3700,7 +3933,8 @@
                                 kfIdx: kfIdx,
                                 startX: moveEvent.clientX,
                                 startTime: track.keyframes[kfIdx].time,
-                                canvasWidth: rect.width,
+                                canvasRect: rect,
+                                scrollLeft: scrollLeft,
                                 marker: newMarker
                             };
                             
@@ -3718,9 +3952,7 @@
                         document.removeEventListener('mousemove', onMouseMove);
                         document.removeEventListener('mouseup', onMouseUp);
                         
-                        // If no movement, treat as click
                         if (!hasMoved) {
-                            console.log("Keyframe clicked! (from mouseup)");
                             const anim = getSelectedAnimation();
                             const track = anim?.tracks.find(t => t.id === trackId);
                             if (track && track.keyframes[kfIdx]) {
@@ -3735,23 +3967,12 @@
                     
                     document.addEventListener('mousemove', onMouseMove);
                     document.addEventListener('mouseup', onMouseUp);
-                    
                     e.preventDefault();
                 };
-
+                
                 newMarker.style.cursor = 'grab';
             });
-            
-            document.addEventListener('mouseup', () => {
-                if (isDraggingPlayhead) {
-                    saveUndoState();
-                    isDraggingPlayhead = false;
-                    applyAnimationAtTime(currentAnimationTime);
-                    draw();
-                }
-            });
         }
-
         function attachKeyframeEvents() {
             console.log("Attaching keyframe events, found markers:", document.querySelectorAll('.keyframe-marker').length);
             
@@ -3815,8 +4036,8 @@
                 // Also ensure cursor is grab
                 marker.style.cursor = 'grab';
             });
-        }        
-
+        }      
+        
         function onTimelineDragEnd() {
             if (timelineDragState.active) {
                 saveUndoState();
@@ -3834,61 +4055,55 @@
             applyAnimationAtTime(currentAnimationTime);
             draw();
         }
-                
+
+        document.addEventListener('dragend', function() {
+            const dragBall = document.getElementById('dragFeedbackBall');
+            if (dragBall) {
+                dragBall.remove();
+            }
+        });
+
         function onTimelineDrag(e) {
             if (!timelineDragState.active) return;
             const anim = getSelectedAnimation();
             const track = anim?.tracks.find(t => t.id === timelineDragState.trackId);
             if (!track) return;
             
-            const deltaX = e.clientX - timelineDragState.startX;
-            const deltaPercent = deltaX / timelineDragState.canvasWidth;
-            let newTime = timelineDragState.startTime + (deltaPercent * anim.duration);
+            const rulerCanvas = document.getElementById('timelineRulerCanvas');
+            if (!rulerCanvas) return;
+            
+            const scrollContainer = document.querySelector('.ruler-track-container');
+            const scrollLeft = scrollContainer ? scrollContainer.scrollLeft : 0;
+            const totalWidth = rulerCanvas.width;
+            
+            const canvasRect = timelineDragState.canvasRect;
+            const mouseX = e.clientX - canvasRect.left + scrollLeft;
+            const percent = Math.min(1, Math.max(0, mouseX / totalWidth));
+            let newTime = percent * anim.duration;
             newTime = Math.max(0, Math.min(anim.duration, newTime));
             
             // Update keyframe time
             track.keyframes[timelineDragState.kfIdx].time = newTime;
             track.keyframes.sort((a, b) => a.time - b.time);
             
-            // Update marker position in real-time
-            const newPercent = (newTime / anim.duration) * 100;
+            // Update marker position in real-time using pixel position
+            const newPixelX = (newTime / anim.duration) * totalWidth;
             if (timelineDragState.marker) {
-                timelineDragState.marker.style.left = `${Math.min(100, Math.max(0, newPercent))}%`;
+                timelineDragState.marker.style.left = `${newPixelX}px`;
             }
             
             // Update the editor if it's open for this keyframe
             if (currentEditingKeyframe && currentEditingKeyframe.track && 
                 currentEditingKeyframe.track.id === track.id) {
                 
-                // Find the current index of this keyframe (it may have changed after sort)
-                const currentKf = track.keyframes[timelineDragState.kfIdx];
-                if (currentKf && currentEditingKeyframe.kf === currentKf) {
-                    // Update the time input in the editor
-                    const timeInput = document.getElementById('editKeyframeTime');
-                    if (timeInput) {
-                        timeInput.value = Math.round(newTime);
-                    }
-                    
-                    // Also update the display time in the editor header
-                    const timeSpan = document.querySelector('#keyframeEditorContent div:first-child span:last-child');
-                    if (timeSpan) {
-                        timeSpan.textContent = `@ ${Math.round(newTime)}ms`;
-                    }
-                } else {
-                    // Try to find the keyframe by reference
-                    const newIndex = track.keyframes.findIndex(k => k === currentEditingKeyframe.kf);
-                    if (newIndex !== -1) {
-                        timelineDragState.kfIdx = newIndex;
-                        if (timelineDragState.marker) {
-                            timelineDragState.marker.setAttribute('data-kf-idx', newIndex);
-                        }
-                        currentEditingKeyframe.keyframeIndex = newIndex;
-                        
-                        const timeInput = document.getElementById('editKeyframeTime');
-                        if (timeInput) {
-                            timeInput.value = Math.round(newTime);
-                        }
-                    }
+                const timeInput = document.getElementById('editKeyframeTime');
+                if (timeInput) {
+                    timeInput.value = Math.round(newTime);
+                }
+                
+                const timeSpan = document.querySelector('#keyframeEditorContent div:first-child span:last-child');
+                if (timeSpan) {
+                    timeSpan.textContent = `@ ${Math.round(newTime)}ms`;
                 }
             }
             
@@ -3910,6 +4125,74 @@
             applyAnimationAtTime(newTime);
             draw();
         }
+
+        function onTimelineDrag(e) {
+            if (!timelineDragState.active) return;
+            const anim = getSelectedAnimation();
+            const track = anim?.tracks.find(t => t.id === timelineDragState.trackId);
+            if (!track) return;
+            
+            const rulerCanvas = document.getElementById('timelineRulerCanvas');
+            if (!rulerCanvas) return;
+            
+            // Get current scroll position
+            const scrollContainer = document.querySelector('.ruler-track-container');
+            const currentScrollLeft = scrollContainer ? scrollContainer.scrollLeft : 0;
+            
+            // Calculate delta in screen pixels, then convert to time
+            const deltaX = e.clientX - timelineDragState.startX;
+            
+            // Convert delta to percentage of total width
+            const deltaPercent = deltaX / rulerCanvas.width;
+            
+            // Calculate new time
+            let newTime = timelineDragState.startTime + (deltaPercent * anim.duration);
+            newTime = Math.max(0, Math.min(anim.duration, newTime));
+            
+            // Update keyframe time
+            track.keyframes[timelineDragState.kfIdx].time = newTime;
+            track.keyframes.sort((a, b) => a.time - b.time);
+            
+            // Update marker position in real-time
+            const newPercent = (newTime / anim.duration) * 100;
+            if (timelineDragState.marker) {
+                timelineDragState.marker.style.left = `${Math.min(100, Math.max(0, newPercent))}%`;
+            }
+            
+            // Update the editor if it's open for this keyframe
+            if (currentEditingKeyframe && currentEditingKeyframe.track && 
+                currentEditingKeyframe.track.id === track.id) {
+                
+                const timeInput = document.getElementById('editKeyframeTime');
+                if (timeInput) {
+                    timeInput.value = Math.round(newTime);
+                }
+                
+                const timeSpan = document.querySelector('#keyframeEditorContent div:first-child span:last-child');
+                if (timeSpan) {
+                    timeSpan.textContent = `@ ${Math.round(newTime)}ms`;
+                }
+            }
+            
+            // Update the keyframe index if it changed after sorting
+            const newKfIdx = track.keyframes.findIndex(k => Math.abs(k.time - newTime) < 0.1);
+            if (newKfIdx !== -1 && newKfIdx !== timelineDragState.kfIdx) {
+                timelineDragState.kfIdx = newKfIdx;
+                if (timelineDragState.marker) {
+                    timelineDragState.marker.setAttribute('data-kf-idx', newKfIdx);
+                }
+                if (currentEditingKeyframe) {
+                    currentEditingKeyframe.keyframeIndex = newKfIdx;
+                }
+            }
+            
+            updateTimelineStats();
+            
+            // Apply animation preview while dragging
+            applyAnimationAtTime(newTime);
+            draw();
+        }
+
         function showKeyframeDialogForTrack(trackId, presetTime) {
             const dialog = document.getElementById('keyframeDialog');
             if (!dialog) return;
@@ -4055,37 +4338,30 @@
                 const instantCheckboxDiv = document.createElement('div');
                 instantCheckboxDiv.style.marginTop = '12px';
                 instantCheckboxDiv.style.marginBottom = '8px';
-                instantCheckboxDiv.style.padding = '8px';
-                instantCheckboxDiv.style.background = '#1e1e1e';
-                instantCheckboxDiv.style.borderRadius = '4px';
-                instantCheckboxDiv.style.border = `1px solid ${config.color}`;
-                
+                instantCheckboxDiv.style.display = 'flex';
+                instantCheckboxDiv.style.alignItems = 'center';
+                instantCheckboxDiv.style.gap = '8px';
+                instantCheckboxDiv.style.padding = '4px 0';
+
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.id = 'instantCheckbox';
-                checkbox.style.marginRight = '8px';
+                checkbox.style.margin = '0';
                 checkbox.style.cursor = 'pointer';
                 checkbox.style.accentColor = config.color;
-                
+                checkbox.style.width = '14px';
+                checkbox.style.height = '14px';
+
                 const checkboxLabel = document.createElement('label');
                 checkboxLabel.htmlFor = 'instantCheckbox';
-                checkboxLabel.textContent = '⚡ INSTANT';
-                checkboxLabel.style.color = config.color;
-                checkboxLabel.style.fontWeight = 'bold';
-                checkboxLabel.style.fontSize = '11px';
+                checkboxLabel.textContent = 'Instant (no interpolation)';
+                checkboxLabel.style.color = '#ccc';
+                checkboxLabel.style.fontSize = '10px';
                 checkboxLabel.style.cursor = 'pointer';
-                checkboxLabel.style.fontFamily = 'monospace';
-                
-                const checkboxDesc = document.createElement('div');
-                checkboxDesc.textContent = 'When checked, this keyframe applies instantly without interpolation';
-                checkboxDesc.style.fontSize = '8px';
-                checkboxDesc.style.color = '#666';
-                checkboxDesc.style.marginTop = '4px';
-                checkboxDesc.style.marginLeft = '24px';
-                
+                checkboxLabel.style.userSelect = 'none';
+
                 instantCheckboxDiv.appendChild(checkbox);
                 instantCheckboxDiv.appendChild(checkboxLabel);
-                instantCheckboxDiv.appendChild(checkboxDesc);
                 paramsDiv.appendChild(instantCheckboxDiv);
                 
                 // Add note for optional fields
@@ -4169,6 +4445,7 @@
                 track.keyframes.sort((a, b) => a.time - b.time);
                 renderTimelineForAnimation();
                 applyAnimationAtTime(currentAnimationTime);
+                updateModelVisibilityForAnimation();
                 draw();
                 dialog.classList.remove('active');
             };
@@ -4225,6 +4502,8 @@
             };
             anim.tracks.push(track);
             renderTimelineForAnimation();
+            updateModelVisibilityForAnimation();
+            draw();
             return track;
         }
 
@@ -4644,14 +4923,18 @@
         function updatePlayheadPosition() {
             const anim = getSelectedAnimation();
             if (!anim) return;
-            const percent = (currentAnimationTime / anim.duration) * 100;
+            
+            const rulerCanvas = document.getElementById('timelineRulerCanvas');
+            const totalWidth = rulerCanvas ? rulerCanvas.width : 2000;
+            const pixelX = (currentAnimationTime / anim.duration) * totalWidth;
+            
             document.querySelectorAll('.playhead').forEach(ph => {
-                ph.style.left = `${Math.min(100, Math.max(0, percent))}%`;
+                ph.style.left = `${pixelX}px`;
             });
+            
             const timeDisplay = document.getElementById('timelineCurrentTime');
             if (timeDisplay) timeDisplay.textContent = Math.round(currentAnimationTime) + ' ms';
             
-            // Also update the main canvas if in animation mode
             if (isAnimationMode) {
                 applyAnimationAtTime(currentAnimationTime);
                 draw();
@@ -4659,47 +4942,109 @@
         }
 
         function updateRuler(duration) {
-            const rulerTrack = document.getElementById('rulerTrack');
-            if (!rulerTrack) return;
-            rulerTrack.innerHTML = '';
+            const canvas = document.getElementById('timelineRulerCanvas');
+            if (!canvas) return;
             
+            // Get the container width
+            const container = canvas.parentElement;
+            const containerWidth = container.clientWidth;
+            
+            // Set canvas dimensions
+            canvas.width = Math.max(containerWidth, 2000);
+            canvas.height = 28;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Background
+            ctx.fillStyle = '#2d2d2d';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw ruler markings
             const step = Math.max(100, Math.floor(duration / 10));
+            ctx.strokeStyle = '#555';
+            ctx.fillStyle = '#888';
+            ctx.font = '8px "Courier New", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            
             for (let t = 0; t <= duration; t += step) {
                 const percent = (t / duration) * 100;
+                const x = (percent / 100) * canvas.width;
                 
-                const marker = document.createElement('div');
-                marker.className = 'ruler-marker';
-                marker.style.left = `${percent}%`;
+                // Draw marker line
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, 10);
+                ctx.stroke();
                 
-                const label = document.createElement('div');
-                label.className = 'ruler-label';
-                label.style.left = `${percent}%`;
-                label.style.transform = 'translateX(-50%)';
-                label.style.whiteSpace = 'nowrap';
-                label.style.display = 'inline-block';
-                
+                // Draw label
+                let labelText;
                 if (t >= 1000) {
-                    label.textContent = (t/1000).toFixed(1) + 's';
+                    labelText = (t/1000).toFixed(1) + 's';
                 } else {
-                    label.textContent = t + 'ms';
+                    labelText = t + 'ms';
                 }
-                
-                rulerTrack.appendChild(marker);
-                rulerTrack.appendChild(label);
+                ctx.fillStyle = '#888';
+                ctx.fillText(labelText, x, 24);
             }
             
-            const endMarker = document.createElement('div');
-            endMarker.className = 'ruler-marker';
-            endMarker.style.left = '100%';
-            const endLabel = document.createElement('div');
-            endLabel.className = 'ruler-label';
-            endLabel.style.left = '100%';
-            endLabel.style.transform = 'translateX(-50%)';
-            endLabel.style.whiteSpace = 'nowrap';
-            endLabel.textContent = (duration/1000).toFixed(1) + 's';
-            rulerTrack.appendChild(endMarker);
-            rulerTrack.appendChild(endLabel);
+            // Draw end marker
+            const endX = canvas.width;
+            ctx.beginPath();
+            ctx.moveTo(endX, 0);
+            ctx.lineTo(endX, 10);
+            ctx.stroke();
+            
+            let endLabel = (duration/1000).toFixed(1) + 's';
+            ctx.fillStyle = '#888';
+            ctx.fillText(endLabel, endX, 24);
+            
+            // Draw major ticks every second
+            const secondStep = 1000;
+            for (let t = secondStep; t <= duration; t += secondStep) {
+                const percent = (t / duration) * 100;
+                const x = (percent / 100) * canvas.width;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, 15);
+                ctx.stroke();
+            }
+            
+            // Only sync scroll if the containers exist
+            const timelinesContainer = document.getElementById('timelinesContainer');
+            const rulerContainer = document.querySelector('.ruler-track-container');
+            if (timelinesContainer && rulerContainer) {
+                syncRulerScroll();
+            }
         }
+
+        function syncRulerScroll() {
+            const rulerContainer = document.querySelector('.ruler-track-container');
+            const timelinesContainer = document.getElementById('timelinesContainer');
+            
+            if (rulerContainer && timelinesContainer) {
+                // Remove existing listener if handler exists
+                if (window.syncScrollHandler) {
+                    timelinesContainer.removeEventListener('scroll', window.syncScrollHandler);
+                }
+                
+                // Define the handler function
+                window.syncScrollHandler = function() {
+                    if (rulerContainer) {
+                        rulerContainer.scrollLeft = timelinesContainer.scrollLeft;
+                    }
+                };
+                
+                // Add scroll listener
+                timelinesContainer.addEventListener('scroll', window.syncScrollHandler);
+                
+                // Initial sync
+                rulerContainer.scrollLeft = timelinesContainer.scrollLeft;
+            }
+        }
+
 
         function updateTimelineStats() {
             const anim = getSelectedAnimation();
@@ -4707,6 +5052,28 @@
             const kfEl = document.getElementById('totalKeyframesCount');
             if (kfEl) kfEl.textContent = totalKf;
         }
+
+        function getMouseTimeFromEvent(e, canvas) {
+            const anim = getSelectedAnimation();
+            if (!anim) return null;
+            
+            const rulerCanvas = document.getElementById('timelineRulerCanvas');
+            if (!rulerCanvas) return null;
+            
+            const scrollContainer = document.querySelector('.ruler-track-container');
+            const scrollLeft = scrollContainer ? scrollContainer.scrollLeft : 0;
+            const totalWidth = rulerCanvas.width;
+            
+            const canvasRect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - canvasRect.left + scrollLeft;
+            
+            // Calculate time based on pixel position
+            const percent = Math.min(1, Math.max(0, mouseX / totalWidth));
+            const time = Math.floor(percent * anim.duration);
+            
+            return time;
+        }
+
 
         // ===========================================
         // ANIMATIONS LIST UI
@@ -4870,11 +5237,39 @@
         // ===========================================
         // INITIALIZE
         // ===========================================
+        function generateCompactTools() {
+            const container = document.querySelector('.timeline-tools-compact');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            for (const [key, config] of Object.entries(animationActionTypes)) {
+                // Skip 'reset' if you don't want it in the tools
+      
+                
+                const tool = document.createElement('div');
+                tool.className = 'compact-tool';
+                tool.setAttribute('draggable', 'true');
+                tool.setAttribute('data-action', key);
+                tool.setAttribute('title', `Drag to add ${config.name} keyframe`);
+                tool.style.borderLeft = `3px solid ${config.color}`;
+                tool.style.transition = 'all 0.1s ease';
+                
+                tool.innerHTML = `
+                    <span class="compact-icon">${config.icon}</span>
+                    <span class="compact-name" style="color: ${config.color};">${config.name.toUpperCase()}</span>
+                `;
+                
+                container.appendChild(tool);
+            }
+            
+            setupDragAndDrop();
+        }
 
-        function initNewAnimationSystem() {
+        function initAnimationSystem() {
             // Generate compact tools from config
             generateCompactTools();
-            
+
+            setupDragAndDrop();
             // Override toggleMode to reset animation state
             const originalToggle = toggleMode;
             window.toggleMode = function() {
@@ -4973,7 +5368,7 @@
         }
 
 
-        setTimeout(initNewAnimationSystem, 100);
+        setTimeout(initAnimationSystem, 100);
         
 
 
@@ -5262,6 +5657,84 @@
             ctx.fill();
         }
 
+        function drawBoundingBoxes() {
+            if (!showBoundingBoxes) return;
+            
+            // Draw bounding boxes for each visible model
+            models.forEach((model, idx) => {
+                if (!model.visible) return;
+                
+                // Calculate min/max points
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                
+                for (let tri of model.triangles) {
+                    minX = Math.min(minX, tri.v1.x, tri.v2.x, tri.v3.x);
+                    maxX = Math.max(maxX, tri.v1.x, tri.v2.x, tri.v3.x);
+                    minY = Math.min(minY, tri.v1.y, tri.v2.y, tri.v3.y);
+                    maxY = Math.max(maxY, tri.v1.y, tri.v2.y, tri.v3.y);
+                }
+                
+                if (minX === Infinity) return;
+                
+                // Convert to screen coordinates
+                let left = minX * SCALE;
+                let top = minY * SCALE;
+                let width = (maxX - minX +1) * SCALE;
+                let height = (maxY - minY +1) * SCALE;
+                
+                ctx.save();
+                ctx.strokeStyle = "#ff3333";
+                ctx.lineWidth = 1;
+                ctx.setLineDash([2, 2]);
+                ctx.strokeRect(left, top, width, height);
+                
+                ctx.restore();
+            });
+            
+            // Draw bounding boxes for point groups
+            const activeModel = models[selectedModelIndex];
+            if (activeModel && activeModel.pointGroups && activeModel.pointGroups.length > 0) {
+                activeModel.pointGroups.forEach((group, groupIdx) => {
+                    if (!group.pointIndices || group.pointIndices.length === 0) return;
+                    
+                    // Get all points in this group
+                    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                    let globalIdx = 0;
+                    
+                    for (let i = 0; i < activeModel.triangles.length; i++) {
+                        let tri = activeModel.triangles[i];
+                        let vertices = [tri.v1, tri.v2, tri.v3];
+                        for (let j = 0; j < 3; j++) {
+                            if (group.pointIndices.includes(globalIdx)) {
+                                let v = vertices[j];
+                                minX = Math.min(minX, v.x);
+                                maxX = Math.max(maxX, v.x);
+                                minY = Math.min(minY, v.y);
+                                maxY = Math.max(maxY, v.y);
+                            }
+                            globalIdx++;
+                        }
+                    }
+                    
+                    if (minX === Infinity) return;
+                    
+                    // Convert to screen coordinates
+                    let left = minX * SCALE;
+                    let top = minY * SCALE;
+                    let width = (maxX - minX+1) * SCALE;
+                    let height = (maxY - minY+1) * SCALE;
+                    
+                    ctx.save();
+                    ctx.strokeStyle = "#33ccff";
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([2, 2]);
+                    ctx.strokeRect(left, top, width, height);
+                    
+                    ctx.restore();
+                });
+            }
+        }
+
         function drawGrid() {
             if (!showGrid) return;
             ctx.save();
@@ -5337,6 +5810,8 @@
             return `rgb(${255-data[0]}, ${255-data[1]}, ${255-data[2]})`;
         }
 
+
+
         function draw() {
             ctx.fillStyle = "#000000";
             ctx.fillRect(0, 0, 1024, 512);
@@ -5347,247 +5822,294 @@
                 ctx.drawImage(overlayImage, overlayControls.x, overlayControls.y, overlayControls.width, overlayControls.height);
                 ctx.restore();
             }
+
+            if (!hoveredGroupBadge) {
+                connectionCtx.clearRect(0, 0, connectionCanvas.width, connectionCanvas.height);
+            }
             
             drawGrid();
+            drawBoundingBoxes();
+            drawConnectionLine();
 
-            let modelsToDraw = models;
-            
-            modelsToDraw.forEach(function(model) {
-                if (!model.visible) return;
-                model.triangles.forEach(function(tri, index) {
-                    let fillColor = tri.color;
-                    if (!isAnimationMode && model === models[selectedModelIndex] && index === hoverTriangleIndex && oscillationTimer) {
-                        if (currentTool === 'paint') {
-                            if (originalTriangleColor.toLowerCase() !== currentColor.toLowerCase()) {
-                                const factor = (Math.sin(oscillationPhase) + 1) / 2;
-                                fillColor = interpolateColor(originalTriangleColor, currentColor, factor);
+            if (isAnimationMode) {
+                // ANIMATION MODE - Show all visible models, highlight hovered model
+                models.forEach((model, idx) => {
+                    if (!model.visible) return;
+                    
+                    // Draw triangles (always show them)
+                    model.triangles.forEach(function(tri) {
+                        let fillColor = tri.color;
+                        if (showPixelated) {
+                            fillTriangleScanline(tri.v1, tri.v2, tri.v3, fillColor);
+                        } else {
+                            fillTriangleSmooth(tri.v1, tri.v2, tri.v3, fillColor);
+                        }
+                    });
+                    
+                    // Draw lines and points ONLY for the hovered model (like selected in model mode)
+                    if (idx === currentHoveredModelIndex) {
+                        // Draw lines
+                        if (showLines) {
+                            model.triangles.forEach(function(tri) {
+                                drawLine(tri.v1, tri.v2, "#FFA500");
+                                drawLine(tri.v2, tri.v3, "#FFA500");
+                                drawLine(tri.v3, tri.v1, "#FFA500");
+                            });
+                        }
+                        
+                        // Draw points
+                        if (showPoints) {
+                            let globalIdx = 0;
+                            for (let i = 0; i < model.triangles.length; i++) {
+                                let tri = model.triangles[i];
+                                let vertices = [tri.v1, tri.v2, tri.v3];
+                                for (let j = 0; j < 3; j++) {
+                                    let v = vertices[j];
+                                    drawPoint(v.x, v.y, "#FFA500", false, false);
+                                    globalIdx++;
+                                }
                             }
-                        } else if (currentTool === 'delete') {
-                            const inverseColor = getInverseHexColor(originalTriangleColor);
-                            const factor = (Math.sin(oscillationPhase) + 1) / 2;
-                            fillColor = interpolateColor(originalTriangleColor, inverseColor, factor);
+                        }
+                    }
+                });
+                
+            } else {
+                // MODEL MODE - Normal drawing
+                let modelsToDraw = models;
+                
+                modelsToDraw.forEach(function(model) {
+                    if (!model.visible) return;
+                    model.triangles.forEach(function(tri, index) {
+                        let fillColor = tri.color;
+                        if (!isAnimationMode && model === models[selectedModelIndex] && index === hoverTriangleIndex && oscillationTimer) {
+                            if (currentTool === 'paint') {
+                                if (originalTriangleColor.toLowerCase() !== currentColor.toLowerCase()) {
+                                    const factor = (Math.sin(oscillationPhase) + 1) / 2;
+                                    fillColor = interpolateColor(originalTriangleColor, currentColor, factor);
+                                }
+                            } else if (currentTool === 'delete') {
+                                const inverseColor = getInverseHexColor(originalTriangleColor);
+                                const factor = (Math.sin(oscillationPhase) + 1) / 2;
+                                fillColor = interpolateColor(originalTriangleColor, inverseColor, factor);
+                            }
+                        }
+                        
+                        if (showPixelated) {
+                            fillTriangleScanline(tri.v1, tri.v2, tri.v3, fillColor);
+                        } else {
+                            fillTriangleSmooth(tri.v1, tri.v2, tri.v3, fillColor);
+                        }
+                    });
+                });
+                
+                if (showLines && modelsToDraw.length > 0 && modelsToDraw[selectedModelIndex] && modelsToDraw[selectedModelIndex].visible) {
+                    let activeTriangles = modelsToDraw[selectedModelIndex].triangles;
+                    for (let tri of activeTriangles) {
+                        drawLine(tri.v1, tri.v2, "#FFA500");
+                        drawLine(tri.v2, tri.v3, "#FFA500");
+                        drawLine(tri.v3, tri.v1, "#FFA500");
+                    }
+                }
+
+                if (showPoints && modelsToDraw.length > 0 && modelsToDraw[selectedModelIndex] && modelsToDraw[selectedModelIndex].visible) {
+                    let active = modelsToDraw[selectedModelIndex];
+                    let groupIndices = new Set();
+                    if (!isAnimationMode && selectedGroupIndex !== -1 && active.pointGroups?.[selectedGroupIndex]) {
+                        active.pointGroups[selectedGroupIndex].pointIndices.forEach(idx => groupIndices.add(idx));
+                    }
+                    
+                    let hoveredIndices = new Set();
+                    if (hoverPointInfo && hoverPointInfo.globalPointIndices) {
+                        hoverPointInfo.globalPointIndices.forEach(idx => hoveredIndices.add(idx));
+                    }
+                    
+                    let globalIdx = 0;
+                    for (let i = 0; i < active.triangles.length; i++) {
+                        let tri = active.triangles[i];
+                        let vertices = [tri.v1, tri.v2, tri.v3];
+                        for (let j = 0; j < 3; j++) {
+                            let v = vertices[j];
+                            let isSel = !isAnimationMode && selectedVertices.some(s => s.triIndex === i && s.vertexIndex === j);
+                            let isGroup = !isAnimationMode && groupIndices.has(globalIdx);
+                            let isHovered = hoveredIndices.has(globalIdx);
+                            
+                            if (!isSel) {
+                                if (isHovered) {
+                                    drawPoint(v.x, v.y, "#0066ff", false, isGroup);
+                                } else {
+                                    drawPoint(v.x, v.y, "#FFA500", false, isGroup);
+                                }
+                            }
+                            globalIdx++;
                         }
                     }
                     
-                    if (showPixelated) {
-                        fillTriangleScanline(tri.v1, tri.v2, tri.v3, fillColor);
-                    } else {
-                        fillTriangleSmooth(tri.v1, tri.v2, tri.v3, fillColor);
+                    if (!isAnimationMode) {
+                        for (let sel of selectedVertices) {
+                            let tri = active.triangles[sel.triIndex];
+                            let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
+                            drawPoint(v.x, v.y, "#FFA500", true, false);
+                        }
                     }
+                }
+                
+                points.forEach(function(point) {
+                    drawPoint(point.x, point.y, "#FFA500");
                 });
-            });
+                
+                if (!isAnimationMode && currentTool === 'add') {
+                    if (state === 1 && points.length === 1 && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
+                        drawLine(points[0], Vec2f(mouseX, mouseY), "#888");
+                    } else if (state === 2 && points.length === 2 && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
+                        if (showPixelated) {
+                            fillTriangleScanline(points[0], points[1], Vec2f(mouseX, mouseY), "#404040");
+                        } else {
+                            fillTriangleSmooth(points[0], points[1], Vec2f(mouseX, mouseY), "#404040");
+                        }
+                        if (showLines) {
+                            drawLine(points[0], points[1], "#888");
+                            drawLine(points[1], Vec2f(mouseX, mouseY), "#888");
+                            drawLine(Vec2f(mouseX, mouseY), points[0], "#888");
+                        }
+                    }
+                }
+                
+                if (!isAnimationMode && shapePlacementMode && shapeStartPos && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.5;
+                    ctx.fillStyle = currentColor;
+                    
+                    if (currentShape === 'square') {
+                        let minX = Math.min(shapeStartPos.x, mouseX);
+                        let maxX = Math.max(shapeStartPos.x, mouseX);
+                        let minY = Math.min(shapeStartPos.y, mouseY);
+                        let maxY = Math.max(shapeStartPos.y, mouseY);
+                        
+                        fillTriangleScanline(
+                            Vec2f(minX, minY),
+                            Vec2f(maxX, minY),
+                            Vec2f(minX, maxY),
+                            currentColor
+                        );
+                        fillTriangleScanline(
+                            Vec2f(maxX, minY),
+                            Vec2f(maxX, maxY),
+                            Vec2f(minX, maxY),
+                            currentColor
+                        );
+                        
+                        if (showLines) {
+                            ctx.strokeStyle = "#ffffff";
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(minX * SCALE, minY * SCALE, (maxX - minX) * SCALE, (maxY - minY) * SCALE);
+                        }
+                    } else if (currentShape === 'circle') {
+                        let radius = Math.max(1, Math.round(Math.sqrt(
+                            Math.pow(mouseX - shapeStartPos.x, 2) + 
+                            Math.pow(mouseY - shapeStartPos.y, 2)
+                        )));
+                        let points = [];
+                        let numPoints = 8;
+                        
+                        for (let i = 0; i < numPoints; i++) {
+                            let angle = (i / numPoints) * Math.PI * 2;
+                            let x = Math.round(shapeStartPos.x + Math.cos(angle) * radius);
+                            let y = Math.round(shapeStartPos.y + Math.sin(angle) * radius);
+                            points.push(Vec2f(x, y));
+                        }
+                        
+                        for (let i = 0; i < numPoints; i++) {
+                            let next = (i + 1) % numPoints;
+                            fillTriangleScanline(
+                                Vec2f(shapeStartPos.x, shapeStartPos.y),
+                                points[i],
+                                points[next],
+                                currentColor
+                            );
+                        }
+                        
+                        if (showLines) {
+                            ctx.strokeStyle = "#ffffff";
+                            ctx.lineWidth = 2;
+                            ctx.beginPath();
+                            for (let i = 0; i < numPoints; i++) {
+                                let next = (i + 1) % numPoints;
+                                ctx.moveTo(points[i].x * SCALE + SCALE/2, points[i].y * SCALE + SCALE/2);
+                                ctx.lineTo(points[next].x * SCALE + SCALE/2, points[next].y * SCALE + SCALE/2);
+                            }
+                            ctx.stroke();
+                        }
+                    } else if (currentShape === 'hexagon') {
+                        let size = Math.max(1, Math.round(Math.sqrt(
+                            Math.pow(mouseX - shapeStartPos.x, 2) + 
+                            Math.pow(mouseY - shapeStartPos.y, 2)
+                        )));
+                        let points = [];
+                        let numPoints = 6;
+                        
+                        for (let i = 0; i < numPoints; i++) {
+                            let angle = (i / numPoints) * Math.PI * 2 - Math.PI / 2;
+                            let x = Math.round(shapeStartPos.x + Math.cos(angle) * size);
+                            let y = Math.round(shapeStartPos.y + Math.sin(angle) * size);
+                            points.push(Vec2f(x, y));
+                        }
+                        
+                        for (let i = 0; i < numPoints; i++) {
+                            let next = (i + 1) % numPoints;
+                            fillTriangleScanline(
+                                Vec2f(shapeStartPos.x, shapeStartPos.y),
+                                points[i],
+                                points[next],
+                                currentColor
+                            );
+                        }
+                        
+                        if (showLines) {
+                            ctx.strokeStyle = "#ffffff";
+                            ctx.lineWidth = 2;
+                            ctx.beginPath();
+                            for (let i = 0; i < numPoints; i++) {
+                                let next = (i + 1) % numPoints;
+                                ctx.moveTo(points[i].x * SCALE + SCALE/2, points[i].y * SCALE + SCALE/2);
+                                ctx.lineTo(points[next].x * SCALE + SCALE/2, points[next].y * SCALE + SCALE/2);
+                            }
+                            ctx.stroke();
+                        }
+                    } else if (currentShape === 'line') {
+                        let dx = mouseX - shapeStartPos.x;
+                        let dy = mouseY - shapeStartPos.y;
+                        let perpX = -dy;
+                        let perpY = dx;
+                        let length = Math.sqrt(perpX * perpX + perpY * perpY);
+                        if (length > 0) {
+                            perpX = perpX / length * 1.0;
+                            perpY = perpY / length * 1.0;
+                        }
+                        let p1 = Vec2f(Math.round(shapeStartPos.x + perpX), Math.round(shapeStartPos.y + perpY));
+                        let p2 = Vec2f(Math.round(shapeStartPos.x - perpX), Math.round(shapeStartPos.y - perpY));
+                        let p3 = Vec2f(Math.round(mouseX - perpX), Math.round(mouseY - perpY));
+                        let p4 = Vec2f(Math.round(mouseX + perpX), Math.round(mouseY + perpY));
+                        
+                        fillTriangleScanline(p1, p2, p3, currentColor);
+                        fillTriangleScanline(p1, p3, p4, currentColor);
+                        
+                        if (showLines) {
+                            ctx.strokeStyle = "#ffffff";
+                            ctx.lineWidth = 2;
+                            ctx.beginPath();
+                            ctx.moveTo(shapeStartPos.x * SCALE + SCALE/2, shapeStartPos.y * SCALE + SCALE/2);
+                            ctx.lineTo(mouseX * SCALE + SCALE/2, mouseY * SCALE + SCALE/2);
+                            ctx.stroke();
+                        }
+                    }
+                    ctx.restore();
+                }
+            }
             
             if (overlayVisible && overlayImage && overlayDrawOrder === "above") {
                 ctx.save();
                 ctx.globalAlpha = overlayAlpha / 100;
                 ctx.drawImage(overlayImage, overlayControls.x, overlayControls.y, overlayControls.width, overlayControls.height);
-                ctx.restore();
-            }
-
-            if (showLines && modelsToDraw.length > 0 && modelsToDraw[selectedModelIndex] && modelsToDraw[selectedModelIndex].visible) {
-                let activeTriangles = modelsToDraw[selectedModelIndex].triangles;
-                for (let tri of activeTriangles) {
-                    drawLine(tri.v1, tri.v2, "#FFA500");
-                    drawLine(tri.v2, tri.v3, "#FFA500");
-                    drawLine(tri.v3, tri.v1, "#FFA500");
-                }
-            }
-
-            if (showPoints && modelsToDraw.length > 0 && modelsToDraw[selectedModelIndex] && modelsToDraw[selectedModelIndex].visible) {
-                let active = modelsToDraw[selectedModelIndex];
-                let groupIndices = new Set();
-                if (!isAnimationMode && selectedGroupIndex !== -1 && active.pointGroups?.[selectedGroupIndex]) {
-                    active.pointGroups[selectedGroupIndex].pointIndices.forEach(idx => groupIndices.add(idx));
-                }
-                
-                let hoveredIndices = new Set();
-                if (hoverPointInfo && hoverPointInfo.globalPointIndices) {
-                    hoverPointInfo.globalPointIndices.forEach(idx => hoveredIndices.add(idx));
-                }
-                
-                let globalIdx = 0;
-                for (let i = 0; i < active.triangles.length; i++) {
-                    let tri = active.triangles[i];
-                    let vertices = [tri.v1, tri.v2, tri.v3];
-                    for (let j = 0; j < 3; j++) {
-                        let v = vertices[j];
-                        let isSel = !isAnimationMode && selectedVertices.some(s => s.triIndex === i && s.vertexIndex === j);
-                        let isGroup = !isAnimationMode && groupIndices.has(globalIdx);
-                        let isHovered = hoveredIndices.has(globalIdx);
-                        
-                        if (!isSel) {
-                            if (isHovered) {
-                                drawPoint(v.x, v.y, "#0066ff", false, isGroup);
-                            } else {
-                                drawPoint(v.x, v.y, "#FFA500", false, isGroup);
-                            }
-                        }
-                        globalIdx++;
-                    }
-                }
-                
-                if (!isAnimationMode) {
-                    for (let sel of selectedVertices) {
-                        let tri = active.triangles[sel.triIndex];
-                        let v = [tri.v1, tri.v2, tri.v3][sel.vertexIndex];
-                        drawPoint(v.x, v.y, "#FFA500", true, false);
-                    }
-                }
-            }
-            
-            points.forEach(function(point) {
-                drawPoint(point.x, point.y, "#FFA500");
-            });
-            
-            if (!isAnimationMode && currentTool === 'add') {
-                if (state === 1 && points.length === 1 && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
-                    drawLine(points[0], Vec2f(mouseX, mouseY), "#888");
-                } else if (state === 2 && points.length === 2 && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
-                    if (showPixelated) {
-                        fillTriangleScanline(points[0], points[1], Vec2f(mouseX, mouseY), "#404040");
-                    } else {
-                        fillTriangleSmooth(points[0], points[1], Vec2f(mouseX, mouseY), "#404040");
-                    }
-                    if (showLines) {
-                        drawLine(points[0], points[1], "#888");
-                        drawLine(points[1], Vec2f(mouseX, mouseY), "#888");
-                        drawLine(Vec2f(mouseX, mouseY), points[0], "#888");
-                    }
-                }
-            }
-            
-            if (!isAnimationMode && shapePlacementMode && shapeStartPos && mouseX >= 0 && mouseX < 64 && mouseY >= 0 && mouseY < 32) {
-                ctx.save();
-                ctx.globalAlpha = 0.5;
-                ctx.fillStyle = currentColor;
-                
-                if (currentShape === 'square') {
-                    let minX = Math.min(shapeStartPos.x, mouseX);
-                    let maxX = Math.max(shapeStartPos.x, mouseX);
-                    let minY = Math.min(shapeStartPos.y, mouseY);
-                    let maxY = Math.max(shapeStartPos.y, mouseY);
-                    
-                    fillTriangleScanline(
-                        Vec2f(minX, minY),
-                        Vec2f(maxX, minY),
-                        Vec2f(minX, maxY),
-                        currentColor
-                    );
-
-                    fillTriangleScanline(
-                        Vec2f(maxX, minY),
-                        Vec2f(maxX, maxY),
-                        Vec2f(minX, maxY),
-                        currentColor
-                    );
-                    
-                    if (showLines) {
-                        ctx.strokeStyle = "#ffffff";
-                        ctx.lineWidth = 2;
-                        ctx.strokeRect(minX * SCALE, minY * SCALE, (maxX - minX) * SCALE, (maxY - minY) * SCALE);
-                    }
-                } else if (currentShape === 'circle') {
-                    let radius = Math.max(1, Math.round(Math.sqrt(
-                        Math.pow(mouseX - shapeStartPos.x, 2) + 
-                        Math.pow(mouseY - shapeStartPos.y, 2)
-                    )));
-                    let points = [];
-                    let numPoints = 8;
-                    
-                    for (let i = 0; i < numPoints; i++) {
-                        let angle = (i / numPoints) * Math.PI * 2;
-                        let x = Math.round(shapeStartPos.x + Math.cos(angle) * radius);
-                        let y = Math.round(shapeStartPos.y + Math.sin(angle) * radius);
-                        points.push(Vec2f(x, y));
-                    }
-                    
-                    for (let i = 0; i < numPoints; i++) {
-                        let next = (i + 1) % numPoints;
-                        fillTriangleScanline(
-                            Vec2f(shapeStartPos.x, shapeStartPos.y),
-                            points[i],
-                            points[next],
-                            currentColor
-                        );
-                    }
-                    
-                    if (showLines) {
-                        ctx.strokeStyle = "#ffffff";
-                        ctx.lineWidth = 2;
-                        ctx.beginPath();
-                        for (let i = 0; i < numPoints; i++) {
-                            let next = (i + 1) % numPoints;
-                            ctx.moveTo(points[i].x * SCALE + SCALE/2, points[i].y * SCALE + SCALE/2);
-                            ctx.lineTo(points[next].x * SCALE + SCALE/2, points[next].y * SCALE + SCALE/2);
-                        }
-                        ctx.stroke();
-                    }
-                } else if (currentShape === 'hexagon') {
-                    let size = Math.max(1, Math.round(Math.sqrt(
-                        Math.pow(mouseX - shapeStartPos.x, 2) + 
-                        Math.pow(mouseY - shapeStartPos.y, 2)
-                    )));
-                    let points = [];
-                    let numPoints = 6;
-                    
-                    for (let i = 0; i < numPoints; i++) {
-                        let angle = (i / numPoints) * Math.PI * 2 - Math.PI / 2;
-                        let x = Math.round(shapeStartPos.x + Math.cos(angle) * size);
-                        let y = Math.round(shapeStartPos.y + Math.sin(angle) * size);
-                        points.push(Vec2f(x, y));
-                    }
-                    
-                    for (let i = 0; i < numPoints; i++) {
-                        let next = (i + 1) % numPoints;
-                        fillTriangleScanline(
-                            Vec2f(shapeStartPos.x, shapeStartPos.y),
-                            points[i],
-                            points[next],
-                            currentColor
-                        );
-                    }
-                    
-                    if (showLines) {
-                        ctx.strokeStyle = "#ffffff";
-                        ctx.lineWidth = 2;
-                        ctx.beginPath();
-                        for (let i = 0; i < numPoints; i++) {
-                            let next = (i + 1) % numPoints;
-                            ctx.moveTo(points[i].x * SCALE + SCALE/2, points[i].y * SCALE + SCALE/2);
-                            ctx.lineTo(points[next].x * SCALE + SCALE/2, points[next].y * SCALE + SCALE/2);
-                        }
-                        ctx.stroke();
-                    }
-                } else if (currentShape === 'line') {
-                    let dx = mouseX - shapeStartPos.x;
-                    let dy = mouseY - shapeStartPos.y;
-
-                    let perpX = -dy;
-                    let perpY = dx;
-                    
-                    let length = Math.sqrt(perpX * perpX + perpY * perpY);
-                    if (length > 0) {
-                        perpX = perpX / length * 1.0;
-                        perpY = perpY / length * 1.0;
-                    }
-                    
-                    let p1 = Vec2f(Math.round(shapeStartPos.x + perpX), Math.round(shapeStartPos.y + perpY));
-                    let p2 = Vec2f(Math.round(shapeStartPos.x - perpX), Math.round(shapeStartPos.y - perpY));
-                    let p3 = Vec2f(Math.round(mouseX - perpX), Math.round(mouseY - perpY));
-                    let p4 = Vec2f(Math.round(mouseX + perpX), Math.round(mouseY + perpY));
-                    
-                    fillTriangleScanline(p1, p2, p3, currentColor);
-                    fillTriangleScanline(p1, p3, p4, currentColor);
-                    
-                    if (showLines) {
-                        ctx.strokeStyle = "#ffffff";
-                        ctx.lineWidth = 2;
-                        ctx.beginPath();
-                        ctx.moveTo(shapeStartPos.x * SCALE + SCALE/2, shapeStartPos.y * SCALE + SCALE/2);
-                        ctx.lineTo(mouseX * SCALE + SCALE/2, mouseY * SCALE + SCALE/2);
-                        ctx.stroke();
-                    }
-                }
                 ctx.restore();
             }
             
@@ -5598,13 +6120,11 @@
                 ctx.setLineDash([5, 5]);
                 ctx.strokeRect(overlayControls.x, overlayControls.y, overlayControls.width, overlayControls.height);
                 ctx.setLineDash([]);
-
                 ctx.fillStyle = "#ff9900";
                 ctx.fillRect(overlayControls.x-4, overlayControls.y-4, 8, 8);
                 ctx.fillRect(overlayControls.x+overlayControls.width-4, overlayControls.y-4, 8, 8);
                 ctx.fillRect(overlayControls.x-4, overlayControls.y+overlayControls.height-4, 8, 8);
                 ctx.fillRect(overlayControls.x+overlayControls.width-4, overlayControls.y+overlayControls.height-4, 8, 8);
-
                 ctx.fillStyle = "#ffffff";
                 ctx.beginPath();
                 ctx.arc(overlayControls.x+overlayControls.width/2, overlayControls.y+overlayControls.height/2, 6, 0, 2*Math.PI);
@@ -5650,6 +6170,8 @@
             updateOverlayPanel();
             updateTotalTriangles();
         }
+
+
 
         // ===========================================
         // UI UPDATE FUNCTIONS
@@ -6029,6 +6551,8 @@
                             
                             posData.indices.sort((a,b)=>a-b);
                             
+                            badge.setAttribute('data-pos', posKey);
+
                             if (posData.indices.length === 1) {
                                 badge.textContent = `#${posData.indices[0]}`;
                             } else {
@@ -6041,12 +6565,14 @@
                             badge.setAttribute('data-indices', posData.indices.join(','));
                             
                             badge.addEventListener("mouseenter", function(e) {
-                                let rect = e.target.getBoundingClientRect();
+                                e.stopPropagation();
                                 
-                                let positions = posKey.split(',').map(Number);
-                                let targetX = positions[0];
-                                let targetY = positions[1];
+                                // Get the positions from the badge
+                                const positions = posKey.split(',').map(Number);
+                                const targetX = positions[0];
+                                const targetY = positions[1];
                                 
+                                // Find all points at this position in the active model
                                 let pointsAtPosition = [];
                                 let globalIdx = 0;
                                 for (let i = 0; i < active.triangles.length; i++) {
@@ -6057,24 +6583,32 @@
                                         let dx = Math.abs(v.x - targetX);
                                         let dy = Math.abs(v.y - targetY);
                                         if (dx < 0.5 && dy < 0.5) {
-                                            pointsAtPosition.push(globalIdx);
+                                            pointsAtPosition.push({
+                                                x: v.x,
+                                                y: v.y,
+                                                globalIdx: globalIdx,
+                                                triIndex: i,
+                                                vertexIndex: j
+                                            });
                                         }
                                         globalIdx++;
                                     }
                                 }
                                 
-                                hoveredGroupInfo = {
-                                    groupIndex: gIdx,
-                                    positionKey: posKey,
-                                    indices: pointsAtPosition,
-                                    badgeX: rect.left + rect.width/2,
-                                    badgeY: rect.top + rect.height/2
+                                hoveredGroupBadge = {
+                                    x: targetX,
+                                    y: targetY,
+                                    points: pointsAtPosition,
+                                    badgeRect: e.target.getBoundingClientRect()
                                 };
+                                
+                                draw();
                             });
-                            
+
                             badge.addEventListener("mouseleave", function() {
-                                hoveredGroupInfo = null;
+                                hoveredGroupBadge = null;
                                 connectionCtx.clearRect(0, 0, connectionCanvas.width, connectionCanvas.height);
+                                draw();
                             });
                             
                             if (!isAnimationMode) {
@@ -6121,27 +6655,40 @@
                             if (isAnimationMode) return;
                             e.stopPropagation();
                             e.preventDefault();
-                            
-                            if (selectedModelIndex !== index) {
-                                selectedModelIndex = index;
+
+                             // Only switch to select tool if not already on a tool that needs selection
+                            if (currentTool !== 'select' && currentTool !== 'move') {
+                                setTool('toolSelectPoints');
                             }
                             
+                            // First, select the model if not already selected
+                            if (selectedModelIndex !== index) {
+                                selectedModelIndex = index;
+                                selectedGroupIndex = -1; // Clear group selection when switching models
+                                renderModelList();
+                            }
+                            
+                            // Handle point group selection
                             if (selectedGroupIndex === gIdx) {
+                                // Already selected - deselect it
                                 selectedGroupIndex = -1;
+                                selectedVertices = [];
+                                selectionFromSelectTool = false;
+                                
+                                
                             } else {
+                                // Select this group
                                 selectedGroupIndex = gIdx;
                                 selectedVertices = [];
                                 selectionFromSelectTool = false;
-                            }
-                            
-                            if (currentTool !== 'select') {
-                                setTool('toolSelectPoints');
+                                
+                               
                             }
                             
                             renderModelList();
                             draw();
                         });
-                        
+
                         collapseContent.appendChild(groupDiv);
                     });
                 } else {
@@ -6198,6 +6745,52 @@
             });
         }
 
+
+        function drawConnectionLine() {
+            if (!hoveredGroupBadge) return;
+            
+            // Clear the connection canvas
+            connectionCtx.clearRect(0, 0, connectionCanvas.width, connectionCanvas.height);
+            
+            const canvas = document.getElementById('meuCanvas');
+            const rect = canvas.getBoundingClientRect();
+            
+            // Get the badge position in screen coordinates
+            const badgeRect = hoveredGroupBadge.badgeRect;
+            const badgeCenterX = (badgeRect.left + badgeRect.right) / 2;
+            const badgeCenterY = (badgeRect.top + badgeRect.bottom) / 2;
+            
+            // For each point at this position, draw a line from the badge to the point
+            hoveredGroupBadge.points.forEach(point => {
+                // Get the point position in screen coordinates
+                const pointScreenX = rect.left + (point.x * SCALE + SCALE/2) * (rect.width / 1024);
+                const pointScreenY = rect.top + (point.y * SCALE + SCALE/2) * (rect.height / 512);
+                
+                // Draw on connection canvas (which covers the whole screen)
+                connectionCtx.save();
+                connectionCtx.beginPath();
+                connectionCtx.moveTo(badgeCenterX, badgeCenterY);
+                connectionCtx.lineTo(pointScreenX, pointScreenY);
+                connectionCtx.strokeStyle = "#ff9900";
+                connectionCtx.lineWidth = 2;
+                connectionCtx.setLineDash([5, 5]);
+                connectionCtx.stroke();
+                
+                // Draw a circle at the point
+                connectionCtx.beginPath();
+                connectionCtx.arc(pointScreenX, pointScreenY, 8, 0, 2 * Math.PI);
+                connectionCtx.fillStyle = "#ff9900";
+                connectionCtx.fill();
+                connectionCtx.beginPath();
+                connectionCtx.arc(pointScreenX, pointScreenY, 4, 0, 2 * Math.PI);
+                connectionCtx.fillStyle = "#ffffff";
+                connectionCtx.fill();
+                connectionCtx.restore();
+            });
+        }
+
+
+
         // ===========================================
         // MOUSE INTERACTION FUNCTIONS
         // ===========================================
@@ -6242,6 +6835,7 @@
             return vertices;
         }
 
+
         function findVertexUnderMouse(x, y) {
             if (models.length === 0) return null;
             var active = models[selectedModelIndex];
@@ -6277,7 +6871,7 @@
             
             return closestHit;
         }
-
+        
         function selectVerticesInRect(start, end) {
             let newSelection = [];
             if (models.length === 0) return;
@@ -6589,29 +7183,55 @@
                 modelsToSave = models;
             }
             
-            // Convert animations to the new format
-            const animationData = [];
+            // Build animations in new format
+            const animationsData = [];
             
             animations.forEach(anim => {
+                // Build resources list (unique models and point groups used in tracks)
+                const resources = [];
+                const resourceMap = new Map(); // map from resource string to index
+                
                 anim.tracks.forEach(track => {
-                    // Determine target name
-                    let targetName = '';
                     const model = models[track.modelIndex];
                     if (!model) return;
                     
+                    let resourceName;
                     if (track.type === 'model') {
-                        targetName = model.name;
+                        resourceName = model.name;
                     } else if (track.type === 'group' && model.pointGroups?.[track.groupIndex]) {
-                        targetName = model.pointGroups[track.groupIndex].name;
+                        resourceName = `${model.name}>${model.pointGroups[track.groupIndex].name}`;
                     } else {
                         return;
                     }
                     
-                    // Convert each keyframe to the new format
+                    if (!resourceMap.has(resourceName)) {
+                        resourceMap.set(resourceName, resources.length);
+                        resources.push(resourceName);
+                    }
+                });
+                
+                // Build keyframes with resource indices
+                const keyframes = [];
+                
+                anim.tracks.forEach(track => {
+                    const model = models[track.modelIndex];
+                    if (!model) return;
+                    
+                    let resourceName;
+                    if (track.type === 'model') {
+                        resourceName = model.name;
+                    } else if (track.type === 'group' && model.pointGroups?.[track.groupIndex]) {
+                        resourceName = `${model.name}>${model.pointGroups[track.groupIndex].name}`;
+                    } else {
+                        return;
+                    }
+                    
+                    const resourceIndex = resourceMap.get(resourceName);
+                    
                     track.keyframes.forEach(kf => {
                         const keyframe = {
-                            target: targetName,
-                            type: kf.action,
+                            r: resourceIndex,
+                            t: kf.action,
                             at: Math.round(kf.time)
                         };
                         
@@ -6620,25 +7240,34 @@
                             keyframe.x = kf.params.x || 0;
                             keyframe.y = kf.params.y || 0;
                         } else if (kf.action === 'rotate') {
-                            keyframe.angle = kf.params.angle || 0;
-                            if (kf.params.centerX !== undefined) keyframe.centerX = kf.params.centerX;
-                            if (kf.params.centerY !== undefined) keyframe.centerY = kf.params.centerY;
+                            keyframe.a = kf.params.angle || 0;
+                            if (kf.params.centerX !== undefined) keyframe.cx = kf.params.centerX;
+                            if (kf.params.centerY !== undefined) keyframe.cy = kf.params.centerY;
+                            if (kf.params.useModelCenter) keyframe.umc = true;
                         } else if (kf.action === 'scale') {
-                            keyframe.scaleX = kf.params.scaleX || 1;
-                            keyframe.scaleY = kf.params.scaleY || 1;
-                            if (kf.params.centerX !== undefined) keyframe.centerX = kf.params.centerX;
-                            if (kf.params.centerY !== undefined) keyframe.centerY = kf.params.centerY;
-                        } else if (kf.action === 'reset') {
-                            // No additional parameters needed
+                            keyframe.sx = kf.params.scaleX || 1;
+                            keyframe.sy = kf.params.scaleY || 1;
+                            if (kf.params.centerX !== undefined) keyframe.cx = kf.params.centerX;
+                            if (kf.params.centerY !== undefined) keyframe.cy = kf.params.centerY;
+                            if (kf.params.useModelCenter) keyframe.umc = true;
                         }
                         
-                        animationData.push(keyframe);
+                        if (kf.instant) keyframe.i = true;
+                        
+                        keyframes.push(keyframe);
                     });
                 });
+                
+                // Sort keyframes by time
+                keyframes.sort((a, b) => a.at - b.at);
+                
+                animationsData.push({
+                    name: anim.name,
+                    duration: anim.duration,
+                    resources: resources,
+                    keyframes: keyframes
+                });
             });
-            
-            // Sort animation data by 'at' time
-            animationData.sort((a, b) => a.at - b.at);
             
             var exportData = {
                 models: modelsToSave.map(model => {
@@ -6656,11 +7285,10 @@
                         x: xCoords,
                         y: yCoords,
                         color: colors,
-                        pointGroups: (model.pointGroups || []).map(g => g.name ? { name: g.name, indices: g.pointIndices } : g.pointIndices)
+                        pointGroups: (model.pointGroups || []).map(g => ({ name: g.name, indices: g.pointIndices }))
                     };
                 }),
-                animation: animationData,
-                animationDuration: animations.length > 0 ? animations[0].duration : 3000
+                animations: animationsData
             };
             
             var jsonStr = JSON.stringify(exportData, null, 2);
@@ -6688,7 +7316,10 @@
                         var parsed = JSON.parse(ev.target.result);
                         
                         if (parsed.models && Array.isArray(parsed.models)) {
-                            let newModels = [];
+                            // Clear existing models array completely
+                            models.length = 0;
+                            expandedGroups = {};
+                            
                             parsed.models.forEach((m, idx) => {
                                 let triangles = [];
                                 if (m.x && m.y && m.color && m.x.length === m.y.length && m.x.length % 3 === 0) {
@@ -6720,7 +7351,7 @@
                                     });
                                 }
                                 
-                                newModels.push({
+                                models.push({
                                     name: m.name || ("Model " + idx),
                                     visible: true,
                                     triangles: triangles,
@@ -6729,58 +7360,92 @@
                                 expandedGroups[idx] = false;
                             });
                             
-                            if (newModels.length > 0) {
-                                saveUndoState();
-                                models = newModels;
-                                
-                                // Parse animations from the new format
-                                const newAnimations = [];
-                                const animationDuration = parsed.animationDuration || 3000;
-                                
-                                if (parsed.animation && Array.isArray(parsed.animation) && parsed.animation.length > 0) {
-                                    // Group keyframes by target
-                                    const targetGroups = new Map();
-                                    
-                                    parsed.animation.forEach(kf => {
-                                        const targetKey = kf.target;
-                                        if (!targetGroups.has(targetKey)) {
-                                            targetGroups.set(targetKey, []);
-                                        }
-                                        targetGroups.get(targetKey).push(kf);
+                            if (models.length === 0) {
+                                // If no models loaded, create a default one
+                                models.push({
+                                    name: "Model 0",
+                                    visible: true,
+                                    triangles: [
+                                        { v1: Vec2f(5.0,19.0), v2: Vec2f(8.0,22.0), v3: Vec2f(12.0,20.0), color: "#0000ff" },
+                                    ],
+                                    pointGroups: []
+                                });
+                                expandedGroups[0] = false;
+                            }
+                            
+                            // Reset selected model index
+                            selectedModelIndex = 0;
+                            selectedGroupIndex = -1;
+                            points = [];
+                            state = 0;
+                            selectedVertices = [];
+                            selectionFromSelectTool = false;
+                            
+                            // Parse animations from new format
+                            const newAnimations = [];
+                            
+                            if (parsed.animations && Array.isArray(parsed.animations)) {
+                                parsed.animations.forEach(animData => {
+                                    // Build resource mapping
+                                    const resourceMap = [];
+                                    animData.resources.forEach((resource, idx) => {
+                                        resourceMap.push(resource);
                                     });
                                     
-                                    // Create tracks for each target
+                                    // Group keyframes by resource
+                                    const keyframesByResource = new Map();
+                                    
+                                    animData.keyframes.forEach(kf => {
+                                        const resourceIndex = kf.r;
+                                        const resourceName = resourceMap[resourceIndex];
+                                        if (!resourceName) return;
+                                        
+                                        if (!keyframesByResource.has(resourceName)) {
+                                            keyframesByResource.set(resourceName, []);
+                                        }
+                                        keyframesByResource.get(resourceName).push(kf);
+                                    });
+                                    
+                                    // Create tracks for each resource
                                     const tracks = [];
                                     
-                                    for (const [targetName, keyframes] of targetGroups) {
-                                        // Find the model and group that matches this target
+                                    for (const [resourceName, keyframes] of keyframesByResource) {
+                                        // Find the model and group that matches this resource
                                         let targetModelIndex = -1;
                                         let targetGroupIndex = -1;
                                         let trackType = null;
                                         
-                                        for (let i = 0; i < models.length; i++) {
-                                            const model = models[i];
-                                            if (model.name === targetName) {
-                                                targetModelIndex = i;
-                                                trackType = 'model';
-                                                break;
-                                            }
+                                        // Check if it's a point group (contains '>')
+                                        if (resourceName.includes('>')) {
+                                            const parts = resourceName.split('>');
+                                            const modelName = parts[0];
+                                            const groupName = parts[1];
                                             
-                                            if (model.pointGroups) {
-                                                for (let j = 0; j < model.pointGroups.length; j++) {
-                                                    if (model.pointGroups[j].name === targetName) {
+                                            for (let i = 0; i < models.length; i++) {
+                                                const model = models[i];
+                                                if (model.name === modelName && model.pointGroups) {
+                                                    const groupIndex = model.pointGroups.findIndex(g => g.name === groupName);
+                                                    if (groupIndex !== -1) {
                                                         targetModelIndex = i;
-                                                        targetGroupIndex = j;
+                                                        targetGroupIndex = groupIndex;
                                                         trackType = 'group';
                                                         break;
                                                     }
                                                 }
                                             }
-                                            if (trackType) break;
+                                        } else {
+                                            // It's a model
+                                            for (let i = 0; i < models.length; i++) {
+                                                if (models[i].name === resourceName) {
+                                                    targetModelIndex = i;
+                                                    trackType = 'model';
+                                                    break;
+                                                }
+                                            }
                                         }
                                         
                                         if (targetModelIndex === -1) {
-                                            console.warn(`Target "${targetName}" not found, skipping`);
+                                            console.warn(`Resource "${resourceName}" not found, skipping`);
                                             continue;
                                         }
                                         
@@ -6788,31 +7453,33 @@
                                         const trackKeyframes = keyframes.map(kf => {
                                             const keyframe = {
                                                 time: kf.at,
-                                                action: kf.type,
+                                                action: kf.t,
                                                 params: {}
                                             };
                                             
-                                            if (kf.type === 'translate') {
+                                            if (kf.t === 'translate') {
                                                 keyframe.params = {
                                                     x: kf.x || 0,
                                                     y: kf.y || 0
                                                 };
-                                            } else if (kf.type === 'rotate') {
+                                            } else if (kf.t === 'rotate') {
                                                 keyframe.params = {
-                                                    angle: kf.angle || 0
+                                                    angle: kf.a || 0
                                                 };
-                                                if (kf.centerX !== undefined) keyframe.params.centerX = kf.centerX;
-                                                if (kf.centerY !== undefined) keyframe.params.centerY = kf.centerY;
-                                            } else if (kf.type === 'scale') {
+                                                if (kf.cx !== undefined) keyframe.params.centerX = kf.cx;
+                                                if (kf.cy !== undefined) keyframe.params.centerY = kf.cy;
+                                                if (kf.umc) keyframe.params.useModelCenter = true;
+                                            } else if (kf.t === 'scale') {
                                                 keyframe.params = {
-                                                    scaleX: kf.scaleX || 1,
-                                                    scaleY: kf.scaleY || 1
+                                                    scaleX: kf.sx || 1,
+                                                    scaleY: kf.sy || 1
                                                 };
-                                                if (kf.centerX !== undefined) keyframe.params.centerX = kf.centerX;
-                                                if (kf.centerY !== undefined) keyframe.params.centerY = kf.centerY;
-                                            } else if (kf.type === 'reset') {
-                                                keyframe.params = {};
+                                                if (kf.cx !== undefined) keyframe.params.centerX = kf.cx;
+                                                if (kf.cy !== undefined) keyframe.params.centerY = kf.cy;
+                                                if (kf.umc) keyframe.params.useModelCenter = true;
                                             }
+                                            
+                                            if (kf.i) keyframe.instant = true;
                                             
                                             return keyframe;
                                         });
@@ -6820,7 +7487,7 @@
                                         // Sort keyframes by time
                                         trackKeyframes.sort((a, b) => a.time - b.time);
                                         
-                                        let trackName = targetName;
+                                        let trackName = resourceName;
                                         if (trackType === 'group') {
                                             const model = models[targetModelIndex];
                                             const group = model.pointGroups[targetGroupIndex];
@@ -6837,66 +7504,64 @@
                                         });
                                     }
                                     
-                                    // Create a single animation with all tracks
+                                    // Create the animation
                                     if (tracks.length > 0) {
                                         const newAnim = {
                                             id: Date.now() + '_' + Math.random().toString(36).substr(2, 6),
-                                            name: "Imported Animation",
-                                            duration: animationDuration,
+                                            name: animData.name || "Imported Animation",
+                                            duration: animData.duration || 3000,
                                             tracks: tracks
                                         };
                                         newAnimations.push(newAnim);
                                     }
-                                }
-                                
-                                // Update animations
-                                if (newAnimations.length > 0) {
-                                    animations = newAnimations;
-                                    selectedAnimationId = animations[0].id;
-                                    currentAnimationTime = 0;
-                                    
-                                    // Update duration input
-                                    const durationInput = document.getElementById('timelineDuration');
-                                    if (durationInput) durationInput.value = animations[0].duration;
-                                    
-                                    // Store original model data for animation reset
-                                    window._originalModelsData = models.map(m => ({
-                                        triangles: JSON.parse(JSON.stringify(m.triangles))
-                                    }));
-                                    window._originalPointsData = {};
-                                    models.forEach((model, modelIdx) => {
-                                        const points = [];
-                                        for (let i = 0; i < model.triangles.length; i++) {
-                                            const tri = model.triangles[i];
-                                            points.push({ x: tri.v1.x, y: tri.v1.y });
-                                            points.push({ x: tri.v2.x, y: tri.v2.y });
-                                            points.push({ x: tri.v3.x, y: tri.v3.y });
-                                        }
-                                        window._originalPointsData[modelIdx] = points;
-                                    });
-                                } else {
-                                    animations = [];
-                                    selectedAnimationId = null;
-                                }
-                                
-                                selectedModelIndex = 0;
-                                selectedGroupIndex = -1;
-                                points = [];
-                                state = 0;
-                                selectedVertices = [];
-                                selectionFromSelectTool = false;
-                                
-                                renderModelList();
-                                renderAnimationList();
-                                renderTimelineForAnimation();
-                                updateCodeDisplay();
-                                
-                                if (isAnimationMode && selectedAnimationId) {
-                                    applyAnimationAtTime(0);
-                                }
-                                
-                                draw();
+                                });
                             }
+                            
+                            // Update animations
+                            if (newAnimations.length > 0) {
+                                animations = newAnimations;
+                                selectedAnimationId = animations[0].id;
+                                currentAnimationTime = 0;
+                                
+                                // Update duration input
+                                const durationInput = document.getElementById('timelineDuration');
+                                if (durationInput) durationInput.value = animations[0].duration;
+                            } else {
+                                animations = [];
+                                selectedAnimationId = null;
+                                currentAnimationTime = 0;
+                            }
+                            
+                            // Store original model data for animation reset
+                            window._originalModelsData = models.map(m => ({
+                                triangles: JSON.parse(JSON.stringify(m.triangles)),
+                                pointGroups: JSON.parse(JSON.stringify(m.pointGroups || []))
+                            }));
+                            
+                            window._originalPointsData = {};
+                            models.forEach((model, modelIdx) => {
+                                const points = [];
+                                for (let i = 0; i < model.triangles.length; i++) {
+                                    const tri = model.triangles[i];
+                                    points.push({ x: tri.v1.x, y: tri.v1.y });
+                                    points.push({ x: tri.v2.x, y: tri.v2.y });
+                                    points.push({ x: tri.v3.x, y: tri.v3.y });
+                                }
+                                window._originalPointsData[modelIdx] = points;
+                            });
+                            
+                            // Update UI
+                            renderModelList();
+                            renderAnimationList();
+                            renderTimelineForAnimation();
+                            updateCodeDisplay();
+                            updateTotalTriangles();
+                            
+                            if (isAnimationMode && selectedAnimationId) {
+                                applyAnimationAtTime(0);
+                            }
+                            
+                            draw();
                         } else {
                             alert("Invalid JSON format: missing 'models' array");
                         }
@@ -7240,7 +7905,12 @@
             draw();
         });
 
-      
+        document.getElementById('toggleBoundingBoxesBtn').addEventListener('click', function() {
+            showBoundingBoxes = !showBoundingBoxes;
+            this.classList.toggle('active', showBoundingBoxes);
+            draw();
+        });
+            
 
         document.getElementById('logoContainer').addEventListener('click', function() {
             document.getElementById('logoModal').classList.add('active');
@@ -7265,11 +7935,44 @@
             }
         });
 
-        // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+                if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+                    return;
+                }
                 return;
             }
+
+            // Check if keyframe editor is open
+            const editor = document.getElementById('keyframeEditor');
+            const isEditorOpen = editor && editor.style.display === 'block';
+
+            // Handle Delete key for keyframe editor
+            if ((e.key === 'Delete' || e.key === 'Del') && isEditorOpen && currentEditingKeyframe) {
+                e.preventDefault();
+                const { track, keyframeIndex } = currentEditingKeyframe;
+                if (track && track.keyframes[keyframeIndex]) {
+                    saveUndoState();
+                    track.keyframes.splice(keyframeIndex, 1);
+                    renderTimelineForAnimation();
+                    applyAnimationAtTime(currentAnimationTime);
+                    draw();
+                    editor.style.display = 'none';
+                    currentEditingKeyframe = null;
+                    clearKeyframeHighlight();
+                }
+                return;
+            }
+
+            // Handle Escape for keyframe editor
+            if (e.key === 'Escape' && isEditorOpen) {
+                e.preventDefault();
+                editor.style.display = 'none';
+                currentEditingKeyframe = null;
+                clearKeyframeHighlight();
+                return;
+            }
+
             if (e.code === 'Space' || e.key === ' ' || e.key === 'Space') {
                 e.preventDefault();
                 if (isAnimationMode) {
@@ -7353,6 +8056,14 @@
                     renderModelList();
                     draw();
                 }
+
+                if (copyModeActive) {
+                    copyModeActive = false;
+                    document.body.style.cursor = '';
+                    const instruction = document.getElementById('pasteInstruction');
+                    if (instruction) instruction.remove();
+                    return;
+                }
                 
                 document.getElementById('nameDialog').classList.remove('active');
                 document.getElementById('modelSettingsDialog').classList.remove('active');
@@ -7372,6 +8083,48 @@
             } else if (e.key === '`' || e.key === '~') {
                 e.preventDefault();
                 toggleMode();
+            } else if ((e.key === 'c' || e.key === 'C') && (e.ctrlKey || e.metaKey)) {
+                // Copy the currently selected keyframe (if editor is open)
+                if (currentEditingKeyframe) {
+                    copiedKeyframe = JSON.parse(JSON.stringify(currentEditingKeyframe.kf));
+                    console.log("Keyframe copied:", copiedKeyframe);
+                    // Show temporary feedback
+                    const editorEl = document.getElementById('keyframeEditor');
+                    const originalBorder = editorEl.style.border;
+                    editorEl.style.border = '2px solid #4CAF50';
+                    setTimeout(() => {
+                        editorEl.style.border = originalBorder;
+                    }, 200);
+                }
+            } else if ((e.key === 'v' || e.key === 'V') && (e.ctrlKey || e.metaKey)) {
+                if (copiedKeyframe && isAnimationMode) {
+                    e.preventDefault();
+                    // Enter paste mode
+                    copyModeActive = true;
+                    document.body.style.cursor = 'copy';
+                    // Show instruction message
+                    const instruction = document.createElement('div');
+                    instruction.id = 'pasteInstruction';
+                    instruction.style.cssText = `
+                        position: fixed;
+                        bottom: 20px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background: #ff9900;
+                        color: #111;
+                        padding: 8px 16px;
+                        border-radius: 4px;
+                        font-family: monospace;
+                        font-size: 12px;
+                        font-weight: bold;
+                        z-index: 10000;
+                        pointer-events: none;
+                        animation: fadeOut 3s forwards;
+                    `;
+                    instruction.textContent = 'Click on any timeline to paste keyframe';
+                    document.body.appendChild(instruction);
+                    setTimeout(() => instruction.remove(), 3000);
+                }
             }
             
             if (!isAnimationMode && selectedVertices.length > 0 && (e.key.startsWith('Arrow'))) {
@@ -7404,7 +8157,6 @@
                 }
             }
         });
-
         c.addEventListener('mousemove', function(e) {
             var rect = c.getBoundingClientRect();
             var scaleX = c.width / rect.width;
@@ -7498,6 +8250,7 @@
                 draw();
             }
             
+            
             if (!isAnimationMode && currentTool === 'move' && multiDragging && selectedVertices.length > 0 && mouseDown) {
                 let dx, dy;
                 
@@ -7536,6 +8289,9 @@
                         v.y = toFloat32(newY);
                     }
                 }
+                if (isAnimationMode) {
+                    highlightModelUnderMouse();
+                }
                 updateCodeDisplay();
                 draw();
             }
@@ -7545,48 +8301,44 @@
                 let firstTri = models[selectedModelIndex].triangles[firstVertex.triIndex];
                 let firstV = [firstTri.v1, firstTri.v2, firstTri.v3][firstVertex.vertexIndex];
                 
-                let oldX = firstV.x;
-                let oldY = firstV.y;
+                // Get current mouse position in grid coordinates
+                let currentMouseX = mouseX;
+                let currentMouseY = mouseY;
                 
-                let newX, newY;
                 if (e.ctrlKey) {
+                    // Fine movement with Ctrl
                     let rect = c.getBoundingClientRect();
                     let scaleX = c.width / rect.width;
                     let scaleY = c.height / rect.height;
                     let physX = (e.clientX - rect.left) * scaleX;
                     let physY = (e.clientY - rect.top) * scaleY;
-                    newX = Math.max(0, Math.min(64, physX / SCALE));
-                    newY = Math.max(0, Math.min(32, physY / SCALE));
-                } else {
-                    newX = mouseX;
-                    newY = mouseY;
+                    currentMouseX = Math.max(0, Math.min(64, physX / SCALE));
+                    currentMouseY = Math.max(0, Math.min(32, physY / SCALE));
                 }
                 
-                let dx = newX - firstV.x;
-                let dy = newY - firstV.y;
+                // Calculate delta from the starting position
+                let dx = currentMouseX - multiDragStart.x;
+                let dy = currentMouseY - multiDragStart.y;
                 
-                if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
-                    didDrag = true;
-                }
-                
+                // Apply the same delta to all vertices in the group
                 draggingVertex.forEach(vertexInfo => {
                     let tri = models[selectedModelIndex].triangles[vertexInfo.triIndex];
                     let v = [tri.v1, tri.v2, tri.v3][vertexInfo.vertexIndex];
                     
-                    if (e.ctrlKey) {
-                        v.x = toFloat32(Math.max(0, Math.min(64, v.x + dx)));
-                        v.y = toFloat32(Math.max(0, Math.min(32, v.y + dy)));
-                    } else {
-                        v.x = toFloat32(Math.min(63, Math.max(0, newX)));
-                        v.y = toFloat32(Math.min(31, Math.max(0, newY)));
-                    }
+                    // Move from original stored position + delta
+                    let newX = vertexInfo.vx + dx;
+                    let newY = vertexInfo.vy + dy;
+                    
+                    // Clamp to grid bounds
+                    v.x = toFloat32(Math.min(63, Math.max(0, newX)));
+                    v.y = toFloat32(Math.min(31, Math.max(0, newY)));
                 });
                 
                 updateCodeDisplay();
                 draw();
-            } else {
-                draw();
             }
+
+            draw();
         });
 
         c.addEventListener('mouseleave', function() { 
@@ -7594,6 +8346,13 @@
             mouseY = -1; 
             hoverTriangleIndex = -1;
             hoverPointInfo = null;
+            
+            // Clear timeline hover in animation mode
+            if (isAnimationMode) {
+                currentHoveredModelIndex = -1;
+                draw();
+            }
+            
             if (oscillationTimer) {
                 clearInterval(oscillationTimer);
                 oscillationTimer = null;
@@ -7699,7 +8458,7 @@
                     let hit = findVertexUnderMouse(mouseX, mouseY);
                     
                     if (hit) {
-                        if (selectedGroupIndex !== -1 && models[selectedModelIndex]?.pointGroups?.[selectedGroupIndex] && !e.ctrlKey && !e.shiftKey) {
+                        if (currentTool === 'select' && selectedGroupIndex !== -1 && models[selectedModelIndex]?.pointGroups?.[selectedGroupIndex] && !e.ctrlKey && !e.shiftKey) {
                             let group = models[selectedModelIndex].pointGroups[selectedGroupIndex];
                             
                             let active = models[selectedModelIndex];
@@ -7741,7 +8500,49 @@
                             return;
                         }
 
+                        
                         if (currentTool === 'move') {
+                            // Check if a point group is selected
+                            const hasSelectedGroup = (selectedGroupIndex !== -1 && models[selectedModelIndex]?.pointGroups?.[selectedGroupIndex]);
+                            
+                            if (hasSelectedGroup) {
+                                // Get ALL vertices in the selected group
+                                const group = models[selectedModelIndex].pointGroups[selectedGroupIndex];
+                                const groupPoints = [];
+                                let globalIdx = 0;
+                                
+                                for (let i = 0; i < models[selectedModelIndex].triangles.length; i++) {
+                                    let tri = models[selectedModelIndex].triangles[i];
+                                    let vertices = [tri.v1, tri.v2, tri.v3];
+                                    for (let j = 0; j < 3; j++) {
+                                        if (group.pointIndices.includes(globalIdx)) {
+                                            groupPoints.push({
+                                                triIndex: i,
+                                                vertexIndex: j,
+                                                globalPointIndex: globalIdx,
+                                                v: vertices[j]
+                                            });
+                                        }
+                                        globalIdx++;
+                                    }
+                                }
+                                
+                                if (groupPoints.length > 0) {
+                                    saveUndoState();
+                                    // Store the original positions of all group points
+                                    multiDragStart = { x: mouseX, y: mouseY };
+                                    draggingVertex = groupPoints;
+                                    for (let point of groupPoints) {
+                                        point.vx = point.v.x;
+                                        point.vy = point.v.y;
+                                    }
+                                    multiDragging = true;
+                                    e.preventDefault();
+                                    return;
+                                }
+                            }
+                            
+                            // Normal single vertex move (when no group selected)
                             if (selectedVertices.length > 0) {
                                 let isInSelection = selectedVertices.some(s => s.triIndex === hit.triIndex && s.vertexIndex === hit.vertexIndex);
                                 
@@ -8016,709 +8817,9 @@ const animationActionTypes = {
 
 const ACTION_TYPES = Object.keys(animationActionTypes);
 
-// ===========================================
-// TIMELINE MODULE - With Duplicate Prevention
-// ===========================================
-
-let timelines = [];
-let globalDuration = 5000;
-let globalCurrentTime = 0;
-let globalPlaying = false;
-let globalAnimationId = null;
-
-let dragState = {
-    active: false,
-    timelineId: null,
-    kfIdx: null,
-    startX: 0,
-    startTime: 0,
-    canvasWidth: 0
-};
-
-// ===========================================
-// INITIALIZATION
-// ===========================================
-
-function initTimelineModule() {
-    buildRuler();
-    renderTimelines();
-    setupDragAndDrop();
-    attachGlobalPlaybackControls();
-    initTimelineModal();
-    updateStats();
-}
-
-// ===========================================
-// RULER
-// ===========================================
-
-function buildRuler() {
-    const rulerTrack = document.getElementById('rulerTrack');
-    if (!rulerTrack) return;
-    
-    rulerTrack.innerHTML = '';
-    const step = 500;
-    
-    for (let t = 0; t <= globalDuration; t += step) {
-        const percent = (t / globalDuration) * 100;
-        
-        const marker = document.createElement('div');
-        marker.className = 'ruler-marker';
-        marker.style.left = `${percent}%`;
-        
-        const label = document.createElement('div');
-        label.className = 'ruler-label';
-        label.style.left = `${percent}%`;
-        label.textContent = t >= 1000 ? (t/1000).toFixed(1) + 's' : t + 'ms';
-        
-        rulerTrack.appendChild(marker);
-        rulerTrack.appendChild(label);
-    }
-    
-    const endMarker = document.createElement('div');
-    endMarker.className = 'ruler-marker';
-    endMarker.style.left = '100%';
-    const endLabel = document.createElement('div');
-    endLabel.className = 'ruler-label';
-    endLabel.style.left = '100%';
-    endLabel.textContent = (globalDuration/1000).toFixed(1) + 's';
-    rulerTrack.appendChild(endMarker);
-    rulerTrack.appendChild(endLabel);
-}
-
-// ===========================================
-// CHECK IF TIMELINE EXISTS
-// ===========================================
-
-function timelineExists(type, modelIndex, groupIndex) {
-    return timelines.some(timeline => {
-        if (type === 'model') {
-            return timeline.type === 'model' && timeline.modelIndex === modelIndex;
-        } else if (type === 'group') {
-            return timeline.type === 'group' && 
-                   timeline.modelIndex === modelIndex && 
-                   timeline.groupIndex === groupIndex;
-        }
-        return false;
-    });
-}
-
-// ===========================================
-// RENDER TIMELINES - Stacked without gaps
-// ===========================================
-function renderTimelines() {
-    const container = document.getElementById('timelinesContainer');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    if (timelines.length === 0) {
-        container.innerHTML = '<div class="empty-timelines-message">No timelines. Click + to add.</div>';
-        updateStats();
-        return;
-    }
-    
-    timelines.forEach((timeline, idx) => {
-        const row = document.createElement('div');
-        row.className = 'timeline-row';
-        row.setAttribute('data-timeline-id', timeline.id);
-        
-        // Label on the left
-        const label = document.createElement('div');
-        label.className = 'timeline-label';
-        
-        let icon = timeline.type === 'model' ? '📁' : '👥';
-        let displayName = timeline.name;
-        
-        label.innerHTML = `
-            <span class="timeline-label-icon">${icon}</span>
-            <span class="timeline-label-text" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>
-            <button class="timeline-delete-btn" data-timeline-id="${timeline.id}" title="Delete timeline">✕</button>
-        `;
-        
-        // Canvas area for keyframes
-        const canvas = document.createElement('div');
-        canvas.className = 'timeline-canvas';
-        canvas.setAttribute('data-timeline-id', timeline.id);
-        
-        // Keyframe markers
-        timeline.keyframes.forEach((kf, kfIdx) => {
-            const percent = (kf.time / globalDuration) * 100;
-            const marker = document.createElement('div');
-            marker.className = 'keyframe-marker';
-            marker.style.left = `${percent}%`;
-            marker.setAttribute('data-timeline-id', timeline.id);
-            marker.setAttribute('data-kf-idx', kfIdx);
-            marker.setAttribute('data-time', kf.time);
-            
-            let paramsStr = '';
-            if (kf.action === 'move') paramsStr = ` (${kf.params.x}, ${kf.params.y})`;
-            else if (kf.action === 'rotate') paramsStr = ` (${kf.params.angle}°)`;
-            else if (kf.action === 'scale') paramsStr = ` (${kf.params.x}, ${kf.params.y})`;
-            else if (kf.action === 'color') paramsStr = ` (${kf.params.color})`;
-            
-            marker.title = `${kf.action.toUpperCase()} @ ${Math.round(kf.time)}ms${paramsStr}`;
-            canvas.appendChild(marker);
-        });
-        
-        // Playhead
-        const playhead = document.createElement('div');
-        playhead.className = 'playhead';
-        playhead.style.left = `${(globalCurrentTime / globalDuration) * 100}%`;
-        canvas.appendChild(playhead);
-        
-        row.appendChild(label);
-        row.appendChild(canvas);
-        container.appendChild(row);
-    });
-    
-    attachTimelineEvents();
-    updateStats();
-    
-    // Scroll to bottom after adding new timeline
-    if (container.scrollHeight > container.clientHeight) {
-        container.scrollTop = container.scrollHeight;
-    }
-}
-// ===========================================
-// ATTACH EVENTS
-// ===========================================
-
-        function attachTimelineEvents() {
-            // Delete buttons
-            document.querySelectorAll('.timeline-delete-btn').forEach(btn => {
-                btn.onclick = (e) => {
-                    e.stopPropagation();
-                    saveUndoState();
-                    const timelineId = btn.getAttribute('data-timeline-id');
-                    const index = timelines.findIndex(t => t.id === timelineId);
-                    if (index !== -1) {
-                        timelines.splice(index, 1);
-                        renderTimelines();
-                    }
-                };
-            });
-            
-            // Keyframe markers - drag
-            document.querySelectorAll('.keyframe-marker').forEach(marker => {
-                marker.onmousedown = (e) => {
-                    e.stopPropagation();
-                    const timelineId = marker.getAttribute('data-timeline-id');
-                    const kfIdx = parseInt(marker.getAttribute('data-kf-idx'));
-                    
-                    const timeline = timelines.find(t => t.id === timelineId);
-                    if (!timeline) return;
-                    
-                    const canvas = marker.parentElement;
-                    const canvasRect = canvas.getBoundingClientRect();
-                    
-                    dragState = {
-                        active: true,
-                        timelineId: timelineId,
-                        kfIdx: kfIdx,
-                        startX: e.clientX,
-                        startTime: timeline.keyframes[kfIdx].time,
-                        canvasWidth: canvasRect.width,
-                        marker: marker
-                    };
-                    
-                    marker.style.cursor = 'grabbing';
-                    marker.style.transform = 'translate(-50%, -50%) scale(1.3)';
-                    
-                    document.addEventListener('mousemove', onKeyframeDrag);
-                    document.addEventListener('mouseup', onKeyframeDragEnd);
-                    
-                    e.preventDefault();
-                };
-            });
-            
-            // Canvas click to add keyframe
-            document.querySelectorAll('.timeline-canvas').forEach(canvas => {
-                canvas.onclick = (e) => {
-                    if (e.target.classList.contains('keyframe-marker')) return;
-                    
-                    const timelineId = canvas.getAttribute('data-timeline-id');
-                    const timeline = timelines.find(t => t.id === timelineId);
-                    if (!timeline) return;
-                    
-                    const rect = canvas.getBoundingClientRect();
-                    const clickX = e.clientX - rect.left;
-                    const percent = Math.min(1, Math.max(0, clickX / rect.width));
-                    const time = Math.floor(percent * globalDuration);
-                    
-                    showKeyframeDialog(timelineId, time);
-                };
-                
-                // Drop zone for tools
-                canvas.ondragover = (e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'copy';
-                };
-                
-                canvas.ondrop = (e) => {
-                    e.preventDefault();
-                    saveUndoState();
-                    
-                    const trackId = canvas.getAttribute('data-track-id');
-                    const anim = getSelectedAnimation();
-                    const track = anim?.tracks.find(t => t.id === trackId);
-                    const action = e.dataTransfer.getData('text/plain');
-                    if (!track || !action) return;
-                    
-                    const config = animationActionTypes[action];
-                    if (!config) return;
-                    
-                    const rect = canvas.getBoundingClientRect();
-                    const percent = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-                    const time = Math.floor(percent * anim.duration);
-                    
-                    // Build params from config defaults
-                    let params = {};
-                    config.fields.forEach(field => {
-                        params[field.name] = field.default;
-                    });
-                    
-                    // For drag and drop, instant defaults to false
-                    const keyframeData = { time, action, params };
-                    
-                    track.keyframes.push(keyframeData);
-                    track.keyframes.sort((a, b) => a.time - b.time);
-                    renderTimelineForAnimation();
-                    applyAnimationAtTime(currentAnimationTime);
-                    draw();
-                    if (newKeyframeIndex !== -1) {
-                        showKeyframeEditor(anim, track, newKeyframeIndex);
-                    }
-                };
-            });
-        }
-
-        // ===========================================
-        // KEYFRAME DRAG
-        // ===========================================
-
-        function onKeyframeDrag(e) {
-            if (!dragState.active) return;
-            
-            const timeline = timelines.find(t => t.id === dragState.timelineId);
-            if (!timeline) return;
-            
-            const deltaX = e.clientX - dragState.startX;
-            const deltaPercent = deltaX / dragState.canvasWidth;
-            let newTime = dragState.startTime + (deltaPercent * globalDuration);
-            newTime = Math.max(0, Math.min(globalDuration, newTime));
-            
-            const keyframe = timeline.keyframes[dragState.kfIdx];
-            
-            if (Math.abs(keyframe.time - newTime) > 0.1) {
-                keyframe.time = newTime;
-                timeline.keyframes.sort((a, b) => a.time - b.time);
-                
-                const newKfIdx = timeline.keyframes.findIndex(kf => Math.abs(kf.time - newTime) < 0.1);
-                if (newKfIdx !== -1) {
-                    dragState.kfIdx = newKfIdx;
-                    if (dragState.marker) {
-                        dragState.marker.setAttribute('data-kf-idx', newKfIdx);
-                    }
-                }
-                
-                const percent = (newTime / globalDuration) * 100;
-                if (dragState.marker) {
-                    dragState.marker.style.left = `${percent}%`;
-                    dragState.marker.setAttribute('data-time', newTime);
-                }
-                
-                updateStats();
-            }
-        }
-
-        function onKeyframeDragEnd() {
-            if (dragState.active) {
-                if (dragState.marker) {
-                    dragState.marker.style.cursor = 'grab';
-                    dragState.marker.style.transform = '';
-                }
-                dragState.active = false;
-            }
-            document.removeEventListener('mousemove', onKeyframeDrag);
-            document.removeEventListener('mouseup', onKeyframeDragEnd);
-            renderTimelines();
-        }
-
-        // ===========================================
-        // KEYFRAME DIALOG
-        // ===========================================
-
-        function showKeyframeDialog(timelineId, presetTime) {
-            const dialog = document.getElementById('keyframeDialog');
-            if (!dialog) return;
-            
-            const actionSelect = document.getElementById('keyframeActionType');
-            const paramsDiv = document.getElementById('keyframeParams');
-            
-            function updateParams() {
-                const type = actionSelect.value;
-                paramsDiv.innerHTML = '';
-                
-                if (type === 'move') {
-                    paramsDiv.innerHTML = `
-                        <label>X offset:</label><input type="number" id="paramX" value="0" step="1">
-                        <label>Y offset:</label><input type="number" id="paramY" value="0" step="1">
-                    `;
-                } else if (type === 'rotate') {
-                    paramsDiv.innerHTML = `<label>Angle:</label><input type="number" id="paramAngle" value="0" step="15">`;
-                } else if (type === 'scale') {
-                    paramsDiv.innerHTML = `
-                        <label>Scale X:</label><input type="number" id="paramScaleX" value="1" step="0.1" min="0.1">
-                        <label>Scale Y:</label><input type="number" id="paramScaleY" value="1" step="0.1" min="0.1">
-                    `;
-                } else if (type === 'color') {
-                    paramsDiv.innerHTML = `<label>Color:</label><input type="color" id="paramColor" value="#ff9900">`;
-                }
-            }
-            
-            updateParams();
-            actionSelect.onchange = updateParams;
-            
-            const createHandler = () => {
-                const timeline = timelines.find(t => t.id === timelineId);
-                if (!timeline) return;
-                
-                const action = actionSelect.value;
-                let params = {};
-                
-                if (action === 'move') {
-                    params = { x: parseFloat(document.getElementById('paramX')?.value) || 0, y: parseFloat(document.getElementById('paramY')?.value) || 0 };
-                } else if (action === 'rotate') {
-                    params = { angle: parseFloat(document.getElementById('paramAngle')?.value) || 0 };
-                } else if (action === 'scale') {
-                    params = { x: parseFloat(document.getElementById('paramScaleX')?.value) || 1, y: parseFloat(document.getElementById('paramScaleY')?.value) || 1 };
-                } else if (action === 'color') {
-                    params = { color: document.getElementById('paramColor')?.value || '#ff9900' };
-                }
-                
-                timeline.keyframes.push({ time: presetTime, action, params });
-                timeline.keyframes.sort((a, b) => a.time - b.time);
-                renderTimelines();
-                dialog.classList.remove('active');
-            };
-            
-            const cancelHandler = () => dialog.classList.remove('active');
-            
-            dialog.classList.add('active');
-            document.getElementById('keyframeDialogCreate').onclick = createHandler;
-            document.getElementById('keyframeDialogCancel').onclick = cancelHandler;
-        }
-
-        // ===========================================
-        // TIMELINE CREATION - With Duplicate Prevention
-        // ===========================================
-
-        function showCreateTimelineModal() {
-            const modal = document.getElementById('createTimelineModal');
-            if (!modal) return;
-            
-            const select = document.getElementById('timelineTargetSelect');
-            select.innerHTML = '<option value="">Loading...</option>';
-            
-            if (typeof models !== 'undefined' && models.length > 0) {
-                select.innerHTML = '';
-                
-                models.forEach((model, modelIdx) => {
-                    // Add model option - check if already exists
-                    const modelExists = timelineExists('model', modelIdx, -1);
-                    const modelOption = document.createElement('option');
-                    modelOption.value = `model:${modelIdx}`;
-                    modelOption.textContent = `📁 ${model.name}`;
-                    if (modelExists) {
-                        modelOption.disabled = true;
-                        modelOption.textContent += ' (already has timeline)';
-                        modelOption.style.color = '#666';
-                    }
-                    select.appendChild(modelOption);
-                    
-                    // Add point groups for this model
-                    const groups = model.pointGroups || [];
-                    groups.forEach((group, groupIdx) => {
-                        const groupExists = timelineExists('group', modelIdx, groupIdx);
-                        const groupOption = document.createElement('option');
-                        groupOption.value = `group:${modelIdx}:${groupIdx}`;
-                        groupOption.textContent = `   └─ 👥 ${model.name} → ${group.name}`;
-                        groupOption.style.paddingLeft = '16px';
-                        if (groupExists) {
-                            groupOption.disabled = true;
-                            groupOption.textContent += ' (already has timeline)';
-                            groupOption.style.color = '#666';
-                        }
-                        select.appendChild(groupOption);
-                    });
-                });
-                
-                // Check if all options are disabled
-                const enabledOptions = Array.from(select.options).some(opt => !opt.disabled && opt.value);
-                if (!enabledOptions) {
-                    const placeholder = document.createElement('option');
-                    placeholder.value = '';
-                    placeholder.textContent = 'All objects already have timelines';
-                    placeholder.disabled = true;
-                    select.innerHTML = '';
-                    select.appendChild(placeholder);
-                }
-            } else {
-                select.innerHTML = '<option disabled>No models available</option>';
-            }
-            
-            modal.classList.add('active');
-        }
-
-        function createTimelineFromModal() {
-            const select = document.getElementById('timelineTargetSelect');
-            const value = select.value;
-            
-            if (!value) {
-                alert('Please select a model or point group');
-                return;
-            }
-            
-            const parts = value.split(':');
-            const type = parts[0];
-            const modelIndex = parseInt(parts[1]);
-            
-            if (isNaN(modelIndex) || typeof models === 'undefined' || !models[modelIndex]) {
-                alert('Invalid selection');
-                return;
-            }
-            
-            // Double-check that timeline doesn't already exist
-            if (type === 'model') {
-                if (timelineExists('model', modelIndex, -1)) {
-                    alert('This model already has a timeline. Please delete the existing timeline first.');
-                    return;
-                }
-            } else if (type === 'group') {
-                const groupIndex = parseInt(parts[2]);
-                if (timelineExists('group', modelIndex, groupIndex)) {
-                    alert('This point group already has a timeline. Please delete the existing timeline first.');
-                    return;
-                }
-            }
-            
-            const model = models[modelIndex];
-            let name = '';
-            let timelineType = '';
-            let groupIndex = -1;
-            let groupName = '';
-            
-            if (type === 'model') {
-                name = model.name;
-                timelineType = 'model';
-            } else if (type === 'group') {
-                groupIndex = parseInt(parts[2]);
-                const groups = model.pointGroups || [];
-                if (!groups[groupIndex]) {
-                    alert('Invalid group selection');
-                    return;
-                }
-                name = `${model.name} → ${groups[groupIndex].name}`;
-                timelineType = 'group';
-                groupName = groups[groupIndex].name;
-            }
-            
-            timelines.push({
-                id: Date.now() + '-' + Math.random().toString(36).substr(2, 6),
-                name: name,
-                type: timelineType,
-                modelIndex: modelIndex,
-                groupIndex: groupIndex,
-                groupName: groupName,
-                keyframes: []
-            });
-            
-            closeTimelineModal();
-            renderTimelines();
-        }
-
-        function closeTimelineModal() {
-            const modal = document.getElementById('createTimelineModal');
-            if (modal) modal.classList.remove('active');
-        }
-
-        function initTimelineModal() {
-            const modal = document.getElementById('createTimelineModal');
-            if (!modal) return;
-            
-            document.getElementById('closeTimelineModal').onclick = closeTimelineModal;
-            document.getElementById('cancelTimelineBtn').onclick = closeTimelineModal;
-            document.getElementById('confirmCreateTimelineBtn').onclick = createTimelineFromModal;
-            
-            modal.onclick = (e) => { if (e.target === modal) closeTimelineModal(); };
-        }
-
-        // ===========================================
-        // DRAG & DROP SETUP
-        // ===========================================
-
-        function setupDragAndDrop() {
-            document.querySelectorAll('.compact-tool').forEach(tool => {
-                tool.setAttribute('draggable', 'true');
-                tool.ondragstart = (e) => {
-                    e.dataTransfer.setData('text/plain', tool.getAttribute('data-action'));
-                    e.dataTransfer.effectAllowed = 'copy';
-                    tool.style.opacity = '0.5';
-                };
-                tool.ondragend = (e) => { tool.style.opacity = '1'; };
-            });
-        }
-
-        // Generate compact tools from config
-        function generateCompactTools() {
-            const container = document.querySelector('.timeline-tools-compact');
-            if (!container) return;
-            
-            container.innerHTML = '';
-            for (const [key, config] of Object.entries(animationActionTypes)) {
-                const tool = document.createElement('div');
-                tool.className = 'compact-tool';
-                tool.setAttribute('draggable', 'true');
-                tool.setAttribute('data-action', key);
-                tool.setAttribute('title', `Drag to add ${config.name} keyframe`);
-                tool.style.borderLeft = `3px solid ${config.color}`;
-                tool.style.transition = 'all 0.1s ease';
-                
-                tool.innerHTML = `
-                    <span class="compact-icon">${config.icon}</span>
-                    <span class="compact-name" style="color: ${config.color};">${config.name.toUpperCase()}</span>
-                `;
-                
-                container.appendChild(tool);
-            }
-            
-            setupDragAndDrop();
-        }
 
 
-
-        // ===========================================
-        // PLAYBACK CONTROLS
-        // ===========================================
-
-        function updatePlayhead() {
-            const percent = (globalCurrentTime / globalDuration) * 100;
-            document.querySelectorAll('.playhead').forEach(ph => {
-                ph.style.left = `${percent}%`;
-            });
-            const timeDisplay = document.getElementById('timelineCurrentTime');
-            if (timeDisplay) timeDisplay.textContent = Math.round(globalCurrentTime) + ' ms';
-        }
-
-        function playTimeline() {
-            if (globalPlaying) return;
-            globalPlaying = true;
-            
-            const startTime = globalCurrentTime;
-            const startStamp = performance.now();
-            
-            function animate() {
-                if (!globalPlaying) return;
-                const elapsed = performance.now() - startStamp;
-                let newTime = startTime + elapsed;
-                
-                if (newTime >= globalDuration) {
-                    newTime = globalDuration;
-                    globalCurrentTime = newTime;
-                    updatePlayhead();
-                    pauseTimeline();
-                    return;
-                }
-                
-                globalCurrentTime = newTime;
-                updatePlayhead();
-                requestAnimationFrame(animate);
-            }
-            
-            globalAnimationId = requestAnimationFrame(animate);
-        }
-
-        function pauseTimeline() {
-            globalPlaying = false;
-            if (globalAnimationId) {
-                cancelAnimationFrame(globalAnimationId);
-                globalAnimationId = null;
-            }
-        }
-
-        function stopTimeline() {
-            pauseTimeline();
-            globalCurrentTime = 0;
-            updatePlayhead();
-        }
-
-        function attachGlobalPlaybackControls() {
-            const playBtn = document.getElementById('timelinePlayBtn');
-            const pauseBtn = document.getElementById('timelinePauseBtn');
-            const stopBtn = document.getElementById('timelineStopBtn');
-            const durationInput = document.getElementById('timelineDuration');
-            const addBtn = document.getElementById('addTimelineBtn'); // Now at bottom
-            
-            if (playBtn) playBtn.onclick = playTimeline;
-            if (pauseBtn) pauseBtn.onclick = pauseTimeline;
-            if (stopBtn) stopBtn.onclick = stopTimeline;
-            if (addBtn) addBtn.onclick = showCreateTimelineModal;
-            if (durationInput) {
-                durationInput.onchange = () => {
-                    globalDuration = Math.max(500, Math.min(30000, parseInt(durationInput.value) || 5000));
-                    durationInput.value = globalDuration;
-                    if (globalCurrentTime > globalDuration) globalCurrentTime = globalDuration;
-                    buildRuler();
-                    renderTimelines();
-                };
-            }
-        }
-
-        // ===========================================
-        // UTILITIES
-        // ===========================================
-
-        function updateStats() {
-            const totalKeyframes = timelines.reduce((sum, t) => sum + t.keyframes.length, 0);
-            const keyframesEl = document.getElementById('totalKeyframesCount');
-            if (keyframesEl) keyframesEl.textContent = totalKeyframes;
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, m => {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-        }
-
-        // ===========================================
-        // EXPORT/IMPORT FUNCTIONS
-        // ===========================================
-
-        function exportTimelines() {
-            return {
-                timelines: timelines,
-                globalDuration: globalDuration
-            };
-        }
-
-        function importTimelines(data) {
-            if (data.timelines) {
-                timelines = data.timelines;
-                globalDuration = data.globalDuration || 5000;
-                
-                const durationInput = document.getElementById('timelineDuration');
-                if (durationInput) durationInput.value = globalDuration;
-                
-                buildRuler();
-                renderTimelines();
-                updateStats();
-            }
-        }
+   
 
         // ===========================================
         // RENDER ANIMATION LIST - Fix for undefined error
@@ -8879,6 +8980,37 @@ function renderTimelines() {
             }
         }
 
+        function highlightKeyframe(trackId, keyframeIndex) {
+            // Remove existing highlight
+            clearKeyframeHighlight();
+            
+            // Find and highlight the keyframe
+            const markers = document.querySelectorAll('.keyframe-marker');
+            markers.forEach(marker => {
+                const markerTrackId = marker.getAttribute('data-track-id');
+                const markerKfIdx = parseInt(marker.getAttribute('data-kf-idx'));
+                if (markerTrackId === trackId && markerKfIdx === keyframeIndex) {
+                    marker.style.boxShadow = '0 0 12px #ff9900';
+                    marker.style.transform = 'translate(-50%, -50%) scale(1.2)';
+                    marker.style.transition = 'all 0.1s ease';
+                    marker.style.border = '2px solid #ffaa33';
+                }
+            });
+        }
+
+        function clearKeyframeHighlight() {
+            const markers = document.querySelectorAll('.keyframe-marker');
+            markers.forEach(marker => {
+                const action = marker.getAttribute('data-action');
+                const config = animationActionTypes[action];
+                const markerColor = config ? config.color : '#ff9900';
+                marker.style.boxShadow = `0 0 4px ${markerColor}`;
+                marker.style.transform = 'translate(-50%, -50%) scale(1)';
+                marker.style.border = `1px solid ${markerColor}80`;
+            });
+        }
+
+
         function showKeyframeEditor(animation, track, keyframeIndex) {
             console.log("showKeyframeEditor called");
             const editor = document.getElementById('keyframeEditor');
@@ -8896,8 +9028,9 @@ function renderTimelines() {
             currentEditingAnimation = animation;
             
             let html = `
-                <div style="margin-bottom: 8px;">
+                <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                     <span style="color: ${config.color};">${config.icon} ${config.name.toUpperCase()}</span>
+                    <button id="copyKeyframeBtn" style="background: #4CAF50; color: white; border: none; border-radius: 3px; padding: 2px 8px; cursor: pointer; font-size: 10px; font-weight: bold;">📋 COPY</button>
                 </div>
                 <div class="param-row">
                     <div class="param-label">TIME (ms)</div>
@@ -8961,7 +9094,7 @@ function renderTimelines() {
                 `;
             }
             
-            // Add instant checkbox and delete button (no save button)
+            // Add instant checkbox and delete button
             html += `
                 <div class="instant-checkbox">
                     <input type="checkbox" id="editInstant" ${kf.instant ? 'checked' : ''}>
@@ -9042,22 +9175,27 @@ function renderTimelines() {
                 if (newIndex !== -1 && newIndex !== keyframeIndex) {
                     currentEditingKeyframe.keyframeIndex = newIndex;
                 }
+                
+                // Highlight the edited keyframe
+                highlightKeyframe(track.id, newIndex);
             }
             
             // Add input event listeners for auto-save
             document.getElementById('editKeyframeTime')?.addEventListener('input', () => {
                 autoSave();
-                // Update the marker position in real-time during drag
+                // Update the marker position in real-time
                 const newTime = parseInt(document.getElementById('editKeyframeTime')?.value);
                 if (!isNaN(newTime)) {
-                    const percent = (newTime / animation.duration) * 100;
+                    const rulerCanvas = document.getElementById('timelineRulerCanvas');
+                    const totalWidth = rulerCanvas ? rulerCanvas.width : 2000;
+                    const pixelX = (newTime / animation.duration) * totalWidth;
                     // Find and update the marker position
                     const markers = document.querySelectorAll('.keyframe-marker');
                     markers.forEach(marker => {
                         const trackId = marker.getAttribute('data-track-id');
                         const kfIdx = parseInt(marker.getAttribute('data-kf-idx'));
                         if (trackId === track.id && kfIdx === currentEditingKeyframe.keyframeIndex) {
-                            marker.style.left = `${Math.min(100, Math.max(0, percent))}%`;
+                            marker.style.left = `${pixelX}px`;
                         }
                     });
                 }
@@ -9073,9 +9211,36 @@ function renderTimelines() {
             document.getElementById('editUseModelCenter')?.addEventListener('change', autoSave);
             document.getElementById('editInstant')?.addEventListener('change', autoSave);
             
+            // Copy button handler
+            document.getElementById('copyKeyframeBtn')?.addEventListener('click', () => {
+                copiedKeyframe = JSON.parse(JSON.stringify(kf));
+                console.log("Keyframe copied:", copiedKeyframe);
+                
+                // Show feedback
+                const btn = document.getElementById('copyKeyframeBtn');
+                const originalText = btn.textContent;
+                btn.textContent = '✓ COPIED!';
+                btn.style.background = '#4CAF50';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#4CAF50';
+                }, 1000);
+                
+                // Flash the editor border
+                const editorDiv = document.getElementById('keyframeEditor');
+                const originalBorder = editorDiv.style.border;
+                editorDiv.style.border = '2px solid #4CAF50';
+                setTimeout(() => {
+                    editorDiv.style.border = originalBorder;
+                }, 300);
+            });
+            
+            // Highlight the keyframe being edited
+            highlightKeyframe(track.id, keyframeIndex);
+            
             // Delete button
             document.getElementById('deleteKeyframeBtn').onclick = () => {
-                if (confirm('Delete this keyframe?')) {
+                if (currentEditingKeyframe) {
                     saveUndoState();
                     track.keyframes.splice(currentEditingKeyframe.keyframeIndex, 1);
                     renderTimelineForAnimation();
@@ -9083,6 +9248,7 @@ function renderTimelines() {
                     draw();
                     editor.style.display = 'none';
                     currentEditingKeyframe = null;
+                    clearKeyframeHighlight();
                 }
             };
             
@@ -9090,21 +9256,153 @@ function renderTimelines() {
             document.getElementById('closeKeyframeEditor').onclick = () => {
                 editor.style.display = 'none';
                 currentEditingKeyframe = null;
+                clearKeyframeHighlight();
             };
         }
 
-       
-        // ===========================================
+        function updateModelVisibilityForAnimation() {
+            if (!isAnimationMode) return;
+            
+            // Get all models that have at least one timeline
+            const modelsWithTimelines = new Set();
+            
+            animations.forEach(anim => {
+                anim.tracks.forEach(track => {
+                    if (track.modelIndex !== undefined) {
+                        modelsWithTimelines.add(track.modelIndex);
+                    }
+                });
+            });
+            
+            // Set visibility: only show models that have timelines
+            models.forEach((model, index) => {
+                model.visible = modelsWithTimelines.has(index);
+            });
+            
+            draw();
+        }
+
+
+        function highlightModelUnderMouse(event) {
+            if (!isAnimationMode) return;
+            
+            // Get mouse position relative to the timeline container
+            const timelineContainer = document.getElementById('timelinesContainer');
+            if (!timelineContainer) return;
+            
+            const rect = timelineContainer.getBoundingClientRect();
+            const mouseY = event ? event.clientY : 0;
+            
+            // Check if mouse is over the timeline area
+            if (mouseY < rect.top || mouseY > rect.bottom) {
+                if (currentHoveredModelIndex !== -1) {
+                    currentHoveredModelIndex = -1;
+                    draw();
+                }
+                return;
+            }
+            
+            // Find which timeline row is being hovered
+            const rows = document.querySelectorAll('.timeline-row');
+            let hoveredTrack = null;
+            
+            for (let row of rows) {
+                const rowRect = row.getBoundingClientRect();
+                if (mouseY >= rowRect.top && mouseY <= rowRect.bottom) {
+                    const trackId = row.getAttribute('data-track-id');
+                    const anim = getSelectedAnimation();
+                    if (anim) {
+                        hoveredTrack = anim.tracks.find(t => t.id === trackId);
+                    }
+                    break;
+                }
+            }
+            
+            // Get the model index from the hovered track
+            let hoveredModelIndex = -1;
+            if (hoveredTrack && hoveredTrack.modelIndex !== undefined) {
+                hoveredModelIndex = hoveredTrack.modelIndex;
+            }
+            
+            // Update highlight if changed
+            if (currentHoveredModelIndex !== hoveredModelIndex) {
+                currentHoveredModelIndex = hoveredModelIndex;
+                draw();
+            }
+        }
+
+    
+            // ===========================================
         // INITIALIZE
         // ===========================================
 
+        // Make canvas container resizable by dragging
+        function makeCanvasResizable() {
+            const container = document.querySelector('.canvas-container');
+            if (!container) return;
+            
+            let isResizing = false;
+            let startY = 0;
+            let startHeight = 0;
+            
+            // Create a resize handle at the bottom
+            const resizeHandle = document.createElement('div');
+            resizeHandle.style.cssText = `
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 4px;
+                background: #666;
+                cursor: ns-resize;
+                opacity: 0.6;
+                transition: opacity 0.2s;
+                border-radius: 0 0 6px 6px;
+            `;
+            
+            resizeHandle.onmouseenter = () => resizeHandle.style.opacity = '1';
+            resizeHandle.onmouseleave = () => resizeHandle.style.opacity = '0.6';
+            
+            resizeHandle.onmousedown = (e) => {
+                isResizing = true;
+                startY = e.clientY;
+                startHeight = container.offsetHeight;
+                document.body.style.cursor = 'ns-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            };
+            
+            document.onmousemove = (e) => {
+                if (!isResizing) return;
+                const deltaY = e.clientY - startY;
+                let newHeight = startHeight + deltaY;
+                newHeight = Math.min(window.innerHeight - 150, Math.max(200, newHeight));
+                container.style.height = newHeight + 'px';
+                
+                // Update canvas scale after resize
+                updateCanvasScale();
+            };
+            
+            document.onmouseup = () => {
+                isResizing = false;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            };
+            
+            container.appendChild(resizeHandle);
+            
+            // Also make the canvas itself maintain aspect ratio within the container
+            const canvas = document.getElementById('meuCanvas');
+            if (canvas) {
+                canvas.style.maxHeight = '100%';
+                canvas.style.width = 'auto';
+                canvas.style.height = 'auto';
+            }
+        }
 
+        // Call this after the DOM is loaded
+        setTimeout(makeCanvasResizable, 100);
 
-
-
-
-        initTimelineModule();
-        // Initial render
         renderModelList();
         updateCodeDisplay();
         updateTotalTriangles();
