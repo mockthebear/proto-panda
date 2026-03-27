@@ -1796,13 +1796,10 @@
     border-bottom: 1px solid #2a2a2a;
     min-height: 32px;
     width: 100%;
-    transition: background 0.1s ease, border-left 0.1s ease;
+    transition: background 0.1s ease;
 }
 
-.timeline-row.selected {
-    background: #2a2a2a !important;
-    border-left: 3px solid #ff9900 !important;
-}
+
 
 .timeline-label {
     width: 160px;
@@ -1821,12 +1818,20 @@
     text-overflow: ellipsis;
 }
 
+.timeline-row.selected .timeline-label {
+    background: #3a6a6a;
+}
+
+.timeline-row.selected .timeline-label {
+    width: 157px;
+}
+
 .timeline-canvas {
     flex: 1;
     position: relative;
     height: 32px;
     background: #1a1a1a;
-    cursor: pointer;
+    cursor: crosshair;
     min-width: 0;
 }
 
@@ -1947,19 +1952,6 @@
     box-sizing: border-box;
 }
 
-/* Individual Timeline - THINNER */
-.timeline-row {
-    display: flex;
-    align-items: stretch;
-    border-bottom: 1px solid #2a2a2a;
-    transition: background 0.1s;
-    min-height: 32px;
-    width: 100%;
-}
-
-.timeline-row:hover {
-    background: #222;
-}
 
 .timeline-label {
     width: 160px;
@@ -2846,6 +2838,7 @@
         var redoStack = [];
 
         var models = [];
+        var animationModels = [];
         var selectedModelIndex = 0;
         var expandedGroups = {}; 
 
@@ -2858,6 +2851,7 @@
             pointGroups: []
         });
         expandedGroups[0] = false; 
+        animationModels = JSON.parse(JSON.stringify(models));
 
         // UI state
         var points = [];
@@ -3022,7 +3016,6 @@
             redoStack = [];
             if (undoStack.length > 50) undoStack.shift();
             
-            // REMOVED: updateOriginalModelData(); - Don't auto-update
         }
 
         function undo() {
@@ -3043,10 +3036,10 @@
             models = JSON.parse(JSON.stringify(previousState.models));
             
             // Restore animations
-            animations = JSON.parse(JSON.stringify(previousState.animations));
+            animations = JSON.parse(JSON.stringify(previousState.models));
             selectedAnimationId = previousState.selectedAnimationId;
             currentAnimationTime = previousState.currentAnimationTime;
-            
+                        
             // Reset UI state
             points = [];
             state = 0;
@@ -3068,24 +3061,6 @@
                 clearInterval(oscillationTimer);
                 oscillationTimer = null;
             }
-            
-            // Update original model data
-            window._originalModelsData = models.map(m => ({
-                triangles: JSON.parse(JSON.stringify(m.triangles)),
-                pointGroups: JSON.parse(JSON.stringify(m.pointGroups || []))
-            }));
-            
-            window._originalPointsData = {};
-            models.forEach((model, modelIdx) => {
-                const points = [];
-                for (let i = 0; i < model.triangles.length; i++) {
-                    const tri = model.triangles[i];
-                    points.push({ x: tri.v1.x, y: tri.v1.y });
-                    points.push({ x: tri.v2.x, y: tri.v2.y });
-                    points.push({ x: tri.v3.x, y: tri.v3.y });
-                }
-                window._originalPointsData[modelIdx] = points;
-            });
             
             // Update UI based on mode
             if (isAnimationMode) {
@@ -3118,10 +3093,11 @@
             models = JSON.parse(JSON.stringify(nextState.models));
             
             // Restore animations
-            animations = JSON.parse(JSON.stringify(nextState.animations));
+            animations = JSON.parse(JSON.stringify(nextState.models));
             selectedAnimationId = nextState.selectedAnimationId;
             currentAnimationTime = nextState.currentAnimationTime;
             
+
             // Reset UI state
             points = [];
             state = 0;
@@ -3144,24 +3120,6 @@
                 oscillationTimer = null;
             }
             
-            // Update original model data
-            window._originalModelsData = models.map(m => ({
-                triangles: JSON.parse(JSON.stringify(m.triangles)),
-                pointGroups: JSON.parse(JSON.stringify(m.pointGroups || []))
-            }));
-            
-            window._originalPointsData = {};
-            models.forEach((model, modelIdx) => {
-                const points = [];
-                for (let i = 0; i < model.triangles.length; i++) {
-                    const tri = model.triangles[i];
-                    points.push({ x: tri.v1.x, y: tri.v1.y });
-                    points.push({ x: tri.v2.x, y: tri.v2.y });
-                    points.push({ x: tri.v3.x, y: tri.v3.y });
-                }
-                window._originalPointsData[modelIdx] = points;
-            });
-            
             // Update UI based on mode
             if (isAnimationMode) {
                 renderAnimationList();
@@ -3173,13 +3131,13 @@
             }
             
             draw();
-        }     
+        }
+        
         // ===========================================
         // MODE TOGGLE FUNCTIONS
         // ===========================================
 
         function toggleMode() {
-            const wasAnimationMode = isAnimationMode;
             isAnimationMode = !isAnimationMode;
             
             const toggleSwitch = document.getElementById('modeToggle');
@@ -3189,7 +3147,6 @@
             const codeOutput = document.getElementById('codeOutputContainer');
             const timeline = document.getElementById('timelineContainer');
             
-            // Stop any playing animation
             if (isAnimPlaying) {
                 pauseAnimationPlayback();
             }
@@ -3204,38 +3161,8 @@
                 if (codeOutput) codeOutput.style.display = 'none';
                 if (timeline) timeline.style.display = 'flex';
                 
-                // IMPORTANT: Save the current model state (what you see in model mode)
-                // This will be restored when leaving animation mode
-                savedPointsData = models.map(model => ({
-                    triangles: JSON.parse(JSON.stringify(model.triangles)),
-                    pointGroups: JSON.parse(JSON.stringify(model.pointGroups || []))
-                }));
-                
-                savedVisibilityState = models.map(model => model.visible);
-                
-                // Store the CURRENT models as the "original" for animations
-                // This is the base state that animations will modify from
-                window._originalModelsData = models.map(m => ({
-                    triangles: JSON.parse(JSON.stringify(m.triangles)),
-                    pointGroups: JSON.parse(JSON.stringify(m.pointGroups || []))
-                }));
-                
-                window._originalPointsData = {};
-                models.forEach((model, modelIdx) => {
-                    const points = [];
-                    for (let i = 0; i < model.triangles.length; i++) {
-                        const tri = model.triangles[i];
-                        points.push({ x: tri.v1.x, y: tri.v1.y });
-                        points.push({ x: tri.v2.x, y: tri.v2.y });
-                        points.push({ x: tri.v3.x, y: tri.v3.y });
-                    }
-                    window._originalPointsData[modelIdx] = points;
-                });
-                
-                // Make all models visible for animation preview
-                models.forEach(model => {
-                    model.visible = true;
-                });
+                // COPY models to animationModels
+                animationModels = JSON.parse(JSON.stringify(models));
                 
                 selectedVertices = [];
                 selectedGroupIndex = -1;
@@ -3243,18 +3170,14 @@
                 state = 0;
                 
                 document.querySelectorAll('.tool-icon').forEach(el => el.classList.remove('active'));
-                
                 document.getElementById('overlayPanel').classList.remove('active');
                 document.getElementById('shapesWindow').classList.remove('active');
                 shapesWindowActive = false;
                 shapePlacementMode = false;
                 overlayActive = false;
                 
-                // Apply animation at current time if an animation exists
-                if (selectedAnimationId && currentAnimationTime > 0) {
+                if (selectedAnimationId) {
                     applyAnimationAtTime(currentAnimationTime);
-                } else if (selectedAnimationId) {
-                    applyAnimationAtTime(0);
                 }
                 
                 draw();
@@ -3268,30 +3191,6 @@
                 
                 if (codeOutput) codeOutput.style.display = 'block';
                 if (timeline) timeline.style.display = 'none';
-                
-                // Restore the saved model state (what you had before entering animation mode)
-                if (savedPointsData) {
-                    models.forEach((model, index) => {
-                        if (savedPointsData[index]) {
-                            model.triangles = JSON.parse(JSON.stringify(savedPointsData[index].triangles));
-                            model.pointGroups = JSON.parse(JSON.stringify(savedPointsData[index].pointGroups));
-                        }
-                    });
-                    savedPointsData = null;
-                }
-                
-                if (savedVisibilityState.length > 0) {
-                    models.forEach((model, index) => {
-                        if (index < savedVisibilityState.length) {
-                            model.visible = savedVisibilityState[index];
-                        }
-                    });
-                    savedVisibilityState = [];
-                } else {
-                    models.forEach(model => {
-                        model.visible = true;
-                    });
-                }
                 
                 document.getElementById('toolMovePoints').classList.add('active');
                 currentTool = 'move';
@@ -3310,6 +3209,7 @@
                 updateCanvasScale();
             }, 50);
         }
+
 
         function getCanvasScale() {
             const windowWidth = window.innerWidth;
@@ -3430,7 +3330,6 @@
             if (durationInput) durationInput.value = 3000;
             
             // Reset models to original and apply animation at time 0
-            resetModelsToOriginal();
             applyAnimationAtTime(0);
             draw();
             
@@ -3509,23 +3408,23 @@
             
             container.innerHTML = '';
             
-            // Get the ruler canvas for width reference
             const rulerCanvas = document.getElementById('timelineRulerCanvas');
             const totalWidth = rulerCanvas ? rulerCanvas.width : 2000;
             
             anim.tracks.forEach((track) => {
                 const row = document.createElement('div');
                 row.className = 'timeline-row';
-                if (selectedTimelineId === track.id) {
-                    row.style.background = '#2a2a2a';
-                    row.style.borderLeft = '3px solid #ff9900';
-                }
                 row.style.display = 'flex';
                 row.style.alignItems = 'stretch';
                 row.style.borderBottom = '1px solid #2a2a2a';
                 row.style.minHeight = '32px';
                 row.style.width = '100%';
                 row.setAttribute('data-track-id', track.id);
+                
+                // Apply selection style directly
+                if (selectedTimelineId === track.id) {
+                    row.style.background = '#2a5a5a';
+                }
                 
                 const label = document.createElement('div');
                 label.className = 'timeline-label';
@@ -3535,7 +3434,7 @@
                 label.style.fontSize = '10px';
                 label.style.fontWeight = 'bold';
                 label.style.color = '#ffaa66';
-                label.style.background = '#1e1e1e';
+                label.style.background = selectedTimelineId === track.id ? '#3a6a6a' : '#1e1e1e';
                 label.style.borderRight = '1px solid #2a2a2a';
                 label.style.display = 'flex';
                 label.style.alignItems = 'center';
@@ -3555,16 +3454,27 @@
                 canvas.style.flex = '1';
                 canvas.style.position = 'relative';
                 canvas.style.height = '32px';
-                canvas.style.background = '#1a1a1a';
+                canvas.style.background = selectedTimelineId === track.id ? '#2a4a4a' : '#1a1a1a';
                 canvas.style.cursor = 'crosshair';
-                canvas.style.minWidth = `${totalWidth}px`; // Set minimum width to match ruler
+                canvas.style.minWidth = `${totalWidth}px`;
                 canvas.setAttribute('data-track-id', track.id);
                 
-                // Add keyframe markers using pixel positioning
+                // Add keyframe markers
                 (track.keyframes || []).forEach((kf, kfIdx) => {
                     const pixelX = (kf.time / anim.duration) * totalWidth;
                     const config = animationActionTypes[kf.action];
                     const markerColor = config ? config.color : '#ff9900';
+                    
+                    // Check for overlapping keyframes at the same time
+                    const overlappingKeyframes = track.keyframes.filter(k => Math.abs(k.time - kf.time) < 0.1);
+                    const overlappingIndex = overlappingKeyframes.findIndex(k => k === kf);
+                    const overlapCount = overlappingKeyframes.length;
+                    
+                    let verticalOffset = 0;
+                    if (overlapCount > 1) {
+                        const step = 8 / (overlapCount - 1);
+                        verticalOffset = -4 + (overlappingIndex * step);
+                    }
                     
                     const marker = document.createElement('div');
                     marker.className = 'keyframe-marker';
@@ -3578,7 +3488,7 @@
                     marker.style.border = `1px solid ${markerColor}80`;
                     marker.style.boxShadow = `0 0 4px ${markerColor}`;
                     marker.style.borderRadius = '50%';
-                    marker.style.transform = 'translate(-50%, -50%)';
+                    marker.style.transform = `translate(-50%, -50%) translateY(${verticalOffset}px)`;
                     marker.style.top = '50%';
                     marker.style.left = `${pixelX}px`;
                     marker.style.cursor = 'grab';
@@ -3588,6 +3498,7 @@
                     if (kf.action === 'translate') info += ` (${kf.params.x},${kf.params.y})`;
                     if (kf.action === 'rotate') info += ` (${kf.params.angle}°)`;
                     if (kf.action === 'scale') info += ` (${kf.params.scaleX},${kf.params.scaleY})`;
+                    if (kf.action === 'visibility') info += kf.params.visible ? ' (SHOW)' : ' (HIDE)';
                     if (kf.instant) info += ` ⚡ INSTANT`;
                     marker.title = info;
                     
@@ -3620,12 +3531,15 @@
             updateRuler(anim.duration);
         }
 
+
         function setupDragAndDrop() {
             document.querySelectorAll('.compact-tool').forEach(tool => {
                 tool.setAttribute('draggable', 'true');
                 
-                let clickTimer = null;
                 let hasMoved = false;
+                let isDragging = false;
+                let startX = 0;
+                let startY = 0;
                 
                 tool.ondragstart = (e) => {
                     const action = tool.getAttribute('data-action');
@@ -3634,12 +3548,8 @@
                     e.dataTransfer.effectAllowed = 'copy';
                     tool.style.opacity = '0.5';
                     
-                    // Clear any pending click timer
-                    if (clickTimer) {
-                        clearTimeout(clickTimer);
-                        clickTimer = null;
-                    }
-                    hasMoved = false;
+                    // Mark as dragging
+                    isDragging = true;
                     
                     // Use external transparent image to hide default drag image
                     const img = new Image();
@@ -3679,52 +3589,43 @@
                         timeTooltip.remove();
                     }
                     
-                    // If no movement and timer exists, it was a click
-                    if (!hasMoved && clickTimer) {
-                        clearTimeout(clickTimer);
-                        clickTimer = null;
-                        
-                        // Check if a timeline is selected
-                        if (selectedTimelineId && isAnimationMode) {
-                            const action = tool.getAttribute('data-action');
-                            const config = animationActionTypes[action];
-                            if (config) {
-                                // Add keyframe at current playhead position
-                                addKeyframeToSelectedTimeline(action, config);
-                            }
-                        }
-                    }
+                    // Reset flags
+                    isDragging = false;
                 };
                 
                 // Track movement to distinguish click from drag
                 tool.onmousedown = (e) => {
                     hasMoved = false;
-                    clickTimer = setTimeout(() => {
-                        // Timer expired, this is a click (not a drag)
-                        if (selectedTimelineId && isAnimationMode) {
-                            const action = tool.getAttribute('data-action');
-                            const config = animationActionTypes[action];
-                            if (config) {
-                                addKeyframeToSelectedTimeline(action, config);
-                            }
-                        }
-                        clickTimer = null;
-                    }, 20);
+                    isDragging = false;
+                    startX = e.clientX;
+                    startY = e.clientY;
                 };
                 
-                tool.onmousemove = () => {
-                    hasMoved = true;
-                };
-                
-                tool.onmouseup = () => {
-                    if (clickTimer) {
-                        clearTimeout(clickTimer);
-                        clickTimer = null;
+                tool.onmousemove = (e) => {
+                    // Check if mouse moved more than 3 pixels
+                    const deltaX = Math.abs(e.clientX - startX);
+                    const deltaY = Math.abs(e.clientY - startY);
+                    if (deltaX > 3 || deltaY > 3) {
+                        hasMoved = true;
                     }
                 };
+                
+                tool.onmouseup = (e) => {
+                    // Only add keyframe if we're NOT dragging and mouse didn't move
+                    if (!isDragging && !hasMoved && selectedTimelineId && isAnimationMode) {
+                        const action = tool.getAttribute('data-action');
+                        const config = animationActionTypes[action];
+                        if (config) {
+                            addKeyframeToSelectedTimeline(action, config);
+                        }
+                    }
+                    
+                    // Reset flags
+                    isDragging = false;
+                    hasMoved = false;
+                };
             });
-        } 
-   
+        }
 
 
         function attachTimelineEventsForAnimation() {
@@ -3738,16 +3639,26 @@
                         return;
                     }
                     
-                    // Remove highlight from all rows
-                    document.querySelectorAll('.timeline-row').forEach(r => {
-                        r.style.background = '';
-                        r.style.borderLeft = '';
-                    });
-                    
-                    // Highlight selected row
+                    // Update selected timeline ID
                     selectedTimelineId = row.getAttribute('data-track-id');
-                    row.style.background = '#2a2a2a';
-                    row.style.borderLeft = '3px solid #ff9900';
+                    
+                    // Update all rows' styling
+                    document.querySelectorAll('.timeline-row').forEach(r => {
+                        const trackId = r.getAttribute('data-track-id');
+                        const label = r.querySelector('.timeline-label');
+                        const canvas = r.querySelector('.timeline-canvas');
+                        
+                        if (trackId === selectedTimelineId) {
+                            // Selected row
+                            r.style.background = '';
+                            if (label) label.style.background = '#2e2e2e';
+                            if (canvas) canvas.style.background = '#2a2a2a';
+                        } else {
+                            r.style.background = '';
+                            if (label) label.style.background = '#1e1e1e';
+                            if (canvas) canvas.style.background = '#1a1a1a';
+                        }
+                    });
                     
                     e.stopPropagation();
                 };
@@ -4172,6 +4083,10 @@
                 newMarker.style.cursor = 'grab';
             });
         }
+     
+     
+     
+     
         function attachKeyframeEvents() {
             console.log("Attaching keyframe events, found markers:", document.querySelectorAll('.keyframe-marker').length);
             
@@ -4417,7 +4332,7 @@
             renderTimelineForAnimation();
             updateModelVisibilityForAnimation();
             draw();
-            return track;
+            return track; // Return the created track
         }
 
         // ===========================================
@@ -4426,27 +4341,31 @@
 
         function applyAnimationAtTime(time) {
             const anim = getSelectedAnimation();
-            if (!anim) return;
             
-            // Start from the base state (original models from model mode)
-            if (window._originalModelsData) {
-                models.forEach((model, idx) => {
-                    if (window._originalModelsData[idx]) {
-                        model.triangles = JSON.parse(JSON.stringify(window._originalModelsData[idx].triangles));
-                        model.pointGroups = JSON.parse(JSON.stringify(window._originalModelsData[idx].pointGroups || []));
-                    }
-                });
+            // Start from fresh copy of models
+            animationModels = JSON.parse(JSON.stringify(models));
+            
+            if (!anim || anim.tracks.length === 0) {
+                draw();
+                return;
             }
             
             // Apply each track's keyframes
             anim.tracks.forEach(track => {
                 if (!track.keyframes.length) return;
                 
-                const model = models[track.modelIndex];
+                const model = animationModels[track.modelIndex];
                 if (!model) return;
                 
-                // Get original points for this model
-                const originalPoints = window._originalPointsData?.[track.modelIndex] || [];
+                // Get original points from models array
+                const originalModel = models[track.modelIndex];
+                const originalPoints = [];
+                for (let i = 0; i < originalModel.triangles.length; i++) {
+                    const tri = originalModel.triangles[i];
+                    originalPoints.push({ x: tri.v1.x, y: tri.v1.y });
+                    originalPoints.push({ x: tri.v2.x, y: tri.v2.y });
+                    originalPoints.push({ x: tri.v3.x, y: tri.v3.y });
+                }
                 
                 // Get target points based on track type
                 let targetPoints = [];
@@ -4498,43 +4417,16 @@
                 const accumulated = {
                     translate: { x: 0, y: 0 },
                     rotate: { angle: 0, useModelCenter: false, centerX: 32, centerY: 16 },
-                    scale: { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 },
-                    visibility: { visible: true }
+                    scale: { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 }
                 };
                 
-                const transformTypes = ['translate', 'rotate', 'scale', 'visibility', 'reset'];
+                const transformTypes = ['translate', 'rotate', 'scale'];
                 const fixedCenter = { x: 32, y: 16 };
-                let needsReset = false;
                 
                 transformTypes.forEach(type => {
                     // Get keyframes of this type
                     const typeKeyframes = sortedKeyframes.filter(kf => kf.action === type);
                     if (typeKeyframes.length === 0) return;
-                    
-                    // For reset - always instant
-                    if (type === 'reset') {
-                        // Find the last reset keyframe before or at current time
-                        for (let i = typeKeyframes.length - 1; i >= 0; i--) {
-                            if (typeKeyframes[i].time <= time) {
-                                needsReset = true;
-                                break;
-                            }
-                        }
-                        return;
-                    }
-                    
-                    // For visibility - always instant
-                    if (type === 'visibility') {
-                        let lastVisible = true;
-                        for (let i = typeKeyframes.length - 1; i >= 0; i--) {
-                            if (typeKeyframes[i].time <= time) {
-                                lastVisible = typeKeyframes[i].params.visible;
-                                break;
-                            }
-                        }
-                        accumulated[type] = { visible: lastVisible };
-                        return;
-                    }
                     
                     // Check if we're at an exact instant keyframe
                     const exactInstant = typeKeyframes.find(kf => Math.abs(kf.time - time) < 0.1 && kf.instant === true);
@@ -4708,6 +4600,10 @@
                     }
                 });
                 
+                // Check for reset keyframe
+                const resetKeyframes = sortedKeyframes.filter(kf => kf.action === 'reset' && kf.time <= time);
+                let needsReset = resetKeyframes.length > 0;
+                
                 // Calculate dynamic center for the model if needed
                 let currentCenter = { x: 32, y: 16 };
                 
@@ -4731,7 +4627,7 @@
                     };
                 }
                 
-                // Apply transforms: Scale -> Rotate -> Translate (or reset if needed)
+                // Apply transforms: Scale -> Rotate -> Translate
                 targetPoints.forEach(tp => {
                     let x = tp.originalPoint ? tp.originalPoint.x : tp.point.x;
                     let y = tp.originalPoint ? tp.originalPoint.y : tp.point.y;
@@ -4787,16 +4683,16 @@
                     tp.point.y = y;
                 });
                 
-                // Apply visibility to the model
-                if (accumulated.visibility && track.type === 'model') {
-                    model.visible = accumulated.visibility.visible;
+                // Apply visibility
+                const visibilityKeyframes = sortedKeyframes.filter(kf => kf.action === 'visibility' && kf.time <= time);
+                if (visibilityKeyframes.length > 0) {
+                    const lastVisibility = visibilityKeyframes[visibilityKeyframes.length - 1];
+                    model.visible = lastVisibility.params.visible;
                 }
             });
             
             draw();
         }
-
-
         // ===========================================
         // PLAYBACK CONTROLS
         // ===========================================
@@ -4855,16 +4751,7 @@
 
         function reapplyCurrentAnimation() {
             if (!isAnimationMode) return;
-            
-            // Reset to original (which now includes the edited models)
-            if (window._originalModelsData) {
-                models.forEach((model, idx) => {
-                    if (window._originalModelsData[idx]) {
-                        model.triangles = JSON.parse(JSON.stringify(window._originalModelsData[idx].triangles));
-                    }
-                });
-            }
-            
+                        
             // Apply animation at current time
             if (selectedAnimationId) {
                 applyAnimationAtTime(currentAnimationTime);
@@ -4891,6 +4778,21 @@
             if (isAnimationMode) {
                 applyAnimationAtTime(currentAnimationTime);
                 draw();
+            }
+        }
+
+
+        function refreshTimelineAfterLoad() {
+            const anim = getSelectedAnimation();
+            if (anim) {
+                // Force ruler to update with correct duration
+                updateRuler(anim.duration);
+                // Re-render timeline
+                renderTimelineForAnimation();
+                // Make sure playhead is at correct position
+                updatePlayheadPosition();
+                // Apply animation at current time
+                applyAnimationAtTime(currentAnimationTime);
             }
         }
 
@@ -5224,22 +5126,8 @@
             // Override toggleMode to reset animation state
             const originalToggle = toggleMode;
             window.toggleMode = function() {
-                if (isAnimationMode) {
-                    // Switching FROM animation mode - save original model state
-                    if (!window._originalModelsData) {
-                        window._originalModelsData = models.map(m => ({
-                            triangles: JSON.parse(JSON.stringify(m.triangles))
-                        }));
-                    }
-                } else {
+                if (!isAnimationMode) {
                     // Switching TO animation mode - restore original if needed
-                    if (window._originalModelsData) {
-                        models.forEach((model, idx) => {
-                            if (window._originalModelsData[idx]) {
-                                model.triangles = JSON.parse(JSON.stringify(window._originalModelsData[idx].triangles));
-                            }
-                        });
-                    }
                     if (selectedAnimationId) {
                         applyAnimationAtTime(currentAnimationTime);
                     }
@@ -5288,24 +5176,7 @@
             animations = [];
             selectedAnimationId = null;
             currentAnimationTime = 0;
-            
-            // Store original model data
-            window._originalModelsData = models.map(m => ({
-                triangles: JSON.parse(JSON.stringify(m.triangles))
-            }));
-            
-            // Store original points data
-            window._originalPointsData = {};
-            models.forEach((model, modelIdx) => {
-                const points = [];
-                for (let i = 0; i < model.triangles.length; i++) {
-                    const tri = model.triangles[i];
-                    points.push({ x: tri.v1.x, y: tri.v1.y });
-                    points.push({ x: tri.v2.x, y: tri.v2.y });
-                    points.push({ x: tri.v3.x, y: tri.v3.y });
-                }
-                window._originalPointsData[modelIdx] = points;
-            });
+
             
             // Update UI to show empty state
             renderAnimationList();
@@ -5763,7 +5634,7 @@
 
 
 
-        function draw() {
+                function draw() {
             ctx.fillStyle = "#000000";
             ctx.fillRect(0, 0, 1024, 512);
 
@@ -5783,8 +5654,10 @@
             drawConnectionLine();
 
             if (isAnimationMode) {
-                // ANIMATION MODE - Show all visible models, highlight hovered model
-                models.forEach((model, idx) => {
+                // ANIMATION MODE - Use animationModels
+                const modelsToDraw = animationModels;
+                
+                modelsToDraw.forEach((model, idx) => {
                     if (!model.visible) return;
 
                     let modelVisible = true;
@@ -5792,7 +5665,6 @@
                     if (anim) {
                         anim.tracks.forEach(track => {
                             if (track.modelIndex === idx && track.keyframes.length > 0) {
-                                // Find the last visibility keyframe before current time
                                 const visKeyframes = track.keyframes.filter(kf => 
                                     kf.action === 'visibility' && kf.time <= currentAnimationTime
                                 );
@@ -5805,7 +5677,7 @@
                     
                     if (!modelVisible) return;
 
-                    // Draw triangles (always show them)
+                    // Draw triangles
                     model.triangles.forEach(function(tri) {
                         let fillColor = tri.color;
                         if (showPixelated) {
@@ -5815,9 +5687,8 @@
                         }
                     });
                     
-                    // Draw lines and points ONLY for the hovered model (like selected in model mode)
+                    // Draw lines and points ONLY for the hovered model
                     if (idx === currentHoveredModelIndex) {
-                        // Draw lines
                         if (showLines) {
                             model.triangles.forEach(function(tri) {
                                 drawLine(tri.v1, tri.v2, "#FFA500");
@@ -5826,7 +5697,6 @@
                             });
                         }
                         
-                        // Draw points
                         if (showPoints) {
                             let globalIdx = 0;
                             for (let i = 0; i < model.triangles.length; i++) {
@@ -5843,8 +5713,8 @@
                 });
                 
             } else {
-                // MODEL MODE - Normal drawing
-                let modelsToDraw = models;
+                // MODEL MODE - Use original models
+                const modelsToDraw = models;
                 
                 modelsToDraw.forEach(function(model) {
                     if (!model.visible) return;
@@ -6139,6 +6009,7 @@
             updateOverlayPanel();
             updateTotalTriangles();
         }
+      
 
 
 
@@ -6620,12 +6491,39 @@
                         groupDiv.appendChild(groupHeader);
                         groupDiv.appendChild(pointsList);
                         
+
                         groupDiv.addEventListener('click', (e) => {
-                            if (isAnimationMode) return;
                             e.stopPropagation();
                             e.preventDefault();
-
-                             // Only switch to select tool if not already on a tool that needs selection
+                            
+                            if (isAnimationMode) {
+                                const anim = getSelectedAnimation();
+                                if (anim) {
+                                    const existingTrack = anim.tracks.find(track => track.type === 'group' && track.modelIndex === index && track.groupIndex === gIdx);
+                                    
+                                    if (existingTrack) {
+                                        // Timeline exists - select it
+                                        selectedTimelineId = existingTrack.id;
+                                        renderTimelineForAnimation();
+                                        draw();
+                                    } else {
+                                        // No timeline exists - ask to create one
+                                        const groupName = models[index].pointGroups[gIdx].name;
+                                        if (confirm(`Point group "${groupName}" doesn't have an animation track. Create one?`)) {
+                                            const newTrack = createTrackFromTarget('group', index, gIdx);
+                                            if (newTrack) {
+                                                selectedTimelineId = newTrack.id;
+                                                renderTimelineForAnimation();
+                                                draw();
+                                            }
+                                        }
+                                    }
+                                }
+                                return;
+                            }
+                            
+                            // Normal model mode behavior
+                            // Only switch to select tool if not already on a tool that needs selection
                             if (currentTool !== 'select' && currentTool !== 'move') {
                                 setTool('toolSelectPoints');
                             }
@@ -6633,7 +6531,7 @@
                             // First, select the model if not already selected
                             if (selectedModelIndex !== index) {
                                 selectedModelIndex = index;
-                                selectedGroupIndex = -1; // Clear group selection when switching models
+                                selectedGroupIndex = -1;
                                 renderModelList();
                             }
                             
@@ -6643,15 +6541,11 @@
                                 selectedGroupIndex = -1;
                                 selectedVertices = [];
                                 selectionFromSelectTool = false;
-                                
-                                
                             } else {
                                 // Select this group
                                 selectedGroupIndex = gIdx;
                                 selectedVertices = [];
                                 selectionFromSelectTool = false;
-                                
-                               
                             }
                             
                             renderModelList();
@@ -6682,32 +6576,43 @@
                 item.addEventListener("click", function(e) {
                     if (e.target === visCheck || e.target.closest('.model-order-btn') || e.target.closest('.model-gear-btn') || e.target.closest('.model-collapse-header') || e.target.closest('.group-item')) return;
                     
-                    // If currently in animation mode, switch to model mode
+
                     if (isAnimationMode) {
-                        toggleMode();
-                        // Small delay to allow mode switch to complete
-                        setTimeout(() => {
-                            selectedModelIndex = index;
-                            selectedGroupIndex = -1;
-                            points = [];
-                            state = 0;
-                            selectedVertices = [];
-                            selectionFromSelectTool = false;
-                            renderModelList();
-                            updateCodeDisplay();
-                            draw();
-                        }, 10);
-                    } else {
-                        selectedModelIndex = index;
-                        selectedGroupIndex = -1;
-                        points = [];
-                        state = 0;
-                        selectedVertices = [];
-                        selectionFromSelectTool = false;
-                        renderModelList();
-                        updateCodeDisplay();
-                        draw();
+                        // Check if this model already has a timeline track
+                        const anim = getSelectedAnimation();
+                        if (anim) {
+                            const existingTrack = anim.tracks.find(track => track.type === 'model' && track.modelIndex === index);
+                            
+                            if (existingTrack) {
+                                // Timeline exists - select it
+                                selectedTimelineId = existingTrack.id;
+                                renderTimelineForAnimation();
+                                draw();
+                            } else {
+                                // No timeline exists - ask to create one
+                                if (confirm(`Model "${models[index].name}" doesn't have an animation track. Create one?`)) {
+                                    const newTrack = createTrackFromTarget('model', index, -1);
+                                    if (newTrack) {
+                                        selectedTimelineId = newTrack.id;
+                                        renderTimelineForAnimation();
+                                        draw();
+                                    }
+                                }
+                            }
+                        }
+                        return;
                     }
+                    
+                    // Normal model mode behavior
+                    selectedModelIndex = index;
+                    selectedGroupIndex = -1;
+                    points = [];
+                    state = 0;
+                    selectedVertices = [];
+                    selectionFromSelectTool = false;
+                    renderModelList();
+                    updateCodeDisplay();
+                    draw();
                 });
                 
                 listDiv.appendChild(item);
@@ -7124,19 +7029,7 @@
             draw();
         }
 
-        // ===========================================
-        // INITIALIZATION AND EVENT LISTENERS
-        // ===========================================
-        function resetModelsToOriginal() {
-            // This function should reset to the original models from model mode
-            if (!window._originalModelsData) return;
-            models.forEach((model, idx) => {
-                if (window._originalModelsData[idx]) {
-                    model.triangles = JSON.parse(JSON.stringify(window._originalModelsData[idx].triangles));
-                    model.pointGroups = JSON.parse(JSON.stringify(window._originalModelsData[idx].pointGroups || []));
-                }
-            });
-        }
+
         // Event Listeners
         document.getElementById('colorPicker').addEventListener('input', function(e) {
             currentColor = e.target.value;
@@ -7146,7 +7039,6 @@
             let modelsToSave;
             
             if (isAnimationMode && savedPointsData) {
-                resetModelsToOriginal();
                 modelsToSave = models;
             } else {
                 modelsToSave = models;
@@ -7341,7 +7233,7 @@
                                 });
                                 expandedGroups[0] = false;
                             }
-                            
+                                                        
                             // Reset selected model index
                             selectedModelIndex = 0;
                             selectedGroupIndex = -1;
@@ -7501,31 +7393,15 @@
                                 currentAnimationTime = 0;
                             }
                             
-                            // Store original model data for animation reset
-                            window._originalModelsData = models.map(m => ({
-                                triangles: JSON.parse(JSON.stringify(m.triangles)),
-                                pointGroups: JSON.parse(JSON.stringify(m.pointGroups || []))
-                            }));
-                            
-                            window._originalPointsData = {};
-                            models.forEach((model, modelIdx) => {
-                                const points = [];
-                                for (let i = 0; i < model.triangles.length; i++) {
-                                    const tri = model.triangles[i];
-                                    points.push({ x: tri.v1.x, y: tri.v1.y });
-                                    points.push({ x: tri.v2.x, y: tri.v2.y });
-                                    points.push({ x: tri.v3.x, y: tri.v3.y });
-                                }
-                                window._originalPointsData[modelIdx] = points;
-                            });
-                            
                             // Update UI
                             renderModelList();
                             renderAnimationList();
                             renderTimelineForAnimation();
                             updateCodeDisplay();
                             updateTotalTriangles();
+                            refreshTimelineAfterLoad();
                             
+                                
                             if (isAnimationMode && selectedAnimationId) {
                                 applyAnimationAtTime(0);
                             }
@@ -7543,7 +7419,6 @@
             };
             input.click();
         });
-
         document.getElementById('addModelBtn').addEventListener('click', function() {
             if (!isAnimationMode) {
                 showNameDialog();
@@ -8722,7 +8597,7 @@
                     draggingVertex = null;
                     multiDragStart = null;
                     updateCodeDisplay();
-                    updateOriginalModelData();
+
                     draw();
                 }
                 if (multiDragging) {
@@ -8781,7 +8656,7 @@
                     updateCodeDisplay();
                     renderModelList();
                     draw();
-                    updateOriginalModelData(); 
+
                 }
             } else if (!isAnimationMode && currentTool === 'paint') {
                 let hit = findTriangleUnderMouse(mouseX, mouseY);
@@ -8805,7 +8680,7 @@
                     models[selectedModelIndex].triangles.splice(hit.triIndex, 1);
                     updateCodeDisplay();
                     renderModelList();
-                    updateOriginalModelData();
+
                     hoverTriangleIndex = -1;
                     if (oscillationTimer) {
                         clearInterval(oscillationTimer);
@@ -9014,16 +8889,7 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
 
         function refreshAnimationAtCurrentTime() {
             if (!isAnimationMode) return;
-            
-            // Reset to original
-            if (window._originalModelsData) {
-                models.forEach((model, idx) => {
-                    if (window._originalModelsData[idx]) {
-                        model.triangles = JSON.parse(JSON.stringify(window._originalModelsData[idx].triangles));
-                    }
-                });
-            }
-            
+                        
             // Apply animation at current time
             if (selectedAnimationId) {
                 applyAnimationAtTime(currentAnimationTime);
@@ -9033,35 +8899,7 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
         }
 
 
-        function updateOriginalModelData() {
-            // This should only update when explicitly needed, not automatically
-            // For now, keep it but don't auto-call it everywhere
-            if (isAnimationMode) {
-                // Only update if we want to change the base state while in animation mode
-                window._originalModelsData = models.map(m => ({
-                    triangles: JSON.parse(JSON.stringify(m.triangles)),
-                    pointGroups: JSON.parse(JSON.stringify(m.pointGroups || []))
-                }));
-                
-                window._originalPointsData = {};
-                models.forEach((model, modelIdx) => {
-                    const points = [];
-                    for (let i = 0; i < model.triangles.length; i++) {
-                        const tri = model.triangles[i];
-                        points.push({ x: tri.v1.x, y: tri.v1.y });
-                        points.push({ x: tri.v2.x, y: tri.v2.y });
-                        points.push({ x: tri.v3.x, y: tri.v3.y });
-                    }
-                    window._originalPointsData[modelIdx] = points;
-                });
-                
-                savedPointsData = models.map(model => ({
-                    triangles: JSON.parse(JSON.stringify(model.triangles)),
-                    pointGroups: JSON.parse(JSON.stringify(model.pointGroups || []))
-                }));
-            }
-        }
-
+        
         function highlightKeyframe(trackId, keyframeIndex) {
             // Remove existing highlight
             clearKeyframeHighlight();
@@ -9605,9 +9443,9 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
             const track = anim.tracks.find(t => t.id === selectedTimelineId);
             if (!track) return;
             
-            // Get current playhead time (snapped to snapInterval)
+            // Get current playhead time (DO NOT CHANGE currentAnimationTime)
             let time = currentAnimationTime;
-            //time = snapTime(time);
+            time = snapTime(time);
             
             // Check if a keyframe with same action already exists at this time
             const existing = track.keyframes.find(kf => 
@@ -9643,7 +9481,14 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
             track.keyframes.push(keyframeData);
             track.keyframes.sort((a, b) => a.time - b.time);
             
+            // Store current time before render
+            const savedTime = currentAnimationTime;
+            
             renderTimelineForAnimation();
+            
+            // Restore time after render
+            currentAnimationTime = savedTime;
+            updatePlayheadPosition();
             applyAnimationAtTime(currentAnimationTime);
             draw();
             
@@ -9657,9 +9502,6 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
                 }
             }, 50);
         }
-
-
-
 
 
 
