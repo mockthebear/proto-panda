@@ -3035,11 +3035,11 @@
             // Restore models
             models = JSON.parse(JSON.stringify(previousState.models));
             
-            // Restore animations
-            animations = JSON.parse(JSON.stringify(previousState.models));
+            // Restore animations - FIX THIS LINE
+            animations = JSON.parse(JSON.stringify(previousState.animations));
             selectedAnimationId = previousState.selectedAnimationId;
             currentAnimationTime = previousState.currentAnimationTime;
-                        
+            
             // Reset UI state
             points = [];
             state = 0;
@@ -3073,8 +3073,7 @@
             }
             
             draw();
-        }
-
+        }    
         function redo() {
             if (redoStack.length === 0) return;
             
@@ -3092,12 +3091,11 @@
             // Restore models
             models = JSON.parse(JSON.stringify(nextState.models));
             
-            // Restore animations
-            animations = JSON.parse(JSON.stringify(nextState.models));
+            // Restore animations - FIX THIS LINE
+            animations = JSON.parse(JSON.stringify(nextState.animations));
             selectedAnimationId = nextState.selectedAnimationId;
             currentAnimationTime = nextState.currentAnimationTime;
             
-
             // Reset UI state
             points = [];
             state = 0;
@@ -3132,7 +3130,6 @@
             
             draw();
         }
-        
         // ===========================================
         // MODE TOGGLE FUNCTIONS
         // ===========================================
@@ -3743,7 +3740,7 @@
                     // Check if we're in paste mode
                     if (copyModeActive && copiedKeyframe) {
                         e.preventDefault();
-                        
+                        saveUndoState();
                         // Create a copy of the keyframe with new time
                         const newKeyframe = JSON.parse(JSON.stringify(copiedKeyframe));
                         newKeyframe.time = time;
@@ -3919,7 +3916,7 @@
 
                 canvas.ondrop = (e) => {
                     e.preventDefault();
-                    
+                    saveUndoState();
                     const dragBall = document.getElementById('dragFeedbackBall');
                     if (dragBall) dragBall.remove();
                     const timeTooltip = document.getElementById('dragTimeTooltip');
@@ -4014,6 +4011,8 @@
                     const track = anim?.tracks.find(t => t.id === trackId);
                     if (!track || !track.keyframes[kfIdx]) return;
                     
+                    saveUndoState();
+
                     // If editor is open for a different keyframe, switch to this one
                     if (currentEditingKeyframe && 
                         (currentEditingKeyframe.track.id !== track.id || 
@@ -4155,7 +4154,6 @@
 
         function onTimelineDragEnd() {
             if (timelineDragState.active) {
-                saveUndoState();
                 if (timelineDragState.marker) {
                     timelineDragState.marker.style.cursor = 'grab';
                     timelineDragState.marker.style.transform = '';
@@ -5207,6 +5205,7 @@ function applyAnimationAtTime(time) {
                 const delBtn = item.querySelector('.anim-delete-btn');
                 delBtn.onclick = (e) => {
                     e.stopPropagation();
+                    saveUndoState();
                     deleteAnimation(anim.id);
                 };
                 listDiv.appendChild(item);
@@ -9675,6 +9674,8 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
             
             const track = anim.tracks.find(t => t.id === selectedTimelineId);
             if (!track) return;
+
+            saveUndoState();
     
             let time = currentAnimationTime;
          
