@@ -581,7 +581,7 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("getInternalButtonStatus", getInternalButtonStatus); 
   //Panels
   #ifdef ENABLE_HUB75_PANEL
-  m_lua->FuncRegister("flipPanelBuffer", FlipScreen);
+  m_lua->FuncRegisterFromObjectOpt("flipPanelBuffer", &g_animation, &Animation::MakeFlip);
   m_lua->FuncRegister("drawPanelRect", DrawRect);
   m_lua->FuncRegister("drawPanelFillRect", DrawFillRect);
   m_lua->FuncRegister("drawPanelPixel", DrawPixel);
@@ -590,23 +590,34 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("drawPanelLine", DrawLine);
   m_lua->FuncRegister("drawPanelCircle", DrawCircle);
   m_lua->FuncRegister("drawPanelFillCircle", DrawFillCircle);
+  m_lua->FuncRegister("drawPanelFillTriangle", DrawFillTriangle);
   m_lua->FuncRegister("clearPanelBuffer", ClearScreen);
   m_lua->FuncRegister("drawPanelFace", DrawFace);
-  m_lua->FuncRegisterOptional("setPanelAnimation", setAnimation, -1, false, -1, 250);
-  m_lua->FuncRegister("popPanelAnimation", popPanelAnimation); 
-  m_lua->FuncRegister("setPanelColorMode", setColorMode); 
+
+  m_lua->FuncRegisterFromObjectOpt("setPanelAnimation", &g_animation, &Animation::SetAnimation, -1, false, -1, 250);
+  m_lua->FuncRegisterFromObjectOpt("setModelAnimation", &g_animation, &Animation::SetModelAnimation, false);
+  m_lua->FuncRegisterFromObjectOpt("loadModel", &g_animation, &Animation::LoadModel);
+
+  m_lua->FuncRegisterFromObjectOpt("popPanelAnimation", &g_animation, &Animation::PopAnimation);
+  m_lua->FuncRegisterFromObjectOpt("setInterruptFrames", &g_animation, &Animation::SetInterruptAnimation);
+  m_lua->FuncRegisterFromObjectOpt("setIntersetInterruptAnimationPinruptFrames", &g_animation, &Animation::SetInterruptPin);
+    
+  m_lua->FuncRegisterFromObjectOpt("setRainbowShader", &g_animation, &Animation::setRainbowShader, true); 
+  m_lua->FuncRegisterFromObjectOpt("getAnimationStackSize", &g_animation, &Animation::getAnimationStackSize);   
+  m_lua->FuncRegisterFromObjectOpt("setPanelColorMode", &g_animation, &Animation::setColorMode);   
+
+  m_lua->FuncRegisterFromObjectOpt("setPanelManaged", &g_animation, &Animation::setManaged);   
+  m_lua->FuncRegisterFromObjectOpt("isPanelManaged", &g_animation, &Animation::isManaged);   
+  m_lua->FuncRegisterFromObjectOpt("getCurrentAnimationStorage", &g_animation, &Animation::getCurrentAnimationStorage);   
+  m_lua->FuncRegisterFromObjectOpt("getPanelCurrentFace", &g_animation, &Animation::getCurrentFace);   
+
   m_lua->FuncRegisterOptional("gentlySetPanelBrightness", gentlySetPanelBrightness, 0, 4);
-  m_lua->FuncRegister("setPanelManaged", setManaged);
-  m_lua->FuncRegister("isPanelManaged", isManaged);
-  m_lua->FuncRegister("getCurrentAnimationStorage", getCurrentAnimationStorage);
-  m_lua->FuncRegister("getPanelCurrentFace", getCurrentFace);
+
+
   m_lua->FuncRegister("drawPanelCurrentFrame", DrawCurrentFrame);
   m_lua->FuncRegister("setPanelBrightness", setPanelBrightness);
   m_lua->FuncRegister("getPanelBrightness", getPanelBrightness);
-  m_lua->FuncRegister("setInterruptFrames", setInterruptFrames);  
-  m_lua->FuncRegister("setInterruptAnimationPin", setInterruptAnimationPin); 
-  m_lua->FuncRegisterFromObjectOpt("setRainbowShader", &g_animation, &Animation::setRainbowShader, true); 
-  m_lua->FuncRegisterFromObjectOpt("getAnimationStackSize", &g_animation, &Animation::getAnimationStackSize); 
+
   m_lua->FuncRegister("color565", color565);
   m_lua->FuncRegister("color444", color444);
   m_lua->FuncRegister("getFrameOffsetByName", GetOffsetByName);
@@ -894,6 +905,23 @@ bool LuaInterface::Start()
   ClassRegister<BleCharacteristicsHandler>::RegisterClassMethod(_state,"BleCharacteristicsHandler","SetRequired",&BleCharacteristicsHandler::SetRequired);
 
   m_lua->FuncRegister("getCharacteristicsFromService", BleServiceHandler::GetCharacteristicsFromService);
+
+  ClassRegister<Model>::RegisterClassType(_state,"Model",[](lua_State* L){ luaL_error(L, "Cannot create a empty object of this class"); return nullptr;}, &EmptyGC);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","Recalculate",&Model::Recalculate);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","Reset",&Model::Reset);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","GetId",&Model::GetId);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","CopyToRaster",&Model::CopyToRaster);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","AddPointGroup",&Model::AddPointGroup);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","SetTriangle",&Model::SetTriangleF);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","GetTriangle",&Model::GetTriangle);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","SetBatchOperations",&Model::SetBatchOperations);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","SetAccumulativeOperations",&Model::SetAccumulativeOperations);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","SetPointsPosition",&Model::SetPointsPosition);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","ScalePoints",&Model::ScalePoints);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","TranslatePoints",&Model::TranslatePoints);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","Scale",&Model::Scale);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","Rotate",&Model::Rotate);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","Translate",&Model::Translate);
   
   lastError = "";
 
