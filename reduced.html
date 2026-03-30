@@ -2285,7 +2285,43 @@
 }
 
 
+.repeat-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
+.repeat-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #aaa;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.repeat-checkbox input {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: #ff9900;
+}
+
+.repeat-select {
+    background: #3c3c3c;
+    border: 1px solid #555;
+    color: #fff;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: monospace;
+    cursor: pointer;
+}
+
+.repeat-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 
 
 
@@ -2556,20 +2592,28 @@
             <div class="timeline-container" id="timelineContainer">
                 <!-- Top bar with transport controls and tools -->
                 <div class="timeline-header">
-                    <div class="timeline-controls">
-                        <button class="timeline-btn" id="timelinePlayBtn">▶</button>
-                        <button class="timeline-btn" id="timelinePauseBtn">⏸</button>
-                        <button class="timeline-btn" id="timelineStopBtn">⏹</button>
-                        <label style="color:#aaa; font-size: 11px;">Duration:</label>
-                        <input type="number" id="timelineDuration" value="3000" min="500" max="30000" step="100" style="width:65px; background:#3c3c3c; border:1px solid #555; color:#fff; border-radius:3px; padding:3px; font-size:11px;">
-                        <span style="color:#aaa; font-size: 11px;">ms</span>
-                    </div>
-                    
-                    <!-- Compact tools on the right -->
-                    <div class="timeline-tools-compact">
-                        
+                <div class="timeline-controls">
+                    <button class="timeline-btn" id="timelinePlayBtn">▶</button>
+                    <button class="timeline-btn" id="timelinePauseBtn">⏸</button>
+                    <button class="timeline-btn" id="timelineStopBtn">⏹</button>
+                    <label style="color:#aaa; font-size: 11px;">Duration:</label>
+                    <input type="number" id="timelineDuration" value="3000" min="500" max="30000" step="100" style="width:65px; background:#3c3c3c; border:1px solid #555; color:#fff; border-radius:3px; padding:3px; font-size:11px;">
+                    <span style="color:#aaa; font-size: 11px;">ms</span>
+                    <div class="repeat-controls">
+                        <label class="repeat-checkbox">
+                            <input type="checkbox" id="repeatToggle"> 🔁 LOOP
+                        </label>
+                        <select id="repeatBehavior" class="repeat-select" disabled>
+                            <option value="reset">Reset</option>
+                            <option value="accumulate">Accumulate</option>
+                        </select>
                     </div>
                 </div>
+                
+                <div class="timeline-tools-compact">
+                    
+                </div>
+            </div>
                 
                 <!-- Ruler with spacer for model names -->
                 <div class="ruler-wrapper" style="display: flex; align-items: stretch; width: 100%;">
@@ -2841,6 +2885,7 @@
         var animationModels = [];
         var selectedModelIndex = 0;
         var expandedGroups = {}; 
+        var accumulatedBaseModels = null;
 
         models.push({
             name: "Model 0",
@@ -3005,6 +3050,7 @@
         // ===========================================
 
         function saveUndoState() {
+            accumulatedBaseModels = null;
             let stateCopy = {
                 models: JSON.parse(JSON.stringify(models)),
                 animations: JSON.parse(JSON.stringify(animations)),
@@ -3159,6 +3205,7 @@
                 if (timeline) timeline.style.display = 'flex';
                 
                 // COPY models to animationModels
+                console.log("RESETTTEDEDED111");
                 animationModels = JSON.parse(JSON.stringify(models));
                 
                 selectedVertices = [];
@@ -3196,6 +3243,7 @@
                 selectedGroupIndex = -1;
                 points = [];
                 state = 0;
+                accumulatedBaseModels = null;
                 
                 renderModelList();
                 updateCodeDisplay();
@@ -3314,7 +3362,9 @@
                 id: Date.now() + '_' + Math.random().toString(36).substr(2, 6),
                 name: name || "Animation " + (animations.length + 1),
                 duration: 3000,
-                tracks: []
+                tracks: [],
+                repeatEnabled: false,
+                repeatBehavior: 'reset',
             };
             animations.push(newAnim);
             selectedAnimationId = newAnim.id;
@@ -3332,6 +3382,7 @@
             
             return newAnim;
         }
+     
         function deleteAnimation(animId) {
             saveUndoState();
             const index = animations.findIndex(a => a.id === animId);
@@ -4335,437 +4386,489 @@
         // ANIMATION APPLICATION
         // ===========================================
 
-function applyAnimationAtTime(time) {
-    const anim = getSelectedAnimation();
-    
-    // Start from fresh copy of models
-    animationModels = JSON.parse(JSON.stringify(models));
-    
-    if (!anim || anim.tracks.length === 0) {
-        draw();
-        return;
-    }
-    
-    const fixedCenter = { x: 32, y: 16 };
-    
-    // FIRST: Apply ALL model transforms to ALL points
-    // Group model tracks by modelIndex
-    const modelTracksByModel = new Map();
-    
-    anim.tracks.forEach(track => {
-        if (track.type === 'model') {
-            if (!modelTracksByModel.has(track.modelIndex)) {
-                modelTracksByModel.set(track.modelIndex, []);
-            }
-            modelTracksByModel.get(track.modelIndex).push(track);
-        }
-    });
-    
-    // Helper function to get interpolated value for a track
-    function getInterpolatedValue(keyframes, currentTime, actionType) {
-        const typeKeyframes = keyframes.filter(kf => kf.action === actionType);
-        if (typeKeyframes.length === 0) return null;
-        
-        let prevKf = null;
-        let nextKf = null;
-        
-        for (let i = 0; i < typeKeyframes.length; i++) {
-            if (typeKeyframes[i].time <= currentTime) {
-                prevKf = typeKeyframes[i];
-            }
-            if (typeKeyframes[i].time > currentTime && !nextKf) {
-                nextKf = typeKeyframes[i];
-                break;
-            }
-        }
-        
-        // Before first keyframe - interpolate from original
-        if (!prevKf && typeKeyframes.length > 0) {
-            const firstKf = typeKeyframes[0];
-            if (currentTime === 0) {
-                if (actionType === 'translate') return { x: 0, y: 0 };
-                if (actionType === 'rotate') return { angle: 0, useModelCenter: false, centerX: 32, centerY: 16 };
-                if (actionType === 'scale') return { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
-            }
-            const t = Math.min(1, Math.max(0, currentTime / firstKf.time));
-            if (actionType === 'translate') {
-                return { x: firstKf.params.x * t, y: firstKf.params.y * t };
-            } else if (actionType === 'rotate') {
-                return {
-                    angle: firstKf.params.angle * t,
-                    useModelCenter: firstKf.params.useModelCenter || false,
-                    centerX: firstKf.params.centerX !== undefined ? firstKf.params.centerX : 32,
-                    centerY: firstKf.params.centerY !== undefined ? firstKf.params.centerY : 16
-                };
-            } else if (actionType === 'scale') {
-                return {
-                    scaleX: 1 + (firstKf.params.scaleX - 1) * t,
-                    scaleY: 1 + (firstKf.params.scaleY - 1) * t,
-                    useModelCenter: firstKf.params.useModelCenter || false,
-                    centerX: firstKf.params.centerX !== undefined ? firstKf.params.centerX : 32,
-                    centerY: firstKf.params.centerY !== undefined ? firstKf.params.centerY : 16
-                };
-            }
-            return null;
-        }
-        
-        if (!prevKf) return null;
-        
-        if (Math.abs(prevKf.time - currentTime) < 0.1 && prevKf.instant === true) {
-            return prevKf.params;
-        }
-        
-        if (!nextKf) return prevKf.params;
-        
-        if (nextKf.instant === true) {
-            return prevKf.params;
-        }
-        
-        const timeDiff = nextKf.time - prevKf.time;
-        const elapsed = currentTime - prevKf.time;
-        const t = timeDiff > 0 ? Math.min(1, Math.max(0, elapsed / timeDiff)) : 1;
-        
-        if (actionType === 'translate') {
-            return {
-                x: prevKf.params.x + (nextKf.params.x - prevKf.params.x) * t,
-                y: prevKf.params.y + (nextKf.params.y - prevKf.params.y) * t
-            };
-        } else if (actionType === 'rotate') {
-            let angleDiff = nextKf.params.angle - prevKf.params.angle;
-            while (angleDiff > 180) angleDiff -= 360;
-            while (angleDiff < -180) angleDiff += 360;
-            return {
-                angle: prevKf.params.angle + angleDiff * t,
-                useModelCenter: nextKf.params.useModelCenter || prevKf.params.useModelCenter,
-                centerX: nextKf.params.centerX !== undefined ? nextKf.params.centerX : prevKf.params.centerX,
-                centerY: nextKf.params.centerY !== undefined ? nextKf.params.centerY : prevKf.params.centerY
-            };
-        } else if (actionType === 'scale') {
-            return {
-                scaleX: prevKf.params.scaleX + (nextKf.params.scaleX - prevKf.params.scaleX) * t,
-                scaleY: prevKf.params.scaleY + (nextKf.params.scaleY - prevKf.params.scaleY) * t,
-                useModelCenter: nextKf.params.useModelCenter || prevKf.params.useModelCenter,
-                centerX: nextKf.params.centerX !== undefined ? nextKf.params.centerX : prevKf.params.centerX,
-                centerY: nextKf.params.centerY !== undefined ? nextKf.params.centerY : prevKf.params.centerY
-            };
-        }
-        return null;
-    }
-    
-    // Apply model transforms to each model
-    for (const [modelIndex, tracks] of modelTracksByModel) {
-        const model = animationModels[modelIndex];
-        if (!model) continue;
-        
-        // Get original points
-        const originalModel = models[modelIndex];
-        const originalPoints = [];
-        for (let i = 0; i < originalModel.triangles.length; i++) {
-            const tri = originalModel.triangles[i];
-            originalPoints.push({ x: tri.v1.x, y: tri.v1.y });
-            originalPoints.push({ x: tri.v2.x, y: tri.v2.y });
-            originalPoints.push({ x: tri.v3.x, y: tri.v3.y });
-        }
-        
-        // Get all points in the model
-        let targetPoints = [];
-        let globalIdx = 0;
-        for (let i = 0; i < model.triangles.length; i++) {
-            const tri = model.triangles[i];
-            targetPoints.push({ point: tri.v1, originalPoint: originalPoints[globalIdx++] });
-            targetPoints.push({ point: tri.v2, originalPoint: originalPoints[globalIdx++] });
-            targetPoints.push({ point: tri.v3, originalPoint: originalPoints[globalIdx++] });
-        }
-        
-        // Combine all model tracks for this model
-        let totalTranslate = { x: 0, y: 0 };
-        let totalRotate = { angle: 0, useModelCenter: false, centerX: 32, centerY: 16 };
-        let totalScale = { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
-        let needsReset = false;
-        
-        tracks.forEach(track => {
-            const resetKfs = track.keyframes.filter(kf => kf.action === 'reset' && kf.time <= time);
-            if (resetKfs.length > 0) needsReset = true;
+        function applyAnimationAtTime(time) {
+            const anim = getSelectedAnimation();
             
-            const translateVal = getInterpolatedValue(track.keyframes, time, 'translate');
-            const rotateVal = getInterpolatedValue(track.keyframes, time, 'rotate');
-            const scaleVal = getInterpolatedValue(track.keyframes, time, 'scale');
+            // Start from fresh copy of models
+            // Check if we have accumulated models and should use them
+            if (accumulatedBaseModels && anim && anim.repeatEnabled && anim.repeatBehavior === 'accumulate') {
+                // Use accumulated models as the base for this loop
+                animationModels = JSON.parse(JSON.stringify(accumulatedBaseModels));
+            } else {
+                // Start from fresh copy of original models
+                animationModels = JSON.parse(JSON.stringify(models));
+            }
             
-            if (translateVal) {
-                totalTranslate.x += translateVal.x;
-                totalTranslate.y += translateVal.y;
-            }
-            if (rotateVal) {
-                totalRotate.angle += rotateVal.angle;
-                if (rotateVal.useModelCenter) totalRotate.useModelCenter = true;
-                if (rotateVal.centerX !== undefined) totalRotate.centerX = rotateVal.centerX;
-                if (rotateVal.centerY !== undefined) totalRotate.centerY = rotateVal.centerY;
-            }
-            if (scaleVal) {
-                totalScale.scaleX *= scaleVal.scaleX;
-                totalScale.scaleY *= scaleVal.scaleY;
-                if (scaleVal.useModelCenter) totalScale.useModelCenter = true;
-                if (scaleVal.centerX !== undefined) totalScale.centerX = scaleVal.centerX;
-                if (scaleVal.centerY !== undefined) totalScale.centerY = scaleVal.centerY;
-            }
-        });
-        
-        // Calculate dynamic center if needed
-        let currentCenter = { x: 32, y: 16 };
-        const useDynamicCenter = totalRotate.useModelCenter || totalScale.useModelCenter;
-        
-        if (useDynamicCenter) {
-            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-            targetPoints.forEach(tp => {
-                minX = Math.min(minX, tp.point.x);
-                maxX = Math.max(maxX, tp.point.x);
-                minY = Math.min(minY, tp.point.y);
-                maxY = Math.max(maxY, tp.point.y);
-            });
-            currentCenter = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
-        }
-        
-        // Apply transforms to all points in the model
-        targetPoints.forEach(tp => {
-            let x = tp.originalPoint.x;
-            let y = tp.originalPoint.y;
-            
-            if (needsReset) {
-                tp.point.x = x;
-                tp.point.y = y;
+            if (!anim || anim.tracks.length === 0) {
+                draw();
                 return;
             }
+                    
+            const fixedCenter = { x: 32, y: 16 };
             
-            // Apply scale
-            if (totalScale.scaleX !== 1 || totalScale.scaleY !== 1) {
-                let centerToUse;
-                if (totalScale.useModelCenter && useDynamicCenter) {
-                    centerToUse = currentCenter;
-                } else if (totalScale.centerX !== undefined && totalScale.centerY !== undefined) {
-                    centerToUse = { x: totalScale.centerX, y: totalScale.centerY };
-                } else {
-                    centerToUse = fixedCenter;
+            // FIRST: Apply ALL model transforms to ALL points
+            // Group model tracks by modelIndex
+            const modelTracksByModel = new Map();
+            
+            anim.tracks.forEach(track => {
+                if (track.type === 'model') {
+                    if (!modelTracksByModel.has(track.modelIndex)) {
+                        modelTracksByModel.set(track.modelIndex, []);
+                    }
+                    modelTracksByModel.get(track.modelIndex).push(track);
                 }
-                x = centerToUse.x + (x - centerToUse.x) * totalScale.scaleX;
-                y = centerToUse.y + (y - centerToUse.y) * totalScale.scaleY;
-            }
-            
-            // Apply rotate
-            if (totalRotate.angle !== 0) {
-                const rad = totalRotate.angle * Math.PI / 180;
-                let centerToUse;
-                if (totalRotate.useModelCenter && useDynamicCenter) {
-                    centerToUse = currentCenter;
-                } else if (totalRotate.centerX !== undefined && totalRotate.centerY !== undefined) {
-                    centerToUse = { x: totalRotate.centerX, y: totalRotate.centerY };
-                } else {
-                    centerToUse = fixedCenter;
-                }
-                const dx = x - centerToUse.x;
-                const dy = y - centerToUse.y;
-                x = centerToUse.x + dx * Math.cos(rad) - dy * Math.sin(rad);
-                y = centerToUse.y + dx * Math.sin(rad) + dy * Math.cos(rad);
-            }
-            
-            // Apply translate
-            x += totalTranslate.x;
-            y += totalTranslate.y;
-            
-            tp.point.x = x;
-            tp.point.y = y;
-        });
-        
-        // Apply visibility
-        let visible = true;
-        tracks.forEach(track => {
-            const visKeyframes = track.keyframes.filter(kf => kf.action === 'visibility' && kf.time <= time);
-            if (visKeyframes.length > 0) {
-                visible = visKeyframes[visKeyframes.length - 1].params.visible;
-            }
-        });
-        model.visible = visible;
-    }
-    
-    // SECOND: Apply point group transforms (using the already transformed points)
-    const groupTracksByTarget = new Map();
-    
-    anim.tracks.forEach(track => {
-        if (track.type === 'group') {
-            const key = `${track.modelIndex}_${track.groupIndex}`;
-            if (!groupTracksByTarget.has(key)) {
-                groupTracksByTarget.set(key, []);
-            }
-            groupTracksByTarget.get(key).push(track);
-        }
-    });
-    
-    // Apply point group transforms
-    for (const [key, tracks] of groupTracksByTarget) {
-        const [modelIndex, groupIndex] = key.split('_').map(Number);
-        const model = animationModels[modelIndex];
-        if (!model) continue;
-        
-        // Get the points in this group (using CURRENT positions after model transforms)
-        const group = models[modelIndex].pointGroups?.[groupIndex];
-        if (!group) continue;
-        const groupIndices = new Set(group.pointIndices);
-        
-        let targetPoints = [];
-        let globalIdx = 0;
-        for (let i = 0; i < model.triangles.length; i++) {
-            const tri = model.triangles[i];
-            for (let v = 0; v < 3; v++) {
-                const point = v === 0 ? tri.v1 : (v === 1 ? tri.v2 : tri.v3);
-                if (groupIndices.has(globalIdx)) {
-                    // Store the CURRENT position (after model transforms) as the starting point
-                    targetPoints.push({ point, originalPoint: { x: point.x, y: point.y } });
-                }
-                globalIdx++;
-            }
-        }
-        
-        if (targetPoints.length === 0) continue;
-        
-        // Combine all group tracks for this group
-        let totalTranslate = { x: 0, y: 0 };
-        let totalRotate = { angle: 0, useModelCenter: false, centerX: 32, centerY: 16 };
-        let totalScale = { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
-        let needsReset = false;
-        
-        tracks.forEach(track => {
-            const resetKfs = track.keyframes.filter(kf => kf.action === 'reset' && kf.time <= time);
-            if (resetKfs.length > 0) needsReset = true;
-            
-            const translateVal = getInterpolatedValue(track.keyframes, time, 'translate');
-            const rotateVal = getInterpolatedValue(track.keyframes, time, 'rotate');
-            const scaleVal = getInterpolatedValue(track.keyframes, time, 'scale');
-            
-            if (translateVal) {
-                totalTranslate.x += translateVal.x;
-                totalTranslate.y += translateVal.y;
-            }
-            if (rotateVal) {
-                totalRotate.angle += rotateVal.angle;
-                if (rotateVal.useModelCenter) totalRotate.useModelCenter = true;
-                if (rotateVal.centerX !== undefined) totalRotate.centerX = rotateVal.centerX;
-                if (rotateVal.centerY !== undefined) totalRotate.centerY = rotateVal.centerY;
-            }
-            if (scaleVal) {
-                totalScale.scaleX *= scaleVal.scaleX;
-                totalScale.scaleY *= scaleVal.scaleY;
-                if (scaleVal.useModelCenter) totalScale.useModelCenter = true;
-                if (scaleVal.centerX !== undefined) totalScale.centerX = scaleVal.centerX;
-                if (scaleVal.centerY !== undefined) totalScale.centerY = scaleVal.centerY;
-            }
-        });
-        
-        // Calculate dynamic center for the group
-        let currentCenter = { x: 32, y: 16 };
-        const useDynamicCenter = totalRotate.useModelCenter || totalScale.useModelCenter;
-        
-        if (useDynamicCenter) {
-            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-            targetPoints.forEach(tp => {
-                minX = Math.min(minX, tp.originalPoint.x);
-                maxX = Math.max(maxX, tp.originalPoint.x);
-                minY = Math.min(minY, tp.originalPoint.y);
-                maxY = Math.max(maxY, tp.originalPoint.y);
             });
-            currentCenter = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+            
+            // Helper function to get interpolated value for a track
+            function getInterpolatedValue(keyframes, currentTime, actionType) {
+                const typeKeyframes = keyframes.filter(kf => kf.action === actionType);
+                if (typeKeyframes.length === 0) return null;
+                
+                let prevKf = null;
+                let nextKf = null;
+                
+                for (let i = 0; i < typeKeyframes.length; i++) {
+                    if (typeKeyframes[i].time <= currentTime) {
+                        prevKf = typeKeyframes[i];
+                    }
+                    if (typeKeyframes[i].time > currentTime && !nextKf) {
+                        nextKf = typeKeyframes[i];
+                        break;
+                    }
+                }
+                
+                // Before first keyframe - interpolate from original
+                if (!prevKf && typeKeyframes.length > 0) {
+                    const firstKf = typeKeyframes[0];
+                    if (currentTime === 0) {
+                        if (actionType === 'translate') return { x: 0, y: 0 };
+                        if (actionType === 'rotate') return { angle: 0, useModelCenter: false, centerX: 32, centerY: 16 };
+                        if (actionType === 'scale') return { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
+                    }
+                    const t = Math.min(1, Math.max(0, currentTime / firstKf.time));
+                    if (actionType === 'translate') {
+                        return { x: firstKf.params.x * t, y: firstKf.params.y * t };
+                    } else if (actionType === 'rotate') {
+                        return {
+                            angle: firstKf.params.angle * t,
+                            useModelCenter: firstKf.params.useModelCenter || false,
+                            centerX: firstKf.params.centerX !== undefined ? firstKf.params.centerX : 32,
+                            centerY: firstKf.params.centerY !== undefined ? firstKf.params.centerY : 16
+                        };
+                    } else if (actionType === 'scale') {
+                        return {
+                            scaleX: 1 + (firstKf.params.scaleX - 1) * t,
+                            scaleY: 1 + (firstKf.params.scaleY - 1) * t,
+                            useModelCenter: firstKf.params.useModelCenter || false,
+                            centerX: firstKf.params.centerX !== undefined ? firstKf.params.centerX : 32,
+                            centerY: firstKf.params.centerY !== undefined ? firstKf.params.centerY : 16
+                        };
+                    }
+                    return null;
+                }
+                
+                if (!prevKf) return null;
+                
+                if (Math.abs(prevKf.time - currentTime) < 0.1 && prevKf.instant === true) {
+                    return prevKf.params;
+                }
+                
+                if (!nextKf) return prevKf.params;
+                
+                if (nextKf.instant === true) {
+                    return prevKf.params;
+                }
+                
+                const timeDiff = nextKf.time - prevKf.time;
+                const elapsed = currentTime - prevKf.time;
+                const t = timeDiff > 0 ? Math.min(1, Math.max(0, elapsed / timeDiff)) : 1;
+                
+                if (actionType === 'translate') {
+                    return {
+                        x: prevKf.params.x + (nextKf.params.x - prevKf.params.x) * t,
+                        y: prevKf.params.y + (nextKf.params.y - prevKf.params.y) * t
+                    };
+                } else if (actionType === 'rotate') {
+                    let angleDiff = nextKf.params.angle - prevKf.params.angle;
+                    while (angleDiff > 180) angleDiff -= 360;
+                    while (angleDiff < -180) angleDiff += 360;
+                    return {
+                        angle: prevKf.params.angle + angleDiff * t,
+                        useModelCenter: nextKf.params.useModelCenter || prevKf.params.useModelCenter,
+                        centerX: nextKf.params.centerX !== undefined ? nextKf.params.centerX : prevKf.params.centerX,
+                        centerY: nextKf.params.centerY !== undefined ? nextKf.params.centerY : prevKf.params.centerY
+                    };
+                } else if (actionType === 'scale') {
+                    return {
+                        scaleX: prevKf.params.scaleX + (nextKf.params.scaleX - prevKf.params.scaleX) * t,
+                        scaleY: prevKf.params.scaleY + (nextKf.params.scaleY - prevKf.params.scaleY) * t,
+                        useModelCenter: nextKf.params.useModelCenter || prevKf.params.useModelCenter,
+                        centerX: nextKf.params.centerX !== undefined ? nextKf.params.centerX : prevKf.params.centerX,
+                        centerY: nextKf.params.centerY !== undefined ? nextKf.params.centerY : prevKf.params.centerY
+                    };
+                }
+                return null;
+            }
+            
+            // Apply model transforms to each model
+            for (const [modelIndex, tracks] of modelTracksByModel) {
+                const model = animationModels[modelIndex];
+                if (!model) continue;
+                
+                // Get original points
+                const originalModel = models[modelIndex];
+                const originalPoints = [];
+                for (let i = 0; i < originalModel.triangles.length; i++) {
+                    const tri = originalModel.triangles[i];
+                    originalPoints.push({ x: tri.v1.x, y: tri.v1.y });
+                    originalPoints.push({ x: tri.v2.x, y: tri.v2.y });
+                    originalPoints.push({ x: tri.v3.x, y: tri.v3.y });
+                }
+                
+                // Get all points in the model
+                let targetPoints = [];
+                let globalIdx = 0;
+                for (let i = 0; i < model.triangles.length; i++) {
+                    const tri = model.triangles[i];
+                    targetPoints.push({ point: tri.v1, originalPoint: originalPoints[globalIdx++] });
+                    targetPoints.push({ point: tri.v2, originalPoint: originalPoints[globalIdx++] });
+                    targetPoints.push({ point: tri.v3, originalPoint: originalPoints[globalIdx++] });
+                }
+                
+                // Combine all model tracks for this model
+                let totalTranslate = { x: 0, y: 0 };
+                let totalRotate = { angle: 0, useModelCenter: false, centerX: 32, centerY: 16 };
+                let totalScale = { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
+                let needsReset = false;
+                
+                tracks.forEach(track => {
+                    const resetKfs = track.keyframes.filter(kf => kf.action === 'reset' && kf.time <= time);
+                    if (resetKfs.length > 0) needsReset = true;
+                    
+                    const translateVal = getInterpolatedValue(track.keyframes, time, 'translate');
+                    const rotateVal = getInterpolatedValue(track.keyframes, time, 'rotate');
+                    const scaleVal = getInterpolatedValue(track.keyframes, time, 'scale');
+                    
+                    if (translateVal) {
+                        totalTranslate.x += translateVal.x;
+                        totalTranslate.y += translateVal.y;
+                    }
+                    if (rotateVal) {
+                        totalRotate.angle += rotateVal.angle;
+                        if (rotateVal.useModelCenter) totalRotate.useModelCenter = true;
+                        if (rotateVal.centerX !== undefined) totalRotate.centerX = rotateVal.centerX;
+                        if (rotateVal.centerY !== undefined) totalRotate.centerY = rotateVal.centerY;
+                    }
+                    if (scaleVal) {
+                        totalScale.scaleX *= scaleVal.scaleX;
+                        totalScale.scaleY *= scaleVal.scaleY;
+                        if (scaleVal.useModelCenter) totalScale.useModelCenter = true;
+                        if (scaleVal.centerX !== undefined) totalScale.centerX = scaleVal.centerX;
+                        if (scaleVal.centerY !== undefined) totalScale.centerY = scaleVal.centerY;
+                    }
+                });
+                
+                // Calculate dynamic center if needed
+                let currentCenter = { x: 32, y: 16 };
+                const useDynamicCenter = totalRotate.useModelCenter || totalScale.useModelCenter;
+                
+                if (useDynamicCenter) {
+                    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                    targetPoints.forEach(tp => {
+                        minX = Math.min(minX, tp.point.x);
+                        maxX = Math.max(maxX, tp.point.x);
+                        minY = Math.min(minY, tp.point.y);
+                        maxY = Math.max(maxY, tp.point.y);
+                    });
+                    currentCenter = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+                }
+                
+                // Apply transforms to all points in the model
+                targetPoints.forEach(tp => {
+                    let x = tp.originalPoint.x;
+                    let y = tp.originalPoint.y;
+                    
+                    if (needsReset) {
+                        tp.point.x = x;
+                        tp.point.y = y;
+                        return;
+                    }
+                    
+                    // Apply scale
+                    if (totalScale.scaleX !== 1 || totalScale.scaleY !== 1) {
+                        let centerToUse;
+                        if (totalScale.useModelCenter && useDynamicCenter) {
+                            centerToUse = currentCenter;
+                        } else if (totalScale.centerX !== undefined && totalScale.centerY !== undefined) {
+                            centerToUse = { x: totalScale.centerX, y: totalScale.centerY };
+                        } else {
+                            centerToUse = fixedCenter;
+                        }
+                        x = centerToUse.x + (x - centerToUse.x) * totalScale.scaleX;
+                        y = centerToUse.y + (y - centerToUse.y) * totalScale.scaleY;
+                    }
+                    
+                    // Apply rotate
+                    if (totalRotate.angle !== 0) {
+                        const rad = totalRotate.angle * Math.PI / 180;
+                        let centerToUse;
+                        if (totalRotate.useModelCenter && useDynamicCenter) {
+                            centerToUse = currentCenter;
+                        } else if (totalRotate.centerX !== undefined && totalRotate.centerY !== undefined) {
+                            centerToUse = { x: totalRotate.centerX, y: totalRotate.centerY };
+                        } else {
+                            centerToUse = fixedCenter;
+                        }
+                        const dx = x - centerToUse.x;
+                        const dy = y - centerToUse.y;
+                        x = centerToUse.x + dx * Math.cos(rad) - dy * Math.sin(rad);
+                        y = centerToUse.y + dx * Math.sin(rad) + dy * Math.cos(rad);
+                    }
+                    
+                    // Apply translate
+                    x += totalTranslate.x;
+                    y += totalTranslate.y;
+                    
+                    tp.point.x = x;
+                    tp.point.y = y;
+                });
+                
+                // Apply visibility
+                let visible = true;
+                tracks.forEach(track => {
+                    const visKeyframes = track.keyframes.filter(kf => kf.action === 'visibility' && kf.time <= time);
+                    if (visKeyframes.length > 0) {
+                        visible = visKeyframes[visKeyframes.length - 1].params.visible;
+                    }
+                });
+                model.visible = visible;
+            }
+            
+            // SECOND: Apply point group transforms (using the already transformed points)
+            const groupTracksByTarget = new Map();
+            
+            anim.tracks.forEach(track => {
+                if (track.type === 'group') {
+                    const key = `${track.modelIndex}_${track.groupIndex}`;
+                    if (!groupTracksByTarget.has(key)) {
+                        groupTracksByTarget.set(key, []);
+                    }
+                    groupTracksByTarget.get(key).push(track);
+                }
+            });
+            
+            // Apply point group transforms
+            for (const [key, tracks] of groupTracksByTarget) {
+                const [modelIndex, groupIndex] = key.split('_').map(Number);
+                const model = animationModels[modelIndex];
+                if (!model) continue;
+                
+                // Get the points in this group (using CURRENT positions after model transforms)
+                const group = models[modelIndex].pointGroups?.[groupIndex];
+                if (!group) continue;
+                const groupIndices = new Set(group.pointIndices);
+                
+                let targetPoints = [];
+                let globalIdx = 0;
+                for (let i = 0; i < model.triangles.length; i++) {
+                    const tri = model.triangles[i];
+                    for (let v = 0; v < 3; v++) {
+                        const point = v === 0 ? tri.v1 : (v === 1 ? tri.v2 : tri.v3);
+                        if (groupIndices.has(globalIdx)) {
+                            // Store the CURRENT position (after model transforms) as the starting point
+                            targetPoints.push({ point, originalPoint: { x: point.x, y: point.y } });
+                        }
+                        globalIdx++;
+                    }
+                }
+                
+                if (targetPoints.length === 0) continue;
+                
+                // Combine all group tracks for this group
+                let totalTranslate = { x: 0, y: 0 };
+                let totalRotate = { angle: 0, useModelCenter: false, centerX: 32, centerY: 16 };
+                let totalScale = { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
+                let needsReset = false;
+                
+                tracks.forEach(track => {
+                    const resetKfs = track.keyframes.filter(kf => kf.action === 'reset' && kf.time <= time);
+                    if (resetKfs.length > 0) needsReset = true;
+                    
+                    const translateVal = getInterpolatedValue(track.keyframes, time, 'translate');
+                    const rotateVal = getInterpolatedValue(track.keyframes, time, 'rotate');
+                    const scaleVal = getInterpolatedValue(track.keyframes, time, 'scale');
+                    
+                    if (translateVal) {
+                        totalTranslate.x += translateVal.x;
+                        totalTranslate.y += translateVal.y;
+                    }
+                    if (rotateVal) {
+                        totalRotate.angle += rotateVal.angle;
+                        if (rotateVal.useModelCenter) totalRotate.useModelCenter = true;
+                        if (rotateVal.centerX !== undefined) totalRotate.centerX = rotateVal.centerX;
+                        if (rotateVal.centerY !== undefined) totalRotate.centerY = rotateVal.centerY;
+                    }
+                    if (scaleVal) {
+                        totalScale.scaleX *= scaleVal.scaleX;
+                        totalScale.scaleY *= scaleVal.scaleY;
+                        if (scaleVal.useModelCenter) totalScale.useModelCenter = true;
+                        if (scaleVal.centerX !== undefined) totalScale.centerX = scaleVal.centerX;
+                        if (scaleVal.centerY !== undefined) totalScale.centerY = scaleVal.centerY;
+                    }
+                });
+                
+                // Calculate dynamic center for the group
+                let currentCenter = { x: 32, y: 16 };
+                const useDynamicCenter = totalRotate.useModelCenter || totalScale.useModelCenter;
+                
+                if (useDynamicCenter) {
+                    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                    targetPoints.forEach(tp => {
+                        minX = Math.min(minX, tp.originalPoint.x);
+                        maxX = Math.max(maxX, tp.originalPoint.x);
+                        minY = Math.min(minY, tp.originalPoint.y);
+                        maxY = Math.max(maxY, tp.originalPoint.y);
+                    });
+                    currentCenter = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+                }
+                
+                // Apply transforms to group points (starting from their current position after model transforms)
+                targetPoints.forEach(tp => {
+                    let x = tp.originalPoint.x;
+                    let y = tp.originalPoint.y;
+                    
+                    if (needsReset) {
+                        tp.point.x = x;
+                        tp.point.y = y;
+                        return;
+                    }
+                    
+                    // Apply scale
+                    if (totalScale.scaleX !== 1 || totalScale.scaleY !== 1) {
+                        let centerToUse;
+                        if (totalScale.useModelCenter && useDynamicCenter) {
+                            centerToUse = currentCenter;
+                        } else if (totalScale.centerX !== undefined && totalScale.centerY !== undefined) {
+                            centerToUse = { x: totalScale.centerX, y: totalScale.centerY };
+                        } else {
+                            centerToUse = fixedCenter;
+                        }
+                        x = centerToUse.x + (x - centerToUse.x) * totalScale.scaleX;
+                        y = centerToUse.y + (y - centerToUse.y) * totalScale.scaleY;
+                    }
+                    
+                    // Apply rotate
+                    if (totalRotate.angle !== 0) {
+                        const rad = totalRotate.angle * Math.PI / 180;
+                        let centerToUse;
+                        if (totalRotate.useModelCenter && useDynamicCenter) {
+                            centerToUse = currentCenter;
+                        } else if (totalRotate.centerX !== undefined && totalRotate.centerY !== undefined) {
+                            centerToUse = { x: totalRotate.centerX, y: totalRotate.centerY };
+                        } else {
+                            centerToUse = fixedCenter;
+                        }
+                        const dx = x - centerToUse.x;
+                        const dy = y - centerToUse.y;
+                        x = centerToUse.x + dx * Math.cos(rad) - dy * Math.sin(rad);
+                        y = centerToUse.y + dx * Math.sin(rad) + dy * Math.cos(rad);
+                    }
+                    
+                    // Apply translate
+                    x += totalTranslate.x;
+                    y += totalTranslate.y;
+                    
+                    tp.point.x = x;
+                    tp.point.y = y;
+                });
+            }
+            
+            draw();
         }
-        
-        // Apply transforms to group points (starting from their current position after model transforms)
-        targetPoints.forEach(tp => {
-            let x = tp.originalPoint.x;
-            let y = tp.originalPoint.y;
-            
-            if (needsReset) {
-                tp.point.x = x;
-                tp.point.y = y;
-                return;
-            }
-            
-            // Apply scale
-            if (totalScale.scaleX !== 1 || totalScale.scaleY !== 1) {
-                let centerToUse;
-                if (totalScale.useModelCenter && useDynamicCenter) {
-                    centerToUse = currentCenter;
-                } else if (totalScale.centerX !== undefined && totalScale.centerY !== undefined) {
-                    centerToUse = { x: totalScale.centerX, y: totalScale.centerY };
-                } else {
-                    centerToUse = fixedCenter;
-                }
-                x = centerToUse.x + (x - centerToUse.x) * totalScale.scaleX;
-                y = centerToUse.y + (y - centerToUse.y) * totalScale.scaleY;
-            }
-            
-            // Apply rotate
-            if (totalRotate.angle !== 0) {
-                const rad = totalRotate.angle * Math.PI / 180;
-                let centerToUse;
-                if (totalRotate.useModelCenter && useDynamicCenter) {
-                    centerToUse = currentCenter;
-                } else if (totalRotate.centerX !== undefined && totalRotate.centerY !== undefined) {
-                    centerToUse = { x: totalRotate.centerX, y: totalRotate.centerY };
-                } else {
-                    centerToUse = fixedCenter;
-                }
-                const dx = x - centerToUse.x;
-                const dy = y - centerToUse.y;
-                x = centerToUse.x + dx * Math.cos(rad) - dy * Math.sin(rad);
-                y = centerToUse.y + dx * Math.sin(rad) + dy * Math.cos(rad);
-            }
-            
-            // Apply translate
-            x += totalTranslate.x;
-            y += totalTranslate.y;
-            
-            tp.point.x = x;
-            tp.point.y = y;
-        });
-    }
-    
-    draw();
-}
         // ===========================================
         // PLAYBACK CONTROLS
         // ===========================================
 
-        function playAnimationPlayback() {
-            if (isAnimPlaying) return;
-            const anim = getSelectedAnimation();
-            if (!anim || anim.tracks.length === 0) return;
-            
-            isAnimPlaying = true;
-            const startTime = currentAnimationTime;
-            const startStamp = performance.now();
-            const duration = anim.duration;
-            
-            function step(now) {
-                if (!isAnimPlaying) return;
-                const elapsed = now - startStamp;
-                let newTime = startTime + elapsed;
+function playAnimationPlayback() {
+    if (isAnimPlaying) return;
+    const anim = getSelectedAnimation();
+    if (!anim || anim.tracks.length === 0) return;
+    
+    // Initialize repeat properties if needed
+    if (anim.repeatEnabled === undefined) {
+        anim.repeatEnabled = false;
+        anim.repeatBehavior = 'reset';
+    }
+    
+    isAnimPlaying = true;
+    const startTime = currentAnimationTime;
+    const startStamp = performance.now();
+    const duration = anim.duration;
+    
+    function step(now) {
+        if (!isAnimPlaying) return;
+        let elapsed = now - startStamp;
+        let newTime = startTime + elapsed;
+        
+        if (newTime >= duration) {
+            if (anim.repeatEnabled) {
+                const overflow = newTime - duration;
                 
-                if (newTime >= duration) {
-                    newTime = duration;
-                    applyAnimationAtTime(newTime);
-                    currentAnimationTime = newTime;
+                if (anim.repeatBehavior === 'reset') {
+                    // Reset - clear accumulated base
+                    accumulatedBaseModels = null;
+                    currentAnimationTime = overflow % duration;
+                    applyAnimationAtTime(currentAnimationTime);
                     updatePlayheadPosition();
                     draw();
-                    pauseAnimationPlayback();
+                    isAnimPlaying = false;
+                    playAnimationPlayback();
+                    return;
+                    
+                } else if (anim.repeatBehavior === 'accumulate') {
+                    // IMPORTANT: Apply the animation at the END first to get final state
+                    applyAnimationAtTime(duration);
+                    draw();
+                    
+                    // Store the current animationModels state as the new base for next loop
+                    // This captures the exact position after the animation completes
+                    accumulatedBaseModels = JSON.parse(JSON.stringify(animationModels));
+                    
+                    // Now set time to overflow and apply (will use accumulatedBaseModels as base)
+                    currentAnimationTime = overflow % duration;
+                    
+                    // Force a fresh apply that uses accumulatedBaseModels
+                    // The next applyAnimationAtTime call will use accumulatedBaseModels
+                    applyAnimationAtTime(currentAnimationTime);
+                    updatePlayheadPosition();
+                    draw();
+                    
+                    // Restart the animation loop
+                    isAnimPlaying = false;
+                    playAnimationPlayback();
                     return;
                 }
-                
+            } else {
+                newTime = duration;
+                applyAnimationAtTime(newTime);
                 currentAnimationTime = newTime;
-                applyAnimationAtTime(currentAnimationTime);
                 updatePlayheadPosition();
                 draw();
-                animFrameId = requestAnimationFrame(step);
+                pauseAnimationPlayback();
+                return;
             }
-            
-            if (animFrameId) cancelAnimationFrame(animFrameId);
-            animFrameId = requestAnimationFrame(step);
         }
+        
+        currentAnimationTime = newTime;
+        applyAnimationAtTime(currentAnimationTime);
+        updatePlayheadPosition();
+        draw();
+        animFrameId = requestAnimationFrame(step);
+    }
+    
+    if (animFrameId) cancelAnimationFrame(animFrameId);
+    animFrameId = requestAnimationFrame(step);
+}
 
         function pauseAnimationPlayback() {
             isAnimPlaying = false;
@@ -4778,6 +4881,10 @@ function applyAnimationAtTime(time) {
         function stopAnimationPlayback() {
             pauseAnimationPlayback();
             currentAnimationTime = 0;
+            
+            // Clear accumulated base when stopping
+            accumulatedBaseModels = null;
+                       
             applyAnimationAtTime(0);
             updatePlayheadPosition();
             draw();
@@ -5222,6 +5329,55 @@ function applyAnimationAtTime(time) {
             if (totalKeyframesEl) totalKeyframesEl.textContent = '0';
             const totalKeyframesAnimEl = document.getElementById('totalKeyframes');
             if (totalKeyframesAnimEl) totalKeyframesAnimEl.textContent = '0';
+
+            function updateRepeatControls() {
+                const anim = getSelectedAnimation();
+                const repeatToggle = document.getElementById('repeatToggle');
+                const repeatBehavior = document.getElementById('repeatBehavior');
+                
+                if (!repeatToggle || !repeatBehavior) return;
+                
+                if (anim) {
+                    initRepeatProperties(anim);
+                    repeatToggle.checked = anim.repeatEnabled;
+                    repeatBehavior.value = anim.repeatBehavior;
+                    repeatBehavior.disabled = !anim.repeatEnabled;
+                } else {
+                    repeatToggle.checked = false;
+                    repeatBehavior.disabled = true;
+                }
+            }
+
+            // Add these event listeners after initAnimationSystem
+            const repeatToggle = document.getElementById('repeatToggle');
+            const repeatBehavior = document.getElementById('repeatBehavior');
+
+            if (repeatToggle) {
+                repeatToggle.addEventListener('change', function() {
+                    const anim = getSelectedAnimation();
+                    if (anim) {
+                        saveUndoState();
+                        initRepeatProperties(anim);
+                        anim.repeatEnabled = this.checked;
+                        updateRepeatControls();
+                    }
+                });
+            }
+
+            if (repeatBehavior) {
+                repeatBehavior.addEventListener('change', function() {
+                    const anim = getSelectedAnimation();
+                    if (anim) {
+                        saveUndoState();
+                        initRepeatProperties(anim);
+                        const oldBehavior = anim.repeatBehavior;
+                        anim.repeatBehavior = this.value;
+                        updateRepeatControls();
+                    }
+                });
+            }
+
+
         }
 
 
@@ -9650,14 +9806,17 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
             }, 50);
         }
 
+        // ===========================================
+        // REPEAT/LOOP FUNCTIONALITY
+        // ===========================================
 
-
-
-
-
-
-
-
+        function initRepeatProperties(anim) {
+            if (anim.repeatEnabled === undefined) {
+                anim.repeatEnabled = false;
+                anim.repeatBehavior = 'reset';
+            }
+            return anim;
+        }
 
 
     
