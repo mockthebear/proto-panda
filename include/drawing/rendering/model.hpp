@@ -63,6 +63,10 @@ class Model {
             batchOperations = b;
         }
 
+        Vec2f GetCenter(){
+            return center;
+        }
+
         int triangleCount;
         int id;
         VecAlignedCustom<float> originalPoints;

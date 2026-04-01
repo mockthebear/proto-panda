@@ -922,6 +922,7 @@ bool LuaInterface::Start()
   ClassRegister<Model>::RegisterClassMethod(_state,"Model","Scale",&Model::Scale);
   ClassRegister<Model>::RegisterClassMethod(_state,"Model","Rotate",&Model::Rotate);
   ClassRegister<Model>::RegisterClassMethod(_state,"Model","Translate",&Model::Translate);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","GetCenter",&Model::GetCenter);
   
   lastError = "";
 
