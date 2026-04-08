@@ -1,9 +1,10 @@
 {
     "boop": {
         "//comment": "The trigger_mode can accept either 'gpio' or 'lidar'",
-        "trigger_mode": "lidar", 
-        "gpio": 39,
-        "gpio_state": 0,
+        "trigger_mode": "gpio", 
+        "gpio": 2,
+        "power_gpio": 1,
+        "gpio_state": 1,
         "enabled": true,
         "transitionIn": "boop_intro",
         "transitionOut": "boop_outro",
