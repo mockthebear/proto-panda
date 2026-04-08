@@ -10,6 +10,18 @@
 #define LUA_USE_C89
 #include "lua/lua.hpp"
 #include "tools/ir.hpp"
+
+
+#if defined(ESP_IDF_VERSION_MAJOR)
+  #if ESP_IDF_VERSION_MAJOR >= 5
+
+  #else
+    #define ALLOW_DUPLICATED_TYPES 1  // Core 2.x with IDF 4.x
+  #endif
+#else
+  #define ALLOW_DUPLICATED_TYPES 1
+#endif
+
 typedef std::function<int(lua_State*)> LuaCFunctionLambda;
 
 void CreateLuaClosure(lua_State *L, const std::function<int(lua_State*)>& f);
@@ -125,11 +137,13 @@ template<> struct GenericLuaGetter<uint16_t> {
     }
 };
 
+#ifdef ALLOW_DUPLICATED_TYPES
 template<> struct GenericLuaGetter<unsigned long> {
     static inline unsigned long Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaTonumber<unsigned long>(hasArgError, L, stackPos, pop);
     }
 };
+#endif
 
 template<> struct GenericLuaGetter<char> {
     static inline char Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
@@ -312,13 +326,14 @@ template<> struct GenericLuaReturner<uint8_t>{
         return 1;
     };
 };
-
+#ifdef ALLOW_DUPLICATED_TYPES
 template<> struct GenericLuaReturner<unsigned long>{
     static inline int Ret(unsigned long vr,lua_State *L,bool forceTable = false){
         lua_pushnumber(L,vr);
         return 1;
    };
 };
+#endif
 
 template<> struct GenericLuaReturner<uint32_t>{
      static inline int Ret(uint32_t vr,lua_State *L,bool forceTable = false){
@@ -542,7 +557,13 @@ template<int N>
             std::get<N-1>(tuple) = v;
             readLuaValues<N-1>::Read(hasArgError, tuple,L,stackpos,offsetStack,head,tail...);
         }else{
+            #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Warray-bounds"
+            //Out of bounds false positive what.
+            //It should never reach here because the N <= argCountLua. But thats validated in run time
+            //So these pragmas only suppress the warning
             ValueType v = LuaTyper<ValueType>::GetTypeIfSame(ValueType(),head);
+            #pragma GCC diagnostic pop
             std::get<N-1>(tuple) = v;
             readLuaValues<N-1>::Read(hasArgError, tuple ,L,stackpos,offsetStack, tail...);
         }

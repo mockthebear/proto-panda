@@ -124,19 +124,12 @@ void composeBulkFile()
 
 void setAnimation(std::vector<int> frames, int duration, int repeatTimes, bool dropAll, int externalStorageId)
 {
-  g_animation.SetAnimation(duration, frames, repeatTimes, dropAll, externalStorageId);
+  g_animation.SetAnimation(frames, duration, repeatTimes, dropAll, externalStorageId);
 }
 
 void setInterruptFrames(std::vector<int> frames, int duration )
 {
   g_animation.SetInterruptAnimation(duration, frames);
-}
-void setInterruptAnimationPin(int pin)
-{
-  if (pin > 0){
-    pinMode(pin, INPUT);
-  }
-  g_animation.SetInterruptPin(pin);
 }
 
 

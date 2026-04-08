@@ -18,7 +18,15 @@
 FtpServer *ftpSrv;
 WiFiServer *luaServer;
 
+#if defined(ESP_IDF_VERSION_MAJOR)
+  #if ESP_IDF_VERSION_MAJOR >= 5
 
+  #else
+    #define ALLOW_DEPRECATED 1  // Core 2.x with IDF 4.x
+  #endif
+#else
+  #define ALLOW_DEPRECATED 1
+#endif
 
 extern FrameRepository g_frameRepo;
 extern LuaInterface g_lua;
@@ -271,8 +279,11 @@ void handleClient(WiFiClient &client){
 
 void EditMode::LoopEditMode(){
   ftpSrv->handleFTP();
-
+  #ifdef ALLOW_DEPRECATED
   WiFiClient client = luaServer->available();
+  #else
+  WiFiClient client = luaServer->accept();
+  #endif
   if (client){
     handleClient(client);
   }

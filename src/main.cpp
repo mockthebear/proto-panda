@@ -3,7 +3,6 @@
 #include <SPI.h>
 #include "SD.h"
 #include <string>
-#include <FastLED.h>
 
 
 #include "tools/sensors.hpp"

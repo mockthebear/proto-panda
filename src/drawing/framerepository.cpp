@@ -28,7 +28,7 @@ bool FrameRepository::Begin(){
 
     m_mutex = xSemaphoreCreateMutex();
     Logger::Info("Starting FFAT");
-    if (!FFat.begin(true)) {
+    if (!FFat.begin(true, "/ffat", 3)) {
         Logger::Info("FFat Mount Failed");
         Logger::Info("Formatting FFat");
         if (!FFat.format()){

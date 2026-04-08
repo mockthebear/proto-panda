@@ -229,7 +229,7 @@ void Animation::DrawFrame(File *file, int i){
     
     g_frameRepo.getBulkOffsetByFrameId(i, startPosition, flashFileLenght);
     if (startPosition < 0){
-        Serial.printf("Failed to find frame id %d, returned position %d\n", i, startPosition);
+        Serial.printf("Failed to find frame id %d, returned position %ld\n", i, startPosition);
         return;
     }
 
@@ -237,7 +237,7 @@ void Animation::DrawFrame(File *file, int i){
     size_t rd = file->readBytes((char*)buffer, flashFileLenght);
 
     if (rd != flashFileLenght){
-        Serial.printf("Failed to read %d at pos %d on file with size %d. Read just %d bytes\n", i , startPosition, flashFileLenght, rd);
+        Serial.printf("Failed to read %d at pos %ld on file with size %ld. Read just %d bytes\n", i , startPosition, flashFileLenght, rd);
         return;
     }
 
@@ -444,7 +444,7 @@ void Animation::SetInterruptAnimation(int duration, std::vector<int> frames){
     xSemaphoreGive(m_mutex);
 }
 
-void Animation::SetAnimation(int duration, std::vector<int> frames, int repeatTimes, bool dropAll, int externalStorageId){
+void Animation::SetAnimation(std::vector<int> frames, int duration, int repeatTimes, bool dropAll, int externalStorageId){
     if (dropAll){
         xSemaphoreTake(m_mutex, portMAX_DELAY);
         while (m_animations.size() > 0){
