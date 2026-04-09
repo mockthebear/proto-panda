@@ -23,7 +23,6 @@ void ClientCallbacks::onMTUChange(NimBLEClient* pClient, uint16_t MTU) {
 }
 
 void ClientCallbacks::onDisconnect(NimBLEClient* pClient, int reason){
-  Logger::Info("[BLE] my bois is ded");
   Devices::BuzzerToneDuration(400, 300);
   const char *reasonStr = NimBLEUtils::returnCodeToString(reason);
   Logger::Info("[BLE] %s Device disconnected, reason=%s", pClient->getPeerAddress().toString().c_str(), reasonStr);

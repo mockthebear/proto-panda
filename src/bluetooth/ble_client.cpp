@@ -6,14 +6,14 @@
 
 BleManager* BleManager::m_myself = nullptr;
 
+
 void AdvertisedDeviceCallbacks::onResult(const NimBLEAdvertisedDevice* advertisedDevice) {
   if (bleObj->canLogDiscoveredClients()){
     Logger::Info("[BLE] Advertised Device found: %s", advertisedDevice->toString().c_str());
   }
+  xSemaphoreTake(bleObj->m_mutex, portMAX_DELAY);
   auto acceptedServices = bleObj->GetAcceptedServices();
-
   for (auto &it : acceptedServices) {
-
     if(it.second != nullptr && advertisedDevice->isAdvertisingService(it.second->uuid)){
       bool canConnect = true;
       bool matchedTrue = true;
@@ -29,26 +29,26 @@ void AdvertisedDeviceCallbacks::onResult(const NimBLEAdvertisedDevice* advertise
         }
       }
 
-      Serial.printf("Found HID Device: %s\n", advertisedDevice->getName().c_str());
-      Serial.printf("Address: %s\n", advertisedDevice->getAddress().toString().c_str());
+      Logger::Info("Found HID Device: %s\n", advertisedDevice->getName().c_str());
+      Logger::Info("Address: %s\n", advertisedDevice->getAddress().toString().c_str());
       if (canConnect){
         bleObj->setScanningMode(false);
         bleObj->toConnect = ConnectionRequest(advertisedDevice, it.second, new BluetoothDeviceHandler());
       }else{
-        Serial.printf("Cannot connect because its not present in the addresses");
+        Logger::Info("Cannot connect because its not present in the addresses");
       }
+      xSemaphoreGive(bleObj->m_mutex);
       return;
     }
   }
+  xSemaphoreGive(bleObj->m_mutex);
 }
 
-void AdvertisedDeviceCallbacks::onScanEnd(const NimBLEScanResults& results, int reason)  {
-  Serial.printf("Scan Ended, reason: %d, device count: %d; Restarting scan\n", reason, results.getCount());
-  NimBLEDevice::getScan()->start(0, false, true);
-}
+void AdvertisedDeviceCallbacks::onScanEnd(const NimBLEScanResults& results, int reason)  {}
 
 
 bool BleManager::connectToServer(){
+
   static ClientCallbacks callbacks;
   NimBLEClient* pClient = nullptr;
   const NimBLEAdvertisedDevice* advDevice = toConnect.advertisedDevice;
@@ -60,71 +60,57 @@ bool BleManager::connectToServer(){
   device->m_device = advDevice;
   
   /** Check if we have a client we should reuse first **/
-
+  
   if (NimBLEDevice::getCreatedClientCount()) {
-      pClient = NimBLEDevice::getClientByPeerAddress(advDevice->getAddress());
-      if (pClient) {
-        device->m_client = pClient;
-        if (!pClient->connect(advDevice, false)) {
-            Logger::Info("[BLE] Fail on 1");
-            return false;
-        }
-        Logger::Info("[BLE] Reconnected client");
-      } else {
-          pClient = NimBLEDevice::getDisconnectedClient();
-      }
-  }
-
-  /** No client to reuse? Create a new one. */
-  if (!pClient) {
-      if (NimBLEDevice::getCreatedClientCount() >= NIMBLE_MAX_CONNECTIONS) {
-          Logger::Info("[BLE] Max clients reached - no more connections available\n");
-          return false;
-      }
-
-      pClient = NimBLEDevice::createClient();
-
-      if (!pClient){
-        Serial.printf("UNEXPECTED FAILURE, NULL CLIENT\n");
+    pClient = NimBLEDevice::getClientByPeerAddress(advDevice->getAddress());
+    if (pClient) {
+      if (!pClient->connect(advDevice, false)) {
+        Logger::Info("Failed to reconnect, last error = %d\n", pClient->getLastError());
         return false;
       }
-      device->m_client = pClient;
-    
-      Logger::Info("[BLE] New client created\n");
-
-      
-      
-      pClient->setClientCallbacks(device->m_callbacks, false);
-      pClient->setConnectionParams(24, 24, 0, 150);
-      pClient->setConnectTimeout(5 * 1000);
-      
-      
-
-      if (!pClient->connect(advDevice, true, false, false)) {
-          NimBLEDevice::deleteClient(pClient);
-          Serial.printf("Failed to connect, deleted client 1\n");
-          return false;
-      }
-      
+      Logger::Info("Reconnected client\n");
+    } else {
+      /**
+      *  We don't already have a client that knows this device,
+      *  check for a client that is disconnected that we can use.
+       */
+      pClient = NimBLEDevice::getDisconnectedClient();
     }
+  }
+  /** No client to reuse? Create a new one. */
+  
+  if (NimBLEDevice::getCreatedClientCount() >= NIMBLE_MAX_CONNECTIONS) {
+      Logger::Info("[BLE] Max clients reached - no more connections available\n");
+      return false;
+  }
+  if (!pClient){
 
-    if (!pClient->isConnected()) {
-      if (!pClient->connect(advDevice, true, false, false)) {
-          Serial.printf("Failed to connect 2\n");
-          return false;
-      }
+    pClient = NimBLEDevice::createClient();
+
+    if (!pClient){
+      Logger::Info("[BLE] UNEXPECTED FAILURE, NULL CLIENT\n");
+      return false;
     }
+    device->m_client = pClient;
 
-    pClient->exchangeMTU();
-    
-    Serial.printf("Connected to: %s RSSI: %d, MTU %d\n", pClient->getPeerAddress().toString().c_str(), pClient->getRssi(), pClient->getMTU());
-    
-    
+    pClient->setClientCallbacks(device->m_callbacks, false);
+    pClient->setConnectionParams(24, 24, 0, 150);
+    pClient->setConnectTimeout(5 * 1000);
+      
+    if (!pClient->connect(advDevice, false)) { 
+      Logger::Info("Failed to connect, last error = %d\n", pClient->getLastError());
+      NimBLEDevice::deleteClient(pClient);
+      device->m_client = nullptr; 
+      return false;
+    }
+  }
 
-    /** Now we can access the HID service characteristics */
-    NimBLERemoteService* pSvc = nullptr;
+  Serial.printf("Connected to: %s RSSI: %d, MTU %d\n", pClient->getPeerAddress().toString().c_str(), pClient->getRssi(), pClient->getMTU());
+    
+  /** Now we can access the HID service characteristics */
+  NimBLERemoteService* pSvc = nullptr;
 
-    if (!availableIds.empty()) {
+  if (!availableIds.empty()) {
     device->m_controllerId = availableIds.top();
     availableIds.pop();
   } else {
@@ -137,6 +123,7 @@ bool BleManager::connectToServer(){
   if (!pSvc) {
       Serial.printf("Service not found!\n");
       pClient->disconnect();
+
       return false;
   }
 
@@ -144,6 +131,7 @@ bool BleManager::connectToServer(){
   // Instead of using getProperties(), we'll try to subscribe and see if it works
   std::vector<BleCharacteristicsHandler*> searchList = handler->getRegisteredCharacteristics();
   std::vector<NimBLERemoteCharacteristic*> pChars = pSvc->getCharacteristics(true);
+
   for (auto &element : searchList){
     vTaskDelay(1);
     bool matched = false;
@@ -155,7 +143,8 @@ bool BleManager::connectToServer(){
               Logger::Error("[BLE] Characteristics %s in service %s, failed to subscribe.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
               pClient->disconnect();
               NimBLEDevice::deleteClient(pClient);
-              g_remoteControls.availableIds.push(device->m_controllerId);         
+              g_remoteControls.availableIds.push(device->m_controllerId);    
+    
               return false;
             }else{
               Logger::Error("[BLE] Subscribed on characteristics %s in service %s.", element->uuid.toString().c_str(), pChr->getUUID().toString().c_str());
@@ -174,7 +163,8 @@ bool BleManager::connectToServer(){
       Logger::Error("[BLE] avaliable characteristics: %s", ss.str().c_str());
       pClient->disconnect();
       NimBLEDevice::deleteClient(pClient);
-      g_remoteControls.availableIds.push(device->m_controllerId);       
+      g_remoteControls.availableIds.push(device->m_controllerId);  
+         
       return false;
     }
   }
@@ -182,9 +172,10 @@ bool BleManager::connectToServer(){
   handler->AddDevice(device);
 
   device->connected = true;
-  
+
   clients[pClient->getPeerAddress().toString()] = device;
   clientCount++;
+
   Logger::Info("[BLE] Done with this device! ConnID=%d %s", -1, pClient->getPeerAddress().toString().c_str());
   Devices::BuzzerToneDuration(1500, 300);
 
@@ -220,10 +211,18 @@ BluetoothDeviceHandler* BleManager::getDeviceById(int clientId){
 }
 
 void BleManager::setScanningMode(bool mode){
-  if (mode == false){
-    NimBLEDevice::getScan()->stop();
-  }
   isScanning = mode;
+  m_scanStartAt = millis()+2000;
+  if (mode == false){
+    Logger::Info("[BLE] Scan stoped");
+    NimBLEDevice::getScan()->stop();
+    isScanning = false;
+    m_canScan = false;
+  }else{
+    Logger::Info("[BLE] Scan resumed");
+    NimBLEDevice::getScan()->clearResults();
+    NimBLEDevice::getScan()->start(0, false, false); 
+  }
 }
 
 BleManager* BleManager::Get(){
@@ -236,6 +235,7 @@ bool BleManager::begin(){
   }
   m_myself = this;
   m_started = true;
+  lastScanClearTime = millis();
   return true;
 }
 
@@ -261,8 +261,8 @@ bool BleManager::beginRadio(int powerLevel){
   pScan->setScanCallbacks(cb, false);
 
     /** Set scan interval (how often) and window (how long) in milliseconds */
-  pScan->setInterval(45);
-  pScan->setWindow(15);
+  pScan->setInterval(100);
+  pScan->setWindow(100);
 
   pScan->setActiveScan(true);
   //pScan->start(0);
@@ -281,6 +281,7 @@ void BleManager::sendUpdatesToLua(){
 void BleManager::beginScanning(){
   isScanning = false;
   m_canScan = true;
+  m_scanStartAt = millis()+1000;
 }
 
 void BleManager::AddAcceptedService(std::string name, BleServiceHandler* obj){
@@ -292,13 +293,13 @@ void BleManager::update(){
   if (!m_started){
     return;
   }
-
-  
   if (millis() - lastScanClearTime >= (30*1000) ) {
-    if (!isScanning){
-      //NimBLEDevice::getScan()->clearDuplicateCache();
+    if (isScanning){
+      setScanningMode(false);
       NimBLEDevice::getScan()->clearResults(); // Clear the scan results
       Logger::Info("[BLE] Scan results cleared");
+      m_canScan = true;
+      m_scanStartAt = millis()+1000;
     }
     lastScanClearTime = millis(); // Reset the timer
     Devices::CalculateMemmoryUsage();
@@ -308,17 +309,15 @@ void BleManager::update(){
   if (toConnect.ready) {
     connectToServer();
     toConnect.erase();
+    m_canScan = true;
+    m_scanStartAt = millis()+1000;
     return;
   }
 
-  if (m_canScan){
+  if (m_canScan){ 
     if (clientCount < maxClients){
-      if (!isScanning){
-        isScanning = true;
-        Logger::Info("[BLE] Scan resumed");
-        //NimBLEDevice::getScan()->clearDuplicateCache();
-        NimBLEDevice::getScan()->clearResults();
-        NimBLEDevice::getScan()->start(0);
+      if (!isScanning && !toConnect.ready && m_scanStartAt < millis()){
+        setScanningMode(true);
       }
     }
       
@@ -343,7 +342,6 @@ void BleManager::update(){
       xSemaphoreGive(m_mutex);
     }
   }
-
 }
 
 
