@@ -59,6 +59,7 @@ class Animation{
         void Update(File *file);
 
         void SetModelAnimation(std::vector<int> models, bool dropAll);
+
         void SetAnimation(std::vector<int> frames, int duration, int repeatTimes, bool dropAll, int externalStorageId=-1);
         void SetInterruptAnimation(int duration, std::vector<int> frames);
         void SetInterruptPin(int pin){

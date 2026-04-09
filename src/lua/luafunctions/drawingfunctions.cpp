@@ -119,8 +119,6 @@ void composeBulkFile(){
 }
 
 
-
-
 void DrawPanelFaceToScreen(int x, int y){
   OledScreen::DrawPanelFaceToScreen(x, y);
   return;

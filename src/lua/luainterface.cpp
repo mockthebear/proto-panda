@@ -595,12 +595,14 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("drawPanelFace", DrawFace);
 
   m_lua->FuncRegisterFromObjectOpt("setPanelAnimation", &g_animation, &Animation::SetAnimation, -1, false, -1, 250);
+
   m_lua->FuncRegisterFromObjectOpt("setModelAnimation", &g_animation, &Animation::SetModelAnimation, false);
   m_lua->FuncRegisterFromObjectOpt("loadModel", &g_animation, &Animation::LoadModel);
 
   m_lua->FuncRegisterFromObjectOpt("popPanelAnimation", &g_animation, &Animation::PopAnimation);
   m_lua->FuncRegisterFromObjectOpt("setInterruptFrames", &g_animation, &Animation::SetInterruptAnimation);
-  m_lua->FuncRegisterFromObjectOpt("setIntersetInterruptAnimationPinruptFrames", &g_animation, &Animation::SetInterruptPin);
+  m_lua->FuncRegisterFromObjectOpt("setInterruptAnimationPin", &g_animation, &Animation::SetInterruptPin);
+
     
   m_lua->FuncRegisterFromObjectOpt("setRainbowShader", &g_animation, &Animation::setRainbowShader, true); 
   m_lua->FuncRegisterFromObjectOpt("getAnimationStackSize", &g_animation, &Animation::getAnimationStackSize);   
@@ -617,6 +619,9 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("drawPanelCurrentFrame", DrawCurrentFrame);
   m_lua->FuncRegister("setPanelBrightness", setPanelBrightness);
   m_lua->FuncRegister("getPanelBrightness", getPanelBrightness);
+
+  m_lua->FuncRegisterFromObjectOpt("setRainbowShader", &g_animation, &Animation::setRainbowShader, true); 
+  m_lua->FuncRegisterFromObjectOpt("getAnimationStackSize", &g_animation, &Animation::getAnimationStackSize); 
 
   m_lua->FuncRegister("color565", color565);
   m_lua->FuncRegister("color444", color444);
@@ -673,9 +678,10 @@ void LuaInterface::RegisterMethods()
   //debug
   m_lua->FuncRegisterRaw("dumpStackToSerial", dumpStackToSerial);
   //Leds
+
   m_lua->FuncRegisterFromObjectOpt("ledsGetBrightness", &g_leds, &LedStrip::getBrightness);
   m_lua->FuncRegisterFromObjectOpt("ledsSetBrightness", &g_leds, &LedStrip::setBrightness, (uint8_t)128);
-  m_lua->FuncRegisterFromObjectOpt("ledsBegin", &g_leds, &LedStrip::Begin, (uint8_t)128);
+  m_lua->FuncRegisterFromObjectOpt("ledsBegin", &g_leds, &LedStrip::Begin, (uint16_t)128);
   m_lua->FuncRegisterFromObjectOpt("ledsBeginDual", &g_leds, &LedStrip::BeginDual, (uint8_t)128);
   m_lua->FuncRegisterFromObjectOpt("ledsSegmentRange", &g_leds, &LedStrip::setSegmentRange, 0);
   m_lua->FuncRegisterFromObjectOpt("ledsSegmentBehavior", &g_leds, &LedStrip::setSegmentBehavior, 0, 0, 0, 0);

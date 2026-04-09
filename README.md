@@ -298,6 +298,7 @@ We know not all of us can build a PCB from scratch, so i'm providing a way you c
 
 ### Parts
 
+#### Main board
 * [5v 3A buck converter](https://aliexpress.com/item/1005005505907937.html)
 * [PD trigger](https://aliexpress.com/item/1005007889747084.html)
 * [SD Card module](https://aliexpress.com/item/1005008723789216.html)
@@ -305,9 +306,28 @@ We know not all of us can build a PCB from scratch, so i'm providing a way you c
 * [ESP32 N16R9 dev board](https://aliexpress.com/item/1005009906920237.html)
 * [Buzzer 5 or 3.3v](https://aliexpress.com/item/1005006201550296.html)
 * [Connector for the HUB75](https://aliexpress.com/item/1005007851512814.html) (Get the 16 pin one)
-For external use:
+* Some resistors (1k, 3k, 10k ohm)
+* Eletrolytic capacitor between 1500uF to 4700uF at least 6.3v
+* Any push button
+* A perf board
+* Some basic electronic stuff, like soldering iron, solder, wires, pliers...
+
+#### External parts
 * 2x [hub75 screen](https://aliexpress.com/item/4000002686894.html)
-* [Adderessable led strip](https://aliexpress.com/item/1005004752499978.html) (optional)
+**OPTIONAL**
+* [Adderessable led strip](https://aliexpress.com/item/1005004752499978.html)
+* [Touch sensor for boop (reccomended)](https://aliexpress.com/item/1005006246380749.html)
+* [Lidar infrared sensor for boop](https://pt.aliexpress.com/item/1005008557812009.html)
+* [IR receiver VS1838B if using IR controller](https://pt.aliexpress.com/item/1005009595736688.html)
+
+#### Remote controller
+
+To control you can:
+* Use a protopanda controller built with a NRF52832.
+* Use IR controller and write a driver for it.
+* [Buy one of those BLE devices that are compatible and have a driver already](https://pt.aliexpress.com/item/1005008459884910.html?)
+* Write your own solution vusing the extra two gpios left.
+
 
 
 # Printing and assembly guide

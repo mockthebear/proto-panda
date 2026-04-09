@@ -735,7 +735,7 @@ void startWifiServer(int port){
   float percentageHeapFree = freeHeapBytes * 100.0f / (float)totalHeapBytes;
   float percentagePsramFree = freePsramBytes* 100.0f / (float)totalPsramBytes;
 
-  Serial.printf("[Memory] %.1f%% free - %d of %d bytes free (psram: %d / %d  -> %.1f%%)", percentageHeapFree, freeHeapBytes, totalHeapBytes, totalPsramBytes, freePsramBytes, percentagePsramFree);
+  Serial.printf("[Memory] %.1f%% free - %lu of %lu bytes free (psram: %lu / %lu  -> %.1f%%)", percentageHeapFree, freeHeapBytes, totalHeapBytes, totalPsramBytes, freePsramBytes, percentagePsramFree);
 
   freeHeapBytes = ESP.getFreeHeap();  
   totalHeapBytes = ESP.getHeapSize(); 
@@ -744,6 +744,6 @@ void startWifiServer(int port){
 
   percentageHeapFree = freeHeapBytes * 100.0f / (float)totalHeapBytes;
   percentagePsramFree = freePsramBytes* 100.0f / (float)totalPsramBytes;
-  Serial.printf("[Memory] %.1f%% free - %d of %d bytes free (psram: %d / %d  -> %.1f%%)", percentageHeapFree, freeHeapBytes, totalHeapBytes, totalPsramBytes, freePsramBytes, percentagePsramFree);
+  Serial.printf("[Memory] %.1f%% free - %lu of %lu bytes free (psram: %lu / %lu  -> %.1f%%)", percentageHeapFree, freeHeapBytes, totalHeapBytes, totalPsramBytes, freePsramBytes, percentagePsramFree);
   server->begin();
 }

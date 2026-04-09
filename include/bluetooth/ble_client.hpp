@@ -17,15 +17,10 @@ class AdvertisedDeviceCallbacks: public NimBLEScanCallbacks {
     BleManager *bleObj;
 };
 
-/*
-
-
-*/
-
 
 class BleManager{
   public:
-    BleManager():clientCount(0), maxClients(2),lastScanClearTime(0),m_started(false),m_canScan(false),m_logDiscoveredClients(false),isScanning(false),nextId(0),m_mutex(xSemaphoreCreateMutex()){}
+    BleManager():clientCount(0), maxClients(2),lastScanClearTime(0),m_scanStartAt(0),m_started(false),m_canScan(false),m_logDiscoveredClients(false),isScanning(false),nextId(0),m_mutex(xSemaphoreCreateMutex()){}
     bool begin();
     bool beginRadio(int powerLevel=ESP_PWR_LVL_P9);
     void update();
@@ -77,7 +72,7 @@ class BleManager{
     bool connectToServerOLD();
     uint16_t clientCount;
   
-    uint32_t  maxClients, lastScanClearTime;
+    uint32_t  maxClients, lastScanClearTime, m_scanStartAt;
     bool m_started, m_canScan, m_logDiscoveredClients, isScanning;
     std::stack<uint8_t> availableIds;
     uint8_t nextId;

@@ -29,6 +29,8 @@ local _M = {
     boopTimerDuration = 500,
     boopTimer = 0,
 
+    gpioTriggeredOnDuration=0,
+
 
     isBooped = false,
 }
@@ -53,9 +55,19 @@ function _M.Load()
         if type(_M.config["gpio_state"]) ~= 'number' then  
             error("Boop mode gpio is enabled. The field 'gpio' is not present or is not a number")
         end
+
+        if type(_M.config["gpio_state"]) ~= 'number' and type(_M.config["gpio_state"]) ~= nil then  
+            error("Boop mode gpio is enabled. The field 'power_gpio' is is not a number")
+        end
+
         pinMode(_M.config["gpio"], INPUT)
         _M.gpio = _M.config["gpio"]
         _M.gpio_state = _M.config["gpio_state"]
+        _M.power_gpio = tonumber(_M.config["power_gpio"])
+        if _M.power_gpio then  
+            pinMode(_M.power_gpio, OUTPUT)
+            digitalWrite(_M.power_gpio, HIGH)
+        end
     end
     print("Mode is ".._M.mode)
 
@@ -526,6 +538,10 @@ function _M.isBoopedCheck(dt)
                 return true
             end
         else 
+            if _M.power_gpio and _M.gpioTriggeredOnDuration > 10000 then  
+                digitalWrite(_M.power_gpio, LOW)
+            end
+            _M.gpioTriggeredOnDuration = _M.gpioTriggeredOnDuration + dt
             if digitalRead(_M.gpio) ~= _M.gpio_state then  
                 _M.boopTimer = _M.boopTimer+dt  
             else
@@ -533,7 +549,9 @@ function _M.isBoopedCheck(dt)
             end
             if _M.boopTimer >= _M.boopTimerDuration then 
                 _M.boopTimer = 0
+                _M.gpioTriggeredOnDuration = 0
                 _M.isBooped = false
+                digitalWrite(_M.power_gpio, HIGH)
                 return false
             end
             return true

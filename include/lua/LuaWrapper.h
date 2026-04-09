@@ -10,7 +10,17 @@
 #define LUA_USE_C89
 #include "lua/lua.hpp"
 #include "tools/ir.hpp"
-#include "drawing/rendering/primitives.hpp"
+
+
+#if defined(ESP_IDF_VERSION_MAJOR)
+  #if ESP_IDF_VERSION_MAJOR >= 5
+
+  #else
+    #define ALLOW_DUPLICATED_TYPES 1  // Core 2.x with IDF 4.x
+  #endif
+#else
+  #define ALLOW_DUPLICATED_TYPES 1
+#endif
 
 typedef std::function<int(lua_State*)> LuaCFunctionLambda;
 
@@ -127,11 +137,13 @@ template<> struct GenericLuaGetter<uint16_t> {
     }
 };
 
+#ifdef ALLOW_DUPLICATED_TYPES
 template<> struct GenericLuaGetter<unsigned long> {
     static inline unsigned long Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaTonumber<unsigned long>(hasArgError, L, stackPos, pop);
     }
 };
+#endif
 
 template<> struct GenericLuaGetter<char> {
     static inline char Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
@@ -210,163 +222,6 @@ template<> struct GenericLuaGetter<PixelStruct> {
     }
 };
 
-
-template<> struct GenericLuaGetter<Vec2f> {
-    static inline Vec2f Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
-        Vec2f vec;
-
-        if (!lua_istable(L, stackPos)) {
-            hasArgError = true;
-            const char* function_name = lua_tostring(L, lua_upvalueindex(1));
-            luaL_error(L, "Expected a table value on parameter %d of function %s", lua_gettop(L), function_name);
-            return vec;
-        }
-
-        // Get x field
-        lua_getfield(L, stackPos, "x");
-        vec.x = static_cast<float>(luaL_optnumber(L, -1, 0));
-        lua_pop(L, 1);
-
-        // Get y field
-        lua_getfield(L, stackPos, "y");
-        vec.y = static_cast<float>(luaL_optnumber(L, -1, 0));
-        lua_pop(L, 1);
-
-        if (pop) {
-            lua_pop(L, 1); // Remove the table from stack if necessary
-        }
-
-        return vec;
-    }
-};
-
-template<> struct GenericLuaGetter<ModelData> {
-    static inline ModelData Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
-        ModelData modelData;
-
-        if (!lua_istable(L, stackPos)) {
-            hasArgError = true;
-            const char* function_name = lua_tostring(L, lua_upvalueindex(1));
-            luaL_error(L, "Expected a table value on parameter %d of function %s", lua_gettop(L), function_name);
-            return modelData;
-        }
-
-        lua_getfield(L, stackPos, "x");
-        if (lua_istable(L, -1)) {
-            int arrayLength = lua_rawlen(L, -1);
-            modelData.x.reserve(arrayLength);
-            
-            for (int i = 1; i <= arrayLength; i++) {
-                lua_rawgeti(L, -1, i);
-                modelData.x.push_back(static_cast<float>(luaL_optnumber(L, -1, 0)));
-                lua_pop(L, 1);
-            }
-        }
-        lua_pop(L, 1); 
-
-
-        lua_getfield(L, stackPos, "y");
-        if (lua_istable(L, -1)) {
-            int arrayLength = lua_rawlen(L, -1);
-            modelData.y.reserve(arrayLength);
-            
-            for (int i = 1; i <= arrayLength; i++) {
-                lua_rawgeti(L, -1, i);
-                modelData.y.push_back(static_cast<float>(luaL_optnumber(L, -1, 0)));
-                lua_pop(L, 1);
-            }
-        }
-        lua_pop(L, 1); 
-
-
-        lua_getfield(L, stackPos, "color");
-        if (lua_istable(L, -1)) {
-            int arrayLength = lua_rawlen(L, -1);
-            modelData.color.reserve(arrayLength);
-            
-            for (int i = 1; i <= arrayLength; i++) {
-                lua_rawgeti(L, -1, i);
-                modelData.color.push_back(static_cast<uint16_t>(luaL_optinteger(L, -1, 0)));
-                lua_pop(L, 1);
-            }
-        }
-        lua_pop(L, 1);
-
-        if (pop) {
-            lua_pop(L, 1);
-        }
-
-        if (modelData.x.size() != modelData.y.size()){
-            luaL_error(L, "Field X and Y must have the same amount of points");
-        }
-        if (modelData.x.size()/3 != modelData.color.size()){
-            luaL_error(L, "Triangle count dont match the color count");
-        }
-
-        return modelData;
-    }
-};
-
-template<> struct GenericLuaGetter<TriangleData> {
-    static inline TriangleData Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
-        TriangleData tdata;
-
-        if (!lua_istable(L, stackPos)) {
-            hasArgError = true;
-            const char* function_name = lua_tostring(L, lua_upvalueindex(1));
-            luaL_error(L, "Expected a table value on parameter %d of function %s", lua_gettop(L), function_name);
-            return tdata;
-        }
-
-        // Get x array
-        lua_getfield(L, stackPos, "x");
-        if (lua_istable(L, -1)) {
-            // Get x1, x2, x3 from the x array (1-indexed in Lua)
-            lua_rawgeti(L, -1, 1);
-            tdata.p1.x = static_cast<float>(luaL_optnumber(L, -1, 0));
-            lua_pop(L, 1);
-            
-            lua_rawgeti(L, -1, 2);
-            tdata.p2.x = static_cast<float>(luaL_optnumber(L, -1, 0));
-            lua_pop(L, 1);
-            
-            lua_rawgeti(L, -1, 3);
-            tdata.p3.x = static_cast<float>(luaL_optnumber(L, -1, 0));
-            lua_pop(L, 1);
-        }
-        lua_pop(L, 1); // Pop x array
-
-        // Get y array
-        lua_getfield(L, stackPos, "y");
-        if (lua_istable(L, -1)) {
-            // Get y1, y2, y3 from the y array (1-indexed in Lua)
-            lua_rawgeti(L, -1, 1);
-            tdata.p1.y = static_cast<float>(luaL_optnumber(L, -1, 0));
-            lua_pop(L, 1);
-            
-            lua_rawgeti(L, -1, 2);
-            tdata.p2.y = static_cast<float>(luaL_optnumber(L, -1, 0));
-            lua_pop(L, 1);
-            
-            lua_rawgeti(L, -1, 3);
-            tdata.p3.y = static_cast<float>(luaL_optnumber(L, -1, 0));
-            lua_pop(L, 1);
-        }
-        lua_pop(L, 1); // Pop y array
-
-        // Get color field
-        lua_getfield(L, stackPos, "color");
-        tdata.color = static_cast<uint16_t>(luaL_optinteger(L, -1, 0));
-        lua_pop(L, 1);
-
-        if (pop) {
-            lua_pop(L, 1); // Remove the main table from stack if necessary
-        }
-
-        return tdata;
-    }
-};
-
 template<>
     struct GenericLuaGetter<std::string> {
      static inline std::string Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
@@ -424,14 +279,6 @@ template<>
 };
 
 template<>
-    struct GenericLuaGetter<std::vector<PointList>> {
-     static inline std::vector<PointList> Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
-        return GenericLuaVector<PointList>(hasArgError, L, stackPos, pop, offsetStack);
-    };
-};
-
-
-template<>
     struct GenericLuaGetter<std::vector<uint8_t>> {
      static inline std::vector<uint8_t> Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
         return GenericLuaVector<uint8_t>(hasArgError, L, stackPos, pop, offsetStack);
@@ -454,32 +301,14 @@ template<>
 };
 
 
-template<>
-    struct GenericLuaGetter<std::vector<TriangleData>> {
-     static inline std::vector<TriangleData> Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
-        return GenericLuaVector<TriangleData>(hasArgError, L, stackPos, pop, offsetStack);
-    };
-};
+
+
 
 template<typename T1> struct GenericLuaReturner{
     static inline int Ret(T1 vr,lua_State *L,bool forceTable = false){
         lua_pushnil(L);
         return 1;
     };
-};
-
-template<> struct GenericLuaReturner<Vec2f> {
-    static inline int Ret(const Vec2f& vec, lua_State* L, bool forceTable = false) {
-        lua_createtable(L, 0, 2);
-            
-        lua_pushnumber(L, static_cast<lua_Number>(vec.x));
-        lua_setfield(L, -2, "x");
-            
-        lua_pushnumber(L, static_cast<lua_Number>(vec.y));
-        lua_setfield(L, -2, "y");
-            
-        return 1;
-    }
 };
 
 template<> struct GenericLuaReturner<char>{
@@ -497,13 +326,14 @@ template<> struct GenericLuaReturner<uint8_t>{
         return 1;
     };
 };
-
+#ifdef ALLOW_DUPLICATED_TYPES
 template<> struct GenericLuaReturner<unsigned long>{
     static inline int Ret(unsigned long vr,lua_State *L,bool forceTable = false){
         lua_pushnumber(L,vr);
         return 1;
    };
 };
+#endif
 
 template<> struct GenericLuaReturner<uint32_t>{
      static inline int Ret(uint32_t vr,lua_State *L,bool forceTable = false){
@@ -727,7 +557,13 @@ template<int N>
             std::get<N-1>(tuple) = v;
             readLuaValues<N-1>::Read(hasArgError, tuple,L,stackpos,offsetStack,head,tail...);
         }else{
+            #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Warray-bounds"
+            //Out of bounds false positive what.
+            //It should never reach here because the N <= argCountLua. But thats validated in run time
+            //So these pragmas only suppress the warning
             ValueType v = LuaTyper<ValueType>::GetTypeIfSame(ValueType(),head);
+            #pragma GCC diagnostic pop
             std::get<N-1>(tuple) = v;
             readLuaValues<N-1>::Read(hasArgError, tuple ,L,stackpos,offsetStack, tail...);
         }
