@@ -796,16 +796,16 @@
 
         .canvas-info-bar {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 10px;
+            right: 10px;
             background: rgba(30, 30, 30, 0.95);
             color: #ff9900;
-            padding: 10px 15px;
-            border-radius: 6px;
+            padding: 4px 8px;
+            border-radius: 4px;
             font-family: 'Courier New', monospace;
-            font-size: 12px;
+            font-size: 9px;
             border: 1px solid #ff9900;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
             z-index: 50;
             backdrop-filter: blur(4px);
             pointer-events: none;
@@ -814,37 +814,39 @@
         .canvas-info-bar .info-item {
             display: flex;
             align-items: center;
-            gap: 6px;
-            margin-bottom: 4px;
+            gap: 4px;
+            margin-bottom: 2px;
         }
 
         .canvas-info-bar .info-label {
             color: #aaa;
             font-weight: bold;
-            min-width: 40px;
+            min-width: 32px;
+            font-size: 8px;
         }
 
         .canvas-info-bar .info-value {
             color: #9cdcfe;
             font-weight: bold;
+            font-size: 8px;
         }
-
         .group-button-container {
             position: absolute;
-            bottom: 15px;
-            right: 15px;
+            bottom: 8px;
+            right: 8px;
             z-index: 50;
         }
+
         .create-group-btn {
             background: #ff9900;
             color: #111;
             border: none;
             border-radius: 4px;
-            padding: 6px 12px;
+            padding: 4px 8px;
             font-family: 'Courier New', monospace;
             font-weight: bold;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 9px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
             transition: all 0.1s;
             pointer-events: auto;
@@ -934,9 +936,16 @@
         .code-output-container {
             margin-top: 10px;
             background: #1e1e1e;
-            padding: 10px;
+            padding: 8px;
             border-radius: 5px;
             transition: opacity 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        :not(.animation-mode) .code-output-container {
+            height: 200px;
+            display: flex;
+            flex-direction: column;
         }
 
         .animation-mode .code-output-container {
@@ -946,22 +955,23 @@
         .code-label {
             color: #9cdcfe;
             font-weight: bold;
-            margin-bottom: 8px;
-            font-size: 16px;
+            margin-bottom: 6px;
+            font-size: 12px;
         }
 
         .code-output {
+            max-height: 150px;
             background: #1e1e1e;
             color: #d4d4d4;
-            padding: 15px;
+            padding: 8px;
             border-radius: 6px;
             font-family: 'Courier New', monospace;
-            font-size: 14px;
+            font-size: 11px;
             border: 1px solid #555;
             white-space: pre-wrap;
             word-wrap: break-word;
-            max-height: 250px;
-            overflow-y: auto;
+            overflow: hidden;;
+
         }
 
         .selection-rect {
@@ -2333,20 +2343,122 @@
 
 /* Keyframe Editor - Make sure it appears above everything */
 .keyframe-editor {
-    position: absolute !important;
-    top: 80px !important;
-    left: 15px !important;
-    background: rgba(30, 30, 30, 0.98) !important;
+    position: fixed !important;
+    background: rgba(30, 30, 30, 0.2) !important;
     backdrop-filter: blur(8px) !important;
     border: 2px solid #ff9900 !important;
     border-radius: 8px !important;
     padding: 12px !important;
-    min-width: 240px !important;
-    z-index: 10000 !important;
+    min-width: 260px !important;
+    z-index: 100000 !important;
     font-family: 'Courier New', monospace !important;
     font-size: 11px !important;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.8) !important;
-    pointer-events: auto !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
+}
+
+.keyframe-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: move;
+}
+
+.keyframe-editor-header span {
+    cursor: move;
+    color: #ff9900;
+    font-weight: bold;
+}
+
+.keyframe-editor-header button {
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 18px;
+    padding: 0 6px;
+}
+
+.keyframe-editor-header button:hover {
+    color: #ff9900;
+}
+
+.keyframe-editor-content {
+    cursor: default;
+}
+
+.keyframe-editor-content input,
+.keyframe-editor-content select {
+    background: rgba(20, 20, 20, 0.9);
+    border: 1px solid #555;
+    color: #fff;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    width: 100%;
+    margin-top: 4px;
+    box-sizing: border-box;
+}
+
+.keyframe-editor-content input:focus,
+.keyframe-editor-content select:focus {
+    outline: none;
+    border-color: #ff9900;
+}
+
+.keyframe-editor-content .param-row {
+    margin-bottom: 10px;
+}
+
+.keyframe-editor-content .param-label {
+    color: #ffaa66;
+    font-size: 10px;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.keyframe-editor-content .delete-btn {
+    background: #ff6666;
+    color: #111;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: bold;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.keyframe-editor-content .delete-btn:hover {
+    background: #ff4444;
+}
+
+.keyframe-editor-content .instant-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 6px;
+    background: rgba(30, 30, 30, 0.6);
+    border-radius: 4px;
+}
+
+.keyframe-editor-content .instant-checkbox input {
+    width: auto;
+    margin: 0;
+}
+
+.keyframe-editor-content .instant-checkbox label {
+    color: #ff9900;
+    cursor: pointer;
+    font-weight: bold;
 }
 
 .keyframe-editor input, .keyframe-editor select {
@@ -2567,12 +2679,13 @@
                         <span class="info-value" id="pointInfo">-</span>
                     </div>
                 </div>
-                <div class="keyframe-editor" id="keyframeEditor" style="display: none; position: absolute; top: 80px; left: 15px; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(4px); border: 1px solid #ff9900; border-radius: 6px; padding: 10px; min-width: 200px; z-index: 100; font-family: 'Courier New', monospace; font-size: 11px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
-                    <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 8px;">
-                        <button id="closeKeyframeEditor" style="background: none; border: none; color: #aaa; cursor: pointer; font-size: 16px; padding: 0 4px;">×</button>
+                <div class="keyframe-editor" id="keyframeEditor" style="display: none; position: fixed; top: 100px; left: 100px; border: 2px solid #ff9900; border-radius: 8px; padding: 12px; min-width: 260px; z-index: 100000; font-family: 'Courier New', monospace; font-size: 11px; box-shadow: 0 8px 24px rgba(0,0,0,0.8);">
+                    <div id="keyframeEditorHeader" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 4px; background: rgba(0,0,0,0.1); border-radius: 4px; cursor: move;">
+                        <span style="color: #ff9900; font-weight: bold; ">⋮⋮</span>
+                        <button id="closeKeyframeEditor" style="background: none; border: none; color: #aaa; cursor: pointer; font-size: 18px; padding: 0 6px;">×</button>
                     </div>
                     <div id="keyframeEditorContent">
-                        <div style="color: #888; text-align: center; padding: 10px;">Click a keyframe to edit</div>
+                        <div style="color: #888; text-align: center; padding: 10px; background: rgba(30, 30, 30, 0.1);">Click a keyframe to edit</div>
                     </div>
                 </div>
                 <div class="group-button-container" id="groupButtonContainer"></div>
@@ -3228,6 +3341,14 @@
                 
             } else {
                 // EXITING ANIMATION MODE
+
+                const editor = document.getElementById('keyframeEditor');
+                if (editor){
+                    editor.style.display = 'none';
+                }
+                currentEditingKeyframe = null;
+                clearKeyframeHighlight();
+
                 toggleSwitch.classList.remove('active');
                 modelLabel.style.color = '#ff9900';
                 animLabel.style.color = '#aaa';
@@ -3448,7 +3569,7 @@
             
             const anim = getSelectedAnimation();
             if (!anim || anim.tracks.length === 0) {
-                container.innerHTML = '<div class="empty-timelines-message">✨ No animation selected or no tracks. Click + to add a track, then drag tools to add keyframes.</div>';
+                container.innerHTML = '<div class="empty-timelines-message">Create or select an animation :3</div>';
                 updateTimelineStats();
                 if (anim) updateRuler(anim.duration);
                 return;
@@ -3979,6 +4100,8 @@
                     }
                     
                     if (time === null) return;
+                    currentAnimationTime = time;
+                    updatePlayheadPosition();
                     
                     const trackId = canvas.getAttribute('data-track-id');
                     const anim = getSelectedAnimation();
@@ -5519,7 +5642,22 @@ function playAnimationPlayback() {
             const stopBtn = document.getElementById('timelineStopBtn');
             const durationInput = document.getElementById('timelineDuration');
             
-            if (playBtn) playBtn.onclick = playAnimationPlayback;
+            if (playBtn) playBtn.onclick = function(){
+                const anim = getSelectedAnimation();
+                if (anim && anim.tracks.length > 0){
+                    if (isAnimPlaying) {
+                        pauseAnimationPlayback();
+                    } else {
+                        if (currentAnimationTime >= anim.duration) {
+                            currentAnimationTime = 0;
+                            updatePlayheadPosition();
+                            applyAnimationAtTime(0);
+                            draw();
+                        }
+                        playAnimationPlayback()
+                    }
+                }
+            };
             if (pauseBtn) pauseBtn.onclick = pauseAnimationPlayback;
             if (stopBtn) stopBtn.onclick = stopAnimationPlayback;
             if (durationInput) durationInput.onchange = updateAnimationDuration;
@@ -5574,6 +5712,7 @@ function playAnimationPlayback() {
             const repeatBehavior = document.getElementById('repeatBehavior');
 
             if (repeatToggle) {
+
                 repeatToggle.addEventListener('change', function() {
                     const anim = getSelectedAnimation();
                     if (anim) {
@@ -5582,7 +5721,11 @@ function playAnimationPlayback() {
                         anim.repeatEnabled = this.checked;
                         updateRepeatControls();
                     }
+                    this.blur(); //yep i need this shit here
                 });
+ 
+
+
             }
 
             if (repeatBehavior) {
@@ -8327,15 +8470,16 @@ function fillTriangleScanline(p1, p2, p3, fillStyle) {
                 !logo.contains(e.target)) {
                 modal.classList.remove('active');
             }
+
             if (pickModeActive) {
                 // Check if the click target is the canvas or a canvas-related element
                 const isCanvas = e.target === c || e.target.closest('#meuCanvas');
                 const isPickButton = e.target.closest('#pickTranslateBtn') || e.target.closest('#pickCenterBtn');
-                
+                console.log("oh shish: "+isCanvas+"  "+isPickButton)
                 // Don't cancel if clicking on the pick button or canvas
                 if (!isCanvas && !isPickButton) {
                     // Clicked outside canvas - cancel pick mode
-                    console.log("Pick mode cancelled by outside click");
+        
                     pickModeActive = false;
                     pickModeCallback = null;
                     if (window._finalizePick) {
@@ -8356,6 +8500,8 @@ function fillTriangleScanline(p1, p2, p3, fillStyle) {
         });
 
         document.addEventListener('keydown', function(e) {
+            
+
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
                 if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
                     return;
@@ -9489,7 +9635,6 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
 
 
         function showKeyframeEditor(animation, track, keyframeIndex) {
-            console.log("showKeyframeEditor called");
             const editor = document.getElementById('keyframeEditor');
             const content = document.getElementById('keyframeEditorContent');
             
@@ -9623,6 +9768,8 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
             
             content.innerHTML = html;
             editor.style.display = 'block';
+
+            setupKeyframeEditorDrag();
             
             // Auto-save function
             function autoSave() {
@@ -9741,7 +9888,6 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
                 pickTranslateBtn.onclick = (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log("Pick translate button clicked");
                     
                     // Store current time
                     const savedTime = currentAnimationTime;
@@ -9773,9 +9919,7 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
                     const baseRefX = currentBounds.minX - originalOffsetX;
                     const baseRefY = currentBounds.minY - originalOffsetY;
                     
-                    console.log("Original offset:", originalOffsetX, originalOffsetY);
-                    console.log("Current bounds min (from animationModels):", currentBounds.minX, currentBounds.minY);
-                    console.log("Base ref:", baseRefX, baseRefY);
+    
                     
                     // Store for use in callback
                     const pickBaseRef = { x: baseRefX, y: baseRefY };
@@ -9786,14 +9930,13 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
                     
                     // Define the pick callback
                     const pickCallback = (canvasX, canvasY) => {
-                        console.log("Picked position:", canvasX, canvasY);
-                        console.log("Pick base ref:", pickBaseRef);
+
                         
                         // Calculate new offset: picked position - base reference
                         const newOffsetX = canvasX - pickBaseRef.x;
                         const newOffsetY = canvasY - pickBaseRef.y;
                         
-                        console.log("New offset calculated:", newOffsetX, newOffsetY);
+             
                         
                         // Update input fields
                         const xInput = document.getElementById('editParamX');
@@ -9823,7 +9966,7 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
                     const finalizePick = () => {
                         if (hasChanges) {
                             saveUndoState();
-                            console.log("Saved pick changes to undo stack");
+      
                         }
                         
                         // Restore original time
@@ -9841,7 +9984,48 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
             }
 
 
-
+            function setupKeyframeEditorDrag() {
+                const editor = document.getElementById('keyframeEditor');
+                const header = document.getElementById('keyframeEditorHeader');
+                
+                if (!editor || !header) return;
+                
+                let isDragging = false;
+                let dragOffsetX = 0;
+                let dragOffsetY = 0;
+                
+                header.addEventListener('mousedown', (e) => {
+                    // Don't drag if clicking on buttons
+                    if (e.target.tagName === 'BUTTON') return;
+                    
+                    isDragging = true;
+                    const rect = editor.getBoundingClientRect();
+                    dragOffsetX = e.clientX - rect.left;
+                    dragOffsetY = e.clientY - rect.top;
+                    
+                    editor.style.cursor = 'grabbing';
+                    e.preventDefault();
+                });
+                
+                document.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+                    
+                    let newLeft = e.clientX - dragOffsetX;
+                    let newTop = e.clientY - dragOffsetY;
+                    
+                    // Keep within window bounds
+                    newLeft = Math.max(0, Math.min(window.innerWidth - editor.offsetWidth, newLeft));
+                    newTop = Math.max(0, Math.min(window.innerHeight - editor.offsetHeight, newTop));
+                    
+                    editor.style.left = newLeft + 'px';
+                    editor.style.top = newTop + 'px';
+                });
+                
+                document.addEventListener('mouseup', () => {
+                    isDragging = false;
+                    editor.style.cursor = '';
+                });
+            }
 
             const pickCenterBtn = document.getElementById('pickCenterBtn');
             if (pickCenterBtn) {
