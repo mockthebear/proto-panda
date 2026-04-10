@@ -50,9 +50,13 @@ class Model {
 
         int AddPointGroup(PointList points);
 
-        void TranslatePoints(uint32_t pointId, Vec2f delta);
-        void ScalePoints(uint32_t pointId, Vec2f center, Vec2f scaleFactors);
-        void SetPointsPosition(uint32_t pointId, Vec2f pos);
+        void TranslatePoints(uint32_t groupid, Vec2f delta);
+        void ScalePoints(uint32_t groupid, Vec2f center, Vec2f scaleFactors);
+        void SetPointsPosition(uint32_t groupid, Vec2f pos);
+
+
+        void SetPointPosition(uint32_t pointId, Vec2f pos);
+        void TranslatePoint(uint32_t pointid, Vec2f pos);
 
         int GetSize(){ return triangleCount;};
         int GetId(){ return id;};

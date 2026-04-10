@@ -922,9 +922,14 @@ bool LuaInterface::Start()
   ClassRegister<Model>::RegisterClassMethod(_state,"Model","GetTriangle",&Model::GetTriangle);
   ClassRegister<Model>::RegisterClassMethod(_state,"Model","SetBatchOperations",&Model::SetBatchOperations);
   ClassRegister<Model>::RegisterClassMethod(_state,"Model","SetAccumulativeOperations",&Model::SetAccumulativeOperations);
+
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","SetPointPosition",&Model::SetPointPosition);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","TranslatePoint",&Model::TranslatePoint);
+
   ClassRegister<Model>::RegisterClassMethod(_state,"Model","SetPointsPosition",&Model::SetPointsPosition);
   ClassRegister<Model>::RegisterClassMethod(_state,"Model","ScalePoints",&Model::ScalePoints);
   ClassRegister<Model>::RegisterClassMethod(_state,"Model","TranslatePoints",&Model::TranslatePoints);
+
   ClassRegister<Model>::RegisterClassMethod(_state,"Model","Scale",&Model::Scale);
   ClassRegister<Model>::RegisterClassMethod(_state,"Model","Rotate",&Model::Rotate);
   ClassRegister<Model>::RegisterClassMethod(_state,"Model","Translate",&Model::Translate);

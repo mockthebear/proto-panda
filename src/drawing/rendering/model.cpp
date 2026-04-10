@@ -252,29 +252,7 @@ void Model::Recalculate(){
         int baseIdx = i * 3;
         
         // Get the three vertices
-        Vec2f v0 = {points.x[baseIdx], points.y[baseIdx]};
-        Vec2f v1 = {points.x[baseIdx + 1], points.y[baseIdx + 1]};
-        Vec2f v2 = {points.x[baseIdx + 2], points.y[baseIdx + 2]};
         
-        // Sort them by y-coordinate (v0.y <= v1.y <= v2.y)
-        // We'll use a simple sorting network for three elements
-        if (v0.y > v1.y) {
-            std::swap(v0, v1);
-        }
-        if (v0.y > v2.y) {
-            std::swap(v0, v2);
-        }
-        if (v1.y > v2.y) {
-            std::swap(v1, v2);
-        }
-        
-        // Write back sorted vertices
-        points.x[baseIdx] = v0.x;
-        points.y[baseIdx] = v0.y;
-        points.x[baseIdx + 1] = v1.x;
-        points.y[baseIdx + 1] = v1.y;
-        points.x[baseIdx + 2] = v2.x;
-        points.y[baseIdx + 2] = v2.y;
 
         for (int j = 0; j < 3; j++){
             //Calculate max and mins
@@ -294,10 +272,8 @@ void Model::Recalculate(){
             }
         }
     }
-    center.x = (boundaries.x[0]-boundaries.x[1])/2.0f;
-    center.y = (boundaries.y[0]-boundaries.y[1])/2.0f;
-
-    
+    center.x = boundaries.x[1] + (boundaries.x[0]-boundaries.x[1])/2.0f;
+    center.y = boundaries.y[1] + (boundaries.y[0]-boundaries.y[1])/2.0f;
 }
 
 TriangleData Model::GetTriangle(int i){
@@ -372,12 +348,32 @@ void Model::RasterTriangle(ModelHandler *scene, int i){
 
     int baseIdx = i * 3;
 
-    int16_t x0 = rasterPoints.x[baseIdx + 0]; 
-    int16_t y0 = rasterPoints.y[baseIdx + 0]; 
-    int16_t x1 = rasterPoints.x[baseIdx + 1]; 
-    int16_t y1 = rasterPoints.y[baseIdx + 1];
-    int16_t x2 = rasterPoints.x[baseIdx + 2]; 
-    int16_t y2 = rasterPoints.y[baseIdx + 2]; 
+    Vec2f v0 = {points.x[baseIdx + 0], points.y[baseIdx + 0]};
+    Vec2f v1 = {points.x[baseIdx + 1], points.y[baseIdx + 1]};
+    Vec2f v2 = {points.x[baseIdx + 2], points.y[baseIdx + 2]};
+        
+    // Sort them by y-coordinate (v0.y <= v1.y <= v2.y)
+    // We'll use a simple sorting network for three elements
+    if (v0.y > v1.y) {
+        std::swap(v0, v1);
+    }
+    if (v0.y > v2.y) {
+        std::swap(v0, v2);
+    }
+    if (v1.y > v2.y) {
+        std::swap(v1, v2);
+    }
+        
+    int16_t x0 = v0.x; 
+    int16_t y0 = v0.y; 
+    int16_t x1 = v1.x; 
+    int16_t y1 = v1.y;
+    int16_t x2 = v2.x; 
+    int16_t y2 = v2.y; 
+
+
+    
+
     uint16_t color = this->color[i];
     int16_t a, b, y, last;
   
@@ -503,4 +499,17 @@ void Model::ScalePoints(uint32_t groupid, Vec2f center, Vec2f scaleFactors){
 }
 void Model::SetPointsPosition(uint32_t groupid, Vec2f pos){
     bones.Set(groupid, pos);
+}
+
+
+void Model::TranslatePoint(uint32_t pointid, Vec2f pos){
+    points.x[pointid] += pos.x;
+    points.y[pointid] += pos.y;
+}
+
+
+
+void Model::SetPointPosition(uint32_t pointid, Vec2f pos){
+    points.x[pointid] = pos.x;
+    points.y[pointid] = pos.y;
 }

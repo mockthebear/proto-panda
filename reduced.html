@@ -4456,12 +4456,77 @@
                             centerY: firstKf.params.centerY !== undefined ? firstKf.params.centerY : 16
                         };
                     } else if (actionType === 'scale') {
+                        // If no keyframes, return identity
+                        if (typeKeyframes.length === 0) return null;
+                        
+                        // Find the keyframes around current time
+                        let prevKf = null;
+                        let nextKf = null;
+                        
+                        for (let i = 0; i < typeKeyframes.length; i++) {
+                            if (typeKeyframes[i].time <= currentTime) {
+                                prevKf = typeKeyframes[i];
+                            }
+                            if (typeKeyframes[i].time > currentTime && !nextKf) {
+                                nextKf = typeKeyframes[i];
+                                break;
+                            }
+                        }
+                        
+                        // Before first keyframe - return identity (scale 1)
+                        if (!prevKf) {
+                            return { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
+                        }
+                        
+                        // If we're exactly at a keyframe and it's instant, return its params
+                        if (Math.abs(prevKf.time - currentTime) < 0.1 && prevKf.instant === true) {
+                            return prevKf.params;
+                        }
+                        
+                        // If no next keyframe, return the cumulative product of all keyframes up to now
+                        if (!nextKf) {
+                            let cumulativeX = 1;
+                            let cumulativeY = 1;
+                            for (let kf of typeKeyframes) {
+                                if (kf.time <= currentTime) {
+                                    cumulativeX *= kf.params.scaleX;
+                                    cumulativeY *= kf.params.scaleY;
+                                }
+                            }
+                            return {
+                                scaleX: cumulativeX,
+                                scaleY: cumulativeY,
+                                useModelCenter: prevKf.params.useModelCenter || false,
+                                centerX: prevKf.params.centerX !== undefined ? prevKf.params.centerX : 32,
+                                centerY: prevKf.params.centerY !== undefined ? prevKf.params.centerY : 16
+                            };
+                        }
+                        
+                        // Calculate cumulative scale up to prevKf
+                        let cumulativeUpToPrevX = 1;
+                        let cumulativeUpToPrevY = 1;
+                        for (let kf of typeKeyframes) {
+                            if (kf.time <= prevKf.time) {
+                                cumulativeUpToPrevX *= kf.params.scaleX;
+                                cumulativeUpToPrevY *= kf.params.scaleY;
+                            }
+                        }
+                        
+                        // Calculate cumulative scale up to nextKf
+                        let cumulativeUpToNextX = cumulativeUpToPrevX * nextKf.params.scaleX;
+                        let cumulativeUpToNextY = cumulativeUpToPrevY * nextKf.params.scaleY;
+                        
+                        // Interpolate between cumulative values
+                        const t = (currentTime - prevKf.time) / (nextKf.time - prevKf.time);
+                        const interpScaleX = cumulativeUpToPrevX + (cumulativeUpToNextX - cumulativeUpToPrevX) * t;
+                        const interpScaleY = cumulativeUpToPrevY + (cumulativeUpToNextY - cumulativeUpToPrevY) * t;
+                        
                         return {
-                            scaleX: 1 + (firstKf.params.scaleX - 1) * t,
-                            scaleY: 1 + (firstKf.params.scaleY - 1) * t,
-                            useModelCenter: firstKf.params.useModelCenter || false,
-                            centerX: firstKf.params.centerX !== undefined ? firstKf.params.centerX : 32,
-                            centerY: firstKf.params.centerY !== undefined ? firstKf.params.centerY : 16
+                            scaleX: interpScaleX,
+                            scaleY: interpScaleY,
+                            useModelCenter: nextKf.params.useModelCenter || prevKf.params.useModelCenter || false,
+                            centerX: nextKf.params.centerX !== undefined ? nextKf.params.centerX : (prevKf.params.centerX !== undefined ? prevKf.params.centerX : 32),
+                            centerY: nextKf.params.centerY !== undefined ? nextKf.params.centerY : (prevKf.params.centerY !== undefined ? prevKf.params.centerY : 16)
                         };
                     }
                     return null;
@@ -4473,7 +4538,21 @@
                     return prevKf.params;
                 }
                 
-                if (!nextKf) return prevKf.params;
+                if (!nextKf) {
+                    if (actionType === 'translate') {
+                        let cumulativeX = 0;
+                        let cumulativeY = 0;
+                        for (let kf of typeKeyframes) {
+                            if (kf.time <= currentTime) {
+                                cumulativeX += kf.params.x;
+                                cumulativeY += kf.params.y;
+                            }
+                        }
+                        return { x: cumulativeX, y: cumulativeY };
+                    }else{
+                        return prevKf.params;
+                    }
+                }
                 
                 if (nextKf.instant === true) {
                     return prevKf.params;
@@ -4484,27 +4563,160 @@
                 const t = timeDiff > 0 ? Math.min(1, Math.max(0, elapsed / timeDiff)) : 1;
                 
                 if (actionType === 'translate') {
+                    const typeKeyframes = keyframes.filter(kf => kf.action === 'translate');
+                    if (typeKeyframes.length === 0) return null;
+                    
+                    let prevKf = null;
+                    let nextKf = null;
+                    
+                    for (let i = 0; i < typeKeyframes.length; i++) {
+                        if (typeKeyframes[i].time <= currentTime) {
+                            prevKf = typeKeyframes[i];
+                        }
+                        if (typeKeyframes[i].time > currentTime && !nextKf) {
+                            nextKf = typeKeyframes[i];
+                            break;
+                        }
+                    }
+                    
+                    // Before first keyframe
+                    if (!prevKf && typeKeyframes.length > 0) {
+                        const firstKf = typeKeyframes[0];
+                        if (currentTime === 0) return { x: 0, y: 0 };
+                        const t = Math.min(1, Math.max(0, currentTime / firstKf.time));
+                        return { x: firstKf.params.x * t, y: firstKf.params.y * t };
+                    }
+                    
+                    if (!prevKf) return { x: 0, y: 0 };
+                    
+                    // Calculate cumulative sum up to prevKf
+                    let cumPrevX = 0, cumPrevY = 0;
+                    for (let kf of typeKeyframes) {
+                        if (kf.time <= prevKf.time) {
+                            cumPrevX += kf.params.x;
+                            cumPrevY += kf.params.y;
+                        }
+                    }
+                    
+                    // After last keyframe - return cumulative sum
+                    if (!nextKf) {
+                        let cumulativeX = 0, cumulativeY = 0;
+                        for (let kf of typeKeyframes) {
+                            if (kf.time <= currentTime) {
+                                cumulativeX += kf.params.x;
+                                cumulativeY += kf.params.y;
+                            }
+                        }
+                        return { x: cumulativeX, y: cumulativeY };
+                    }
+                    
+                    // Between keyframes - interpolate between cumulative sums
+                    let cumNextX = cumPrevX + nextKf.params.x;
+                    let cumNextY = cumPrevY + nextKf.params.y;
+                    const t = (currentTime - prevKf.time) / (nextKf.time - prevKf.time);
+                    
                     return {
-                        x: prevKf.params.x + (nextKf.params.x - prevKf.params.x) * t,
-                        y: prevKf.params.y + (nextKf.params.y - prevKf.params.y) * t
+                        x: cumPrevX + (cumNextX - cumPrevX) * t,
+                        y: cumPrevY + (cumNextY - cumPrevY) * t
                     };
                 } else if (actionType === 'rotate') {
-                    let angleDiff = nextKf.params.angle - prevKf.params.angle;
-                    while (angleDiff > 180) angleDiff -= 360;
-                    while (angleDiff < -180) angleDiff += 360;
+                    let totalAngle = 0;
+                    let lastTime = 0;
+                    let lastAngle = 0;
+                    
+                    // Sum all keyframes up to current time
+                    for (let kf of typeKeyframes) {
+                        if (kf.time <= currentTime) {
+                            totalAngle += kf.params.angle;
+                            lastTime = kf.time;
+                            lastAngle = kf.params.angle;
+                        }
+                    }
+                    
+                    if (nextKf && currentTime > lastTime && !prevKf.instant) {
+                        const t = (currentTime - lastTime) / (nextKf.time - lastTime);
+                        // Add partial of the next keyframe's delta
+                        totalAngle += nextKf.params.angle * t;
+                    }
+                    
                     return {
-                        angle: prevKf.params.angle + angleDiff * t,
-                        useModelCenter: nextKf.params.useModelCenter || prevKf.params.useModelCenter,
-                        centerX: nextKf.params.centerX !== undefined ? nextKf.params.centerX : prevKf.params.centerX,
-                        centerY: nextKf.params.centerY !== undefined ? nextKf.params.centerY : prevKf.params.centerY
+                        angle: totalAngle,
+                        useModelCenter: nextKf?.params.useModelCenter || prevKf?.params.useModelCenter || false,
+                        centerX: nextKf?.params.centerX !== undefined ? nextKf.params.centerX : (prevKf?.params.centerX !== undefined ? prevKf.params.centerX : 32),
+                        centerY: nextKf?.params.centerY !== undefined ? nextKf.params.centerY : (prevKf?.params.centerY !== undefined ? prevKf.params.centerY : 16)
                     };
                 } else if (actionType === 'scale') {
+                    // If no keyframes, return identity
+                    if (typeKeyframes.length === 0) return null;
+                    
+                    // Find the keyframes around current time
+                    let prevKf = null;
+                    let nextKf = null;
+                    
+                    for (let i = 0; i < typeKeyframes.length; i++) {
+                        if (typeKeyframes[i].time <= currentTime) {
+                            prevKf = typeKeyframes[i];
+                        }
+                        if (typeKeyframes[i].time > currentTime && !nextKf) {
+                            nextKf = typeKeyframes[i];
+                            break;
+                        }
+                    }
+                    
+                    // Before first keyframe - return identity (scale 1)
+                    if (!prevKf) {
+                        return { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
+                    }
+                    
+                    // If we're exactly at a keyframe and it's instant, return its params
+                    if (Math.abs(prevKf.time - currentTime) < 0.1 && prevKf.instant === true) {
+                        return prevKf.params;
+                    }
+                    
+                    // If no next keyframe, return the cumulative product of all keyframes up to now
+                    if (!nextKf) {
+                        let cumulativeX = 1;
+                        let cumulativeY = 1;
+                        for (let kf of typeKeyframes) {
+                            if (kf.time <= currentTime) {
+                                cumulativeX *= kf.params.scaleX;
+                                cumulativeY *= kf.params.scaleY;
+                            }
+                        }
+                        return {
+                            scaleX: cumulativeX,
+                            scaleY: cumulativeY,
+                            useModelCenter: prevKf.params.useModelCenter || false,
+                            centerX: prevKf.params.centerX !== undefined ? prevKf.params.centerX : 32,
+                            centerY: prevKf.params.centerY !== undefined ? prevKf.params.centerY : 16
+                        };
+                    }
+                    
+                    // Calculate cumulative scale up to prevKf
+                    let cumulativeUpToPrevX = 1;
+                    let cumulativeUpToPrevY = 1;
+                    for (let kf of typeKeyframes) {
+                        if (kf.time <= prevKf.time) {
+                            cumulativeUpToPrevX *= kf.params.scaleX;
+                            cumulativeUpToPrevY *= kf.params.scaleY;
+                        }
+                    }
+                    
+                    // Calculate cumulative scale up to nextKf
+                    let cumulativeUpToNextX = cumulativeUpToPrevX * nextKf.params.scaleX;
+                    let cumulativeUpToNextY = cumulativeUpToPrevY * nextKf.params.scaleY;
+                    
+                    // Interpolate between cumulative values
+                    const t = (currentTime - prevKf.time) / (nextKf.time - prevKf.time);
+                    const interpScaleX = cumulativeUpToPrevX + (cumulativeUpToNextX - cumulativeUpToPrevX) * t;
+                    const interpScaleY = cumulativeUpToPrevY + (cumulativeUpToNextY - cumulativeUpToPrevY) * t;
+                    
                     return {
-                        scaleX: prevKf.params.scaleX + (nextKf.params.scaleX - prevKf.params.scaleX) * t,
-                        scaleY: prevKf.params.scaleY + (nextKf.params.scaleY - prevKf.params.scaleY) * t,
-                        useModelCenter: nextKf.params.useModelCenter || prevKf.params.useModelCenter,
-                        centerX: nextKf.params.centerX !== undefined ? nextKf.params.centerX : prevKf.params.centerX,
-                        centerY: nextKf.params.centerY !== undefined ? nextKf.params.centerY : prevKf.params.centerY
+                        scaleX: interpScaleX,
+                        scaleY: interpScaleY,
+                        useModelCenter: nextKf.params.useModelCenter || prevKf.params.useModelCenter || false,
+                        centerX: nextKf.params.centerX !== undefined ? nextKf.params.centerX : (prevKf.params.centerX !== undefined ? prevKf.params.centerX : 32),
+                        centerY: nextKf.params.centerY !== undefined ? nextKf.params.centerY : (prevKf.params.centerY !== undefined ? prevKf.params.centerY : 16)
                     };
                 }
                 return null;
@@ -4560,8 +4772,12 @@
                         if (rotateVal.centerY !== undefined) totalRotate.centerY = rotateVal.centerY;
                     }
                     if (scaleVal) {
-                        totalScale.scaleX *= scaleVal.scaleX;
-                        totalScale.scaleY *= scaleVal.scaleY;
+                        const multiplierX = scaleVal.scaleX;
+                        const multiplierY = scaleVal.scaleY;
+
+                        totalScale.scaleX *= multiplierX;
+                        totalScale.scaleY *= multiplierY;
+                        
                         if (scaleVal.useModelCenter) totalScale.useModelCenter = true;
                         if (scaleVal.centerX !== undefined) totalScale.centerX = scaleVal.centerX;
                         if (scaleVal.centerY !== undefined) totalScale.centerY = scaleVal.centerY;
@@ -4709,8 +4925,13 @@
                         if (rotateVal.centerY !== undefined) totalRotate.centerY = rotateVal.centerY;
                     }
                     if (scaleVal) {
-                        totalScale.scaleX *= scaleVal.scaleX;
-                        totalScale.scaleY *= scaleVal.scaleY;
+                        const multiplierX = scaleVal.scaleX;
+                        const multiplierY = scaleVal.scaleY;
+                        
+                        // Apply as multiplier (cumulative)
+                        totalScale.scaleX *= multiplierX;
+                        totalScale.scaleY *= multiplierY;
+                        
                         if (scaleVal.useModelCenter) totalScale.useModelCenter = true;
                         if (scaleVal.centerX !== undefined) totalScale.centerX = scaleVal.centerX;
                         if (scaleVal.centerY !== undefined) totalScale.centerY = scaleVal.centerY;
@@ -4884,7 +5105,7 @@ function playAnimationPlayback() {
             
             // Clear accumulated base when stopping
             accumulatedBaseModels = null;
-                       
+                    
             applyAnimationAtTime(0);
             updatePlayheadPosition();
             draw();
@@ -5560,105 +5781,109 @@ function playAnimationPlayback() {
         // DRAWING FUNCTIONS
         // ===========================================
 
-        function fillTriangleScanline(p1, p2, p3, fillStyle) {
-            let x0 = Math.round(p1.x);
-            let y0 = Math.round(p1.y);
-            let x1 = Math.round(p2.x);
-            let y1 = Math.round(p2.y);
-            let x2 = Math.round(p3.x);
-            let y2 = Math.round(p3.y);
-            
-            if (y0 > y1) { [x0, y0, x1, y1] = [x1, y1, x0, y0]; }
-            if (y0 > y2) { [x0, y0, x2, y2] = [x2, y2, x0, y0]; }
-            if (y1 > y2) { [x1, y1, x2, y2] = [x2, y2, x1, y1]; }
-            
-            if (y0 === y2) {
-                let minX = Math.min(x0, x1, x2);
-                let maxX = Math.max(x0, x1, x2);
-                minX = Math.max(0, minX);
-                maxX = Math.min(63, maxX);
-                
-                ctx.fillStyle = fillStyle;
-                for (let x = minX; x <= maxX; x++) {
-                    if (showCircles) {
-                        ctx.beginPath();
-                        ctx.arc(x * SCALE + SCALE/2, y0 * SCALE + SCALE/2, (SCALE/2) - 1, 0, 2 * Math.PI);
-                        ctx.fill();
-                    } else {
-                        ctx.fillRect(x * SCALE, y0 * SCALE, SCALE, SCALE);
-                    }
-                }
-                return;
+function fillTriangleScanline(p1, p2, p3, fillStyle) {
+    // Convert to integers (C++ uses int16_t)
+    let x0 = Math.round(Math.fround(p1.x));
+    let y0 = Math.round(Math.fround(p1.y));
+    let x1 = Math.round(Math.fround(p2.x));
+    let y1 = Math.round(Math.fround(p2.y));
+    let x2 = Math.round(Math.fround(p3.x));
+    let y2 = Math.round(Math.fround(p3.y));
+    
+    // Sort vertices by y
+    if (y0 > y1) { [x0, y0, x1, y1] = [x1, y1, x0, y0]; }
+    if (y0 > y2) { [x0, y0, x2, y2] = [x2, y2, x0, y0]; }
+    if (y1 > y2) { [x1, y1, x2, y2] = [x2, y2, x1, y1]; }
+    
+    // Handle flat triangle case (y0 == y2)
+    if (y0 === y2) {
+        let minX = Math.min(x0, x1, x2);
+        let maxX = Math.max(x0, x1, x2);
+        if (minX < 0) minX = 0;
+        if (y0 < 0 || y0 >= LOGIC_HEIGHT) return;
+        
+        ctx.fillStyle = fillStyle;
+        for (let x = minX; x <= maxX; x++) {
+            if (x >= LOGIC_WIDTH) break;
+            if (x < 0) continue;
+            if (showCircles) {
+                ctx.beginPath();
+                ctx.arc(x * SCALE + SCALE/2, y0 * SCALE + SCALE/2, (SCALE/2) - 1, 0, 2 * Math.PI);
+                ctx.fill();
+            } else {
+                ctx.fillRect(x * SCALE, y0 * SCALE, SCALE, SCALE);
             }
+        }
+        return;
+    }
+    
+    let dx01 = x1 - x0;
+    let dy01 = y1 - y0;
+    let dx02 = x2 - x0;
+    let dy02 = y2 - y0;
+    let dx12 = x2 - x1;
+    let dy12 = y2 - y1;
+    
+    let sa = 0;
+    let sb = 0;
+    let last = (y1 === y2) ? y1 : y1 - 1;
+    
+    ctx.fillStyle = fillStyle;
+    
+    // Upper part of triangle (y0 to last)
+    for (let y = y0; y <= last; y++) {
+        if (y >= 0 && y < LOGIC_HEIGHT) {
+            // Use Math.trunc for C++-style integer division (truncates toward zero)
+            let a = x0 + Math.trunc(sa / dy01);
+            let b = x0 + Math.trunc(sb / dy02);
             
-            let dx01 = x1 - x0, dy01 = y1 - y0;
-            let dx02 = x2 - x0, dy02 = y2 - y0;
-            let dx12 = x2 - x1, dy12 = y2 - y1;
+            if (a > b) { [a, b] = [b, a]; }
+            if (a < 0) a = 0;
             
-            let sa = 0, sb = 0;
-            let last = (y1 === y2) ? y1 : y1 - 1;
-            
-            ctx.fillStyle = fillStyle;
-            
-            for (let y = y0; y <= last; y++) {
-                if (y < 0) {
-                    sa += dx01;
-                    sb += dx02;
-                    continue;
-                }
-                if (y >= LOGIC_HEIGHT) break;
-                
-                let a = x0 + Math.floor(sa / dy01);
-                let b = x0 + Math.floor(sb / dy02);
-                sa += dx01;
-                sb += dx02;
-                
-                if (a > b) [a, b] = [b, a];
-                a = Math.max(0, a);
-                b = Math.min(63, b);
-                
-                for (let x = a; x <= b; x++) {
-                    if (showCircles) {
-                        ctx.beginPath();
-                        ctx.arc(x * SCALE + SCALE/2, y * SCALE + SCALE/2, (SCALE/2) - 1, 0, 2 * Math.PI);
-                        ctx.fill();
-                    } else {
-                        ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
-                    }
-                }
-            }
-            
-            sa = dx12 * (last + 1 - y1);
-            sb = dx02 * (last + 1 - y0);
-            
-            for (let y = last + 1; y <= y2; y++) {
-                if (y < 0) {
-                    sa += dx12;
-                    sb += dx02;
-                    continue;
-                }
-                if (y >= LOGIC_HEIGHT) break;
-                
-                let a = x1 + Math.floor(sa / dy12);
-                let b = x0 + Math.floor(sb / dy02);
-                sa += dx12;
-                sb += dx02;
-                
-                if (a > b) [a, b] = [b, a];
-                a = Math.max(0, a);
-                b = Math.min(63, b);
-                
-                for (let x = a; x <= b; x++) {
-                    if (showCircles) {
-                        ctx.beginPath();
-                        ctx.arc(x * SCALE + SCALE/2, y * SCALE + SCALE/2, (SCALE/2) - 1, 0, 2 * Math.PI);
-                        ctx.fill();
-                    } else {
-                        ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
-                    }
+            for (let x = a; x <= b; x++) {
+                if (x >= LOGIC_WIDTH) break;
+                if (x < 0) continue;
+                if (showCircles) {
+                    ctx.beginPath();
+                    ctx.arc(x * SCALE + SCALE/2, y * SCALE + SCALE/2, (SCALE/2) - 1, 0, 2 * Math.PI);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
                 }
             }
         }
+        sa += dx01;
+        sb += dx02;
+    }
+    
+    // Lower part of triangle (y to y2)
+    sa = dx12 * (last + 1 - y1);
+    sb = dx02 * (last + 1 - y0);
+    
+    for (let y = last + 1; y <= y2; y++) {
+        if (y >= 0 && y < LOGIC_HEIGHT) {
+            let a = x1 + Math.trunc(sa / dy12);
+            let b = x0 + Math.trunc(sb / dy02);
+            
+            if (a > b) { [a, b] = [b, a]; }
+            if (a < 0) a = 0;
+            
+            for (let x = a; x <= b; x++) {
+                if (x >= LOGIC_WIDTH) break;
+                if (x < 0) continue;
+                if (showCircles) {
+                    ctx.beginPath();
+                    ctx.arc(x * SCALE + SCALE/2, y * SCALE + SCALE/2, (SCALE/2) - 1, 0, 2 * Math.PI);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
+                }
+            }
+        }
+        sa += dx12;
+        sb += dx02;
+    }
+}
 
         function fillTriangleSmooth(p1, p2, p3, fillStyle) {
             ctx.fillStyle = fillStyle;
@@ -5825,7 +6050,7 @@ function playAnimationPlayback() {
 
 
 
-                function draw() {
+        function draw() {
             ctx.fillStyle = "#000000";
             ctx.fillRect(0, 0, 1024, 512);
 
@@ -7253,7 +7478,7 @@ function playAnimationPlayback() {
                     if (track.type === 'model') {
                         resourceName = model.name;
                     } else if (track.type === 'group' && model.pointGroups?.[track.groupIndex]) {
-                        resourceName = `${model.name}>${model.pointGroups[track.groupIndex].name}`;
+                        resourceName = `${model.name}.${track.groupIndex + 1}`;
                     } else {
                         return;
                     }
@@ -7275,7 +7500,7 @@ function playAnimationPlayback() {
                     if (track.type === 'model') {
                         resourceName = model.name;
                     } else if (track.type === 'group' && model.pointGroups?.[track.groupIndex]) {
-                        resourceName = `${model.name}>${model.pointGroups[track.groupIndex].name}`;
+                        resourceName = `${model.name}.${track.groupIndex + 1}`;
                     } else {
                         return;
                     }
@@ -7331,6 +7556,17 @@ function playAnimationPlayback() {
                     tracks: tracksData
                 });
             });
+            function rgbToRGB565(r, g, b) {
+                return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+            }
+
+            // Helper function to convert hex color to RGB565
+            function hexToRGB565(hexColor) {
+                const r = parseInt(hexColor.slice(1, 3), 16);
+                const g = parseInt(hexColor.slice(3, 5), 16);
+                const b = parseInt(hexColor.slice(5, 7), 16);
+                return rgbToRGB565(r, g, b);
+            }
             
             var exportData = {
                 models: modelsToSave.map(model => {
@@ -7340,14 +7576,14 @@ function playAnimationPlayback() {
                     model.triangles.forEach(tri => {
                         xCoords.push(tri.v1.x, tri.v2.x, tri.v3.x);
                         yCoords.push(tri.v1.y, tri.v2.y, tri.v3.y);
-                        let numColor = parseInt(tri.color.slice(1), 16);
-                        colors.push(numColor);
+                        let rgb565Color = hexToRGB565(tri.color);
+                        colors.push(rgb565Color);
                     });
                     return {
                         name: model.name,
                         x: xCoords,
                         y: yCoords,
-                        color: colors,
+                        color: colors,  // Now stored as RGB565 uint16_t values
                         pointGroups: (model.pointGroups || []).map(g => ({ name: g.name, indices: g.pointIndices }))
                     };
                 }),
@@ -7383,12 +7619,20 @@ function playAnimationPlayback() {
                             // Clear existing models array completely
                             models.length = 0;
                             expandedGroups = {};
-                            
+
                             parsed.models.forEach((m, idx) => {
                                 let triangles = [];
                                 if (m.x && m.y && m.color && m.x.length === m.y.length && m.x.length % 3 === 0) {
                                     for (let i = 0; i < m.x.length; i += 3) {
-                                        let colorHex = '#' + m.color[i/3].toString(16).padStart(6, '0');
+                                        const rgb565 = m.color[i/3];
+                                        const r = (rgb565 >> 11) & 0x1F;
+                                        const g = (rgb565 >> 5) & 0x3F;
+                                        const b = rgb565 & 0x1F;
+                                        // Convert 5-bit to 8-bit
+                                        const r8 = (r << 3) | (r >> 2);
+                                        const g8 = (g << 2) | (g >> 4);
+                                        const b8 = (b << 3) | (b >> 2);
+                                        const colorHex = '#' + ((1 << 24) + (r8 << 16) + (g8 << 8) + b8).toString(16).slice(1);
                                         triangles.push({
                                             v1: Vec2f(m.x[i], m.y[i]),
                                             v2: Vec2f(m.x[i+1], m.y[i+1]),
@@ -7455,6 +7699,7 @@ function playAnimationPlayback() {
                                     // Build resource mapping
                                     const resourceMap = [];
                                     animData.resources.forEach((resource, idx) => {
+                                        console.log("load the "+resource)
                                         resourceMap.push(resource);
                                     });
                                     
@@ -7465,29 +7710,29 @@ function playAnimationPlayback() {
                                         // NEW FORMAT: Each track is saved individually
                                         animData.tracks.forEach((trackData, trackIdx) => {
                                             const resourceName = resourceMap[trackData.r];
-                                            if (!resourceName) return;
-                                            
+                                            if (!resourceName) {
+                                                console.log("ohshit the "+trackData.r)
+                                                return;
+                                            }
                                             // Find the model and group that matches this resource
                                             let targetModelIndex = -1;
                                             let targetGroupIndex = -1;
                                             let trackType = null;
                                             
                                             // Check if it's a point group (contains '>')
-                                            if (resourceName.includes('>')) {
-                                                const parts = resourceName.split('>');
-                                                const modelName = parts[0];
-                                                const groupName = parts[1];
+                                            const match = resourceName.match(/\.(\d+)$/);
+                                            if (match) {
+                                                // It's a point group: "ModelName.1"
+                                                const modelName = resourceName.substring(0, resourceName.lastIndexOf('.'));
+                                                const groupNumber = parseInt(match[1]) - 1;
                                                 
                                                 for (let i = 0; i < models.length; i++) {
                                                     const model = models[i];
-                                                    if (model.name === modelName && model.pointGroups) {
-                                                        const groupIndex = model.pointGroups.findIndex(g => g.name === groupName);
-                                                        if (groupIndex !== -1) {
-                                                            targetModelIndex = i;
-                                                            targetGroupIndex = groupIndex;
-                                                            trackType = 'group';
-                                                            break;
-                                                        }
+                                                    if (model.name === modelName && model.pointGroups && groupNumber >= 0 && groupNumber < model.pointGroups.length) {
+                                                        targetModelIndex = i;
+                                                        targetGroupIndex = groupNumber;
+                                                        trackType = 'group';
+                                                        break;
                                                     }
                                                 }
                                             } else {
@@ -8165,6 +8410,12 @@ function playAnimationPlayback() {
                         if (isAnimPlaying) {
                             pauseAnimationPlayback();
                         } else {
+                            if (currentAnimationTime >= anim.duration) {
+                                currentAnimationTime = 0;
+                                updatePlayheadPosition();
+                                applyAnimationAtTime(0);
+                                draw();
+                            }
                             playAnimationPlayback();
                         }
                     }
@@ -8193,7 +8444,13 @@ function playAnimationPlayback() {
                         if (isAnimPlaying) {
                             pauseAnimationPlayback();
                         } else {
-                            playAnimationPlayback();
+                            if (currentAnimationTime >= anim.duration) {
+                                currentAnimationTime = 0;
+                                updatePlayheadPosition();
+                                applyAnimationAtTime(0);
+                                draw();
+                            }
+                            playAnimationPlayback()
                         }
                     } else {
                         alert('Create an animation and add tracks first!');
