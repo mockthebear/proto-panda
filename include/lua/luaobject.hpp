@@ -3,6 +3,7 @@
 #include "lua/LuaWrapper.h"
 #include "bluetooth/characteristicshandler.hpp"
 #include "bluetooth/servicehandler.hpp"
+#include "drawing/rendering/model.hpp"
 #include <Arduino.h>
 
 
@@ -490,6 +491,13 @@ template<> struct GenericLuaReturner<BleCharacteristicsHandler*>{
     };
 };
 
+template<> struct GenericLuaReturner<Model*>{
+    static int Ret(Model* vr,lua_State *L,bool forceTable = false){
+        MakeLuaObject<Model>::Make(L, vr, "Model");
+        return 1;
+    };
+};
+
 
 
 template<> struct GenericLuaGetter<BleCharacteristicsHandler*> {
@@ -538,20 +546,8 @@ template<> struct GenericLuaGetter<BleCharacteristicsHandler*> {
 };
 
 
-           
-              
-         /*   
-
-template<> struct GenericLuaReturner<Batata*>{
-    static int Ret(Batata* vr,lua_State *L,bool forceTable = false){
-        MakeLuaObject<Batata>::Make(L, vr, "Batata");
-    };
-};
-
-
-
-template<> struct GenericLuaGetter<Batata*> {
-    static inline Batata* Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
+template<> struct GenericLuaGetter<Model*> {
+    static inline Model* Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
 
         if (!lua_istable(L, stackPos)) {
             hasArgError = true;
@@ -567,7 +563,7 @@ template<> struct GenericLuaGetter<Batata*> {
         }
 
         lua_getfield(L, -2, "__self");
-        Batata** sp = (Batata**)lua_touserdata(L,-1);
+        Model** sp = (Model**)lua_touserdata(L,-1);
         if (!sp){
             luaL_error(L, "Expected a lua object");
             return nullptr;
@@ -578,8 +574,8 @@ template<> struct GenericLuaGetter<Batata*> {
         std::string otherType = std::string(lua_tostring(L, -1));
         lua_pop(L, 1);
 
-        if (otherType != "Batata"){
-            luaL_error(L, "Type mismatched, expecting 'Batata' instead got %s", otherType.c_str());
+        if (otherType != "Model"){
+            luaL_error(L, "Type mismatched, expecting 'Model' instead got %s", otherType.c_str());
             return nullptr;
         }
 
@@ -595,4 +591,3 @@ template<> struct GenericLuaGetter<Batata*> {
     }
 };
 
-*/

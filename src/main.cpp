@@ -170,11 +170,9 @@ void second_loop(void*){
   #ifndef SINGLE_CORE_RUN
   for( ;; )
   { 
-    uint32_t st = millis();
     Devices::BeginAutoFrame();
     g_animation.Update(g_frameRepo.takeFile());
     vTaskDelay(1);
-    uint32_t st2 = millis()-st;
     g_frameRepo.freeFile();
     g_leds.Update();
     if (g_leds.IsManaged()){
@@ -182,10 +180,6 @@ void second_loop(void*){
     }
     vTaskDelay(1);
     Devices::EndAutoFrame();
-    st = millis()-st;
-    if (st > 80){
-      Logger::Info("Animation cycle took too long %d and %d ms", st2, st);
-    }
   }
   #endif
 }
