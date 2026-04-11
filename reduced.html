@@ -1756,7 +1756,7 @@
     display: flex;
     align-items: stretch;
     width: 100%;
-    flex-shrink: 0;
+    overflow-x: auto;
 }
 
 .ruler-label-space {
@@ -1775,6 +1775,7 @@
     overflow-x: auto;
     overflow-y: visible;
     background: #2d2d2d;
+
     position: relative;
 }
 
@@ -1805,10 +1806,9 @@
     align-items: stretch;
     border-bottom: 1px solid #2a2a2a;
     min-height: 32px;
-    width: 100%;
-    transition: background 0.1s ease;
+    width: max-content;  /* Change from 100% to max-content */
+    min-width: 100%;
 }
-
 
 
 .timeline-label {
@@ -1842,7 +1842,8 @@
     height: 32px;
     background: #1a1a1a;
     cursor: crosshair;
-    min-width: 0;
+    min-width: 800px;  /* Minimum width */
+    width: auto;
 }
 
 .timeline-canvas:active {
@@ -1932,6 +1933,16 @@
     color: #ffaa66;
     font-family: monospace;
 }
+
+.timelines-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    background: #1a1a1a;
+    min-height: 0;
+    width: 100%;
+}
+
 
 /* Custom scrollbar */
 .timelines-container::-webkit-scrollbar {
@@ -3562,54 +3573,127 @@
         let timelineDragState = { active: false, trackId: null, kfIdx: null, startX: 0, startTime: 0, canvasWidth: 0 };
         let globalTimelineDuration = 3000;
 
-       
-        function renderTimelineForAnimation() {
-            const container = document.getElementById('timelinesContainer');
-            if (!container) return;
-            
-            const anim = getSelectedAnimation();
-            if (!anim || anim.tracks.length === 0) {
-                container.innerHTML = '<div class="empty-timelines-message">Create or select an animation :3</div>';
-                updateTimelineStats();
-                if (anim) updateRuler(anim.duration);
-                return;
-            }
-            
-            container.innerHTML = '';
-            
-            const rulerCanvas = document.getElementById('timelineRulerCanvas');
-            const totalWidth = rulerCanvas ? rulerCanvas.width : 2000;
-            
-            anim.tracks.forEach((track) => {
-                const row = document.createElement('div');
-                row.className = 'timeline-row';
-                row.style.display = 'flex';
-                row.style.alignItems = 'stretch';
-                row.style.borderBottom = '1px solid #2a2a2a';
-                row.style.minHeight = '32px';
-                row.style.width = '100%';
-                row.setAttribute('data-track-id', track.id);
-                
-                // Apply selection style directly
-                if (selectedTimelineId === track.id) {
-                    row.style.background = '#2a5a5a';
-                }
-                
-                const label = document.createElement('div');
-                label.className = 'timeline-label';
-                label.style.width = '160px';
-                label.style.flexShrink = '0';
-                label.style.padding = '4px 8px';
-                label.style.fontSize = '10px';
-                label.style.fontWeight = 'bold';
-                label.style.color = '#ffaa66';
-                label.style.background = selectedTimelineId === track.id ? '#3a6a6a' : '#1e1e1e';
-                label.style.borderRight = '1px solid #2a2a2a';
-                label.style.display = 'flex';
-                label.style.alignItems = 'center';
-                label.style.gap = '4px';
-                label.style.whiteSpace = 'nowrap';
-                label.style.overflow = 'hidden';
+        
+function drawRuler(canvas, duration) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fillStyle = '#2d2d2d';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Dynamic step based on duration
+    let step = 100;
+    if (duration > 5000) step = 500;
+    if (duration > 10000) step = 1000;
+    
+    ctx.strokeStyle = '#555';
+    ctx.fillStyle = '#888';
+    ctx.font = '8px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    
+    for (let t = 0; t <= duration; t += step) {
+        const x = (t / duration) * canvas.width;
+        
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, 10);
+        ctx.stroke();
+        
+        let labelText;
+        if (t >= 1000) {
+            labelText = (t/1000).toFixed(1) + 's';
+        } else {
+            labelText = t + 'ms';
+        }
+        ctx.fillStyle = '#888';
+        ctx.fillText(labelText, x, 24);
+    }
+    
+    // Major ticks every second
+    const secondStep = 1000;
+    for (let t = secondStep; t <= duration; t += secondStep) {
+        const x = (t / duration) * canvas.width;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, 15);
+        ctx.stroke();
+    }
+}
+
+function updateRuler(duration) {
+    const canvas = document.getElementById('timelineRulerCanvas');
+    if (!canvas) return;
+    
+    // Get the actual container width
+    const container = canvas.parentElement;
+    const width = container ? container.clientWidth : 800;
+    
+    // Only update if width changed
+    if (canvas.width === width) return;
+    
+    canvas.width = width;
+    canvas.height = 28;
+    drawRuler(canvas, duration);
+}
+
+function renderTimelineForAnimation() {
+    const container = document.getElementById('timelinesContainer');
+    if (!container) return;
+    
+    const anim = getSelectedAnimation();
+    if (!anim || anim.tracks.length === 0) {
+        container.innerHTML = '<div class="empty-timelines-message">✨ No animation selected or no tracks. Click + to add a track, then drag tools to add keyframes.</div>';
+        updateTimelineStats();
+        if (anim) updateRuler(anim.duration);
+        return;
+    }
+    
+    // Get the current visible width
+    const rulerContainer = document.querySelector('.ruler-track-container');
+    const visibleWidth = rulerContainer ? rulerContainer.clientWidth : 800;
+    const totalWidth = visibleWidth;
+    
+    // Update ruler to match (if width changed)
+    const rulerCanvas = document.getElementById('timelineRulerCanvas');
+    if (rulerCanvas && rulerCanvas.width !== totalWidth) {
+        rulerCanvas.width = totalWidth;
+        rulerCanvas.height = 28;
+        drawRuler(rulerCanvas, anim.duration);
+    }
+    
+    container.innerHTML = '';
+    
+    anim.tracks.forEach((track) => {
+        const row = document.createElement('div');
+        row.className = 'timeline-row';
+        row.style.display = 'flex';
+        row.style.alignItems = 'stretch';
+        row.style.borderBottom = '1px solid #2a2a2a';
+        row.style.minHeight = '32px';
+        row.style.width = '100%';
+        row.style.minWidth = '100%';
+        row.setAttribute('data-track-id', track.id);
+        
+        if (selectedTimelineId === track.id) {
+            row.style.background = '#2a5a5a';
+        }
+        
+        const label = document.createElement('div');
+        label.className = 'timeline-label';
+        label.style.width = '160px';
+        label.style.flexShrink = '0';
+        label.style.padding = '4px 8px';
+        label.style.fontSize = '10px';
+        label.style.fontWeight = 'bold';
+        label.style.color = '#ffaa66';
+        label.style.background = selectedTimelineId === track.id ? '#3a6a6a' : '#1e1e1e';
+        label.style.borderRight = '1px solid #2a2a2a';
+        label.style.display = 'flex';
+        label.style.alignItems = 'center';
+        label.style.gap = '4px';
+        label.style.whiteSpace = 'nowrap';
+        label.style.overflow = 'hidden';
                 
                 const icon = track.type === 'model' ? '📁' : '👥';
                 label.innerHTML = `
@@ -3625,25 +3709,15 @@
                 canvas.style.height = '32px';
                 canvas.style.background = selectedTimelineId === track.id ? '#2a4a4a' : '#1a1a1a';
                 canvas.style.cursor = 'crosshair';
-                canvas.style.minWidth = `${totalWidth}px`;
+                canvas.style.width = '100%';  // Use 100% not fixed pixels
                 canvas.setAttribute('data-track-id', track.id);
                 
-                // Add keyframe markers
+                // Add keyframe markers - position using percentage
                 (track.keyframes || []).forEach((kf, kfIdx) => {
-                    const pixelX = (kf.time / anim.duration) * totalWidth;
+                    const percent = kf.time / anim.duration;
+                    const pixelX = percent * totalWidth;
                     const config = animationActionTypes[kf.action];
                     const markerColor = config ? config.color : '#ff9900';
-                    
-                    // Check for overlapping keyframes at the same time
-                    const overlappingKeyframes = track.keyframes.filter(k => Math.abs(k.time - kf.time) < 0.1);
-                    const overlappingIndex = overlappingKeyframes.findIndex(k => k === kf);
-                    const overlapCount = overlappingKeyframes.length;
-                    
-                    let verticalOffset = 0;
-                    if (overlapCount > 1) {
-                        const step = 8 / (overlapCount - 1);
-                        verticalOffset = -4 + (overlappingIndex * step);
-                    }
                     
                     const marker = document.createElement('div');
                     marker.className = 'keyframe-marker';
@@ -3657,7 +3731,7 @@
                     marker.style.border = `1px solid ${markerColor}80`;
                     marker.style.boxShadow = `0 0 4px ${markerColor}`;
                     marker.style.borderRadius = '50%';
-                    marker.style.transform = `translate(-50%, -50%) translateY(${verticalOffset}px)`;
+                    marker.style.transform = 'translate(-50%, -50%)';
                     marker.style.top = '50%';
                     marker.style.left = `${pixelX}px`;
                     marker.style.cursor = 'grab';
@@ -3684,7 +3758,8 @@
                 playhead.style.pointerEvents = 'none';
                 playhead.style.zIndex = '20';
                 playhead.style.boxShadow = '0 0 3px #ff9900';
-                const pixelX = (currentAnimationTime / anim.duration) * totalWidth;
+                const percent = currentAnimationTime / anim.duration;
+                const pixelX = percent * totalWidth;
                 playhead.style.left = `${pixelX}px`;
                 canvas.appendChild(playhead);
                 
@@ -3697,7 +3772,6 @@
             attachTimelineEventsForAnimation();
             updateTimelineStats();
             updateModelVisibilityForAnimation();
-            updateRuler(anim.duration);
         }
 
 
@@ -4512,13 +4586,10 @@
         function applyAnimationAtTime(time) {
             const anim = getSelectedAnimation();
             
-            // Start from fresh copy of models
-            // Check if we have accumulated models and should use them
+            // Start from fresh copy of original models
             if (accumulatedBaseModels && anim && anim.repeatEnabled && anim.repeatBehavior === 'accumulate') {
-                // Use accumulated models as the base for this loop
                 animationModels = JSON.parse(JSON.stringify(accumulatedBaseModels));
             } else {
-                // Start from fresh copy of original models
                 animationModels = JSON.parse(JSON.stringify(models));
             }
             
@@ -4526,214 +4597,120 @@
                 draw();
                 return;
             }
-                    
+            
             const fixedCenter = { x: 32, y: 16 };
             
-            // FIRST: Apply ALL model transforms to ALL points
-            // Group model tracks by modelIndex
-            const modelTracksByModel = new Map();
-            
-            anim.tracks.forEach(track => {
-                if (track.type === 'model') {
-                    if (!modelTracksByModel.has(track.modelIndex)) {
-                        modelTracksByModel.set(track.modelIndex, []);
-                    }
-                    modelTracksByModel.get(track.modelIndex).push(track);
-                }
-            });
-            
-            // Helper function to get interpolated value for a track
-            function getInterpolatedValue(keyframes, currentTime, actionType) {
+            // Helper function to get interpolated value with reset support
+            function getValueWithReset(keyframes, currentTime, actionType, isGroup = false) {
                 const typeKeyframes = keyframes.filter(kf => kf.action === actionType);
                 if (typeKeyframes.length === 0) return null;
+                
+                // Find the last reset keyframe before or at current time
+                let lastResetTime = -1;
+                const resetKeyframes = keyframes.filter(kf => kf.action === 'reset');
+                
+                for (let i = 0; i < resetKeyframes.length; i++) {
+                    if (resetKeyframes[i].time <= currentTime) {
+                        lastResetTime = resetKeyframes[i].time;
+                    }
+                }
+                
+                // Get keyframes after the last reset
+                let relevantKeyframes = typeKeyframes;
+                if (lastResetTime >= 0) {
+                    relevantKeyframes = typeKeyframes.filter(kf => kf.time >= lastResetTime);
+                }
+                
+                if (relevantKeyframes.length === 0) {
+                    if (actionType === 'translate') return { x: 0, y: 0 };
+                    if (actionType === 'rotate') return { angle: 0, useModelCenter: false, centerX: 32, centerY: 16 };
+                    if (actionType === 'scale') return { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
+                    return null;
+                }
                 
                 let prevKf = null;
                 let nextKf = null;
                 
-                for (let i = 0; i < typeKeyframes.length; i++) {
-                    if (typeKeyframes[i].time <= currentTime) {
-                        prevKf = typeKeyframes[i];
+                for (let i = 0; i < relevantKeyframes.length; i++) {
+                    if (relevantKeyframes[i].time <= currentTime) {
+                        prevKf = relevantKeyframes[i];
                     }
-                    if (typeKeyframes[i].time > currentTime && !nextKf) {
-                        nextKf = typeKeyframes[i];
+                    if (relevantKeyframes[i].time > currentTime && !nextKf) {
+                        nextKf = relevantKeyframes[i];
                         break;
                     }
                 }
                 
-                // Before first keyframe - interpolate from original
-                if (!prevKf && typeKeyframes.length > 0) {
-                    const firstKf = typeKeyframes[0];
-                    if (currentTime === 0) {
-                        if (actionType === 'translate') return { x: 0, y: 0 };
-                        if (actionType === 'rotate') return { angle: 0, useModelCenter: false, centerX: 32, centerY: 16 };
-                        if (actionType === 'scale') return { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
-                    }
-                    const t = Math.min(1, Math.max(0, currentTime / firstKf.time));
-                    if (actionType === 'translate') {
-                        return { x: firstKf.params.x * t, y: firstKf.params.y * t };
-                    } else if (actionType === 'rotate') {
-                        return {
-                            angle: firstKf.params.angle * t,
-                            useModelCenter: firstKf.params.useModelCenter || false,
-                            centerX: firstKf.params.centerX !== undefined ? firstKf.params.centerX : 32,
-                            centerY: firstKf.params.centerY !== undefined ? firstKf.params.centerY : 16
-                        };
-                    } else if (actionType === 'scale') {
-                        // If no keyframes, return identity
-                        if (typeKeyframes.length === 0) return null;
-                        
-                        // Find the keyframes around current time
-                        let prevKf = null;
-                        let nextKf = null;
-                        
-                        for (let i = 0; i < typeKeyframes.length; i++) {
-                            if (typeKeyframes[i].time <= currentTime) {
-                                prevKf = typeKeyframes[i];
-                            }
-                            if (typeKeyframes[i].time > currentTime && !nextKf) {
-                                nextKf = typeKeyframes[i];
-                                break;
-                            }
+                // Before first keyframe after reset
+                if (!prevKf && relevantKeyframes.length > 0) {
+                    const firstKf = relevantKeyframes[0];
+                    if (currentTime <= firstKf.time) {
+                        if (currentTime === lastResetTime || currentTime === 0) {
+                            if (actionType === 'translate') return { x: 0, y: 0 };
+                            if (actionType === 'rotate') return { angle: 0, useModelCenter: false, centerX: 32, centerY: 16 };
+                            if (actionType === 'scale') return { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
                         }
-                        
-                        // Before first keyframe - return identity (scale 1)
-                        if (!prevKf) {
-                            return { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
-                        }
-                        
-                        // If we're exactly at a keyframe and it's instant, return its params
-                        if (Math.abs(prevKf.time - currentTime) < 0.1 && prevKf.instant === true) {
-                            return prevKf.params;
-                        }
-                        
-                        // If no next keyframe, return the cumulative product of all keyframes up to now
-                        if (!nextKf) {
-                            let cumulativeX = 1;
-                            let cumulativeY = 1;
-                            for (let kf of typeKeyframes) {
-                                if (kf.time <= currentTime) {
-                                    cumulativeX *= kf.params.scaleX;
-                                    cumulativeY *= kf.params.scaleY;
-                                }
-                            }
+                        const t = Math.min(1, Math.max(0, (currentTime - lastResetTime) / (firstKf.time - lastResetTime)));
+                        if (actionType === 'translate') {
+                            return { x: firstKf.params.x * t, y: firstKf.params.y * t };
+                        } else if (actionType === 'rotate') {
                             return {
-                                scaleX: cumulativeX,
-                                scaleY: cumulativeY,
-                                useModelCenter: prevKf.params.useModelCenter || false,
-                                centerX: prevKf.params.centerX !== undefined ? prevKf.params.centerX : 32,
-                                centerY: prevKf.params.centerY !== undefined ? prevKf.params.centerY : 16
+                                angle: firstKf.params.angle * t,
+                                useModelCenter: firstKf.params.useModelCenter || false,
+                                centerX: firstKf.params.centerX !== undefined ? firstKf.params.centerX : 32,
+                                centerY: firstKf.params.centerY !== undefined ? firstKf.params.centerY : 16
+                            };
+                        } else if (actionType === 'scale') {
+                            return {
+                                scaleX: 1 + (firstKf.params.scaleX - 1) * t,
+                                scaleY: 1 + (firstKf.params.scaleY - 1) * t,
+                                useModelCenter: firstKf.params.useModelCenter || false,
+                                centerX: firstKf.params.centerX !== undefined ? firstKf.params.centerX : 32,
+                                centerY: firstKf.params.centerY !== undefined ? firstKf.params.centerY : 16
                             };
                         }
-                        
-                        // Calculate cumulative scale up to prevKf
-                        let cumulativeUpToPrevX = 1;
-                        let cumulativeUpToPrevY = 1;
-                        for (let kf of typeKeyframes) {
-                            if (kf.time <= prevKf.time) {
-                                cumulativeUpToPrevX *= kf.params.scaleX;
-                                cumulativeUpToPrevY *= kf.params.scaleY;
-                            }
-                        }
-                        
-                        // Calculate cumulative scale up to nextKf
-                        let cumulativeUpToNextX = cumulativeUpToPrevX * nextKf.params.scaleX;
-                        let cumulativeUpToNextY = cumulativeUpToPrevY * nextKf.params.scaleY;
-                        
-                        // Interpolate between cumulative values
-                        const t = (currentTime - prevKf.time) / (nextKf.time - prevKf.time);
-                        const interpScaleX = cumulativeUpToPrevX + (cumulativeUpToNextX - cumulativeUpToPrevX) * t;
-                        const interpScaleY = cumulativeUpToPrevY + (cumulativeUpToNextY - cumulativeUpToPrevY) * t;
-                        
-                        return {
-                            scaleX: interpScaleX,
-                            scaleY: interpScaleY,
-                            useModelCenter: nextKf.params.useModelCenter || prevKf.params.useModelCenter || false,
-                            centerX: nextKf.params.centerX !== undefined ? nextKf.params.centerX : (prevKf.params.centerX !== undefined ? prevKf.params.centerX : 32),
-                            centerY: nextKf.params.centerY !== undefined ? nextKf.params.centerY : (prevKf.params.centerY !== undefined ? prevKf.params.centerY : 16)
-                        };
                     }
                     return null;
                 }
                 
-                if (!prevKf) return null;
+                if (!prevKf) {
+                    if (actionType === 'translate') return { x: 0, y: 0 };
+                    if (actionType === 'rotate') return { angle: 0, useModelCenter: false, centerX: 32, centerY: 16 };
+                    if (actionType === 'scale') return { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
+                    return null;
+                }
                 
+                // Check if at exact time and instant
                 if (Math.abs(prevKf.time - currentTime) < 0.1 && prevKf.instant === true) {
                     return prevKf.params;
                 }
                 
-                if (!nextKf) {
-                    if (actionType === 'translate') {
-                        let cumulativeX = 0;
-                        let cumulativeY = 0;
-                        for (let kf of typeKeyframes) {
-                            if (kf.time <= currentTime) {
-                                cumulativeX += kf.params.x;
-                                cumulativeY += kf.params.y;
-                            }
+                // Calculate cumulative after last reset
+                if (actionType === 'translate') {
+                    let cumulativeX = 0, cumulativeY = 0;
+                    for (let kf of relevantKeyframes) {
+                        if (kf.time <= currentTime) {
+                            cumulativeX += kf.params.x;
+                            cumulativeY += kf.params.y;
                         }
+                    }
+                    
+                    if (!nextKf) {
                         return { x: cumulativeX, y: cumulativeY };
-                    }else{
+                    }
+                    
+                    if (nextKf.instant === true) {
                         return prevKf.params;
                     }
-                }
-                
-                if (nextKf.instant === true) {
-                    return prevKf.params;
-                }
-                
-                const timeDiff = nextKf.time - prevKf.time;
-                const elapsed = currentTime - prevKf.time;
-                const t = timeDiff > 0 ? Math.min(1, Math.max(0, elapsed / timeDiff)) : 1;
-                
-                if (actionType === 'translate') {
-                    const typeKeyframes = keyframes.filter(kf => kf.action === 'translate');
-                    if (typeKeyframes.length === 0) return null;
                     
-                    let prevKf = null;
-                    let nextKf = null;
-                    
-                    for (let i = 0; i < typeKeyframes.length; i++) {
-                        if (typeKeyframes[i].time <= currentTime) {
-                            prevKf = typeKeyframes[i];
-                        }
-                        if (typeKeyframes[i].time > currentTime && !nextKf) {
-                            nextKf = typeKeyframes[i];
-                            break;
-                        }
-                    }
-                    
-                    // Before first keyframe
-                    if (!prevKf && typeKeyframes.length > 0) {
-                        const firstKf = typeKeyframes[0];
-                        if (currentTime === 0) return { x: 0, y: 0 };
-                        const t = Math.min(1, Math.max(0, currentTime / firstKf.time));
-                        return { x: firstKf.params.x * t, y: firstKf.params.y * t };
-                    }
-                    
-                    if (!prevKf) return { x: 0, y: 0 };
-                    
-                    // Calculate cumulative sum up to prevKf
                     let cumPrevX = 0, cumPrevY = 0;
-                    for (let kf of typeKeyframes) {
+                    for (let kf of relevantKeyframes) {
                         if (kf.time <= prevKf.time) {
                             cumPrevX += kf.params.x;
                             cumPrevY += kf.params.y;
                         }
                     }
                     
-                    // After last keyframe - return cumulative sum
-                    if (!nextKf) {
-                        let cumulativeX = 0, cumulativeY = 0;
-                        for (let kf of typeKeyframes) {
-                            if (kf.time <= currentTime) {
-                                cumulativeX += kf.params.x;
-                                cumulativeY += kf.params.y;
-                            }
-                        }
-                        return { x: cumulativeX, y: cumulativeY };
-                    }
-                    
-                    // Between keyframes - interpolate between cumulative sums
                     let cumNextX = cumPrevX + nextKf.params.x;
                     let cumNextY = cumPrevY + nextKf.params.y;
                     const t = (currentTime - prevKf.time) / (nextKf.time - prevKf.time);
@@ -4742,23 +4719,17 @@
                         x: cumPrevX + (cumNextX - cumPrevX) * t,
                         y: cumPrevY + (cumNextY - cumPrevY) * t
                     };
+                    
                 } else if (actionType === 'rotate') {
                     let totalAngle = 0;
-                    let lastTime = 0;
-                    let lastAngle = 0;
-                    
-                    // Sum all keyframes up to current time
-                    for (let kf of typeKeyframes) {
+                    for (let kf of relevantKeyframes) {
                         if (kf.time <= currentTime) {
                             totalAngle += kf.params.angle;
-                            lastTime = kf.time;
-                            lastAngle = kf.params.angle;
                         }
                     }
                     
-                    if (nextKf && currentTime > lastTime && !prevKf.instant) {
-                        const t = (currentTime - lastTime) / (nextKf.time - lastTime);
-                        // Add partial of the next keyframe's delta
+                    if (nextKf && currentTime > prevKf.time && !prevKf.instant && !nextKf.instant) {
+                        const t = (currentTime - prevKf.time) / (nextKf.time - prevKf.time);
                         totalAngle += nextKf.params.angle * t;
                     }
                     
@@ -4768,89 +4739,58 @@
                         centerX: nextKf?.params.centerX !== undefined ? nextKf.params.centerX : (prevKf?.params.centerX !== undefined ? prevKf.params.centerX : 32),
                         centerY: nextKf?.params.centerY !== undefined ? nextKf.params.centerY : (prevKf?.params.centerY !== undefined ? prevKf.params.centerY : 16)
                     };
+                    
                 } else if (actionType === 'scale') {
-                    // If no keyframes, return identity
-                    if (typeKeyframes.length === 0) return null;
-                    
-                    // Find the keyframes around current time
-                    let prevKf = null;
-                    let nextKf = null;
-                    
-                    for (let i = 0; i < typeKeyframes.length; i++) {
-                        if (typeKeyframes[i].time <= currentTime) {
-                            prevKf = typeKeyframes[i];
-                        }
-                        if (typeKeyframes[i].time > currentTime && !nextKf) {
-                            nextKf = typeKeyframes[i];
-                            break;
+                    let cumulativeScaleX = 1, cumulativeScaleY = 1;
+                    for (let kf of relevantKeyframes) {
+                        if (kf.time <= currentTime) {
+                            cumulativeScaleX *= kf.params.scaleX;
+                            cumulativeScaleY *= kf.params.scaleY;
                         }
                     }
                     
-                    // Before first keyframe - return identity (scale 1)
-                    if (!prevKf) {
-                        return { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
-                    }
-                    
-                    // If we're exactly at a keyframe and it's instant, return its params
-                    if (Math.abs(prevKf.time - currentTime) < 0.1 && prevKf.instant === true) {
-                        return prevKf.params;
-                    }
-                    
-                    // If no next keyframe, return the cumulative product of all keyframes up to now
-                    if (!nextKf) {
-                        let cumulativeX = 1;
-                        let cumulativeY = 1;
-                        for (let kf of typeKeyframes) {
-                            if (kf.time <= currentTime) {
-                                cumulativeX *= kf.params.scaleX;
-                                cumulativeY *= kf.params.scaleY;
+                    if (nextKf && currentTime > prevKf.time && !prevKf.instant && !nextKf.instant) {
+                        const t = (currentTime - prevKf.time) / (nextKf.time - prevKf.time);
+                        let cumPrevX = 1, cumPrevY = 1;
+                        for (let kf of relevantKeyframes) {
+                            if (kf.time <= prevKf.time) {
+                                cumPrevX *= kf.params.scaleX;
+                                cumPrevY *= kf.params.scaleY;
                             }
                         }
-                        return {
-                            scaleX: cumulativeX,
-                            scaleY: cumulativeY,
-                            useModelCenter: prevKf.params.useModelCenter || false,
-                            centerX: prevKf.params.centerX !== undefined ? prevKf.params.centerX : 32,
-                            centerY: prevKf.params.centerY !== undefined ? prevKf.params.centerY : 16
-                        };
+                        const interpMultiplierX = prevKf.params.scaleX + (nextKf.params.scaleX - prevKf.params.scaleX) * t;
+                        const interpMultiplierY = prevKf.params.scaleY + (nextKf.params.scaleY - prevKf.params.scaleY) * t;
+                        cumulativeScaleX = cumPrevX / prevKf.params.scaleX * interpMultiplierX;
+                        cumulativeScaleY = cumPrevY / prevKf.params.scaleY * interpMultiplierY;
                     }
-                    
-                    // Calculate cumulative scale up to prevKf
-                    let cumulativeUpToPrevX = 1;
-                    let cumulativeUpToPrevY = 1;
-                    for (let kf of typeKeyframes) {
-                        if (kf.time <= prevKf.time) {
-                            cumulativeUpToPrevX *= kf.params.scaleX;
-                            cumulativeUpToPrevY *= kf.params.scaleY;
-                        }
-                    }
-                    
-                    // Calculate cumulative scale up to nextKf
-                    let cumulativeUpToNextX = cumulativeUpToPrevX * nextKf.params.scaleX;
-                    let cumulativeUpToNextY = cumulativeUpToPrevY * nextKf.params.scaleY;
-                    
-                    // Interpolate between cumulative values
-                    const t = (currentTime - prevKf.time) / (nextKf.time - prevKf.time);
-                    const interpScaleX = cumulativeUpToPrevX + (cumulativeUpToNextX - cumulativeUpToPrevX) * t;
-                    const interpScaleY = cumulativeUpToPrevY + (cumulativeUpToNextY - cumulativeUpToPrevY) * t;
                     
                     return {
-                        scaleX: interpScaleX,
-                        scaleY: interpScaleY,
-                        useModelCenter: nextKf.params.useModelCenter || prevKf.params.useModelCenter || false,
-                        centerX: nextKf.params.centerX !== undefined ? nextKf.params.centerX : (prevKf.params.centerX !== undefined ? prevKf.params.centerX : 32),
-                        centerY: nextKf.params.centerY !== undefined ? nextKf.params.centerY : (prevKf.params.centerY !== undefined ? prevKf.params.centerY : 16)
+                        scaleX: cumulativeScaleX,
+                        scaleY: cumulativeScaleY,
+                        useModelCenter: nextKf?.params.useModelCenter || prevKf?.params.useModelCenter || false,
+                        centerX: nextKf?.params.centerX !== undefined ? nextKf.params.centerX : (prevKf?.params.centerX !== undefined ? prevKf.params.centerX : 32),
+                        centerY: nextKf?.params.centerY !== undefined ? nextKf.params.centerY : (prevKf?.params.centerY !== undefined ? prevKf.params.centerY : 16)
                     };
                 }
+                
                 return null;
             }
             
-            // Apply model transforms to each model
+            // Process model tracks
+            const modelTracksByModel = new Map();
+            anim.tracks.forEach(track => {
+                if (track.type === 'model') {
+                    if (!modelTracksByModel.has(track.modelIndex)) {
+                        modelTracksByModel.set(track.modelIndex, []);
+                    }
+                    modelTracksByModel.get(track.modelIndex).push(track);
+                }
+            });
+            
             for (const [modelIndex, tracks] of modelTracksByModel) {
                 const model = animationModels[modelIndex];
                 if (!model) continue;
                 
-                // Get original points
                 const originalModel = models[modelIndex];
                 const originalPoints = [];
                 for (let i = 0; i < originalModel.triangles.length; i++) {
@@ -4860,7 +4800,6 @@
                     originalPoints.push({ x: tri.v3.x, y: tri.v3.y });
                 }
                 
-                // Get all points in the model
                 let targetPoints = [];
                 let globalIdx = 0;
                 for (let i = 0; i < model.triangles.length; i++) {
@@ -4870,19 +4809,14 @@
                     targetPoints.push({ point: tri.v3, originalPoint: originalPoints[globalIdx++] });
                 }
                 
-                // Combine all model tracks for this model
                 let totalTranslate = { x: 0, y: 0 };
                 let totalRotate = { angle: 0, useModelCenter: false, centerX: 32, centerY: 16 };
                 let totalScale = { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
-                let needsReset = false;
                 
-                tracks.forEach(track => {
-                    const resetKfs = track.keyframes.filter(kf => kf.action === 'reset' && kf.time <= time);
-                    if (resetKfs.length > 0) needsReset = true;
-                    
-                    const translateVal = getInterpolatedValue(track.keyframes, time, 'translate');
-                    const rotateVal = getInterpolatedValue(track.keyframes, time, 'rotate');
-                    const scaleVal = getInterpolatedValue(track.keyframes, time, 'scale');
+                for (const track of tracks) {
+                    const translateVal = getValueWithReset(track.keyframes, time, 'translate');
+                    const rotateVal = getValueWithReset(track.keyframes, time, 'rotate');
+                    const scaleVal = getValueWithReset(track.keyframes, time, 'scale');
                     
                     if (translateVal) {
                         totalTranslate.x += translateVal.x;
@@ -4895,19 +4829,14 @@
                         if (rotateVal.centerY !== undefined) totalRotate.centerY = rotateVal.centerY;
                     }
                     if (scaleVal) {
-                        const multiplierX = scaleVal.scaleX;
-                        const multiplierY = scaleVal.scaleY;
-
-                        totalScale.scaleX *= multiplierX;
-                        totalScale.scaleY *= multiplierY;
-                        
+                        totalScale.scaleX *= scaleVal.scaleX;
+                        totalScale.scaleY *= scaleVal.scaleY;
                         if (scaleVal.useModelCenter) totalScale.useModelCenter = true;
                         if (scaleVal.centerX !== undefined) totalScale.centerX = scaleVal.centerX;
                         if (scaleVal.centerY !== undefined) totalScale.centerY = scaleVal.centerY;
                     }
-                });
+                }
                 
-                // Calculate dynamic center if needed
                 let currentCenter = { x: 32, y: 16 };
                 const useDynamicCenter = totalRotate.useModelCenter || totalScale.useModelCenter;
                 
@@ -4922,18 +4851,10 @@
                     currentCenter = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
                 }
                 
-                // Apply transforms to all points in the model
                 targetPoints.forEach(tp => {
                     let x = tp.originalPoint.x;
                     let y = tp.originalPoint.y;
                     
-                    if (needsReset) {
-                        tp.point.x = x;
-                        tp.point.y = y;
-                        return;
-                    }
-                    
-                    // Apply scale
                     if (totalScale.scaleX !== 1 || totalScale.scaleY !== 1) {
                         let centerToUse;
                         if (totalScale.useModelCenter && useDynamicCenter) {
@@ -4947,7 +4868,6 @@
                         y = centerToUse.y + (y - centerToUse.y) * totalScale.scaleY;
                     }
                     
-                    // Apply rotate
                     if (totalRotate.angle !== 0) {
                         const rad = totalRotate.angle * Math.PI / 180;
                         let centerToUse;
@@ -4964,7 +4884,6 @@
                         y = centerToUse.y + dx * Math.sin(rad) + dy * Math.cos(rad);
                     }
                     
-                    // Apply translate
                     x += totalTranslate.x;
                     y += totalTranslate.y;
                     
@@ -4972,20 +4891,19 @@
                     tp.point.y = y;
                 });
                 
-                // Apply visibility
+                // Handle visibility
                 let visible = true;
-                tracks.forEach(track => {
+                for (const track of tracks) {
                     const visKeyframes = track.keyframes.filter(kf => kf.action === 'visibility' && kf.time <= time);
                     if (visKeyframes.length > 0) {
                         visible = visKeyframes[visKeyframes.length - 1].params.visible;
                     }
-                });
+                }
                 model.visible = visible;
             }
             
-            // SECOND: Apply point group transforms (using the already transformed points)
+            // Process group tracks (same pattern)
             const groupTracksByTarget = new Map();
-            
             anim.tracks.forEach(track => {
                 if (track.type === 'group') {
                     const key = `${track.modelIndex}_${track.groupIndex}`;
@@ -4996,13 +4914,11 @@
                 }
             });
             
-            // Apply point group transforms
             for (const [key, tracks] of groupTracksByTarget) {
                 const [modelIndex, groupIndex] = key.split('_').map(Number);
                 const model = animationModels[modelIndex];
                 if (!model) continue;
                 
-                // Get the points in this group (using CURRENT positions after model transforms)
                 const group = models[modelIndex].pointGroups?.[groupIndex];
                 if (!group) continue;
                 const groupIndices = new Set(group.pointIndices);
@@ -5014,7 +4930,6 @@
                     for (let v = 0; v < 3; v++) {
                         const point = v === 0 ? tri.v1 : (v === 1 ? tri.v2 : tri.v3);
                         if (groupIndices.has(globalIdx)) {
-                            // Store the CURRENT position (after model transforms) as the starting point
                             targetPoints.push({ point, originalPoint: { x: point.x, y: point.y } });
                         }
                         globalIdx++;
@@ -5023,19 +4938,14 @@
                 
                 if (targetPoints.length === 0) continue;
                 
-                // Combine all group tracks for this group
                 let totalTranslate = { x: 0, y: 0 };
                 let totalRotate = { angle: 0, useModelCenter: false, centerX: 32, centerY: 16 };
                 let totalScale = { scaleX: 1, scaleY: 1, useModelCenter: false, centerX: 32, centerY: 16 };
-                let needsReset = false;
                 
-                tracks.forEach(track => {
-                    const resetKfs = track.keyframes.filter(kf => kf.action === 'reset' && kf.time <= time);
-                    if (resetKfs.length > 0) needsReset = true;
-                    
-                    const translateVal = getInterpolatedValue(track.keyframes, time, 'translate');
-                    const rotateVal = getInterpolatedValue(track.keyframes, time, 'rotate');
-                    const scaleVal = getInterpolatedValue(track.keyframes, time, 'scale');
+                for (const track of tracks) {
+                    const translateVal = getValueWithReset(track.keyframes, time, 'translate', true);
+                    const rotateVal = getValueWithReset(track.keyframes, time, 'rotate', true);
+                    const scaleVal = getValueWithReset(track.keyframes, time, 'scale', true);
                     
                     if (translateVal) {
                         totalTranslate.x += translateVal.x;
@@ -5048,20 +4958,14 @@
                         if (rotateVal.centerY !== undefined) totalRotate.centerY = rotateVal.centerY;
                     }
                     if (scaleVal) {
-                        const multiplierX = scaleVal.scaleX;
-                        const multiplierY = scaleVal.scaleY;
-                        
-                        // Apply as multiplier (cumulative)
-                        totalScale.scaleX *= multiplierX;
-                        totalScale.scaleY *= multiplierY;
-                        
+                        totalScale.scaleX *= scaleVal.scaleX;
+                        totalScale.scaleY *= scaleVal.scaleY;
                         if (scaleVal.useModelCenter) totalScale.useModelCenter = true;
                         if (scaleVal.centerX !== undefined) totalScale.centerX = scaleVal.centerX;
                         if (scaleVal.centerY !== undefined) totalScale.centerY = scaleVal.centerY;
                     }
-                });
+                }
                 
-                // Calculate dynamic center for the group
                 let currentCenter = { x: 32, y: 16 };
                 const useDynamicCenter = totalRotate.useModelCenter || totalScale.useModelCenter;
                 
@@ -5076,18 +4980,10 @@
                     currentCenter = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
                 }
                 
-                // Apply transforms to group points (starting from their current position after model transforms)
                 targetPoints.forEach(tp => {
                     let x = tp.originalPoint.x;
                     let y = tp.originalPoint.y;
                     
-                    if (needsReset) {
-                        tp.point.x = x;
-                        tp.point.y = y;
-                        return;
-                    }
-                    
-                    // Apply scale
                     if (totalScale.scaleX !== 1 || totalScale.scaleY !== 1) {
                         let centerToUse;
                         if (totalScale.useModelCenter && useDynamicCenter) {
@@ -5101,7 +4997,6 @@
                         y = centerToUse.y + (y - centerToUse.y) * totalScale.scaleY;
                     }
                     
-                    // Apply rotate
                     if (totalRotate.angle !== 0) {
                         const rad = totalRotate.angle * Math.PI / 180;
                         let centerToUse;
@@ -5118,7 +5013,6 @@
                         y = centerToUse.y + dx * Math.sin(rad) + dy * Math.cos(rad);
                     }
                     
-                    // Apply translate
                     x += totalTranslate.x;
                     y += totalTranslate.y;
                     
@@ -5129,90 +5023,91 @@
             
             draw();
         }
+        
         // ===========================================
         // PLAYBACK CONTROLS
         // ===========================================
 
-function playAnimationPlayback() {
-    if (isAnimPlaying) return;
-    const anim = getSelectedAnimation();
-    if (!anim || anim.tracks.length === 0) return;
-    
-    // Initialize repeat properties if needed
-    if (anim.repeatEnabled === undefined) {
-        anim.repeatEnabled = false;
-        anim.repeatBehavior = 'reset';
-    }
-    
-    isAnimPlaying = true;
-    const startTime = currentAnimationTime;
-    const startStamp = performance.now();
-    const duration = anim.duration;
-    
-    function step(now) {
-        if (!isAnimPlaying) return;
-        let elapsed = now - startStamp;
-        let newTime = startTime + elapsed;
-        
-        if (newTime >= duration) {
-            if (anim.repeatEnabled) {
-                const overflow = newTime - duration;
+        function playAnimationPlayback() {
+            if (isAnimPlaying) return;
+            const anim = getSelectedAnimation();
+            if (!anim || anim.tracks.length === 0) return;
+            
+            // Initialize repeat properties if needed
+            if (anim.repeatEnabled === undefined) {
+                anim.repeatEnabled = false;
+                anim.repeatBehavior = 'reset';
+            }
+            
+            isAnimPlaying = true;
+            const startTime = currentAnimationTime;
+            const startStamp = performance.now();
+            const duration = anim.duration;
+            
+            function step(now) {
+                if (!isAnimPlaying) return;
+                let elapsed = now - startStamp;
+                let newTime = startTime + elapsed;
                 
-                if (anim.repeatBehavior === 'reset') {
-                    // Reset - clear accumulated base
-                    accumulatedBaseModels = null;
-                    currentAnimationTime = overflow % duration;
-                    applyAnimationAtTime(currentAnimationTime);
-                    updatePlayheadPosition();
-                    draw();
-                    isAnimPlaying = false;
-                    playAnimationPlayback();
-                    return;
-                    
-                } else if (anim.repeatBehavior === 'accumulate') {
-                    // IMPORTANT: Apply the animation at the END first to get final state
-                    applyAnimationAtTime(duration);
-                    draw();
-                    
-                    // Store the current animationModels state as the new base for next loop
-                    // This captures the exact position after the animation completes
-                    accumulatedBaseModels = JSON.parse(JSON.stringify(animationModels));
-                    
-                    // Now set time to overflow and apply (will use accumulatedBaseModels as base)
-                    currentAnimationTime = overflow % duration;
-                    
-                    // Force a fresh apply that uses accumulatedBaseModels
-                    // The next applyAnimationAtTime call will use accumulatedBaseModels
-                    applyAnimationAtTime(currentAnimationTime);
-                    updatePlayheadPosition();
-                    draw();
-                    
-                    // Restart the animation loop
-                    isAnimPlaying = false;
-                    playAnimationPlayback();
-                    return;
+                if (newTime >= duration) {
+                    if (anim.repeatEnabled) {
+                        const overflow = newTime - duration;
+                        
+                        if (anim.repeatBehavior === 'reset') {
+                            // Reset - clear accumulated base
+                            accumulatedBaseModels = null;
+                            currentAnimationTime = overflow % duration;
+                            applyAnimationAtTime(currentAnimationTime);
+                            updatePlayheadPosition();
+                            draw();
+                            isAnimPlaying = false;
+                            playAnimationPlayback();
+                            return;
+                            
+                        } else if (anim.repeatBehavior === 'accumulate') {
+                            // IMPORTANT: Apply the animation at the END first to get final state
+                            applyAnimationAtTime(duration);
+                            draw();
+                            
+                            // Store the current animationModels state as the new base for next loop
+                            // This captures the exact position after the animation completes
+                            accumulatedBaseModels = JSON.parse(JSON.stringify(animationModels));
+                            
+                            // Now set time to overflow and apply (will use accumulatedBaseModels as base)
+                            currentAnimationTime = overflow % duration;
+                            
+                            // Force a fresh apply that uses accumulatedBaseModels
+                            // The next applyAnimationAtTime call will use accumulatedBaseModels
+                            applyAnimationAtTime(currentAnimationTime);
+                            updatePlayheadPosition();
+                            draw();
+                            
+                            // Restart the animation loop
+                            isAnimPlaying = false;
+                            playAnimationPlayback();
+                            return;
+                        }
+                    } else {
+                        newTime = duration;
+                        applyAnimationAtTime(newTime);
+                        currentAnimationTime = newTime;
+                        updatePlayheadPosition();
+                        draw();
+                        pauseAnimationPlayback();
+                        return;
+                    }
                 }
-            } else {
-                newTime = duration;
-                applyAnimationAtTime(newTime);
+                
                 currentAnimationTime = newTime;
+                applyAnimationAtTime(currentAnimationTime);
                 updatePlayheadPosition();
                 draw();
-                pauseAnimationPlayback();
-                return;
+                animFrameId = requestAnimationFrame(step);
             }
+            
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            animFrameId = requestAnimationFrame(step);
         }
-        
-        currentAnimationTime = newTime;
-        applyAnimationAtTime(currentAnimationTime);
-        updatePlayheadPosition();
-        draw();
-        animFrameId = requestAnimationFrame(step);
-    }
-    
-    if (animFrameId) cancelAnimationFrame(animFrameId);
-    animFrameId = requestAnimationFrame(step);
-}
 
         function pauseAnimationPlayback() {
             isAnimPlaying = false;
@@ -5265,7 +5160,6 @@ function playAnimationPlayback() {
                 draw();
             }
         }
-
 
         function refreshTimelineAfterLoad() {
             const anim = getSelectedAnimation();
@@ -5393,26 +5287,28 @@ function playAnimationPlayback() {
             if (kfEl) kfEl.textContent = totalKf;
         }
 
-        function getMouseTimeFromEvent(e, canvas) {
-            const anim = getSelectedAnimation();
-            if (!anim) return null;
-            
-            const rulerCanvas = document.getElementById('timelineRulerCanvas');
-            if (!rulerCanvas) return null;
-            
-            const scrollContainer = document.querySelector('.ruler-track-container');
-            const scrollLeft = scrollContainer ? scrollContainer.scrollLeft : 0;
-            const totalWidth = rulerCanvas.width;
-            
-            const canvasRect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - canvasRect.left + scrollLeft;
-            
-            // Calculate time based on pixel position
-            const percent = Math.min(1, Math.max(0, mouseX / totalWidth));
-            const time = Math.floor(percent * anim.duration);
-            
-            return time;
-        }
+
+// Also update getMouseTimeFromEvent to use the correct calculation
+function getMouseTimeFromEvent(e, canvas) {
+    const anim = getSelectedAnimation();
+    if (!anim) return null;
+    
+    const rulerCanvas = document.getElementById('timelineRulerCanvas');
+    if (!rulerCanvas) return null;
+    
+    const scrollContainer = document.querySelector('.ruler-track-container');
+    const scrollLeft = scrollContainer ? scrollContainer.scrollLeft : 0;
+    const totalWidth = rulerCanvas.width;
+    
+    const canvasRect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - canvasRect.left + scrollLeft;
+    
+    // Calculate time based on pixel position (proportional)
+    const percent = Math.min(1, Math.max(0, mouseX / totalWidth));
+    const time = Math.floor(percent * anim.duration);
+    
+    return time;
+}
 
 
         // ===========================================
@@ -5467,37 +5363,129 @@ function playAnimationPlayback() {
         // ADD ANIMATION BUTTON
         // ===========================================
 
-        function showCreateAnimationDialog() {
-            // If not in animation mode, switch first
-            if (!isAnimationMode) {
-                toggleMode();
-                // Small delay to allow mode switch
-                setTimeout(() => {
-                    const name = prompt("Enter animation name:", "Animation " + (animations.length + 1));
-                    if (name && name.trim()) {
-                        createNewAnimation(name.trim());
-                    } else if (animations.length === 0) {
-                        createNewAnimation("My First Animation");
-                    }
-                }, 50);
-            } else {
-                const name = prompt("Enter animation name:", "Animation " + (animations.length + 1));
-                if (name && name.trim()) {
-                    createNewAnimation(name.trim());
-                } else if (animations.length === 0) {
-                    createNewAnimation("My First Animation");
+        function showCreateAnimationDialog(openTrackModalAfter = false) {
+            // Create a modal dialog with name, loop, and duration
+            const dialog = document.createElement('div');
+            dialog.className = 'name-dialog';
+            dialog.style.display = 'block';
+            dialog.style.zIndex = '20000';
+            dialog.innerHTML = `
+                <h3>Create New Animation</h3>
+                <div class="settings-row">
+                    <label>Animation Name:</label>
+                    <input type="text" id="newAnimName" placeholder="Animation name" value="Animation ${animations.length + 1}">
+                </div>
+                <div class="settings-row">
+                    <label>Duration (ms):</label>
+                    <input type="number" id="newAnimDuration" value="3000" min="500" max="30000" step="100">
+                </div>
+                <div class="settings-row">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="newAnimLoop"> Enable Loop
+                    </label>
+                </div>
+                <div class="settings-row" id="loopBehaviorRow" style="display: none;">
+                    <label>Loop Behavior:</label>
+                    <select id="newAnimLoopBehavior">
+                        <option value="reset">Reset</option>
+                        <option value="accumulate">Accumulate</option>
+                    </select>
+                </div>
+                <div class="name-dialog-buttons">
+                    <button class="name-dialog-btn cancel" id="newAnimCancel">CANCEL</button>
+                    <button class="name-dialog-btn create" id="newAnimCreate">CREATE</button>
+                </div>
+            `;
+            
+            document.body.appendChild(dialog);
+            
+            const loopCheckbox = dialog.querySelector('#newAnimLoop');
+            const loopBehaviorRow = dialog.querySelector('#loopBehaviorRow');
+            
+            loopCheckbox.addEventListener('change', () => {
+                loopBehaviorRow.style.display = loopCheckbox.checked ? 'block' : 'none';
+            });
+            
+            const createBtn = dialog.querySelector('#newAnimCreate');
+            const cancelBtn = dialog.querySelector('#newAnimCancel');
+            const nameInput = dialog.querySelector('#newAnimName');
+            const durationInput = dialog.querySelector('#newAnimDuration');
+            const loopBehaviorSelect = dialog.querySelector('#newAnimLoopBehavior');
+            
+            createBtn.onclick = () => {
+                const name = nameInput.value.trim();
+                if (!name) {
+                    alert('Please enter a name');
+                    return;
                 }
-            }
+                
+                const duration = parseInt(durationInput.value);
+                const loopEnabled = loopCheckbox.checked;
+                const loopBehavior = loopBehaviorSelect.value;
+                
+                const newAnim = {
+                    id: Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+                    name: name,
+                    duration: duration,
+                    tracks: [],
+                    repeatEnabled: loopEnabled,
+                    repeatBehavior: loopBehavior,
+                };
+                
+                animations.push(newAnim);
+                selectedAnimationId = newAnim.id;
+                currentAnimationTime = 0;
+                
+                renderAnimationList();
+                renderTimelineForAnimation();
+                updateRuler(duration);
+                
+                const durationInputElem = document.getElementById('timelineDuration');
+                if (durationInputElem) durationInputElem.value = duration;
+                
+                // Update repeat controls
+                const repeatToggle = document.getElementById('repeatToggle');
+                const repeatBehavior = document.getElementById('repeatBehavior');
+                if (repeatToggle) repeatToggle.checked = loopEnabled;
+                if (repeatBehavior) {
+                    repeatBehavior.value = loopBehavior;
+                    repeatBehavior.disabled = !loopEnabled;
+                }
+                
+                applyAnimationAtTime(0);
+                draw();
+                
+                dialog.remove();
+                
+                // If we need to open track modal after creating animation
+                if (openTrackModalAfter) {
+                    setTimeout(() => showAddTrackModal(), 100);
+                }
+            };
+            
+            cancelBtn.onclick = () => {
+                dialog.remove();
+            };
+            
+            nameInput.focus();
+            nameInput.select();
         }
         // ===========================================
         // MODAL FOR CREATING TRACK FROM MODEL/GROUP
         // ===========================================
 
         function showAddTrackModal() {
+            // If no animations exist, create one first
+            if (animations.length === 0) {
+                showCreateAnimationDialog(true); // true = then show track modal after
+                return;
+            }
+            
             const anim = getSelectedAnimation();
             if (!anim) {
-                alert('Please create an animation first (click + in Animations section)');
-                return;
+                // If no animation selected but animations exist, select the first one
+                selectedAnimationId = animations[0].id;
+                renderAnimationList();
             }
             
             const modal = document.getElementById('createTimelineModal');
@@ -5518,18 +5506,6 @@ function playAnimationPlayback() {
                     select.appendChild(gopt);
                 });
             });
-            
-            // Remove any existing keydown listener
-            const oldHandler = modal.onkeydown;
-            modal.onkeydown = (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    createTrackFromModal();
-                } else if (e.key === 'Escape') {
-                    e.preventDefault();
-                    closeTrackModal();
-                }
-            };
             
             modal.classList.add('active');
             select.focus();
@@ -5625,9 +5601,9 @@ function playAnimationPlayback() {
             // Override renderTimelines to use our system
             window.renderTimelines = renderTimelineForAnimation;
             
-            // Setup event listeners for new UI
-            const addAnimBtn = document.getElementById('addAnimationBtn');
-            if (addAnimBtn) addAnimBtn.onclick = showCreateAnimationDialog;
+            document.getElementById('addAnimationBtn').addEventListener('click', function() {
+                showCreateAnimationDialog(false);
+            });
             
             // Add track button (the inline one in the header)
             const addTrackBtnInline = document.getElementById('addTimelineBtnInline');
@@ -10383,6 +10359,28 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
             updateCanvasScale();
         });
 
+        function handleWindowResize() {
+            if (!isAnimationMode) return;
+            
+            const anim = getSelectedAnimation();
+            if (!anim) return;
+            
+            // Update ruler with new container width
+            updateRuler(anim.duration);
+            
+            // Re-render timeline with new width
+            renderTimelineForAnimation();
+            
+            // Update playhead position
+            updatePlayheadPosition();
+
+            updateCanvasScale();
+            
+            // Redraw
+            draw();
+        }
+
+
         window.addEventListener('load', function() {
             const container = document.querySelector('.canvas-container');
             if (container) {
@@ -10394,9 +10392,11 @@ const ACTION_TYPES = Object.keys(animationActionTypes);
         });
 
         window.addEventListener('resize', function() {
-            updateCanvasScale();
+            if (window.resizeTimeout) clearTimeout(window.resizeTimeout);
+            window.resizeTimeout = setTimeout(() => {
+                handleWindowResize();
+            }, 100);
         });
-
         document.addEventListener('DOMContentLoaded', function() {
             const canvas = document.getElementById('meuCanvas');
             if (canvas) {
