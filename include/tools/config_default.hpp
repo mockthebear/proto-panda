@@ -2,7 +2,7 @@
 /*
     Avoid changing this vile, change the config.hpp instead if you need custom configuration
 */
-#define PANDA_VERSION "2.0.8"
+#define PANDA_VERSION "2.0.9"
 /*
 Cache file version to invalidate cache in case of firmware update
 */
@@ -63,6 +63,21 @@ Cache file version to invalidate cache in case of firmware update
 #define SPI_MISO 47
 #define SPI_SCK 21
 #define SPI_MAX_CLOCK (80 * 1000 * 1000)
+
+/* 
+    SD_MMC
+*/
+#define MMC_PIN_DATA2 -1
+#define MMC_PIN_DATA3 SPI_CS
+#define MMC_PIN_CMD SPI_MOSI
+#define MMC_PIN_CLK SPI_SCK
+#define MMC_PIN_DATA0 SPI_MISO
+#define MMC_PIN_DATA1 -1
+#define MMC_CLOCK_SPEED 40000
+//If using the full range of pins (data1 and 2, set this to false)
+#define MMC_ONE_BIT true  
+//Set 2 to MMC and 1 to SD
+#define PANDA_SD_MODE 2
 
 
 /*
@@ -139,3 +154,10 @@ Servos
 #define DMA_GPIO_OE 4
 #define DMA_GPIO_CLK 6
 
+#if PANDA_SD_MODE == 1
+#define PANDA_SD SD
+#define PANDA_SD_NAME "SD"
+#elif PANDA_SD_MODE == 2
+#define PANDA_SD SD_MMC
+#define PANDA_SD_NAME "MMC"
+#endif

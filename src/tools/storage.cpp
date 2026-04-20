@@ -1,9 +1,19 @@
 #include "tools/storage.hpp"
 #include "tools/logger.hpp"
+
+#if PANDA_SD_MODE == 1
 #include <SD.h>
+#elif PANDA_SD_MODE == 2
+#include <SD_MMC.h>
+#else
+#error "NO SD_MODE Mode defined (set PANDA_SD_MODE to 1 for SD or 2 for SD_MMC)"
+#endif
+
 #include <PNGdec.h>
 #include "SPI.h"
 #include <string.h>
+
+#include "tools/oledscreen.hpp"
 
 File Storage::pngDecFile;
 uint16_t* Storage::tmpBuffer;
@@ -11,11 +21,26 @@ uint16_t* Storage::tmpBuffer;
 PNG *png = nullptr;
 
 bool Storage::Begin(){
+  Serial.printf("Starting sd card mode as %s\n", PANDA_SD_NAME);
+#if PANDA_SD_MODE == 1
   SPI.setFrequency(SPI_MAX_CLOCK);
-    if(!SD.begin(SPI_CS, SPI, SPI_MAX_CLOCK, "/sd", 10)){
-        return false;
-    }   
-    return AllocatePngDecoder(true);
+  
+  if(!SD.begin(SPI_CS, SPI, SPI_MAX_CLOCK, "/sd", 10)){
+      return false;
+  }   
+#elif PANDA_SD_MODE == 2
+
+  if(! PANDA_SD.setPins(MMC_PIN_CLK, MMC_PIN_CMD, MMC_PIN_DATA0, MMC_PIN_DATA1, MMC_PIN_DATA2, MMC_PIN_DATA3)){
+    Serial.println("Pin change failed");
+    return false;
+  }
+
+  if (!PANDA_SD.begin("/sdcard", MMC_ONE_BIT, false, MMC_CLOCK_SPEED, 10)) {
+    Serial.println("Card Mount Failed");
+    return false;
+  }
+#endif
+  return AllocatePngDecoder(true);
 }
 
 bool Storage::AllocatePngDecoder(bool allocateOnPsram){
@@ -40,7 +65,7 @@ bool Storage::DeallocatePngDecoder(){
 }
 
 File Storage::getFile(const char *name){
-  File myFile = SD.open(name);
+  File myFile = PANDA_SD.open(name);
   return myFile;
 }  
 
@@ -70,7 +95,7 @@ String Storage::GetFileText(const char *name){
 }
 
 std::vector<std::string> Storage::listFolder(const char *name){
-  File dir = SD.open(name);
+  File dir = PANDA_SD.open(name);
   std::vector<std::string> res;
   while (true) {
     File entry = dir.openNextFile();
@@ -144,7 +169,7 @@ uint16_t* Storage::DecodeBMP(const char *name){
 
 
 void * myOpen(const char *filename, int32_t *size) {
-  Storage::pngDecFile = SD.open(filename);
+  Storage::pngDecFile = PANDA_SD.open(filename);
   *size = Storage::pngDecFile.size();
   return &Storage::pngDecFile;
 }

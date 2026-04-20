@@ -1,5 +1,6 @@
 #include "editmode/editmode.hpp"
 
+#include "tools/config_default.hpp"
 #include "tools/logger.hpp"
 #include "drawing/framerepository.hpp"
 #include "drawing/icons/icons.hpp"
@@ -11,7 +12,15 @@
 
 #include <WiFi.h>
 #include <ArduinoJson.h>
-#include "SD.h"
+
+#if PANDA_SD_MODE == 1
+#include <SD.h>
+#elif PANDA_SD_MODE == 2
+#include <SD_MMC.h>
+#else
+#error "NO SD_MODE Mode defined (set PANDA_SD_MODE to 1 for SD or 2 for SD_MMC)"
+#endif
+
 
 #include "editmode/ftp/FtpServer.h"
 
@@ -123,7 +132,7 @@ void EditMode::DoBegin(bool connectToWifi)
     }
   }
 
-  File file = SD.open("/wifi.json", "r");
+  File file = PANDA_SD.open("/wifi.json", "r");
   if (!file){
     OledScreen::CriticalFail("Failed\nto open\n/wifi.json");
     for (;;){}

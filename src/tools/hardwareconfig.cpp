@@ -4,6 +4,14 @@
 #include "tools/devices.hpp"
 #include "tools/psrammap.hpp"
 
+#if PANDA_SD_MODE == 1
+#include <SD.h>
+#elif PANDA_SD_MODE == 2
+#include <SD_MMC.h>
+#else
+#error "NO SD_MODE Mode defined (set PANDA_SD_MODE to 1 for SD or 2 for SD_MMC)"
+#endif
+
 const uint8_t invalidPins[] = {
     I2C_SDA,
     I2C_SLC,
@@ -119,7 +127,7 @@ void HardwareConfig::loadHub75AndStart(JsonObject hub75){
 bool HardwareConfig::LoadConfigs(){
     loadDefaults();
 
-    File conf = SD.open( "/hardware.json" );
+    File conf = PANDA_SD.open( "/hardware.json" );
     if( !conf ) {
         OledScreen::CriticalFail("Can't open hardware.jsonn");
         for(;;){}

@@ -1,7 +1,6 @@
 #include "config.hpp"
 
 #include <SPI.h>
-#include "SD.h"
 #include <string>
 
 

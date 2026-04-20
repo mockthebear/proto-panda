@@ -4,7 +4,16 @@
 #include "drawing/framerepository.hpp"
 #include "lua/luainterface.hpp"
 #include "drawing/animation.hpp"
-#include "SD.h"
+
+
+#if PANDA_SD_MODE == 1
+#include <SD.h>
+#elif PANDA_SD_MODE == 2
+#include <SD_MMC.h>
+#else
+#error "NO SD_MODE Mode defined (set PANDA_SD_MODE to 1 for SD or 2 for SD_MMC)"
+#endif
+
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
@@ -20,14 +29,14 @@ bool createDirectories(String path){
 
   while ((slashIdx = path.indexOf('/', startIdx)) != -1){
     currentPath = path.substring(0, slashIdx);
-    if (!SD.exists(currentPath)){
-      SD.mkdir(currentPath);
+    if (!PANDA_SD.exists(currentPath)){
+      PANDA_SD.mkdir(currentPath);
     }
     startIdx = slashIdx + 1;
   }
 
-  if (!SD.exists(path)){
-    SD.mkdir(path);
+  if (!PANDA_SD.exists(path)){
+    PANDA_SD.mkdir(path);
   }
   return true;
 }
@@ -44,13 +53,13 @@ void handleUpload(AsyncWebServerRequest *request, String filename, size_t index,
     filePath = path + "/" + filename;
 
     String dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
-    if (dirPath.length() > 0 && !SD.exists(dirPath)){
+    if (dirPath.length() > 0 && !PANDA_SD.exists(dirPath)){
       if (!createDirectories(dirPath)){
         request->send(500, "text/plain", "{\"success\": false, \"error\": \"Failed to open file for writing\"}");
       }
     }
 
-    uploadFile = SD.open(filePath, FILE_WRITE);
+    uploadFile = PANDA_SD.open(filePath, FILE_WRITE);
     if (!uploadFile){
       request->send(500, "text/plain", "{\"success\": false, \"error\": \"Failed to open file for writing\"}");
       Serial.println("Failed to open file for writing");
@@ -77,12 +86,12 @@ void handleCopy(AsyncWebServerRequest *request){
   String srcPath = request->getParam("src")->value();
   String dstPath = request->getParam("dst")->value();
 
-  if (!SD.exists(srcPath)){
+  if (!PANDA_SD.exists(srcPath)){
     request->send(404, "text/plain", "Source file not found");
     return;
   }
 
-  File src = SD.open(srcPath);
+  File src = PANDA_SD.open(srcPath);
   if (src.isDirectory()){
     src.close();
     request->send(400, "text/plain", "Source is a directory");
@@ -95,15 +104,15 @@ void handleCopy(AsyncWebServerRequest *request){
     String dstDir = dstPath.substring(0, lastSlash);
     
     // Create directory if it doesn't exist
-    if (!SD.exists(dstDir)){
+    if (!PANDA_SD.exists(dstDir)){
       // Create all necessary parent directories
       String currentPath = "";
       for (int i = 0; i < dstDir.length(); i++){
         currentPath += dstDir[i];
         if (dstDir[i] == '/' && i > 0) // Found a directory level
         {
-          if (!SD.exists(currentPath.substring(0, currentPath.length() - 1))){
-            if (!SD.mkdir(currentPath.substring(0, currentPath.length() - 1))){
+          if (!PANDA_SD.exists(currentPath.substring(0, currentPath.length() - 1))){
+            if (!PANDA_SD.mkdir(currentPath.substring(0, currentPath.length() - 1))){
               src.close();
               request->send(500, "text/plain", "Failed to create directory: " + currentPath);
               return;
@@ -113,7 +122,7 @@ void handleCopy(AsyncWebServerRequest *request){
       }
       
       // Create the final directory
-      if (!SD.mkdir(dstDir)){
+      if (!PANDA_SD.mkdir(dstDir)){
         src.close();
         request->send(500, "text/plain", "Failed to create destination directory");
         return;
@@ -122,8 +131,8 @@ void handleCopy(AsyncWebServerRequest *request){
   }
 
   // Check if destination already exists (file, not directory)
-  if (SD.exists(dstPath)){
-    File dstCheck = SD.open(dstPath);
+  if (PANDA_SD.exists(dstPath)){
+    File dstCheck = PANDA_SD.open(dstPath);
     if (!dstCheck.isDirectory()) // Only fail if it's a file
     {
       src.close();
@@ -134,7 +143,7 @@ void handleCopy(AsyncWebServerRequest *request){
     dstCheck.close();
   }
 
-  File dst = SD.open(dstPath, FILE_WRITE);
+  File dst = PANDA_SD.open(dstPath, FILE_WRITE);
   if (!dst){
     src.close();
     request->send(500, "text/plain", "Failed to create destination file");
@@ -156,7 +165,7 @@ void handleCopy(AsyncWebServerRequest *request){
   dst.close();
 
   if (error){
-    SD.remove(dstPath);
+    PANDA_SD.remove(dstPath);
     request->send(500, "text/plain", "Copy failed");
     return;
   }
@@ -172,12 +181,12 @@ void handleRm(AsyncWebServerRequest *request){
 
   String path = request->getParam("path")->value();
 
-  if (!SD.exists(path)){
+  if (!PANDA_SD.exists(path)){
     request->send(404, "text/plain", "Path not found");
     return;
   }
 
-  File file = SD.open(path);
+  File file = PANDA_SD.open(path);
   if (file.isDirectory()){
     bool isEmpty = true;
     File entry = file.openNextFile();
@@ -197,13 +206,13 @@ void handleRm(AsyncWebServerRequest *request){
     }
 
     file.close();
-    if (!SD.rmdir(path)){
+    if (!PANDA_SD.rmdir(path)){
       request->send(500, "text/plain", "Failed to delete directory");
       return;
     }
   }else{
     file.close();
-    if (!SD.remove(path)){
+    if (!PANDA_SD.remove(path)){
       request->send(500, "text/plain", "Failed to delete file");
       return;
     }
@@ -219,10 +228,10 @@ void handleMkdir(AsyncWebServerRequest *request){
     String fullPath = basePath + "/" + dirName;
 
     fullPath.replace("//", "/");
-    if (SD.exists(fullPath)){
+    if (PANDA_SD.exists(fullPath)){
       request->send(400, "text/plain", "Directory already exists");
     }
-    else if (SD.mkdir(fullPath)){
+    else if (PANDA_SD.mkdir(fullPath)){
       request->send(200, "text/plain", "Directory created successfully");
     }else{
       request->send(500, "text/plain", "Failed to create directory");
@@ -239,7 +248,7 @@ void serveDirectoryListing(AsyncWebServerRequest *request){
     path.remove(path.length() - 1);
   }
 
-  if (!SD.exists(path)){
+  if (!PANDA_SD.exists(path)){
     path = "/";
   }
 
@@ -475,7 +484,7 @@ void serveDirectoryListing(AsyncWebServerRequest *request){
         <th>Action</th>
       </tr>)";
 
-  File root = SD.open(path);
+  File root = PANDA_SD.open(path);
   File file = root.openNextFile();
   if (path == "/"){
     path = "";
@@ -717,7 +726,7 @@ void startWifiServer(int port){
   server = new AsyncWebServer(port);
 
   server->on("/", HTTP_GET, serveDirectoryListing);
-  server->serveStatic("/", SD, "/", "max-age=0").setCacheControl("max-age=0");
+  server->serveStatic("/", SD_MMC, "/", "max-age=0").setCacheControl("max-age=0");
   server->on("/mkdir", HTTP_POST, handleMkdir);
   server->on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){ request->send(200); }, handleUpload);
   server->on("/delete", HTTP_DELETE, handleRm);
