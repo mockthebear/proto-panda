@@ -315,7 +315,8 @@ Cabô >:3
 # Frame frontal
 [Voltar ao topo](#peças)
 
-A Frame frontal é onde geralmente vai toda a eletrônica. Neste ponto, não tenho peças sobrando pra filmar o processo inteiro de montagem. Então vou mostrar só o processo de impressão por enquanto.
+A Frame frontal é onde geralmente vai toda a eletrônica. 
+
 
 ## Materiais do Frame frontal
 
@@ -359,7 +360,8 @@ Agora fatie e você vai notar que só aparecem dois suportes:
 
 ## Montagem do Frame frontal
 
-A Frame frontal é onde geralmente vai toda a eletrônica. Neste ponto, não tenho peças sobrando pra filmar o processo inteiro de montagem. Então vou mostrar só o processo de impressão por enquanto.
+A Frame frontal é onde geralmente vai toda a eletrônica. 
+[Nessa parte requer seu próprio guia](./front-frame-guide.pt-br.md)
 
 # Suporte de LED
 [Voltar ao topo](#peças)
