@@ -56,6 +56,20 @@
 //#define SPI_MISO 47
 //#define SPI_SCK 21
 
+/* 
+    SD_MMC
+*/
+//#define MMC_PIN_DATA2 -1
+//#define MMC_PIN_DATA3 SPI_CS
+//#define MMC_PIN_CMD SPI_MOSI
+//#define MMC_PIN_CLK SPI_SCK
+//#define MMC_PIN_DATA0 SPI_MISO
+//#define MMC_PIN_DATA1 -1
+//#define MMC_CLOCK_SPEED 40000
+//If using the full range of pins (data1 and 2, set this to false)
+//#define MMC_ONE_BIT true  
+//Set 2 to MMC and 1 to SD
+//#define PANDA_SD_MODE 2
 
 /*
  Oled screen

@@ -1,16 +1,22 @@
 #include "lua/persistentdict.hpp"
+#if PANDA_SD_MODE == 1
 #include <SD.h>
+#elif PANDA_SD_MODE == 2
+#include <SD_MMC.h>
+#else
+#error "NO SD_MODE Mode defined (set PANDA_SD_MODE to 1 for SD or 2 for SD_MMC)"
+#endif
 #include <stdio.h>
 #include <string.h>
 #include "tools/logger.hpp"
 
 void PersistentDictionary::Format(){
     store.clear();
-    SD.remove("/dict.bin");
+    PANDA_SD.remove("/dict.bin");
 }
 
 void PersistentDictionary::Save() {
-    File outfile = SD.open("/cache/dict.bin", FILE_WRITE);
+    File outfile = PANDA_SD.open("/cache/dict.bin", FILE_WRITE);
     if (!outfile) {
         Logger::Error("Failed to open file for writing!");
         return;
@@ -34,7 +40,7 @@ void PersistentDictionary::Save() {
 void PersistentDictionary::Load() {
     Logger::Info("Loading dictionary...");
 
-    File infile = SD.open("/cache/dict.bin", FILE_READ);
+    File infile = PANDA_SD.open("/cache/dict.bin", FILE_READ);
     if (!infile) {
         set("clear", "1");
         Save();

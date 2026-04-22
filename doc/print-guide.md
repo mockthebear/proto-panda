@@ -309,7 +309,7 @@ Once all 6 are installed, you finished it! Now if you going to need the extender
 # Front frame
 [Back to top](#print-guide-and-assembly-guide)
 
-The front frame is where all the electronics usually go.  At this point, i dont have spare parts to record a footage of the whole assemble process. So I'll show just the printing process for now.
+The front frame is where all the electronics usually go.
 
 ## Front frame materials
 
@@ -352,7 +352,8 @@ Thats it. Print it like that.
 
 ## Front frame assembly guide
 
-The front frame is where all the electronics usually go.  At this point, i dont have spare parts to record a footage of the whole assemble process. So I'll show just the printing process for now.
+The front frame is where all the electronics usually go. 
+[This section requires a dedicated page](./front-frame-guide.md)
 
 # Led holder
 [Back to top](#print-guide-and-assembly-guide)

@@ -1,6 +1,13 @@
 #include "lua/LuaWrapper.h"
 #include "esp32-hal.h"
+
+#if PANDA_SD_MODE == 1
 #include <SD.h>
+#elif PANDA_SD_MODE == 2
+#include <SD_MMC.h>
+#else
+#error "NO SD_MODE Mode defined (set PANDA_SD_MODE to 1 for SD or 2 for SD_MMC)"
+#endif
 
 void CreateLuaClosure(lua_State *L, const std::function<int(lua_State*)>& f){
     LuaCFunctionLambda** baseF = static_cast<LuaCFunctionLambda**>(lua_newuserdata(L, sizeof(LuaCFunctionLambda) ));
@@ -134,7 +141,7 @@ EspFile *custom_fopen(lua_State *L, const char* filename, const char *mode){
   if (filename == NULL){
     return NULL;
   }
-  File *myFile = new File(SD.open(filename, mode));
+  File *myFile = new File(PANDA_SD.open(filename, mode));
   if (*myFile){
     EspFile *fp = new EspFile;
     fp->lastUngetC = -1;

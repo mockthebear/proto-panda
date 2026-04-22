@@ -12,6 +12,15 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc.h"
 #include <FFat.h>
+
+#if PANDA_SD_MODE == 1
+#include <SD.h>
+#elif PANDA_SD_MODE == 2
+#include <SD_MMC.h>
+#else
+#error "NO SD_MODE Mode defined (set PANDA_SD_MODE to 1 for SD or 2 for SD_MMC)"
+#endif
+
 #include "lua/luafunctions/drawingfunctions.hpp"
 
 
@@ -209,7 +218,7 @@ std::vector<std::string> listFiles(std::string path, bool recursive) {
   if (path.back() != '/') {
       path += '/';
   }
-  File dir = SD.open(path.c_str());
+  File dir = PANDA_SD.open(path.c_str());
   if (!dir) {
       return fileList;
   }
@@ -242,19 +251,19 @@ std::vector<std::string> listFiles(std::string path, bool recursive) {
 }
 
 bool moveFile(std::string path, std::string pathtgt){
-  return SD.rename(path.c_str(), pathtgt.c_str());
+  return PANDA_SD.rename(path.c_str(), pathtgt.c_str());
 }
 
 bool removeFile(std::string path){
-  return SD.remove(path.c_str());
+  return PANDA_SD.remove(path.c_str());
 }
 
 bool createDir(std::string path){
-  return SD.mkdir(path.c_str());
+  return PANDA_SD.mkdir(path.c_str());
 }
 
 bool fileExists(std::string path){
-  return SD.exists(path.c_str());
+  return PANDA_SD.exists(path.c_str());
 }
 
 bool formatFFAT(bool full){

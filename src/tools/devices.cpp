@@ -283,11 +283,12 @@ void Devices::BeginAutoFrame(){
 
 void Devices::EndAutoFrame(){
   s_frameAutoDuration = millis()-s_frameAutoStart;
-
+  #ifdef USE_BUZZER
   if (m_toneDuration > 0 && m_toneDuration < millis()){
     m_toneDuration = 0;
     BuzzerNoTone();
   }
+  #endif
 }
 
 uint32_t Devices::getDeltaTime(){

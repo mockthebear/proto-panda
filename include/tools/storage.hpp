@@ -3,7 +3,12 @@
 
 #include <stdint.h>
 #include <Arduino.h>
+#if SD_MODE == SD
 #include <SD.h>
+#elif SD_MODE == SD_MMC
+#include <SD_MMC.h>
+#endif
+
 #include <vector>
 #include <string>
 
