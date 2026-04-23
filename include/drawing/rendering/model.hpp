@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <string.h>
+#include <map>
 
 
 class Model;
@@ -20,6 +21,7 @@ class PointGroups{
         void Translate(uint32_t group, Vec2f position);
         void Scale(uint32_t group, Vec2f center, Vec2f scaleFactors);
         void Set(uint32_t group, Vec2f position);
+        bool Has(u_int32_t group);
         uint32_t groupCount;
         Model *mainModel;
         std::vector<PointList> points;
@@ -49,6 +51,7 @@ class Model {
         void Scale(Vec2f center, Vec2f scaleFactors);
 
         int AddPointGroup(PointList points);
+        bool hasPointGroup(uint32_t groupid);
 
         void TranslatePoints(uint32_t groupid, Vec2f delta);
         void ScalePoints(uint32_t groupid, Vec2f center, Vec2f scaleFactors);
@@ -96,3 +99,16 @@ class Model {
         TriangleData GetTriangle(int i);
         void RasterTriangle(ModelHandler *s, int i);
 };
+
+class ModelDict{
+    public:
+        Model* LoadModel(ModelData modelInfo, std::string name);
+        Model* GetModelByName(std::string name){
+            return m_modelsMap[name];
+        }
+    private:
+        
+        std::map<std::string, Model*> m_modelsMap;
+};
+extern ModelHandler g_modelHandler;
+extern ModelDict g_models;

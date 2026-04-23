@@ -24,6 +24,8 @@
 
 #include "bluetooth/ble_client.hpp"
 
+#include "drawing/modelanimation/keyframeplayer.hpp"
+
 
 LedStrip g_leds;
 FrameRepository g_frameRepo;
@@ -33,6 +35,10 @@ LuaInterface g_lua;
 TaskHandle_t g_secondCore;
 EditMode g_editMode;
 InfraRedManager g_InfraRed;
+ModelDict g_models;
+ModelHandler g_modelHandler;
+
+KeyframePlayer g_kf;
 
 void second_loop(void*);
 
@@ -146,6 +152,14 @@ void setup() {
   g_lua.CallFunction("onSetup");
   Devices::BuzzerTone(150);
   delay(100);
+  Logger::Info("begin load models");
+  g_kf.begin_tmp();
+  Logger::Info("set play animation");
+  g_kf.PlayAnimationId(0);
+  
+
+
+
   Devices::BuzzerNoTone();
   Devices::CalculateMemmoryUsageDifference("onSetup");
 
@@ -159,8 +173,10 @@ void setup() {
    
   Devices::BuzzerTone(880);
   delay(100);
+  
   g_lua.CallFunction("onPreflight");
   Devices::BuzzerNoTone();
+  
   
   Devices::CalculateMemmoryUsageDifference("completed setup");
 }
@@ -170,9 +186,13 @@ void second_loop(void*){
   for( ;; )
   { 
     Devices::BeginAutoFrame();
-    g_animation.Update(g_frameRepo.takeFile());
+    
+    
+    g_kf.Update(Devices::getAutoDeltaTime());
+
+    //g_animation.Update(g_frameRepo.takeFile());
     vTaskDelay(1);
-    g_frameRepo.freeFile();
+    //g_frameRepo.freeFile();
     g_leds.Update();
     if (g_leds.IsManaged()){
       g_leds.Display();

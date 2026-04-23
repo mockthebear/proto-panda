@@ -603,10 +603,13 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("clearPanelBuffer", ClearScreen);
   m_lua->FuncRegister("drawPanelFace", DrawFace);
 
+  m_lua->FuncRegisterFromObjectOpt("loadModel", &g_models, &ModelDict::LoadModel, "");
+
+
   m_lua->FuncRegisterFromObjectOpt("setPanelAnimation", &g_animation, &Animation::SetAnimation, -1, false, -1, 250);
 
   m_lua->FuncRegisterFromObjectOpt("setModelAnimation", &g_animation, &Animation::SetModelAnimation, false);
-  m_lua->FuncRegisterFromObjectOpt("loadModel", &g_animation, &Animation::LoadModel);
+
 
   m_lua->FuncRegisterFromObjectOpt("popPanelAnimation", &g_animation, &Animation::PopAnimation);
   m_lua->FuncRegisterFromObjectOpt("setInterruptFrames", &g_animation, &Animation::SetInterruptAnimation);

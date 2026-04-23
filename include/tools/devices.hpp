@@ -60,7 +60,7 @@ class Devices{
         static void BeginAutoFrame();
         static void EndAutoFrame();
         static uint32_t getDeltaTime();
-        static float getAutoDeltaTime();
+        static uint32_t getAutoDeltaTime();
 
         static void ReadSensors();
 

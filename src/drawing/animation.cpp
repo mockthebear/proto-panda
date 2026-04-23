@@ -51,9 +51,6 @@ AnimationFrameAction AnimationSequence::ChangeFrame(){
 }
 
 AnimationFrameAction AnimationSequence::Update(int m_interruptPin){
-    if (m_isModel){
-        return ANIMATION_MODEL;
-    }
     if (m_isNew){
         m_counter = millis()+m_duration;
         m_isNew = false;
@@ -397,8 +394,7 @@ bool Animation::internalUpdate(File *file, AnimationSequence &running){
             DrawFrame(file, m_lastFace);
         }
         break;
-    case ANIMATION_MODEL:
-        DrawAnimatonModel(running);
+
     case ANIMATION_NO_CHANGE:
         if (m_shader == 1){
             m_lastFace = running.GetFrameId();
@@ -417,15 +413,6 @@ bool Animation::internalUpdate(File *file, AnimationSequence &running){
     return false;
 }
 
-
-void Animation::DrawAnimatonModel(AnimationSequence &running){
-    uint64_t ld = micros();
-    uint64_t begin = ld;
-    m_models.RenderScene();
-    m_needFlip = true;
-    m_frameDrawDuration = micros()-ld;
-    m_cycleDuration =  micros()-begin;
-}
 
 int Animation::getCurrentAnimationStorage(){
     xSemaphoreTake(m_mutex, portMAX_DELAY);
@@ -499,29 +486,5 @@ void Animation::SetAnimation( std::vector<int> frames, int duration,int repeatTi
     xSemaphoreGive(m_mutex);
 }
 
-
-Model* Animation::LoadModel(ModelData modelInfo){
-    Model *mem = new Model();
-    int tsize = modelInfo.color.size();
-    mem->Begin(tsize);
-    for (int i=0;i<tsize;i++){
-        int currDataTriangle = i * 3;
-        mem->SetTriangleF(i, 
-            Vec2f(modelInfo.x[currDataTriangle + 0], modelInfo.y[currDataTriangle + 0]), 
-            Vec2f(modelInfo.x[currDataTriangle + 1], modelInfo.y[currDataTriangle + 1]), 
-            Vec2f(modelInfo.x[currDataTriangle + 2], modelInfo.y[currDataTriangle + 2]), 
-            modelInfo.color[i]
-        );
-    }
-    mem->id = m_models.models.size();
-
-    mem->Recalculate();
-    mem->Reset();
-    mem->SetBatchOperations(true);
-    mem->SetAccumulativeOperations(true);
-    mem->CopyToRaster();
-    m_models.addModel(mem);
-    return mem;
-}
 
 #endif

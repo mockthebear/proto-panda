@@ -295,8 +295,8 @@ uint32_t Devices::getDeltaTime(){
   return s_frameDuration;
 }
 
-float Devices::getAutoDeltaTime(){
-  return s_frameAutoDuration/1000.0f;
+uint32_t Devices::getAutoDeltaTime(){
+  return s_frameAutoDuration;
 }
 
 float Devices::getFps(){

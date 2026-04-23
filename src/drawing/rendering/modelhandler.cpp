@@ -1,8 +1,8 @@
 #include "drawing/rendering/modelhandler.hpp"
 #include "tools/devices.hpp"
 
-void ModelHandler::RenderModels(){
-    for (auto& model : models) {
+void ModelHandler::RenderModels(std::vector<Model*> mdls){
+    for (auto& model : mdls) {
         if (model->triangleCount == 0) continue;
         
         for (int i = model->triangleCount - 1; i >= 0; i--) {
@@ -12,7 +12,7 @@ void ModelHandler::RenderModels(){
 }
 
 
-void ModelHandler::RenderScene(){
+void ModelHandler::RenderScene(std::vector<Model*> mdls){
     Devices::Display->startWrite();
     memset(pixelBitmap, 0, sizeof(pixelBitmap));
     uint8_t r, g, b;
@@ -23,6 +23,7 @@ void ModelHandler::RenderScene(){
             Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH) + x, y, r, g, b);
         }
     }
-    RenderModels();
+    Devices::Display->updateMatrixDMABuffer_2(3,3, 255, 255, 255);
+    RenderModels(mdls);
     Devices::Display->endWrite();
 }

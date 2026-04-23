@@ -7,8 +7,8 @@ class ModelHandler {
         __attribute__((aligned(32)))
         uint8_t pixelBitmap[PANEL_HEIGHT * (PANEL_WIDTH/8)];
 
-        void RenderScene();
-        void RenderModels();
+        void RenderScene(std::vector<Model*> mdls);
+        void RenderModels(std::vector<Model*> mdls);
 
         int addModel(Model *m){
             models.emplace_back(m);

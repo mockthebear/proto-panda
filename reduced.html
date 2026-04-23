@@ -5902,12 +5902,12 @@ function getMouseTimeFromEvent(e, canvas) {
 
 function fillTriangleScanline(p1, p2, p3, fillStyle) {
     // Convert to integers (C++ uses int16_t)
-    let x0 = Math.round(Math.fround(p1.x));
-    let y0 = Math.round(Math.fround(p1.y));
-    let x1 = Math.round(Math.fround(p2.x));
-    let y1 = Math.round(Math.fround(p2.y));
-    let x2 = Math.round(Math.fround(p3.x));
-    let y2 = Math.round(Math.fround(p3.y));
+    let x0 = Math.floor(Math.fround(p1.x));
+    let y0 = Math.floor(Math.fround(p1.y));
+    let x1 = Math.floor(Math.fround(p2.x));
+    let y1 = Math.floor(Math.fround(p2.y));
+    let x2 = Math.floor(Math.fround(p3.x));
+    let y2 = Math.floor(Math.fround(p3.y));
     
     // Sort vertices by y
     if (y0 > y1) { [x0, y0, x1, y1] = [x1, y1, x0, y0]; }

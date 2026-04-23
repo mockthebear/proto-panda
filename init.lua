@@ -24,8 +24,11 @@ function loadModelsFromJson(filename)
     modelAnimation = content['animations']
     for i,model in pairs(content.models) do  
         print("Loading "..model.name)
-        local md = loadModel(model)
+        local md = loadModel(model, model.name)
         print(md)
+        if not md then  
+            error("Error loading model: "..model.name)
+        end
 
         print("ID="..tostring(md:GetId()))
 
@@ -78,7 +81,7 @@ function onSetup()
 
 
     loadModelsFromJson("/models/meme.json")
-    preloadData()
+    --preloadData()
     
 
 end
@@ -91,7 +94,7 @@ function onPreflight()
     setPoweringMode(BUILT_IN_POWER_MODE)
     ledsGentlySeBrightness(tonumber(dictGet("led_brightness") ) or 64)
     gentlySetPanelBrightness(tonumber(dictGet("panel_brightness")) or 64)
-    setModelAnimation({0,1,2}, true)
+    --[[setModelAnimation({0,1,2}, true)
 
     local md = models[0]
     md:Reset()
@@ -100,7 +103,7 @@ function onPreflight()
 
     md:Recalculate()
     md:CopyToRaster()
-
+]]
 
 end
 local rotated = 0
@@ -134,7 +137,7 @@ function onLoop(dt)
 
 
 
-    runModelAnim(dt)
+    --[[runModelAnim(dt)
     for idx, anim in pairs(modelAnimation) do
         for trackid, track in pairs(anim.tracks) do
             if track.r.model then  
@@ -142,7 +145,7 @@ function onLoop(dt)
                 track.r.model:CopyToRaster()
             end
         end 
-    end
+    end]]
 
 
     

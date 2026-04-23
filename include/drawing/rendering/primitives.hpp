@@ -50,6 +50,7 @@ template<typename T, int N> class VecAligned2{
 
 
 typedef Vec2<float> Vec2f;
+typedef Vec2<double> Vec2d;
 typedef Vec3<float> Vec3f;
 typedef Vec2<int> Vec2i;
 typedef Vec3<int> Vec3i;

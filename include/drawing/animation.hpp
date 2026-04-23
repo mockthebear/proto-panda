@@ -24,7 +24,6 @@ enum AnimationFrameAction{
     ANIMATION_NO_CHANGE,
     ANIMATION_FRAME_CHANGED,
     ANIMATION_FINISHED,
-    ANIMATION_MODEL,
 };
 class FrameRepository;
 extern FrameRepository g_frameRepo;
@@ -68,13 +67,12 @@ class Animation{
             }
             m_interruptPin = pin;
         }
-        void DrawAnimatonModel(AnimationSequence &running);
+
         void DrawFrame(File *file, int i);
         void DrawCurrentFrame(File *file){
             DrawFrame(file, m_lastFace);
         }
 
-        Model* LoadModel(ModelData triangles);
 
         bool PopAnimation();
         void MakeFlip();
@@ -135,10 +133,7 @@ class Animation{
         uint64_t m_frameDrawDuration;
         uint64_t m_frameLoadDuration;
         uint64_t m_cycleDuration;
-        SemaphoreHandle_t m_mutex;
-
-        ModelHandler m_models;
-        
+        SemaphoreHandle_t m_mutex;        
 };
 
 

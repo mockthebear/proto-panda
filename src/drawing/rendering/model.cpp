@@ -3,6 +3,13 @@
 #include "tools/devices.hpp"
 
 
+bool PointGroups::Has(u_int32_t group){
+    if (group >= groupCount){
+        return false;
+    }
+    return true;
+}
+
 void PointGroups::Translate(uint32_t group, Vec2f position){
     if (group >= groupCount){
         return;
@@ -249,10 +256,7 @@ void Model::Recalculate(){
     boundaries.x[0] = -999999.0f;
     boundaries.y[0] = -999999.0f;
     for (int i=0;i<triangleCount;i++){
-        int baseIdx = i * 3;
-        
-        // Get the three vertices
-        
+       
 
         for (int j = 0; j < 3; j++){
             //Calculate max and mins
@@ -344,6 +348,7 @@ int Model::AddPointGroup(PointList pts) {
     bones.groupCount++;
     return bones.points.size() - 1; 
 }
+
 void Model::RasterTriangle(ModelHandler *scene, int i){
 
     int baseIdx = i * 3;
@@ -364,12 +369,12 @@ void Model::RasterTriangle(ModelHandler *scene, int i){
         std::swap(v1, v2);
     }
         
-    int16_t x0 = v0.x; 
-    int16_t y0 = v0.y; 
-    int16_t x1 = v1.x; 
-    int16_t y1 = v1.y;
-    int16_t x2 = v2.x; 
-    int16_t y2 = v2.y; 
+    int16_t x0 = round(v0.x); 
+    int16_t y0 = round(v0.y); 
+    int16_t x1 = round(v1.x); 
+    int16_t y1 = round(v1.y);
+    int16_t x2 = round(v2.x); 
+    int16_t y2 = round(v2.y); 
 
 
     
@@ -488,7 +493,9 @@ void Model::RasterTriangle(ModelHandler *scene, int i){
     }
 }
 
-
+bool Model::hasPointGroup(uint32_t groupid){
+    return bones.Has(groupid);
+}
 
 void Model::TranslatePoints(uint32_t groupid, Vec2f delta){
     bones.Translate(groupid, delta);
@@ -512,4 +519,35 @@ void Model::TranslatePoint(uint32_t pointid, Vec2f pos){
 void Model::SetPointPosition(uint32_t pointid, Vec2f pos){
     points.x[pointid] = pos.x;
     points.y[pointid] = pos.y;
+}
+
+
+
+Model* ModelDict::LoadModel(ModelData modelInfo, std::string name){
+    if (m_modelsMap[name] != nullptr){
+        return nullptr;
+    }
+
+    Model *mem = new Model();
+    int tsize = modelInfo.color.size();
+    mem->Begin(tsize);
+    for (int i=0;i<tsize;i++){
+        int currDataTriangle = i * 3;
+        mem->SetTriangleF(i, 
+            Vec2f(modelInfo.x[currDataTriangle + 0], modelInfo.y[currDataTriangle + 0]), 
+            Vec2f(modelInfo.x[currDataTriangle + 1], modelInfo.y[currDataTriangle + 1]), 
+            Vec2f(modelInfo.x[currDataTriangle + 2], modelInfo.y[currDataTriangle + 2]), 
+            modelInfo.color[i]
+        );
+    }
+    mem->id = g_modelHandler.models.size();
+
+    mem->Recalculate();
+    mem->Reset();
+    mem->SetBatchOperations(true);
+    mem->SetAccumulativeOperations(true);
+    mem->CopyToRaster();
+    g_modelHandler.addModel(mem);
+    m_modelsMap[name] = mem;
+    return mem;
 }
