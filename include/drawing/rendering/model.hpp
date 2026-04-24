@@ -20,7 +20,9 @@ class PointGroups{
         PointGroups():groupCount(0),mainModel(nullptr){};
         void Translate(uint32_t group, Vec2f position);
         void Scale(uint32_t group, Vec2f center, Vec2f scaleFactors);
+        void Rotate(uint32_t groupid, Vec2f center, float angle);
         void Set(uint32_t group, Vec2f position);
+        Vec2f GetCenter(uint32_t group);
         bool Has(u_int32_t group);
         uint32_t groupCount;
         Model *mainModel;
@@ -54,6 +56,7 @@ class Model {
         bool hasPointGroup(uint32_t groupid);
 
         void TranslatePoints(uint32_t groupid, Vec2f delta);
+        void RotatePoints(uint32_t groupid, Vec2f center, float angle);
         void ScalePoints(uint32_t groupid, Vec2f center, Vec2f scaleFactors);
         void SetPointsPosition(uint32_t groupid, Vec2f pos);
 
@@ -69,6 +72,8 @@ class Model {
         void SetBatchOperations(bool b){
             batchOperations = b;
         }
+
+        Vec2f GetPointGroupCenter(uint32_t pointId);
 
         Vec2f GetCenter(){
             return center;
@@ -97,7 +102,11 @@ class Model {
         void SetTriangleF(int i, Vec2f p1, Vec2f p2, Vec2f p3, uint16_t color);
 
         TriangleData GetTriangle(int i);
-        void RasterTriangle(ModelHandler *s, int i);
+        void RasterTriangleWithBitmap(ModelHandler *s, int i, uint8_t *targetBitmap=nullptr);
+        
+        inline void RasterTriangle(ModelHandler *s, int i){
+            return RasterTriangleWithBitmap(s, i, nullptr);
+        }
 };
 
 class ModelDict{

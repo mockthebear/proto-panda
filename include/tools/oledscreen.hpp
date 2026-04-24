@@ -36,7 +36,8 @@ class OledScreen{
         static Adafruit_SSD1306 display;
         static bool consoleMode;
         static std::list<std::string> lines;
-        static uint8_t* DisplayFace;
+        static uint8_t* DisplayFace[2];
+        static uint8_t screenFlipId;
 
         static std::vector<OledIcon> icons;
     private:

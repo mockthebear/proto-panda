@@ -1,7 +1,7 @@
 #include "drawing/rendering/model.hpp"
 #include "drawing/rendering/modelhandler.hpp"
 #include "tools/devices.hpp"
-
+#include "tools/oledscreen.hpp"
 
 bool PointGroups::Has(u_int32_t group){
     if (group >= groupCount){
@@ -26,6 +26,31 @@ void PointGroups::Translate(uint32_t group, Vec2f position){
         yPoints[pointid] += position.y;
     }
 };
+
+void PointGroups::Rotate(uint32_t group, Vec2f center, float angle){
+    if (group >= groupCount){
+        return;
+    }
+
+    float commonCos = cos(angle);
+    float commonSin = sin(angle);
+    
+    auto &it = points[group];
+    auto xPoints = mainModel->originalPoints.x;
+    auto yPoints = mainModel->originalPoints.y;
+    if (mainModel->accumulatedOperation){
+        xPoints = mainModel->points.x;
+        yPoints = mainModel->points.y;
+    }
+    float x,y;
+    for (auto &pointid : it){
+        x = xPoints[pointid] - center.x;
+        y = xPoints[pointid] - center.y;
+        xPoints[pointid] = (x * commonCos - y * commonSin) + center.x;
+        yPoints[pointid] = (x * commonSin + y * commonCos) + center.y;        
+    }
+}
+
 
 void PointGroups::Scale(uint32_t group, Vec2f center, Vec2f scaleFactors){
     if (group >= groupCount){
@@ -69,6 +94,44 @@ void PointGroups::Set(uint32_t group, Vec2f position){
         yPoints[pointid] = position.y;
     }
 };
+
+Vec2f PointGroups::GetCenter(uint32_t group){
+    if (group >= groupCount){
+        return Vec2f();
+    }
+    auto &it = points[group];
+    auto xPoints = mainModel->originalPoints.x;
+    auto yPoints = mainModel->originalPoints.y;
+    if (mainModel->accumulatedOperation){
+        xPoints = mainModel->points.x;
+        yPoints = mainModel->points.y;
+    }
+
+    VecAligned2<float, 2> boundaries;
+    boundaries.x[1] = 999999.0f;
+    boundaries.y[1] = 999999.0f;
+    boundaries.x[0] = -999999.0f;
+    boundaries.y[0] = -999999.0f;
+
+    for (auto &pointid : it){
+        if (xPoints[pointid] > boundaries.x[0] ){
+            boundaries.x[0] = xPoints[pointid];
+        }
+        if (yPoints[pointid] > boundaries.y[0] ){
+            boundaries.y[0] = yPoints[pointid];
+        }
+        if (xPoints[pointid] < boundaries.x[1]){
+            boundaries.x[1] = xPoints[pointid];
+        }
+        if (yPoints[pointid] < boundaries.y[1]){
+            boundaries.y[1] = yPoints[pointid];
+        }
+    }
+    return Vec2f(
+        boundaries.x[1] + (boundaries.x[0]-boundaries.x[1])/2.0f,
+        boundaries.y[1] + (boundaries.y[0]-boundaries.y[1])/2.0f
+    );
+}
 
 
 bool Model::Begin(int sz){
@@ -349,7 +412,7 @@ int Model::AddPointGroup(PointList pts) {
     return bones.points.size() - 1; 
 }
 
-void Model::RasterTriangle(ModelHandler *scene, int i){
+void Model::RasterTriangleWithBitmap(ModelHandler *scene, int i, uint8_t *targetBitmap){
 
     int baseIdx = i * 3;
 
@@ -408,6 +471,12 @@ void Model::RasterTriangle(ModelHandler *scene, int i){
             if (!scene->MarkPixel(a, y0)) {
                 Devices::Display->updateMatrixDMABuffer_2(a, y0, r, g, bl);
                 Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH+PANEL_WIDTH-1) - a, y0, r, g, bl);
+                if (targetBitmap != nullptr){
+                    if ((color & 0x8610) != 0) { 
+                        int byteIdOled = a + y0*PANEL_WIDTH;
+                        targetBitmap[byteIdOled] = 1;
+                    }
+                }
             }
         }
         return;
@@ -456,6 +525,12 @@ void Model::RasterTriangle(ModelHandler *scene, int i){
             if (!scene->MarkPixel(xx, y)) {
                 Devices::Display->updateMatrixDMABuffer_2(xx, y, r, g, bl);
                 Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH+PANEL_WIDTH-1) - xx, y, r, g, bl);
+                if (targetBitmap != nullptr){
+                    if ((color & 0x8610) != 0) { 
+                        int byteIdOled = xx + y*PANEL_WIDTH;
+                        targetBitmap[byteIdOled] = 1;
+                    }
+                }
             }
         }
     }
@@ -488,6 +563,12 @@ void Model::RasterTriangle(ModelHandler *scene, int i){
             if (!scene->MarkPixel(xx, y)) {
                 Devices::Display->updateMatrixDMABuffer_2(xx, y, r, g, bl);
                 Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH+PANEL_WIDTH-1) - xx, y, r, g, bl);
+                if (targetBitmap != nullptr){
+                    if ((color & 0x8610) != 0) { 
+                        int byteIdOled = xx + y*PANEL_WIDTH;
+                        targetBitmap[byteIdOled] = 1;
+                    }
+                }
             }
         }
     }
@@ -500,12 +581,19 @@ bool Model::hasPointGroup(uint32_t groupid){
 void Model::TranslatePoints(uint32_t groupid, Vec2f delta){
     bones.Translate(groupid, delta);
 }
+void Model::RotatePoints(uint32_t groupid, Vec2f center, float angle){
+    bones.Rotate(groupid, center, angle);
+}
 
 void Model::ScalePoints(uint32_t groupid, Vec2f center, Vec2f scaleFactors){
     bones.Scale(groupid, center, scaleFactors);
 }
 void Model::SetPointsPosition(uint32_t groupid, Vec2f pos){
     bones.Set(groupid, pos);
+}
+
+Vec2f Model::GetPointGroupCenter(uint32_t pointId){
+    return bones.GetCenter(pointId);
 }
 
 

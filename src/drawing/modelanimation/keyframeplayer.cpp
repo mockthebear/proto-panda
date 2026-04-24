@@ -5,7 +5,19 @@
 
 
 
-Model* KeyframeTrack::SetResource(std::string resourceName){
+
+Keyframe Keyframe::KeyFrameMaker(int mode, uint32_t at, Vec2f val, Vec2f cntr, bool igInterp, bool dynamicCenterP){
+    Keyframe kf;
+    kf.type = (KeyframeType)mode;
+    kf.playAt = at;
+    kf.value = val;
+    kf.center = cntr;
+    kf.ignoreInterpolation = igInterp;
+    kf.dynamicCenter = dynamicCenterP;
+    return kf;
+}
+
+bool KeyframeTrack::SetResource(std::string resourceName){
     size_t dotPos = resourceName.find('.');
      if (dotPos != std::string::npos) {
         std::string name = resourceName.substr(0, dotPos);
@@ -15,16 +27,16 @@ Model* KeyframeTrack::SetResource(std::string resourceName){
         Model *md = g_models.GetModelByName(name);
         if (md == nullptr){
             Logger::Info("Failed to find resource model called %s", name.c_str());
-            return nullptr;
+            return false;
         }
         number = number -1;
         if (number < 0){
             Logger::Info("Point group %d is invalid!", number+1);
-            return nullptr;
+            return false;
         }
         if (!md->hasPointGroup(number)){
             Logger::Info("Model %s does not have point group %d", number+1);
-            return nullptr;
+            return false;
         }
         obj = md;
         pointGroup = number;
@@ -34,11 +46,11 @@ Model* KeyframeTrack::SetResource(std::string resourceName){
         Model *md = g_models.GetModelByName(resourceName);
         if (md == nullptr){
             Logger::Info("Failed to find resource model called %s", resourceName.c_str());
-            return nullptr;
+            return false;
         }
         obj = md;
         usingModel = true;
-        return obj;
+        return true;
     }
 }
 
@@ -55,7 +67,6 @@ void KeyframeTrack::Reset(){
         n++;
     }
 
-
     if (obj != nullptr){
         obj->Reset();
     }
@@ -63,8 +74,9 @@ void KeyframeTrack::Reset(){
 }
 
 
-void KeyframeTrack::AddKeyFrame(Keyframe kf){
+int KeyframeTrack::AddKeyFrame(Keyframe kf){
     keyframes.emplace_back(kf);
+    return keyframes.size();
 }
 
 void KeyframeTrack::Reserve(){
@@ -73,63 +85,29 @@ void KeyframeTrack::Reserve(){
     }
 }
 
-void KeyframePlayer::begin_tmp(){
-
+KeyframeAnimation* KeyframePlayer::NewKeyframeAnimation(uint32_t duration){
     KeyframeAnimation* kf = new KeyframeAnimation();
-
     kf->duration = 3000;
 
-
-
-    KeyframeTrack t1;
-    t1.Reserve();
-    Logger::Info("get moidel");
-    Model *rs = t1.SetResource("mouth");
-    if (!rs){
-        return;
-    }
-    Logger::Info("setted");
-    kf->m_models.emplace_back(rs);
-
-    t1.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE,  300, Vec2f(0.0f,  -1.5f)));
-    t1.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE,  600, Vec2f(0.0f,  3.0f)));
-    t1.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE,  900, Vec2f(0.0f, -3.0f)));
-    t1.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE, 1200, Vec2f(0.0f,  3.0f)));
-    t1.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE, 1500, Vec2f(0.0f, -3.0f)));
-    t1.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE, 1800, Vec2f(0.0f,  3.0f)));
-    t1.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE, 2100, Vec2f(0.0f, -3.0f)));
-    t1.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE, 2400, Vec2f(0.0f,  3.0f)));
-    t1.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE, 2700, Vec2f(0.0f, -3.0f)));
-    t1.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE, 3000, Vec2f(0.0f,  1.5f)));
-    Logger::Info("ADD TRACK");
-    kf->AddTrack(t1);
-    Logger::Info("added");
-
-
-    
-
-
-
-    KeyframeTrack t2;
-    t2.Reserve();
-    t2.SetResource("mouth.1");
-
-    t2.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE,  600, Vec2f(-2.0f, 0.0f)));
-    t2.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE,  1000, Vec2f(4.0f, 0.0f)));
-    t2.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE,  1400, Vec2f(-4.0f, 0.0f)));
-    t2.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE,  2000, Vec2f(4.0f, 0.0f)));
-    t2.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE,  2400, Vec2f(-4.0f, 0.0f)));
-    t2.AddKeyFrame(Keyframe(KEYFRAME_TRANSLATE,  2800, Vec2f(2.0f, 0.0f)));
-
-
-    kf->AddTrack(t2);
-
     int idx = AddKeyframeAnimation(kf);
-    Logger::Info("rdy: %d", idx);
+    kf->SetId(idx);
+    return kf;
 }
 
+void KeyframeAnimation::AddModelReference(Model *m){
+    auto it = std::find(m_models.begin(), m_models.end(), m);
+    if (it == m_models.end()) {
+        m_models.emplace_back(m);
+    }
+}
 
-void KeyframeAnimation::AddTrack(KeyframeTrack &t){
+void KeyframeAnimation::AddTrack(KeyframeTrack t){
+    if (t.obj == nullptr){
+        return;
+    }
+
+    AddModelReference(t.obj);
+
     std::map<KeyframeType,int> lastDtByType;
     for (auto &track : t.keyframes){
         uint32_t aux = lastDtByType[track.type];
@@ -141,14 +119,11 @@ void KeyframeAnimation::AddTrack(KeyframeTrack &t){
 
 
 void KeyframeAnimation::Reset(){
-    m_timeNow = 0;
     m_prevDt = 0;
-
     for (auto &track : m_tracks){
 
         track.Reset();
     }
-
 }
 
 
@@ -276,28 +251,87 @@ void KeyframeTrack::UpdateTrack(uint32_t dt, uint32_t prevDt){
     }
 }
 
-void KeyframeTrack::applyTransformations(uint32_t remaining, Keyframe &nextKf, bool instant){
+void KeyframeTrack::applyTransformations(uint32_t remaining, Keyframe &nextKf, bool lastIteration){
     switch (nextKf.type){
-    case KEYFRAME_TRANSLATE:{
-        if (nextKf.deltaToNext == 0){
-            if (usingModel){  
-                obj->Translate(nextKf.value);
+        case KEYFRAME_TRANSLATE:{
+            float delta = 0.0f;
+            if (nextKf.deltaToNext != 0){
+                delta = (float)remaining/(float)nextKf.deltaToNext;
             }else{
-                obj->TranslatePoints(pointGroup, nextKf.value);
+                delta = 1.0f;
             }
-        }else{
-            
-            double delta = (double)remaining/(double)nextKf.deltaToNext;
-            double px = delta * nextKf.value.x;
-            double py = delta * nextKf.value.y;
+           
+            float px = delta * nextKf.value.x;
+            float py = delta * nextKf.value.y;
             if (usingModel){  
                 obj->Translate(Vec2f(px, py));
             }else{
                 obj->TranslatePoints(pointGroup, Vec2f(px, py));
             }
+            
+            break;
         }
-        break;
-    }
+        case KEYFRAME_ROTATE:{
+            if (nextKf.value.x == 0){
+                return;
+            }
+            float delta = 0;
+            if (nextKf.deltaToNext != 0){
+                delta = (float)remaining/(float)nextKf.deltaToNext;
+            }else{
+                delta = 1.0f;
+            }
+
+            float ang = delta * nextKf.value.x;
+            Vec2f center = nextKf.center;
+            if (nextKf.dynamicCenter){ 
+                if (usingModel){   
+                    obj->Recalculate();
+                    center = obj->GetCenter();
+                }else{
+                    center = obj->GetPointGroupCenter(pointGroup);
+                }
+            }
+            if (usingModel){   
+                obj->Rotate(center, ang * (3.14159265358979323846f / 180.0) );
+            }else{
+                obj->RotatePoints(pointGroup, center, ang * (3.14159265358979323846f / 180.0));
+            }
+            break;
+        }
+        case KEYFRAME_SCALE:{
+
+            float delta = 0;
+            if (nextKf.deltaToNext != 0){
+                delta = (float)remaining/(float)nextKf.deltaToNext;
+            }else{
+                delta = 1.0f;
+            }
+            Vec2f scaleF(1.0f + (nextKf.value.x - 1.0f) * delta, 1.0f + (nextKf.value.y - 1.0f) * delta);
+
+            Vec2f center = nextKf.center;
+            if (nextKf.dynamicCenter){ 
+                if (usingModel){   
+                    obj->Recalculate();
+                    center = obj->GetCenter();
+                }else{
+                    center = obj->GetPointGroupCenter(pointGroup);
+                }
+            }
+
+            if (usingModel){   
+                obj->Scale(center, scaleF);
+            }else{
+                obj->ScalePoints(pointGroup, center, scaleF);
+            }
+            break;
+        }
+        case KEYFRAME_RESET:{
+            if (lastIteration){
+                obj->Reset();
+            }
+            break;
+        }
     
     default:
         break;

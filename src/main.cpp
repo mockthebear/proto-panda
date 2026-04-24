@@ -152,13 +152,6 @@ void setup() {
   g_lua.CallFunction("onSetup");
   Devices::BuzzerTone(150);
   delay(100);
-  Logger::Info("begin load models");
-  g_kf.begin_tmp();
-  Logger::Info("set play animation");
-  g_kf.PlayAnimationId(0);
-  
-
-
 
   Devices::BuzzerNoTone();
   Devices::CalculateMemmoryUsageDifference("onSetup");

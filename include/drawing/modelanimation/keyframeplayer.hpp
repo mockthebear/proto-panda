@@ -25,8 +25,10 @@ const std::map<std::string, KeyframeType> KeyframeTypeMap = {
 class Keyframe{
     public:
     Keyframe():type(KEYFRAME_NONE),playAt(0),deltaToNext(0.0f),value(0.0f, 0.0f),center(0.0f,0.0f),ignoreInterpolation(false), dynamicCenter(false){};
-    Keyframe(KeyframeType mode, uint32_t at, Vec2f val, Vec2f cntr = Vec2(0.0f, 0.0f), bool igInterp = false, bool dynamicCenter=false):type(mode),playAt(at),value(val),center(cntr),ignoreInterpolation(false), dynamicCenter(false){};
+    Keyframe(KeyframeType mode, uint32_t at, Vec2f val, Vec2f cntr = Vec2(0.0f, 0.0f), bool igInterp = false, bool dynamicCenterP=false):type(mode),playAt(at),value(val),center(cntr),ignoreInterpolation(igInterp), dynamicCenter(dynamicCenterP){};
 
+
+    static Keyframe KeyFrameMaker(int mode, uint32_t at, Vec2f val, Vec2f cntr = Vec2(0.0f, 0.0f), bool igInterp = false, bool dynamicCenterP=false);
     
     KeyframeType type;
     uint32_t playAt;
@@ -39,12 +41,12 @@ class Keyframe{
 
 class KeyframeTrack{
     public:
-        KeyframeTrack(){};
+        KeyframeTrack(){Reserve();};
         
         void Reserve();
 
-        Model* SetResource(std::string resourceName);
-        void AddKeyFrame(Keyframe kf);
+        bool SetResource(std::string resourceName);
+        int AddKeyFrame(Keyframe kf);
 
         void UpdateTrack(uint32_t dt, uint32_t prevDt);
         void Reset();
@@ -65,17 +67,23 @@ class KeyframeTrack{
 class KeyframeAnimation{
     public:
         KeyframeAnimation(){};
-
-        void AddTrack(KeyframeTrack &t);
+        
+        void AddTrack(KeyframeTrack t);
+        void AddModelReference(Model *m);
         void Reset();
+        void SetId(uint32_t i){
+            idx = i;
+        };
 
+        uint32_t GetId(){
+            return idx;
+        }
 
 
         std::string name;
         uint32_t duration;
 
-
-        uint32_t m_timeNow;
+        uint32_t idx;
         uint32_t m_prevDt;
     
         std::vector<KeyframeTrack> m_tracks; 
@@ -93,9 +101,12 @@ class KeyframePlayer{
             return m_loadedAnimations.size()-1;
         }
 
-        void begin_tmp();
+        KeyframeAnimation* NewKeyframeAnimation(uint32_t duration);
+
     private:
         void runModelAnim(uint32_t dt);
         int32_t m_currentlyPlaying;
         std::vector<KeyframeAnimation*> m_loadedAnimations;
 };
+
+extern KeyframePlayer g_kf;

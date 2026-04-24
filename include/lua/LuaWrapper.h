@@ -7,6 +7,7 @@
 #include <vector>
 #include <sstream>
 #include "drawing/rendering/primitives.hpp"
+#include "drawing/modelanimation/keyframeplayer.hpp"
 #define LUA_USE_C89
 #include "lua/lua.hpp"
 #include "tools/ir.hpp"
@@ -381,6 +382,77 @@ template<> struct GenericLuaGetter<TriangleData> {
     }
 };
 
+template<> struct GenericLuaGetter<Keyframe> {
+    static inline Keyframe Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
+        Keyframe keyframe;
+
+        if (!lua_istable(L, stackPos)) {
+            hasArgError = true;
+            const char* function_name = lua_tostring(L, lua_upvalueindex(1));
+            luaL_error(L, "Expected a table value on parameter %d of function %s", lua_gettop(L), function_name);
+            return keyframe;
+        }
+
+        // Get type field
+        lua_getfield(L, stackPos, "type");
+        keyframe.type = static_cast<KeyframeType>(luaL_optinteger(L, -1, 0));
+        lua_pop(L, 1);
+
+        // Get playAt field
+        lua_getfield(L, stackPos, "playAt");
+        keyframe.playAt = static_cast<uint32_t>(luaL_optinteger(L, -1, 0));
+        lua_pop(L, 1);
+
+        // Get deltaToNext field
+        lua_getfield(L, stackPos, "deltaToNext");
+        keyframe.deltaToNext = static_cast<uint32_t>(luaL_optinteger(L, -1, 0));
+        lua_pop(L, 1);
+
+        // Get value field (Vec2f)
+        lua_getfield(L, stackPos, "value");
+        if (lua_istable(L, -1)) {
+            // Use existing Vec2f getter if available, or manually extract
+            lua_getfield(L, -1, "x");
+            keyframe.value.x = static_cast<float>(luaL_optnumber(L, -1, 0));
+            lua_pop(L, 1);
+            
+            lua_getfield(L, -1, "y");
+            keyframe.value.y = static_cast<float>(luaL_optnumber(L, -1, 0));
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 1);
+
+        // Get center field (Vec2f)
+        lua_getfield(L, stackPos, "center");
+        if (lua_istable(L, -1)) {
+            lua_getfield(L, -1, "x");
+            keyframe.center.x = static_cast<float>(luaL_optnumber(L, -1, 0));
+            lua_pop(L, 1);
+            
+            lua_getfield(L, -1, "y");
+            keyframe.center.y = static_cast<float>(luaL_optnumber(L, -1, 0));
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 1);
+
+        // Get ignoreInterpolation field
+        lua_getfield(L, stackPos, "ignoreInterpolation");
+        keyframe.ignoreInterpolation = lua_toboolean(L, -1) != 0;
+        lua_pop(L, 1);
+
+        // Get dynamicCenter field
+        lua_getfield(L, stackPos, "dynamicCenter");
+        keyframe.dynamicCenter = lua_toboolean(L, -1) != 0;
+        lua_pop(L, 1);
+
+        if (pop) {
+            lua_pop(L, 1); // Remove the table from stack if necessary
+        }
+
+        return keyframe;
+    }
+};
+
 template<>
     struct GenericLuaGetter<std::string> {
      static inline std::string Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
@@ -683,6 +755,42 @@ template<> struct GenericLuaReturner<Vec2f> {
         lua_pushnumber(L, static_cast<lua_Number>(vec.y));
         lua_setfield(L, -2, "y");
             
+        return 1;
+    }
+};
+
+template<> struct GenericLuaReturner<Keyframe> {
+    static inline int Ret(const Keyframe& keyframe, lua_State* L, bool forceTable = false) {
+        lua_createtable(L, 0, 7); // 7 fields: type, playAt, deltaToNext, value, center, ignoreInterpolation, dynamicCenter
+        
+        // Push type field
+        lua_pushinteger(L, static_cast<lua_Integer>(keyframe.type));
+        lua_setfield(L, -2, "type");
+        
+        // Push playAt field
+        lua_pushinteger(L, static_cast<lua_Integer>(keyframe.playAt));
+        lua_setfield(L, -2, "playAt");
+        
+        // Push deltaToNext field
+        lua_pushinteger(L, static_cast<lua_Integer>(keyframe.deltaToNext));
+        lua_setfield(L, -2, "deltaToNext");
+        
+        // Push value field using Vec2f returner
+        GenericLuaReturner<Vec2f>::Ret(keyframe.value, L);
+        lua_setfield(L, -2, "value");
+        
+        // Push center field using Vec2f returner
+        GenericLuaReturner<Vec2f>::Ret(keyframe.center, L);
+        lua_setfield(L, -2, "center");
+        
+        // Push ignoreInterpolation field
+        lua_pushboolean(L, keyframe.ignoreInterpolation);
+        lua_setfield(L, -2, "ignoreInterpolation");
+        
+        // Push dynamicCenter field
+        lua_pushboolean(L, keyframe.dynamicCenter);
+        lua_setfield(L, -2, "dynamicCenter");
+        
         return 1;
     }
 };
