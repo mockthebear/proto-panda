@@ -717,6 +717,8 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("fileExists", fileExists);
   
   m_lua->FuncRegister("formatFFAT", formatFFAT);
+
+  m_lua->FuncRegister("listFilesInFolder", Storage::listFolder);
   #ifdef ENABLE_HUB75_PANEL
   m_lua->FuncRegister("composeBulkFile", composeBulkFile);
   m_lua->FuncRegister("deleteBulkFile", deleteBulkFile);

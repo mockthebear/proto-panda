@@ -72,6 +72,7 @@ function panda.onSubscribeMessagePanda(connectionId, clientId, data)
         log("Possible corrupt package in panda controller. Expected size at least 20 but got "..(#data))
         return
     end
+
     parsePandaData(drivers.panda[clientId], data)
 end
 

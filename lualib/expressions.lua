@@ -1,5 +1,5 @@
 local configloader = require("configloader")
-
+local models = require("models")
 local _M = {
 	animations = {},
 	by_name = {},
@@ -9,6 +9,7 @@ local _M = {
 
 
 function _M.Load()
+	generic.displaySplashMessage("Starting:\nExpressions")
 	content = nil
 	local conf = configloader.Get()
 	local unHiddenExpresions = {}
@@ -93,6 +94,9 @@ function _M.Load()
 		end
 	end
 	_M.avaliableAnimations = res
+
+
+	models.Load()
 	return true
 end
 
