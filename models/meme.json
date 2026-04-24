@@ -258,18 +258,9 @@
     {
       "name": "idle loop",
       "duration": 3000,
-      "resources": [
-        "mouth",
-        "eye",
-        "mouth.1",
-        "mouth.2",
-        "nose"
-      ],
       "tracks": [
         {
-          "id": "1775788644553_qfhebm_0",
-          "name": "mouth",
-          "r": 0,
+          "modelname": "mouth",
           "keyframes": [
             {
               "t": "translate",
@@ -334,9 +325,7 @@
           ]
         },
         {
-          "id": "1775788644553_a1ok5b_1",
-          "name": "eye",
-          "r": 1,
+          "modelname": "eye",
           "keyframes": [
             {
               "t": "rotate",
@@ -373,9 +362,7 @@
           ]
         },
         {
-          "id": "1775788644553_3pk5jx_2",
-          "name": "mouth.1",
-          "r": 2,
+          "modelname": "mouth.1",
           "keyframes": [
             {
               "t": "translate",
@@ -416,9 +403,7 @@
           ]
         },
         {
-          "id": "1775788644553_izmf7c_3",
-          "name": "mouth.2",
-          "r": 3,
+          "modelname": "mouth.2",
           "keyframes": [
             {
               "t": "translate",
@@ -459,9 +444,7 @@
           ]
         },
         {
-          "id": "1775788644553_t2b0rr_4",
-          "name": "nose",
-          "r": 4,
+          "modelname": "nose",
           "keyframes": [
             {
               "t": "scale",
