@@ -41,22 +41,22 @@ void DrawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
   Devices::Display->drawRect(x, y, w, h, color);
 }
 
-int DrawLine(int16_t x, int16_t y, int16_t x1, int16_t x2, uint16_t color)
+void DrawLine(int16_t x, int16_t y, int16_t x1, int16_t x2, uint16_t color)
 {
   Devices::Display->drawLine(x, y, x1, x2, color);
-  return 0;
 }
 
-int DrawCircle(int16_t x, int16_t y, int16_t r, uint16_t color)
+void DrawCircle(int16_t x, int16_t y, int16_t r, uint16_t color)
 {
   Devices::Display->drawCircle(x, y, r, color);
-  return 0;
 }
 
-int DrawFillCircle(int16_t x, int16_t y, int16_t r, uint16_t color)
-{
+void DrawFillCircle(int16_t x, int16_t y, int16_t r, uint16_t color){
   Devices::Display->fillCircle(x, y, r, color);
-  return 0;
+}
+
+void DrawFillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color){
+  Devices::Display->fillTriangle(x0, y0, x1, y1, x2, y2, color);
 }
 
 uint16_t color444(uint8_t r, uint8_t g, uint8_t b)
@@ -99,80 +99,37 @@ int GetFrameCountByName(std::string aliasName)
 
 int DrawFace(int i)
 {
-  g_animation.DrawFrame(g_frameRepo.takeFile(), i);
+  g_animation.DrawFrame(i);
   g_frameRepo.freeFile();
   return 0;
 }
+
 void DrawCurrentFrame()
 {
-  g_animation.DrawCurrentFrame(g_frameRepo.takeFile());
+  g_animation.DrawCurrentFrame();
   g_frameRepo.freeFile();
 }
 
-void FlipScreen()
-{
-  g_animation.MakeFlip();
-}
+
 void deleteBulkFile(){
   FFat.remove("/frames.bulk");
 }
 
-void composeBulkFile()
-{
+void composeBulkFile(){
   g_frameRepo.composeBulkFile();
 }
 
-void setAnimation(std::vector<int> frames, int duration, int repeatTimes, bool dropAll, int externalStorageId)
-{
-  g_animation.SetAnimation(frames, duration, repeatTimes, dropAll, externalStorageId);
-}
 
-void setInterruptFrames(std::vector<int> frames, int duration )
-{
-  g_animation.SetInterruptAnimation(duration, frames);
-}
-
-
-void setManaged(bool bn)
-{
-  g_animation.setManaged(bn);
-}
-bool isManaged()
-{
-  return g_animation.isManaged();
-}
-
-int getCurrentAnimationStorage()
-{
-  return g_animation.getCurrentAnimationStorage();
-}
-int getCurrentFace()
-{
-  return g_animation.getCurrentFace();
-}
-
-void DrawPanelFaceToScreen(int x, int y)
-{
+void DrawPanelFaceToScreen(int x, int y){
   OledScreen::DrawPanelFaceToScreen(x, y);
   return;
 }
 
-
-void gentlySetPanelBrightness(uint8_t bright, uint8_t rate)
-{
+void gentlySetPanelBrightness(uint8_t bright, uint8_t rate){
   Devices::SetGentlyBrightness(bright, rate);
   return;
 }
 
-
-bool popPanelAnimation()
-{
-  return g_animation.PopAnimation();
-}
-
-void setColorMode(int mode){
-  g_animation.setColorMode((ColorMode)mode);
-}
 
 
 #endif

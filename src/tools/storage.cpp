@@ -94,8 +94,8 @@ String Storage::GetFileText(const char *name){
   return fileContent;
 }
 
-std::vector<std::string> Storage::listFolder(const char *name){
-  File dir = PANDA_SD.open(name);
+std::vector<std::string> Storage::listFolder(std::string path){
+  File dir = PANDA_SD.open(path.c_str());
   std::vector<std::string> res;
   while (true) {
     File entry = dir.openNextFile();

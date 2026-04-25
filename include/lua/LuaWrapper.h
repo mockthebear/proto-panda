@@ -6,7 +6,8 @@
 #include <type_traits>
 #include <vector>
 #include <sstream>
-
+#include "drawing/rendering/primitives.hpp"
+#include "drawing/modelanimation/keyframeplayer.hpp"
 #define LUA_USE_C89
 #include "lua/lua.hpp"
 #include "tools/ir.hpp"
@@ -222,6 +223,236 @@ template<> struct GenericLuaGetter<PixelStruct> {
     }
 };
 
+
+
+
+template<> struct GenericLuaGetter<Vec2f> {
+    static inline Vec2f Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
+        Vec2f vec;
+
+        if (!lua_istable(L, stackPos)) {
+            hasArgError = true;
+            const char* function_name = lua_tostring(L, lua_upvalueindex(1));
+            luaL_error(L, "Expected a table value on parameter %d of function %s", lua_gettop(L), function_name);
+            return vec;
+        }
+
+        // Get x field
+        lua_getfield(L, stackPos, "x");
+        vec.x = static_cast<float>(luaL_optnumber(L, -1, 0));
+        lua_pop(L, 1);
+
+        // Get y field
+        lua_getfield(L, stackPos, "y");
+        vec.y = static_cast<float>(luaL_optnumber(L, -1, 0));
+        lua_pop(L, 1);
+
+        if (pop) {
+            lua_pop(L, 1); // Remove the table from stack if necessary
+        }
+
+        return vec;
+    }
+};
+
+template<> struct GenericLuaGetter<ModelData> {
+    static inline ModelData Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
+        ModelData modelData;
+
+        if (!lua_istable(L, stackPos)) {
+            hasArgError = true;
+            const char* function_name = lua_tostring(L, lua_upvalueindex(1));
+            luaL_error(L, "Expected a table value on parameter %d of function %s", lua_gettop(L), function_name);
+            return modelData;
+        }
+
+        lua_getfield(L, stackPos, "x");
+        if (lua_istable(L, -1)) {
+            int arrayLength = lua_rawlen(L, -1);
+            modelData.x.reserve(arrayLength);
+            
+            for (int i = 1; i <= arrayLength; i++) {
+                lua_rawgeti(L, -1, i);
+                modelData.x.push_back(static_cast<float>(luaL_optnumber(L, -1, 0)));
+                lua_pop(L, 1);
+            }
+        }
+        lua_pop(L, 1); 
+
+
+        lua_getfield(L, stackPos, "y");
+        if (lua_istable(L, -1)) {
+            int arrayLength = lua_rawlen(L, -1);
+            modelData.y.reserve(arrayLength);
+            
+            for (int i = 1; i <= arrayLength; i++) {
+                lua_rawgeti(L, -1, i);
+                modelData.y.push_back(static_cast<float>(luaL_optnumber(L, -1, 0)));
+                lua_pop(L, 1);
+            }
+        }
+        lua_pop(L, 1); 
+
+
+        lua_getfield(L, stackPos, "color");
+        if (lua_istable(L, -1)) {
+            int arrayLength = lua_rawlen(L, -1);
+            modelData.color.reserve(arrayLength);
+            
+            for (int i = 1; i <= arrayLength; i++) {
+                lua_rawgeti(L, -1, i);
+                modelData.color.push_back(static_cast<uint16_t>(luaL_optinteger(L, -1, 0)));
+                lua_pop(L, 1);
+            }
+        }
+        lua_pop(L, 1);
+
+        if (pop) {
+            lua_pop(L, 1);
+        }
+
+        if (modelData.x.size() != modelData.y.size()){
+            luaL_error(L, "Field X and Y must have the same amount of points");
+        }
+        if (modelData.x.size()/3 != modelData.color.size()){
+            luaL_error(L, "Triangle count dont match the color count");
+        }
+
+        return modelData;
+    }
+};
+
+template<> struct GenericLuaGetter<TriangleData> {
+    static inline TriangleData Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
+        TriangleData tdata;
+
+        if (!lua_istable(L, stackPos)) {
+            hasArgError = true;
+            const char* function_name = lua_tostring(L, lua_upvalueindex(1));
+            luaL_error(L, "Expected a table value on parameter %d of function %s", lua_gettop(L), function_name);
+            return tdata;
+        }
+
+        // Get x array
+        lua_getfield(L, stackPos, "x");
+        if (lua_istable(L, -1)) {
+            // Get x1, x2, x3 from the x array (1-indexed in Lua)
+            lua_rawgeti(L, -1, 1);
+            tdata.p1.x = static_cast<float>(luaL_optnumber(L, -1, 0));
+            lua_pop(L, 1);
+            
+            lua_rawgeti(L, -1, 2);
+            tdata.p2.x = static_cast<float>(luaL_optnumber(L, -1, 0));
+            lua_pop(L, 1);
+            
+            lua_rawgeti(L, -1, 3);
+            tdata.p3.x = static_cast<float>(luaL_optnumber(L, -1, 0));
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 1); // Pop x array
+
+        // Get y array
+        lua_getfield(L, stackPos, "y");
+        if (lua_istable(L, -1)) {
+            // Get y1, y2, y3 from the y array (1-indexed in Lua)
+            lua_rawgeti(L, -1, 1);
+            tdata.p1.y = static_cast<float>(luaL_optnumber(L, -1, 0));
+            lua_pop(L, 1);
+            
+            lua_rawgeti(L, -1, 2);
+            tdata.p2.y = static_cast<float>(luaL_optnumber(L, -1, 0));
+            lua_pop(L, 1);
+            
+            lua_rawgeti(L, -1, 3);
+            tdata.p3.y = static_cast<float>(luaL_optnumber(L, -1, 0));
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 1); // Pop y array
+
+        // Get color field
+        lua_getfield(L, stackPos, "color");
+        tdata.color = static_cast<uint16_t>(luaL_optinteger(L, -1, 0));
+        lua_pop(L, 1);
+
+        if (pop) {
+            lua_pop(L, 1); // Remove the main table from stack if necessary
+        }
+
+        return tdata;
+    }
+};
+
+template<> struct GenericLuaGetter<Keyframe> {
+    static inline Keyframe Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
+        Keyframe keyframe;
+
+        if (!lua_istable(L, stackPos)) {
+            hasArgError = true;
+            const char* function_name = lua_tostring(L, lua_upvalueindex(1));
+            luaL_error(L, "Expected a table value on parameter %d of function %s", lua_gettop(L), function_name);
+            return keyframe;
+        }
+
+        // Get type field
+        lua_getfield(L, stackPos, "type");
+        keyframe.type = static_cast<KeyframeType>(luaL_optinteger(L, -1, 0));
+        lua_pop(L, 1);
+
+        // Get playAt field
+        lua_getfield(L, stackPos, "playAt");
+        keyframe.playAt = static_cast<uint32_t>(luaL_optinteger(L, -1, 0));
+        lua_pop(L, 1);
+
+        // Get deltaToNext field
+        lua_getfield(L, stackPos, "deltaToNext");
+        keyframe.deltaToNext = static_cast<uint32_t>(luaL_optinteger(L, -1, 0));
+        lua_pop(L, 1);
+
+        // Get value field (Vec2f)
+        lua_getfield(L, stackPos, "value");
+        if (lua_istable(L, -1)) {
+            // Use existing Vec2f getter if available, or manually extract
+            lua_getfield(L, -1, "x");
+            keyframe.value.x = static_cast<float>(luaL_optnumber(L, -1, 0));
+            lua_pop(L, 1);
+            
+            lua_getfield(L, -1, "y");
+            keyframe.value.y = static_cast<float>(luaL_optnumber(L, -1, 0));
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 1);
+
+        // Get center field (Vec2f)
+        lua_getfield(L, stackPos, "center");
+        if (lua_istable(L, -1)) {
+            lua_getfield(L, -1, "x");
+            keyframe.center.x = static_cast<float>(luaL_optnumber(L, -1, 0));
+            lua_pop(L, 1);
+            
+            lua_getfield(L, -1, "y");
+            keyframe.center.y = static_cast<float>(luaL_optnumber(L, -1, 0));
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 1);
+
+        // Get ignoreInterpolation field
+        lua_getfield(L, stackPos, "ignoreInterpolation");
+        keyframe.ignoreInterpolation = lua_toboolean(L, -1) != 0;
+        lua_pop(L, 1);
+
+        // Get dynamicCenter field
+        lua_getfield(L, stackPos, "dynamicCenter");
+        keyframe.dynamicCenter = lua_toboolean(L, -1) != 0;
+        lua_pop(L, 1);
+
+        if (pop) {
+            lua_pop(L, 1); // Remove the table from stack if necessary
+        }
+
+        return keyframe;
+    }
+};
+
 template<>
     struct GenericLuaGetter<std::string> {
      static inline std::string Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
@@ -302,6 +533,19 @@ template<>
 
 
 
+template<>
+    struct GenericLuaGetter<std::vector<PointList>> {
+     static inline std::vector<PointList> Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
+        return GenericLuaVector<PointList>(hasArgError, L, stackPos, pop, offsetStack);
+    };
+};
+
+template<>
+    struct GenericLuaGetter<std::vector<TriangleData>> {
+     static inline std::vector<TriangleData> Call(bool &hasArgError, lua_State *L,int stackPos = -1,bool pop=true, int offsetStack = 0){
+        return GenericLuaVector<TriangleData>(hasArgError, L, stackPos, pop, offsetStack);
+    };
+};
 
 
 template<typename T1> struct GenericLuaReturner{
@@ -498,6 +742,57 @@ template<> struct GenericLuaReturner<std::vector<uint8_t>>{
         }
         return 1;
     };
+};
+
+
+template<> struct GenericLuaReturner<Vec2f> {
+    static inline int Ret(const Vec2f& vec, lua_State* L, bool forceTable = false) {
+        lua_createtable(L, 0, 2);
+            
+        lua_pushnumber(L, static_cast<lua_Number>(vec.x));
+        lua_setfield(L, -2, "x");
+            
+        lua_pushnumber(L, static_cast<lua_Number>(vec.y));
+        lua_setfield(L, -2, "y");
+            
+        return 1;
+    }
+};
+
+template<> struct GenericLuaReturner<Keyframe> {
+    static inline int Ret(const Keyframe& keyframe, lua_State* L, bool forceTable = false) {
+        lua_createtable(L, 0, 7); // 7 fields: type, playAt, deltaToNext, value, center, ignoreInterpolation, dynamicCenter
+        
+        // Push type field
+        lua_pushinteger(L, static_cast<lua_Integer>(keyframe.type));
+        lua_setfield(L, -2, "type");
+        
+        // Push playAt field
+        lua_pushinteger(L, static_cast<lua_Integer>(keyframe.playAt));
+        lua_setfield(L, -2, "playAt");
+        
+        // Push deltaToNext field
+        lua_pushinteger(L, static_cast<lua_Integer>(keyframe.deltaToNext));
+        lua_setfield(L, -2, "deltaToNext");
+        
+        // Push value field using Vec2f returner
+        GenericLuaReturner<Vec2f>::Ret(keyframe.value, L);
+        lua_setfield(L, -2, "value");
+        
+        // Push center field using Vec2f returner
+        GenericLuaReturner<Vec2f>::Ret(keyframe.center, L);
+        lua_setfield(L, -2, "center");
+        
+        // Push ignoreInterpolation field
+        lua_pushboolean(L, keyframe.ignoreInterpolation);
+        lua_setfield(L, -2, "ignoreInterpolation");
+        
+        // Push dynamicCenter field
+        lua_pushboolean(L, keyframe.dynamicCenter);
+        lua_setfield(L, -2, "dynamicCenter");
+        
+        return 1;
+    }
 };
 
 template<>

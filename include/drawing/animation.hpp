@@ -6,7 +6,7 @@
 #include <FS.h>
 #include "config.hpp"
 #include "tools/psrammap.hpp"
-
+#include "drawing/rendering/modelhandler.hpp"
 
 enum ColorMode{
     COLOR_MODE_RGB,
@@ -24,24 +24,29 @@ enum AnimationFrameAction{
     ANIMATION_NO_CHANGE,
     ANIMATION_FRAME_CHANGED,
     ANIMATION_FINISHED,
+    ANIMATION_NEED_FLIP,
 };
 class FrameRepository;
 extern FrameRepository g_frameRepo;
 
+#define MODEL_FRAME_ID_OFFSET 100000
+
 
 class AnimationSequence{
     public:
-        AnimationSequence():m_duration(2500),m_frame(0),m_counter(0),m_repeat(-1),m_updateMode(0),m_storageId(-1),m_isNew(true){}
+        AnimationSequence():m_duration(2500),m_frame(0),m_counter(0),m_repeat(-1),m_updateMode(0),m_storageId(-1),m_isNew(true),m_isModel(false){}
         PSRAMVector<int> m_frames;
-        AnimationFrameAction Update(int m_interruptPin);
+        AnimationFrameAction Update(uint32_t dt, int m_interruptPin, bool isManaged);
         inline int GetFrameId();
+        void ResetIfNeeded();
         int m_duration;
-        int m_frame;
+        int m_frame; //Also used to store the ID of the animation if its a model animation
         int m_counter;
         int m_repeat;
         int m_updateMode;
         int m_storageId;
         bool m_isNew;
+        bool m_isModel;
     private:
         AnimationFrameAction ChangeFrame();
         AnimationFrameAction InterruptFrame(int pinRead);
@@ -54,19 +59,24 @@ class Animation{
     public:
         Animation():m_animations(),m_shader(0),m_lastFace(0),m_interruptPin(-1),m_colorMode(COLOR_MODE_RGB),m_needFlip(false),m_isManaged(true),m_needRedraw(false),m_onBlankScreen(false),m_frameDrawDuration(0),m_frameLoadDuration(0),m_cycleDuration(0),m_mutex(xSemaphoreCreateMutex()){};
 
-        void Update(File *file);
+        void Update(uint32_t dt);
+
+        void SetModelAnimation(int animationId, int repeatTimes, bool dropAll, int externalStorageId=-1);
 
         void SetAnimation(std::vector<int> frames, int duration, int repeatTimes, bool dropAll, int externalStorageId=-1);
         void SetInterruptAnimation(int duration, std::vector<int> frames);
         void SetInterruptPin(int pin){
+              if (pin > 0){
+                pinMode(pin, INPUT);
+            }
             m_interruptPin = pin;
         }
-        void DrawFrame(File *file, int i);
-        void DrawCurrentFrame(File *file){
-            DrawFrame(file, m_lastFace);
+
+        void DrawFrame(int i);
+        void DrawCurrentFrame(){
+            DrawFrame(m_lastFace);
         }
 
-        
 
         bool PopAnimation();
         void MakeFlip();
@@ -114,8 +124,7 @@ class Animation{
         inline void drawPixelAt(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r, uint8_t &g, uint8_t &b, uint8_t &flip_left, uint8_t &flip_right, int &byteIdOled);
         inline void adjustColor(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r, uint8_t &g, uint8_t &b, ColorMode &colorMode, int16_t &frameId);
         std::stack<AnimationSequence> m_animations;
-
-        bool internalUpdate(File *file, AnimationSequence &seq);
+        bool internalUpdate(uint32_t dt, AnimationSequence &seq);
         int m_shader;
         int m_lastFace;
         int m_interruptPin;
@@ -128,8 +137,7 @@ class Animation{
         uint64_t m_frameDrawDuration;
         uint64_t m_frameLoadDuration;
         uint64_t m_cycleDuration;
-        SemaphoreHandle_t m_mutex;
-        
+        SemaphoreHandle_t m_mutex;        
 };
 
 
@@ -139,13 +147,13 @@ class Animation{
     public:
         Animation(){};
 
-        void Update(File *file){}
+        void Update(uint32_t)){}
 
         void SetAnimation(int duration, std::vector<int> frames, int repeatTimes, bool dropAll, int externalStorageId=-1){}
         void SetInterruptAnimation(int duration, std::vector<int> frames){}
         void SetInterruptPin(int pin){       }
-        void DrawFrame(File *file, int i){}
-        void DrawCurrentFrame(File *file){}
+        void DrawFrame(int i){}
+        void DrawCurrentFrame(){}
 
         bool PopAnimation(){return false;}
         void MakeFlip(){}

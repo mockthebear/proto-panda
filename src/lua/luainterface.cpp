@@ -7,6 +7,7 @@
 #include "tools/storage.hpp"
 #include "tools/ir.hpp"
 #include "drawing/animation.hpp"
+#include "drawing/modelanimation/keyframeplayer.hpp"
 #include "drawing/ledstrip.hpp"
 #include "bluetooth/ble_client.hpp"
 #include "soc/rtc_cntl_reg.h"
@@ -590,7 +591,7 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("getInternalButtonStatus", getInternalButtonStatus); 
   //Panels
   #ifdef ENABLE_HUB75_PANEL
-  m_lua->FuncRegister("flipPanelBuffer", FlipScreen);
+  m_lua->FuncRegisterFromObjectOpt("flipPanelBuffer", &g_animation, &Animation::MakeFlip);
   m_lua->FuncRegister("drawPanelRect", DrawRect);
   m_lua->FuncRegister("drawPanelFillRect", DrawFillRect);
   m_lua->FuncRegister("drawPanelPixel", DrawPixel);
@@ -599,15 +600,18 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("drawPanelLine", DrawLine);
   m_lua->FuncRegister("drawPanelCircle", DrawCircle);
   m_lua->FuncRegister("drawPanelFillCircle", DrawFillCircle);
+  m_lua->FuncRegister("drawPanelFillTriangle", DrawFillTriangle);
   m_lua->FuncRegister("clearPanelBuffer", ClearScreen);
   m_lua->FuncRegister("drawPanelFace", DrawFace);
 
-  m_lua->FuncRegisterFromObjectOpt("setPanelAnimation", &g_animation, &Animation::SetAnimation, -1, false, -1, 250);
 
+  m_lua->FuncRegisterFromObjectOpt("setPanelAnimation", &g_animation, &Animation::SetAnimation, -1, false, -1, 250);
+  m_lua->FuncRegisterFromObjectOpt("setPanelModelAnimation", &g_animation, &Animation::SetModelAnimation, -1, false, -1);
 
   m_lua->FuncRegisterFromObjectOpt("popPanelAnimation", &g_animation, &Animation::PopAnimation);
   m_lua->FuncRegisterFromObjectOpt("setInterruptFrames", &g_animation, &Animation::SetInterruptAnimation);
   m_lua->FuncRegisterFromObjectOpt("setInterruptAnimationPin", &g_animation, &Animation::SetInterruptPin);
+
     
   m_lua->FuncRegisterFromObjectOpt("setRainbowShader", &g_animation, &Animation::setRainbowShader, true); 
   m_lua->FuncRegisterFromObjectOpt("getAnimationStackSize", &g_animation, &Animation::getAnimationStackSize);   
@@ -624,9 +628,10 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("drawPanelCurrentFrame", DrawCurrentFrame);
   m_lua->FuncRegister("setPanelBrightness", setPanelBrightness);
   m_lua->FuncRegister("getPanelBrightness", getPanelBrightness);
-  m_lua->FuncRegister("setInterruptFrames", setInterruptFrames);  
+
   m_lua->FuncRegisterFromObjectOpt("setRainbowShader", &g_animation, &Animation::setRainbowShader, true); 
   m_lua->FuncRegisterFromObjectOpt("getAnimationStackSize", &g_animation, &Animation::getAnimationStackSize); 
+
   m_lua->FuncRegister("color565", color565);
   m_lua->FuncRegister("color444", color444);
   m_lua->FuncRegister("getFrameOffsetByName", GetOffsetByName);
@@ -707,6 +712,8 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("fileExists", fileExists);
   
   m_lua->FuncRegister("formatFFAT", formatFFAT);
+
+  m_lua->FuncRegister("listFilesInFolder", Storage::listFolder);
   #ifdef ENABLE_HUB75_PANEL
   m_lua->FuncRegister("composeBulkFile", composeBulkFile);
   m_lua->FuncRegister("deleteBulkFile", deleteBulkFile);
@@ -834,6 +841,16 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("ONLOW_WE" , (int)ONLOW_WE );
   m_lua->setConstant("ONHIGH_WE", (int)ONHIGH_WE);
 
+
+
+  m_lua->setConstant("KEYFRAME_TRANSLATE",  (int)KEYFRAME_TRANSLATE);
+  m_lua->setConstant("KEYFRAME_ROTATE",     (int)KEYFRAME_ROTATE);
+  m_lua->setConstant("KEYFRAME_SCALE",      (int)KEYFRAME_SCALE);
+  m_lua->setConstant("KEYFRAME_RESET",      (int)KEYFRAME_RESET);
+
+
+  m_lua->setConstant("MODEL_FRAME_ID_OFFSET",      (int)MODEL_FRAME_ID_OFFSET);
+
  
 }
 
@@ -850,23 +867,6 @@ bool LuaInterface::Start()
   RegisterMethods();
   RegisterConstants();
   auto _state = m_lua->GetState();
-
-  /*
-  
-  ClassRegister<Batata>::RegisterClassType(_state,"Batata",[](lua_State* L){
-        Batata *t = new Batata();
-        return t;
-  });
-    
-  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","Get",&Batata::Get);
-  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","Sum",&Batata::Sum, 0);
-  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","Set",&Batata::Set);
-  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","SumBatata",&Batata::SumBatata);
-  ClassRegister<Batata>::RegisterClassMethod(_state,"Batata","CloneBatata",&Batata::CloneBatata);
-
-  ClassRegister<Batata>::RegisterField(_state, "count", &Batata::count);
-
-*/
 
   static LuaCFunctionLambda EmptyGC = [](lua_State* L) -> int{
     return 0;
@@ -915,7 +915,52 @@ bool LuaInterface::Start()
   ClassRegister<BleCharacteristicsHandler>::RegisterClassMethod(_state,"BleCharacteristicsHandler","SetRequired",&BleCharacteristicsHandler::SetRequired);
 
   m_lua->FuncRegister("getCharacteristicsFromService", BleServiceHandler::GetCharacteristicsFromService);
-  
+
+  //Created only using loadModel(modeldata, name)
+  m_lua->FuncRegisterFromObjectOpt("loadModel", &g_models, &ModelDict::LoadModel, "");
+  ClassRegister<Model>::RegisterClassType(_state,"Model",[](lua_State* L){ luaL_error(L, "Cannot create a empty object of this class"); return nullptr;}, &EmptyGC);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","Recalculate",&Model::Recalculate);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","Reset",&Model::Reset);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","GetId",&Model::GetId);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","CopyToRaster",&Model::CopyToRaster);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","AddPointGroup",&Model::AddPointGroup);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","SetTriangle",&Model::SetTriangleF);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","GetTriangle",&Model::GetTriangle);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","SetBatchOperations",&Model::SetBatchOperations);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","SetAccumulativeOperations",&Model::SetAccumulativeOperations);
+
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","SetPointPosition",&Model::SetPointPosition);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","TranslatePoint",&Model::TranslatePoint);
+
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","SetPointsPosition",&Model::SetPointsPosition);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","ScalePoints",&Model::ScalePoints);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","TranslatePoints",&Model::TranslatePoints);
+
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","Scale",&Model::Scale);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","Rotate",&Model::Rotate);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","Translate",&Model::Translate);
+  ClassRegister<Model>::RegisterClassMethod(_state,"Model","GetCenter",&Model::GetCenter);
+
+
+
+  //Created only using newKeyframeAnimation(duration)
+  m_lua->FuncRegisterFromObjectOpt("newKeyframeAnimation", &g_kf, &KeyframePlayer::NewKeyframeAnimation);  
+  ClassRegister<KeyframeAnimation>::RegisterClassType(_state,"KeyframeAnimation",[](lua_State* L){ luaL_error(L, "Cannot create a empty object of this class"); return nullptr;}, &EmptyGC);
+  ClassRegister<KeyframeAnimation>::RegisterClassMethod(_state,"KeyframeAnimation","Reset",&KeyframeAnimation::Reset);
+  ClassRegister<KeyframeAnimation>::RegisterClassMethod(_state,"KeyframeAnimation","GetId",&KeyframeAnimation::GetId);
+  ClassRegister<KeyframeAnimation>::RegisterClassMethod(_state,"KeyframeAnimation","AddTrack",&KeyframeAnimation::AddTrack);
+
+  static LuaCFunctionLambda ThisGc = [](lua_State* L) -> int{ return LuaCaller::GC<KeyframeTrack>(L); };
+
+  ClassRegister<KeyframeTrack>::RegisterClassType(_state,"KeyframeTrack", [](lua_State* L) -> KeyframeTrack* { return new KeyframeTrack();}, &ThisGc ); 
+  ClassRegister<KeyframeTrack>::RegisterClassMethod(_state,"KeyframeTrack","Reset", &KeyframeTrack::Reset);
+  ClassRegister<KeyframeTrack>::RegisterClassMethod(_state,"KeyframeTrack","SetResource", &KeyframeTrack::SetResource);
+  ClassRegister<KeyframeTrack>::RegisterClassMethod(_state,"KeyframeTrack","AddKeyFrame", &KeyframeTrack::AddKeyFrame);
+
+
+  m_lua->FuncRegisterOptional("KeyFrame",  Keyframe::KeyFrameMaker, false, false, Vec2f(0.0f, 0.0f));
+ 
+
   lastError = "";
 
   return true;
