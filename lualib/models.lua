@@ -97,8 +97,7 @@ function _M.loadModelsFromJson(filename)
 	return true
 end
 
-
-function _M.loadModelAnimationFromJson(filename)
+function _M.getModelAnimationList(filename)
     
     local fp, err = io.open(filename, "r")
     if not fp then 
@@ -110,15 +109,7 @@ function _M.loadModelAnimationFromJson(filename)
     json.filename = filename
     local content = json.decode(content)
 
-    if content.animations then
-	    for i, anim in pairs(content.animations) do  
-	        local success, err = _M.loadAnimation(anim)
-	        if not success then  
-	        	return false, "Failed to load animation "..i.." at file "..filename..": "..err
-	        end
-	    end
-	end
-	return true
+	return content.animations
 end
 
 function _M.loadAnimation(anim)
@@ -187,31 +178,19 @@ end
 
 function _M.Load()
 	generic.displaySplashMessage("Starting:\nModels")
-	local mainPath = "/models/"
-	local files = listFilesInFolder(mainPath)
-	for i,file in pairs(files) do  
-		local fullPath = mainPath..file
-		local ok, err = _M.loadModelsFromJson(fullPath)
-		if not ok then 
-			error(err)
+	local conf = configloader.Get()
+	if conf.models_folder then
+		local files = listFilesInFolder(conf.models_folder)
+		for i,file in pairs(files) do  
+			local fullPath = conf.models_folder..file
+			local ok, err = _M.loadModelsFromJson(fullPath)
+			if not ok then 
+				error(err)
+			end
 		end
-	end	
+	else
+		log("Skipping loading models for 'models_folder' not beeing defined")	
+	end
 end
-
-function _M.LoadAnimations()
-	generic.displaySplashMessage("Starting:\nModels Anim")
-	local mainPath = "/models/"
-	local files = listFilesInFolder(mainPath)
-	for i,file in pairs(files) do  
-		local fullPath = mainPath..file
-		local ok, err = _M.loadModelAnimationFromJson(fullPath)
-		if not ok then 
-			error(err)
-		end
-	end	
-
-	return _M.animations
-end
-
 
 return _M

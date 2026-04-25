@@ -1,4 +1,5 @@
 {
+  "models_folder": "/models/",
   "frames": [
     {
       "pattern": "/expressions/blink/blink%d.png",
@@ -209,9 +210,6 @@
       "to": 3,
       "name": "frames_noise"
     }
-
-
-
   ],
   "expressions": [
     {
