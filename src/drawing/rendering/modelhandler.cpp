@@ -28,8 +28,6 @@ void ModelHandler::RenderScene(std::vector<Model*> mdls){
             byteIdOled++;
         }
     }
-    
-    Devices::Display->updateMatrixDMABuffer_2(3,3, 255, 255, 255);
     RenderModels(mdls, nextId);
     OledScreen::screenFlipId++;
     Devices::Display->endWrite();

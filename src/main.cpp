@@ -180,12 +180,10 @@ void second_loop(void*){
   { 
     Devices::BeginAutoFrame();
     
-    
-    g_kf.Update(Devices::getAutoDeltaTime());
 
-    //g_animation.Update(g_frameRepo.takeFile());
+    g_animation.Update(Devices::getAutoDeltaTime());
     vTaskDelay(1);
-    //g_frameRepo.freeFile();
+
     g_leds.Update();
     if (g_leds.IsManaged()){
       g_leds.Display();

@@ -26,6 +26,7 @@ function onSetup()
 
     configloader.Load()
     input.Load()
+    models.Load()
     expressions.Load() 
     scripts.Load() 
     boop.Load()
@@ -47,28 +48,12 @@ function onPreflight()
     expressions.Next()
     input.Start() 
     setPoweringMode(BUILT_IN_POWER_MODE)
-    setPanelBrightness(64)
+    ledsGentlySeBrightness(tonumber(dictGet("led_brightness") ) or 64)
+    gentlySetPanelBrightness(tonumber(dictGet("panel_brightness")) or 64)
 
-    playModelAnimation(0)
-
-
-    --[[setModelAnimation({0,1,2}, true)
-
-    local md = models[0]
-    md:Reset()
-
-    md:TranslatePoints(0, {x=0, y=-10})
-
-    md:Recalculate()
-    md:CopyToRaster()
-]]
 
 end
-local rotated = 0
-local sin = math.sin
-local cos = math.cos
-local transform = {x = 0, y = 0}
-local center = {x = 20.5, y= 4.5}
+
 function onLoop(dt)
     drivers.update()
     input.update()

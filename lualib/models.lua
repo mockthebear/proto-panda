@@ -157,8 +157,9 @@ function _M.loadAnimation(anim)
 			kfAnim:AddTrack(tr)
 	    end
 	end
-	_M.animationsByName[anim.name] = kfAnim
-	_M.animations[#_M.animations+1] = kfAnim
+	anim.obj = kfAnim
+	_M.animationsByName[anim.name] = anim
+	_M.animations[#_M.animations+1] = anim
 	return kfAnim, nil
 end
 
@@ -194,11 +195,22 @@ function _M.Load()
 		if not ok then 
 			error(err)
 		end
+	end	
+end
+
+function _M.LoadAnimations()
+	generic.displaySplashMessage("Starting:\nModels Anim")
+	local mainPath = "/models/"
+	local files = listFilesInFolder(mainPath)
+	for i,file in pairs(files) do  
+		local fullPath = mainPath..file
 		local ok, err = _M.loadModelAnimationFromJson(fullPath)
 		if not ok then 
 			error(err)
 		end
 	end	
+
+	return _M.animations
 end
 
 

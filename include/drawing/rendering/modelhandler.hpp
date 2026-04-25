@@ -5,7 +5,7 @@
 class ModelHandler {
     public:
         __attribute__((aligned(32)))
-        uint8_t pixelBitmap[PANEL_HEIGHT * (PANEL_WIDTH/8)];
+        uint8_t pixelBitmap[PANEL_HEIGHT * (PANEL_WIDTH/8)]; //Used to mark pixels that were drawn and dont need to draw twice
 
         void RenderScene(std::vector<Model*> mdls);
         void RenderModels(std::vector<Model*> mdls, uint8_t *bitmap);

@@ -605,13 +605,8 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("drawPanelFace", DrawFace);
 
 
-  
-
-
-
   m_lua->FuncRegisterFromObjectOpt("setPanelAnimation", &g_animation, &Animation::SetAnimation, -1, false, -1, 250);
-  m_lua->FuncRegisterFromObjectOpt("setModelAnimation", &g_animation, &Animation::SetModelAnimation, false);
-
+  m_lua->FuncRegisterFromObjectOpt("setPanelModelAnimation", &g_animation, &Animation::SetModelAnimation, -1, false, -1);
 
   m_lua->FuncRegisterFromObjectOpt("popPanelAnimation", &g_animation, &Animation::PopAnimation);
   m_lua->FuncRegisterFromObjectOpt("setInterruptFrames", &g_animation, &Animation::SetInterruptAnimation);
@@ -853,6 +848,9 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("KEYFRAME_SCALE",      (int)KEYFRAME_SCALE);
   m_lua->setConstant("KEYFRAME_RESET",      (int)KEYFRAME_RESET);
 
+
+  m_lua->setConstant("MODEL_FRAME_ID_OFFSET",      (int)MODEL_FRAME_ID_OFFSET);
+
  
 }
 
@@ -946,9 +944,7 @@ bool LuaInterface::Start()
 
 
   //Created only using newKeyframeAnimation(duration)
-  m_lua->FuncRegisterFromObjectOpt("newKeyframeAnimation", &g_kf, &KeyframePlayer::NewKeyframeAnimation);
-  m_lua->FuncRegisterFromObjectOpt("playModelAnimation", &g_kf, &KeyframePlayer::PlayAnimationId);
-  
+  m_lua->FuncRegisterFromObjectOpt("newKeyframeAnimation", &g_kf, &KeyframePlayer::NewKeyframeAnimation);  
   ClassRegister<KeyframeAnimation>::RegisterClassType(_state,"KeyframeAnimation",[](lua_State* L){ luaL_error(L, "Cannot create a empty object of this class"); return nullptr;}, &EmptyGC);
   ClassRegister<KeyframeAnimation>::RegisterClassMethod(_state,"KeyframeAnimation","Reset",&KeyframeAnimation::Reset);
   ClassRegister<KeyframeAnimation>::RegisterClassMethod(_state,"KeyframeAnimation","GetId",&KeyframeAnimation::GetId);

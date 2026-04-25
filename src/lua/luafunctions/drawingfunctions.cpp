@@ -99,13 +99,14 @@ int GetFrameCountByName(std::string aliasName)
 
 int DrawFace(int i)
 {
-  g_animation.DrawFrame(g_frameRepo.takeFile(), i);
+  g_animation.DrawFrame(i);
   g_frameRepo.freeFile();
   return 0;
 }
+
 void DrawCurrentFrame()
 {
-  g_animation.DrawCurrentFrame(g_frameRepo.takeFile());
+  g_animation.DrawCurrentFrame();
   g_frameRepo.freeFile();
 }
 

@@ -13,9 +13,29 @@ function _M.Load()
 	content = nil
 	local conf = configloader.Get()
 	local unHiddenExpresions = {}
+
+
+	local modelAnim = models.LoadAnimations()
+	local idOffset = #modelAnim
+	for id , anim in pairs(modelAnim) do 
+		local animObj = {}
+		animObj.id = id
+		animObj.isModel = true
+		animObj.modelAnimId = anim.obj:GetId()
+		animObj.name = anim.name
+		animObj.transition = false
+		_M.by_name[animObj.name] = id
+		_M.by_frame[MODEL_FRAME_ID_OFFSET + anim.obj:GetId()] = id
+		if not animObj.transition then 
+			_M.count = _M.count+1
+		end
+
+		_M.animations[#_M.animations+1] = animObj
+	end
+
 	for id ,b in pairs(conf.expressions) do 
 		local offset = nil 
-		b.id = id
+		b.id = id+idOffset
 		if b.frame_offset and type(b.frames) == "number" then 
 			offset = b.frame_offset
 		elseif b.frames and type(b.frames) == "string" then 
@@ -57,13 +77,13 @@ function _M.Load()
 			end
 			for a,c in pairs(b.animation) do 
 				animation[a] = c + offset
-				_M.by_frame[c + offset] = id
+				_M.by_frame[c + offset] = id+idOffset
 			end
 			b.animation = animation
 		end
 		b.frame_offset = b.frame_offset or 0
 		b.duration = tonumber(b.duration) or 250
-		b.name = b.name or "expression "..id
+		b.name = b.name or "expression "..(id+idOffset)
 
 		if b.onEnter then 
 			local f = load(b.onEnter)
@@ -80,12 +100,14 @@ function _M.Load()
 			b.onLeave = f
 		end
 
-		_M.by_name[b.name] = id
+		_M.by_name[b.name] = id+idOffset
 		if not b.transition then 
 			_M.count = _M.count+1
 		end
+
+		_M.animations[#_M.animations+1] = b
 	end
-	_M.animations = conf.expressions
+
 
 	local res = {}
 	for __, data in pairs(_M.animations) do 
@@ -94,9 +116,6 @@ function _M.Load()
 		end
 	end
 	_M.avaliableAnimations = res
-
-
-	models.Load()
 	return true
 end
 
@@ -197,10 +216,14 @@ function _M.SetExpression(id)
 		if _M.previousExpression and _M.previousExpression.onLeave then 
 			_M.previousExpression.onLeave()
 		end
-		setPanelManaged(false) --To avoid frame flicket
+		setPanelManaged(false) --To avoid frame flicker
 		local current_id = aux.id 
-		setPanelAnimation(aux.animation, aux.duration, repeats, allDrop, current_id)
-		
+		if aux.isModel then  
+			setPanelModelAnimation(aux.modelAnimId, repeats, allDrop, current_id)
+		else
+			setPanelAnimation(aux.animation, aux.duration, repeats, allDrop, current_id)
+		end
+
 		if aux.intro then
 			_M.StackExpression(aux.intro)
 		end
@@ -242,7 +265,11 @@ function _M.StackExpression(id)
 			end
 		end
 		local current_id = aux.id 
-		setPanelAnimation(aux.animation, aux.duration, repeats, false, current_id)
+		if aux.isModel then  
+			setPanelModelAnimation(aux.modelAnimId, repeats, false, current_id)
+		else
+			setPanelAnimation(aux.animation, aux.duration, repeats, false, current_id)
+		end
 	else
 		log("Unknown ID: "..tostring(id))
 	end

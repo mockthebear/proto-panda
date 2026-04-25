@@ -121,35 +121,62 @@ void KeyframeAnimation::AddTrack(KeyframeTrack t){
 void KeyframeAnimation::Reset(){
     m_prevDt = 0;
     for (auto &track : m_tracks){
-
         track.Reset();
     }
 }
 
+void KeyframePlayer::ResetSpecificAnimation(int id){
+    if (id >= m_loadedAnimations.size()){
+        Logger::Info("Cannot reset animation id %d, no such id exists", id);
+        return;
+    }
+    auto &obj = m_loadedAnimations[id];
+    if (obj == nullptr){
+        Logger::Info("Cannot reset animation id %d, no such id exists", id);
+        return;
+    }
+    obj->Reset();
+}
 
-void KeyframePlayer::PlayAnimationId(int32_t id){
+void KeyframePlayer::PlayAnimationId(int32_t id, bool restartAnimation){
+    if (id == m_currentlyPlaying){
+        //If we're already playing it, there is no point in restarting it.
+        return;
+    }
     if (id >= m_loadedAnimations.size()){
         Logger::Info("Cannot play animation id %d, no such id exists", id);
         return;
     }
+    
+    m_currentlyPlaying = id;
+    if (restartAnimation){
+        ResetCurrentAnimation();
+    }
+}
 
-    auto &obj = m_loadedAnimations[id];
-    if (obj == nullptr){
-        Logger::Info("Cannot play animation id %d, no such id exists", id);
+void KeyframePlayer::ResetCurrentAnimation(){
+    if (m_currentlyPlaying < 0){
         return;
     }
-
+    auto &obj = m_loadedAnimations[m_currentlyPlaying];
+    if (obj == nullptr){
+        Logger::Info("Cannot play animation id %d, no such id exists", m_currentlyPlaying);
+        return;
+    }
     obj->Reset();
-
-
-
-    m_currentlyPlaying = id;
 }
 
 void KeyframePlayer::runModelAnim(uint32_t dt){
     auto &obj = m_loadedAnimations[m_currentlyPlaying];
     for (auto &track : obj->m_tracks){
         track.UpdateTrack(dt, obj->m_prevDt);
+    }
+
+    m_finishedAnimationInThisFrame = false;
+
+    if (m_extraDtForNextFrame > 0){
+        dt += m_extraDtForNextFrame;
+        m_extraDtForNextFrame = 0;
     }
 
     int res = 0;
@@ -161,9 +188,13 @@ void KeyframePlayer::runModelAnim(uint32_t dt){
         for (auto &track : obj->m_tracks){
             track.Reset();
         }
+        
+        m_finishedAnimationInThisFrame = true;
+
         if (res > 0){
-            runModelAnim(res);
+            m_extraDtForNextFrame = res;
         }
+        return;
     }
 
    
@@ -172,28 +203,16 @@ void KeyframePlayer::runModelAnim(uint32_t dt){
         mod->CopyToRaster();
     }    
     
-    g_modelHandler.RenderScene(obj->m_models);
-    Devices::Display->startWrite();
-    Devices::Display->drawPixel(0 , 32, Devices::Display->color565(255,255,0));
-    Devices::Display->drawPixel(31 , 32, Devices::Display->color565(255,255,0));
-    Devices::Display->drawPixel(31 * (obj->m_prevDt/(float)obj->duration), 32, Devices::Display->color565(255,0,0));
-    Devices::Display->endWrite();
-
-    Devices::Display->drawLine(0,0, 63 * (obj->m_prevDt/(float)obj->duration), 0, 255);
-    Devices::Display->flipDma();    
-    
+    g_modelHandler.RenderScene(obj->m_models);    
 }
-void KeyframePlayer::Update(uint32_t dt){
 
+bool KeyframePlayer::Update(uint32_t dt){
     if (m_currentlyPlaying < 0){
-        return;
+        return false;
     }
-
     runModelAnim(dt);
-
-   
+    return m_finishedAnimationInThisFrame;
 }
-
 
 
 void KeyframeTrack::UpdateTrack(uint32_t dt, uint32_t prevDt){

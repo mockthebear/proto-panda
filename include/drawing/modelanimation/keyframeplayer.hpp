@@ -93,10 +93,16 @@ class KeyframeAnimation{
 
 class KeyframePlayer{
     public:
-        KeyframePlayer():m_currentlyPlaying(-1){};
-        void Update(uint32_t dt);
-        void PlayAnimationId(int32_t id);
+        KeyframePlayer():m_currentlyPlaying(-1),m_extraDtForNextFrame(0),m_finishedAnimationInThisFrame(false){};
+        bool Update(uint32_t dt);
+        void PlayAnimationId(int32_t id, bool restartAnimation=true);
+        void ResetCurrentAnimation();
+        void ResetSpecificAnimation(int id);
+        int32_t GetCurrentPlaying(){
+            return m_currentlyPlaying;
+        }
         int AddKeyframeAnimation(KeyframeAnimation* kf){
+            kf->Reset();
             m_loadedAnimations.emplace_back(kf);
             return m_loadedAnimations.size()-1;
         }
@@ -106,6 +112,8 @@ class KeyframePlayer{
     private:
         void runModelAnim(uint32_t dt);
         int32_t m_currentlyPlaying;
+        uint32_t m_extraDtForNextFrame;
+        bool m_finishedAnimationInThisFrame;
         std::vector<KeyframeAnimation*> m_loadedAnimations;
 };
 
