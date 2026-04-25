@@ -55,13 +55,16 @@ void AnimationSequence::ResetIfNeeded(){
     }
 }
 
-AnimationFrameAction AnimationSequence::Update(uint32_t dt, int m_interruptPin){
+AnimationFrameAction AnimationSequence::Update(uint32_t dt, int m_interruptPin, bool isManaged){
 
     if (m_isModel){
         //Timing is handled here.
         g_kf.PlayAnimationId(m_frame, true);
 
-        bool finishedAnimation = g_kf.Update(dt);
+        bool finishedAnimation = false;
+        if (isManaged){
+           finishedAnimation = g_kf.Update(dt);
+        }
         if (finishedAnimation){
             if (m_repeat == -1){
                 return ANIMATION_NEED_FLIP;
@@ -416,31 +419,33 @@ void Animation::setManaged(bool v){
 }
 
 bool Animation::internalUpdate(uint32_t dt, AnimationSequence &running){
-
-    switch (running.Update(dt, m_interruptPin)){
+    bool managed = isManaged();
+    switch (running.Update(dt, m_interruptPin, managed)){
     case ANIMATION_FINISHED:
         return 1;
         break;
     case ANIMATION_FRAME_CHANGED:    
         m_lastFace = running.GetFrameId();
-        if (isManaged()){
+        if (managed){
             DrawFrame(m_lastFace);
         }
         break;
     case ANIMATION_NEED_FLIP:
-        m_lastFace = running.GetFrameId();
-        m_needFlip = true;
+        if (managed){
+            m_lastFace = running.GetFrameId();
+            m_needFlip = true;
+        }
         break;
     case ANIMATION_NO_CHANGE:
         if (m_shader == 1){
             m_lastFace = running.GetFrameId();
-            if (isManaged()){
+            if (managed){
                 DrawFrame(m_lastFace);
             }
         }
         if (m_needRedraw){
             m_needRedraw = false;
-            if (isManaged()){
+            if (managed){
                 DrawFrame(m_lastFace);
             }
         }

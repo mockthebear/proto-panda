@@ -36,7 +36,7 @@ class AnimationSequence{
     public:
         AnimationSequence():m_duration(2500),m_frame(0),m_counter(0),m_repeat(-1),m_updateMode(0),m_storageId(-1),m_isNew(true),m_isModel(false){}
         PSRAMVector<int> m_frames;
-        AnimationFrameAction Update(uint32_t dt, int m_interruptPin);
+        AnimationFrameAction Update(uint32_t dt, int m_interruptPin, bool isManaged);
         inline int GetFrameId();
         void ResetIfNeeded();
         int m_duration;
