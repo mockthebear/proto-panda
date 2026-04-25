@@ -83,7 +83,12 @@ uint8_t getPanelBrightness()
 
 int ClearScreen()
 {
-  Devices::Display->clearScreen();
+  for (uint16_t y = 0; y < PANEL_HEIGHT; y++) {
+      for (uint16_t x = 0; x < PANEL_WIDTH; x++) {
+          Devices::Display->updateMatrixDMABuffer_2(x, y, 0, 0, 0);
+          Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH) + x, y, 0, 0, 0);
+      }
+  }
   return 0;
 }
 

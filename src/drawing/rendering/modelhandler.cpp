@@ -20,8 +20,8 @@ void ModelHandler::RenderScene(std::vector<Model*> mdls){
     Devices::Display->color565to888(0, r, g, b);
     int byteIdOled = 0;
     uint8_t* nextId = OledScreen::DisplayFace[(OledScreen::screenFlipId+1)%2];
-    for (float y = 0; y < PANEL_HEIGHT; y++) {
-        for (float x = 0; x < PANEL_WIDTH; x++) {
+    for (uint16_t y = 0; y < PANEL_HEIGHT; y++) {
+        for (uint16_t x = 0; x < PANEL_WIDTH; x++) {
             Devices::Display->updateMatrixDMABuffer_2(x, y, r, g, b);
             Devices::Display->updateMatrixDMABuffer_2((PANEL_WIDTH) + x, y, r, g, b);
             nextId[byteIdOled] = 0;
