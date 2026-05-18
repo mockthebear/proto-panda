@@ -9,6 +9,7 @@ local generic = require("generic")
 local versions = require("versions")
 
 function _M.Load(filepath)
+	generic.displaySplashMessage("Starting:\nScripts")
 	local conf = configloader.Get()
     local auxScripts = {}
     for a,c in pairs(conf.scripts) do  

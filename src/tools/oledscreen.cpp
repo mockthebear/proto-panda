@@ -12,7 +12,8 @@ extern Animation g_animation;
 Adafruit_SSD1306 OledScreen::display(OLED_SCREEN_WIDTH, OLED_SCREEN_HEIGHT, &Wire, -1);
 bool OledScreen::consoleMode = false;
 std::list<std::string> OledScreen::lines;
-uint8_t *OledScreen::DisplayFace = nullptr;
+uint8_t *OledScreen::DisplayFace[2] = {nullptr, nullptr};
+uint8_t OledScreen::screenFlipId = 0;
 
 uint32_t OledScreen::swapTimer = 0;
 
@@ -20,7 +21,8 @@ std::vector<OledIcon> OledScreen::icons;
 
 bool OledScreen::Start(){
     
-    OledScreen::DisplayFace = (uint8_t*)ps_malloc(sizeof(uint8_t) * PANEL_WIDTH * PANEL_HEIGHT);
+    OledScreen::DisplayFace[0] = (uint8_t*)ps_malloc(sizeof(uint8_t) * PANEL_WIDTH * PANEL_HEIGHT);
+    OledScreen::DisplayFace[1] = (uint8_t*)ps_malloc(sizeof(uint8_t) * PANEL_WIDTH * PANEL_HEIGHT);
 
     if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)){
         Serial.println(F("SSD1306 allocation failed"));
@@ -89,7 +91,7 @@ void OledScreen::DrawPanelFaceToScreen(int xx, int yy){
     int ptr = 0;
     for (int y=0;y<PANEL_HEIGHT;y++){
       for (int x=0;x<PANEL_WIDTH;x++){
-        display.drawPixel(xx+x+1, yy+y+1, OledScreen::DisplayFace[ptr++]);
+        display.drawPixel(xx+x+1, yy+y+1, OledScreen::DisplayFace[OledScreen::screenFlipId%2][ptr++]);
       }
     }
 }

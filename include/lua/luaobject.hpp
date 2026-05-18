@@ -3,6 +3,7 @@
 #include "lua/LuaWrapper.h"
 #include "bluetooth/characteristicshandler.hpp"
 #include "bluetooth/servicehandler.hpp"
+#include "drawing/rendering/model.hpp"
 #include <Arduino.h>
 
 
@@ -490,6 +491,26 @@ template<> struct GenericLuaReturner<BleCharacteristicsHandler*>{
     };
 };
 
+template<> struct GenericLuaReturner<Model*>{
+    static int Ret(Model* vr,lua_State *L,bool forceTable = false){
+        MakeLuaObject<Model>::Make(L, vr, "Model");
+        return 1;
+    };
+};
+
+template<> struct GenericLuaReturner<KeyframeAnimation*>{
+    static int Ret(KeyframeAnimation* vr,lua_State *L,bool forceTable = false){
+        MakeLuaObject<KeyframeAnimation>::Make(L, vr, "KeyframeAnimation");
+        return 1;
+    };
+};
+template<> struct GenericLuaReturner<KeyframeTrack*>{
+    static int Ret(KeyframeTrack* vr,lua_State *L,bool forceTable = false){
+        MakeLuaObject<KeyframeTrack>::Make(L, vr, "KeyframeTrack");
+        return 1;
+    };
+};
+
 
 
 template<> struct GenericLuaGetter<BleCharacteristicsHandler*> {
@@ -501,21 +522,15 @@ template<> struct GenericLuaGetter<BleCharacteristicsHandler*> {
             luaL_error(L, "Expected a table value on parameter %d of function %s", lua_gettop(L), function_name);
             return nullptr;
         }
-        if (!lua_istable(L, stackPos)){
-             hasArgError = true;
-            const char* function_name = lua_tostring(L, lua_upvalueindex(1));
-            luaL_error(L, "Expected a table value on parameter %d of function %s", lua_gettop(L), function_name);
-            return nullptr;
-        }
 
-        lua_getfield(L, -2, "__self");
+        lua_getfield(L, stackPos, "__self");
         BleCharacteristicsHandler** sp = (BleCharacteristicsHandler**)lua_touserdata(L,-1);
         if (!sp){
             luaL_error(L, "Expected a lua object");
             return nullptr;
         }
         lua_pop(L, 1);
-        lua_getfield(L, -2, "type");
+        lua_getfield(L, stackPos, "type");
           
         std::string otherType = std::string(lua_tostring(L, -1));
         lua_pop(L, 1);
@@ -538,61 +553,42 @@ template<> struct GenericLuaGetter<BleCharacteristicsHandler*> {
 };
 
 
-           
-              
-         /*   
 
-template<> struct GenericLuaReturner<Batata*>{
-    static int Ret(Batata* vr,lua_State *L,bool forceTable = false){
-        MakeLuaObject<Batata>::Make(L, vr, "Batata");
-    };
-};
-
-
-
-template<> struct GenericLuaGetter<Batata*> {
-    static inline Batata* Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
+template<> struct GenericLuaGetter<KeyframeTrack> {
+    static inline KeyframeTrack Call(bool &hasArgError, lua_State *L, int stackPos = -1, bool pop = true, int offsetStack = 0) {
 
         if (!lua_istable(L, stackPos)) {
             hasArgError = true;
             const char* function_name = lua_tostring(L, lua_upvalueindex(1));
             luaL_error(L, "Expected a table value on parameter %d of function %s", lua_gettop(L), function_name);
-            return nullptr;
+            return KeyframeTrack();
         }
-        if (!lua_istable(L, stackPos)){
-             hasArgError = true;
-            const char* function_name = lua_tostring(L, lua_upvalueindex(1));
-            luaL_error(L, "Expected a table value on parameter %d of function %s", lua_gettop(L), function_name);
-            return nullptr;
-        }
-
-        lua_getfield(L, -2, "__self");
-        Batata** sp = (Batata**)lua_touserdata(L,-1);
-        if (!sp){
-            luaL_error(L, "Expected a lua object");
-            return nullptr;
-        }
-        lua_pop(L, 1);
-        lua_getfield(L, -2, "type");
-          
+    
+        lua_getfield(L, stackPos, "type");
         std::string otherType = std::string(lua_tostring(L, -1));
         lua_pop(L, 1);
 
-        if (otherType != "Batata"){
-            luaL_error(L, "Type mismatched, expecting 'Batata' instead got %s", otherType.c_str());
-            return nullptr;
+        if (otherType != "KeyframeTrack"){
+            luaL_error(L, "Type mismatched, expecting 'KeyframeTrack' instead got %s", otherType.c_str());
+            return KeyframeTrack();
         }
+
+        lua_getfield(L, stackPos, "__self");
+        KeyframeTrack** sp = (KeyframeTrack**)lua_touserdata(L,-1);
+        if (!sp){
+            luaL_error(L, "Expected a lua object");
+            return KeyframeTrack();
+        }
+        lua_pop(L, 1);
 
         if (*sp == nullptr){
             luaL_error(L, "Null userdata in to the object");
-            return nullptr;
+            return KeyframeTrack();
         }
 
         if (pop) {
             lua_pop(L, 1);
         }  
-        return  (*sp);
+        return (*(*sp));
     }
 };
-
-*/

@@ -3,18 +3,15 @@
 #include "tools/devices.hpp"
 #include "tools/compression.hpp"
 #include "drawing/framerepository.hpp"
-
+#include "drawing/modelanimation/keyframeplayer.hpp"
 #include "tools/storage.hpp"
 
 
 #include "FS.h"
-#include "SPIFFS.h"
-
 unsigned char Animation::buffer[FILE_SIZE];
 
 
 #ifdef ENABLE_HUB75_PANEL
-
 
 
 AnimationFrameAction AnimationSequence::InterruptFrame(int pinRead){ 
@@ -52,7 +49,34 @@ AnimationFrameAction AnimationSequence::ChangeFrame(){
     }
 }
 
-AnimationFrameAction AnimationSequence::Update(int m_interruptPin){
+void AnimationSequence::ResetIfNeeded(){
+    if (m_isModel){
+        g_kf.ResetSpecificAnimation(m_frame);
+    }
+}
+
+AnimationFrameAction AnimationSequence::Update(uint32_t dt, int m_interruptPin, bool isManaged, ShaderType &shdr, float &strenght){
+
+    if (m_isModel){
+        //Timing is handled here.
+        g_kf.PlayAnimationId(m_frame, true, shdr, strenght);
+
+        bool finishedAnimation = false;
+        if (isManaged){
+           finishedAnimation = g_kf.Update(dt);
+        }
+        if (finishedAnimation){
+            if (m_repeat == -1){
+                return ANIMATION_NEED_FLIP;
+            }
+            m_repeat--;
+            if (m_repeat <= 0){
+                return ANIMATION_FINISHED;
+            }
+        }
+        return ANIMATION_NEED_FLIP;
+    }
+
     if (m_isNew){
         m_counter = millis()+m_duration;
         m_isNew = false;
@@ -63,12 +87,10 @@ AnimationFrameAction AnimationSequence::Update(int m_interruptPin){
         if (m_interruptPin < 0){
             return ChangeFrame();
         }
-        switch (m_updateMode)
-        {
+        switch (m_updateMode){
         case 1:
             return InterruptFrame(digitalRead(m_interruptPin));
             break;
-        
         default:
             return ChangeFrame();
         }
@@ -77,67 +99,10 @@ AnimationFrameAction AnimationSequence::Update(int m_interruptPin){
  
 }
 int AnimationSequence::GetFrameId(){
+    if (m_isModel){
+        return MODEL_FRAME_ID_OFFSET + m_frame;
+    }
     return m_frames[m_frame];
-}
-
-void hsv_to_rgb(uint8_t h, uint8_t s, uint8_t v, uint8_t& r, uint8_t& g, uint8_t& b) {
-  // Convert hue to degrees
-  float hue = h / 255.0f * 360.0f;
-
-  // Convert saturation and value to percentages
-  float saturation = s / 255.0f;
-  float value = v / 255.0f;
-
-  // Calculate chroma
-  float chroma = value * saturation;
-
-  // Find the hue sector
-  float hue_sector = hue / 60.0f;
-  int hue_sector_int = (int)hue_sector;
-
-  // Calculate the intermediate value x
-  float x = chroma * (1.0f - fabs(fmod(hue_sector, 2.0f) - 1.0f));
-
-  // Calculate the values of r, g, and b
-  float r_temp = 0.0f, g_temp = 0.0f, b_temp = 0.0f;
-  switch(hue_sector_int) {
-    case 0:
-      r_temp = chroma;
-      g_temp = x;
-      b_temp = 0;
-      break;
-    case 1:
-      r_temp = x;
-      g_temp = chroma;
-      b_temp = 0;
-      break;
-    case 2:
-      r_temp = 0;
-      g_temp = chroma;
-      b_temp = x;
-      break;
-    case 3:
-      r_temp = 0;
-      g_temp = x;
-      b_temp = chroma;
-      break;
-    case 4:
-      r_temp = x;
-      g_temp = 0;
-      b_temp = chroma;
-      break;
-    case 5:
-      r_temp = chroma;
-      g_temp = 0;
-      b_temp = x;
-      break;
-  }
-
-  // Calculate the final values of r, g, and b
-  float m = value - chroma;
-  r = (uint8_t)((r_temp + m) * 255);
-  g = (uint8_t)((g_temp + m) * 255);
-  b = (uint8_t)((b_temp + m) * 255);
 }
 
 void reorder_rgb(ColorMode mode, uint8_t *r, uint8_t *g, uint8_t *b){
@@ -175,12 +140,11 @@ void reorder_rgb(ColorMode mode, uint8_t *r, uint8_t *g, uint8_t *b){
     }
 }
 
-
 void Animation::drawPixelAt(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r, uint8_t &g, uint8_t &b, uint8_t &flip_left, uint8_t &flip_right, int &byteIdOled){
     if ((color & 0x8610) != 0) { 
-        OledScreen::DisplayFace[byteIdOled] = 1;
+        OledScreen::DisplayFace[0][byteIdOled] = 1;
     }else{
-        OledScreen::DisplayFace[byteIdOled] = 0;
+        OledScreen::DisplayFace[0][byteIdOled] = 0;
     }
     byteIdOled++;
 
@@ -203,17 +167,137 @@ void Animation::adjustColor(int16_t &x, int16_t &y, uint16_t &color, uint8_t &r,
     //We know each color has 5 6 and 5 bits. So to check if the color is strong enough, we're using this mask that discards
     //each of 3 initial bits of each color
     //If any of the remaining bits are 1, the whole condition will give != 0 and therefore color!
-    if (m_shader == 1 || (r == 57 && g == 121 && b == 181)){
-        float gray = (r+g+b)/3.0f;
-        hsv_to_rgb(  (((frameId+x)%64) / 64.0f) * 255, 255, gray, r, g, b);
-    }
+    /*if (m_shader == 1 || (r == 57 && g == 121 && b == 181)){
+
+    }*/
     reorder_rgb(currentMode, &r, &g, &b);
+    ShaderProcessor::UpdateColorByShader(x, y, r, g, b, m_shader, m_shaderStrenght);
 }
 
-void Animation::DrawFrame(File *file, int i){
+void Animation::LoadFrameAsTexture(int i){
     if (i == 0){
         return;
     }
+
+    uint32_t startPosition;
+    uint32_t flashFileLenght;
+    
+    g_frameRepo.getBulkOffsetByFrameId(i, startPosition, flashFileLenght);
+    if (startPosition < 0){
+        Serial.printf("Failed to find frame id %d, returned position %ld\n", i, startPosition);
+        return;
+    }
+
+    File *file = g_frameRepo.takeFile();
+    if (file == nullptr){
+        return;
+    }
+
+    file->seek(startPosition);
+    size_t rd = file->readBytes((char*)buffer, flashFileLenght);
+    g_frameRepo.freeFile();
+
+    if (rd != flashFileLenght){
+        Serial.printf("Failed to read %d at pos %ld on file with size %ld. Read just %d bytes\n", i , startPosition, flashFileLenght, rd);
+        g_frameRepo.freeFile();
+        return;
+    }
+
+    uint8_t r, g, b;
+    uint8_t version = buffer[0];
+    if (version != PANDA_CACHE_VERSION){
+        Serial.printf("Mismatched cached frame version. Current version is %d but in cache got %d. Clear the cache or rebuild bulk: %d", PANDA_CACHE_VERSION, version, buffer[1]);
+        g_frameRepo.freeFile();
+        return;
+    }
+
+    uint8_t flip_left = buffer[1];
+    uint8_t flip_right = buffer[2];
+    if (m_colorMode == 0){
+        m_colorMode = (ColorMode)buffer[3];
+    }
+
+    if (m_texture == nullptr){
+        m_texture = (uint16_t*)ps_malloc(sizeof(uint16_t) * PANEL_WIDTH * PANEL_HEIGHT);
+        ShaderProcessor::SetTextureAddr(m_texture);
+    }
+
+
+    int byteIdOled = 0;
+    int compressionMode = buffer[5];
+    uint16_t fileLenght = *((uint16_t*)(&buffer[6])); 
+    int16_t x=0;
+    int16_t y=0;
+
+    if (compressionMode == 1){
+        int compressionReadPos = 0;
+        uint8_t *readBuffer = (buffer+FILE_HEADER_BYTES);
+
+        do{
+            int lenght = readBuffer[compressionReadPos++];
+            int iter = 1;
+            
+            if (lenght == 253){
+                iter = readBuffer[compressionReadPos++];
+                lenght = 1;
+            }
+
+            while(iter > 0){
+                uint16_t color = readBuffer[compressionReadPos++]; 
+                iter--;
+                color |= (readBuffer[compressionReadPos++] << 8); 
+
+                
+                
+                for (int iddx=0;iddx<lenght;iddx++){
+                    //drawPixelAt(x, y, color, r, g, b, flip_left, flip_right, byteIdOled);
+                    m_texture[y * PANEL_WIDTH + x] = color;
+                    x++;
+                    if (x >= PANEL_WIDTH){
+                        x = 0;
+                        y++;
+                        
+                        if (y >= PANEL_HEIGHT){
+                            g_frameRepo.freeFile();
+                            return;
+                        }
+                    }
+                }
+                if (compressionReadPos >= fileLenght){
+                    g_frameRepo.freeFile();
+                    return;
+                }
+                
+            }
+        } while(compressionReadPos <= fileLenght);
+       
+    }else{
+        //Need to divide by 2 (size of uint16_t) because the buffer is converted to a uin16_t pixels.
+        //And the header must be a multiple of 2 to avoid byte skipping
+        uint16_t *readBuffer = (uint16_t *)(buffer);
+        const int begin = FILE_HEADER_BYTES / sizeof(uint16_t);
+        const int finish = begin+FILE_PIXEL_COUNT;
+
+        for (int16_t idx=begin;idx<finish;idx++){
+            uint16_t color = readBuffer[idx];
+            
+            m_texture[y * PANEL_WIDTH + x] = color;
+            x++;
+            if (x >= PANEL_WIDTH){
+                x = 0;
+                y++;
+            }
+        }
+    }
+    g_frameRepo.freeFile();
+    return;
+}
+
+void Animation::DrawFrame(int i){
+    if (i == 0){
+        return;
+    }
+
     uint64_t ld = micros();
     uint64_t begin = ld;
     
@@ -222,7 +306,6 @@ void Animation::DrawFrame(File *file, int i){
     frameId++;    
 
     i--;
-
     
     uint32_t startPosition;
     uint32_t flashFileLenght;
@@ -233,8 +316,14 @@ void Animation::DrawFrame(File *file, int i){
         return;
     }
 
+    File *file = g_frameRepo.takeFile();
+    if (file == nullptr){
+        return;
+    }
+
     file->seek(startPosition);
     size_t rd = file->readBytes((char*)buffer, flashFileLenght);
+    g_frameRepo.freeFile();
 
     if (rd != flashFileLenght){
         Serial.printf("Failed to read %d at pos %ld on file with size %ld. Read just %d bytes\n", i , startPosition, flashFileLenght, rd);
@@ -337,6 +426,7 @@ bool Animation::PopAnimation(){
     xSemaphoreTake(m_mutex, portMAX_DELAY);
     if (m_animations.size() > 0){
         xSemaphoreGive(m_mutex);
+        m_animations.top().ResetIfNeeded();
         m_animations.pop();
         return true;
     }else{
@@ -350,17 +440,18 @@ void Animation::MakeFlip(){
     m_needFlip = false;
 }
 
-void Animation::SetShader(int id){
-    m_shader = id;
+void Animation::SetShader(int id, float strenght){
+    m_shader = (ShaderType)id;
+    m_shaderStrenght = strenght;
 }
 
-void Animation::Update(File *file){
-    
+void Animation::Update(uint32_t dt){
+
     xSemaphoreTake(m_mutex, portMAX_DELAY);
     if (m_animations.size() > 0){
         auto &elem = m_animations.top();
         xSemaphoreGive(m_mutex);
-        bool canPop = internalUpdate(file, elem);
+        bool canPop = internalUpdate(dt, elem);
         if (canPop){
             PopAnimation();
         }
@@ -387,34 +478,42 @@ void Animation::setManaged(bool v){
     xSemaphoreGive(m_mutex);
 }
 
-bool Animation::internalUpdate(File *file, AnimationSequence &running){
-    switch (running.Update(m_interruptPin)){
+bool Animation::internalUpdate(uint32_t dt, AnimationSequence &running){
+    bool managed = isManaged();
+    switch (running.Update(dt, m_interruptPin, managed, m_shader, m_shaderStrenght)){
     case ANIMATION_FINISHED:
         return 1;
         break;
     case ANIMATION_FRAME_CHANGED:    
         m_lastFace = running.GetFrameId();
-        if (isManaged()){
-            DrawFrame(file, m_lastFace);
+        if (managed){
+            DrawFrame(m_lastFace);
+        }
+        break;
+    case ANIMATION_NEED_FLIP:
+        if (managed){
+            m_lastFace = running.GetFrameId();
+            m_needFlip = true;
         }
         break;
     case ANIMATION_NO_CHANGE:
-        if (m_shader == 1){
+        if (m_shader != SHADER_NONE){
             m_lastFace = running.GetFrameId();
-            if (isManaged()){
-                DrawFrame(file, m_lastFace);
+            if (managed){
+                DrawFrame(m_lastFace);
             }
         }
         if (m_needRedraw){
             m_needRedraw = false;
-            if (isManaged()){
-                DrawFrame(file, m_lastFace);
+            if (managed){
+                DrawFrame(m_lastFace);
             }
         }
         break;
     }
     return false;
 }
+
 
 int Animation::getCurrentAnimationStorage(){
     xSemaphoreTake(m_mutex, portMAX_DELAY);
@@ -444,10 +543,35 @@ void Animation::SetInterruptAnimation(int duration, std::vector<int> frames){
     xSemaphoreGive(m_mutex);
 }
 
-void Animation::SetAnimation(std::vector<int> frames, int duration, int repeatTimes, bool dropAll, int externalStorageId){
+void Animation::SetModelAnimation(int animationId, int repeatTimes, bool dropAll, int externalStorageId){
     if (dropAll){
         xSemaphoreTake(m_mutex, portMAX_DELAY);
         while (m_animations.size() > 0){
+            m_animations.top().ResetIfNeeded();
+            m_animations.pop();
+        }
+        xSemaphoreGive(m_mutex);
+    }
+
+    AnimationSequence newSeq;
+    newSeq.m_frame = animationId;
+    newSeq.m_isNew = true;
+    newSeq.m_isModel = true;
+    newSeq.m_repeat = repeatTimes;
+    newSeq.m_storageId = externalStorageId;
+
+    xSemaphoreTake(m_mutex, portMAX_DELAY);
+    newSeq.ResetIfNeeded();
+    m_animations.emplace(newSeq);
+    xSemaphoreGive(m_mutex);
+}
+
+void Animation::SetAnimation( std::vector<int> frames, int duration,int repeatTimes, bool dropAll, int externalStorageId){
+
+    if (dropAll){
+        xSemaphoreTake(m_mutex, portMAX_DELAY);
+        while (m_animations.size() > 0){
+            m_animations.top().ResetIfNeeded();
             m_animations.pop();
         }
         xSemaphoreGive(m_mutex);
@@ -462,6 +586,7 @@ void Animation::SetAnimation(std::vector<int> frames, int duration, int repeatTi
     newSeq.m_repeat = repeatTimes;
     newSeq.m_storageId = externalStorageId;
     xSemaphoreTake(m_mutex, portMAX_DELAY);
+    newSeq.ResetIfNeeded();
     m_animations.emplace(newSeq);
     xSemaphoreGive(m_mutex);
 }

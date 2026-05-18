@@ -687,8 +687,7 @@ void managedLoop(void *){
   
   for (;;){
     Devices::BeginAutoFrame();
-    g_animation.Update(g_frameRepo.takeFile());
-    g_frameRepo.freeFile();
+    g_animation.Update(Devices::getAutoDeltaTime());
     Devices::EndAutoFrame();
     vTaskDelay(5);
     if (millis() > managedDuration){

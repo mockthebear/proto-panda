@@ -25,10 +25,17 @@ local _M = {
     displayTime = 2000,
     settings={},
     maxTextShowSize = 20,
-    shader = false,
+    shader = SHADER_NONE,
     infoShown=1,
     swapTimer = millis()+5*1000,
     rssi = {},
+}
+
+local shaderNames = {
+    [SHADER_NONE] = 'NONE',
+    [SHADER_RAINBOW] = 'RAINBOW',
+    [SHADER_FIRE] = 'FIRE',
+    [SHADER_TEXTURE] = 'TEXTURE',
 }
 
 function _M.setup(expressions)
@@ -49,9 +56,12 @@ function _M.setup(expressions)
     --settings ui
     _M.settings = ui.generateUi("Press < To back", nil, _M.enterMainMenu)
 
-    _M.settings.addElement(function() return "Rainbow ["..(_M.shader and "ON" or "OFF").."]" end, function()
-        _M.shader = not _M.shader
-        setRainbowShader(_M.shader)
+    _M.settings.addElement(function() return "Shader [".._M.shader.."]" end, function()
+        _M.shader = _M.shader +1
+        if _M.shader > SHADER_LAST then  
+            _M.shader = SHADER_NONE
+        end
+        setAnimationShader(_M.shader, 1.0)
     end)
 
     _M.settings.addElement(function() return "P. Brightness [".._M.brigthness.."]" end, _M.enterPanelBrightnessMenu)

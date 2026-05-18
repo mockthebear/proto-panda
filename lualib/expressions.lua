@@ -1,5 +1,5 @@
 local configloader = require("configloader")
-
+local models = require("models")
 local _M = {
 	animations = {},
 	by_name = {},
@@ -7,84 +7,122 @@ local _M = {
 	count = 0,
 }
 
+function _M.loadSingleExpression(data, filename, i)
+	local id = #_M.animations+1
 
-function _M.Load()
-	content = nil
-	local conf = configloader.Get()
-	local unHiddenExpresions = {}
-	for id ,b in pairs(conf.expressions) do 
+	if data.tracks then  
+		local success, err = models.loadAnimation(data)
+	    if not success then  
+	    	error("Failed to load animation "..i.." at file "..filename..": "..err)
+	    end
+
+		data.id = id
+		data.isModel = true
+		data.modelAnimId = data.obj:GetId()
+		_M.by_name[data.name] = id
+		_M.by_frame[MODEL_FRAME_ID_OFFSET + data.modelAnimId] = id
+		if not data.transition then 
+			_M.count = _M.count+1
+		end
+
+		_M.animations[#_M.animations+1] = data
+	else
 		local offset = nil 
-		b.id = id
-		if b.frame_offset and type(b.frames) == "number" then 
-			offset = b.frame_offset
-		elseif b.frames and type(b.frames) == "string" then 
-			offset = getFrameOffsetByName(b.frames)
+		data.id = id
+		if data.frame_offset and type(data.frames) == "number" then 
+			offset = data.frame_offset
+		elseif data.frames and type(data.frames) == "string" then 
+			offset = getFrameOffsetByName(data.frames)
 		end
 		if offset then 
-			b.frame_offset = offset
-			local animation = b.animation
-			if type(b.animation) ~= 'table' then  
-				if b.animation == "auto" then 
-					b.animation = "loop" --Compatibility
+			data.frame_offset = offset
+			local animation = data.animation
+			if type(data.animation) ~= 'table' then  
+				if data.animation == "auto" then 
+					data.animation = "loop" --Compatibility
 				end
-				if b.animation == "loop" or b.animation == "auto_backwards" or b.animation == "loop_backwards" or b.animation == "pingpong" then 
-					local name = b.animation
-					b.animation = {}
-					if not b.frames then  
+				if data.animation == "loop" or data.animation == "auto_backwards" or data.animation == "loop_backwards" or data.animation == "pingpong" then 
+					local name = data.animation
+					data.animation = {}
+					if not data.frames then  
 						error("Cannot use 'frames=loop' when there is no alias defined")
 					end
-					local count = getFrameCountByName(b.frames)
+					local count = getFrameCountByName(data.frames)
 					if count == 0 then  
-						error("Using frame group '"..b.frames.."' returned 0 frames. Are you sure this alias has loaded frames?")
+						error("Using frame group '"..data.frames.."' returned 0 frames. Are you sure this alias has loaded frames?")
 					end 
 					for i=1,count do  
 						local idx = i  
 						if name == "loop_backwards" or name == 'auto_backwards' then 
 							idx = count-i+1
 						end
-						b.animation[i] = idx
+						data.animation[i] = idx
 					end
 					if name == "pingpong" then  
 						for i=1,count do  
-							b.animation[#b.animation + 1] = count-i+1
+							data.animation[#data.animation + 1] = count-i+1
 						end
 					end
-					animation = b.animation
+					animation = data.animation
 				else 
-					error("Animation can only have numeric array or 'loop', got "..tostring(b.animation).." in animation id "..tostring(id))
+					error("Animation can only have numeric array or 'loop', got "..tostring(data.animation).." in animation id "..tostring(id))
 				end
 			end
-			for a,c in pairs(b.animation) do 
+			for a,c in pairs(data.animation) do 
 				animation[a] = c + offset
 				_M.by_frame[c + offset] = id
 			end
-			b.animation = animation
+			data.animation = animation
 		end
-		b.frame_offset = b.frame_offset or 0
-		b.duration = tonumber(b.duration) or 250
-		b.name = b.name or "expression "..id
-
-		if b.onEnter then 
-			local f = load(b.onEnter)
+		data.frame_offset = data.frame_offset or 0
+		data.duration = tonumber(data.duration) or 250
+		data.name = data.name or "expression "..(id)
+			if data.onEnter then 
+			local f = load(data.onEnter)
 			if not f then 
 				error("Error loading 'onEnter', contains syntax error")
 			end
-			b.onEnter = f
+			data.onEnter = f
 		end
-		if b.onLeave then 
-			local f = load(b.onLeave)
+		if data.onLeave then 
+			local f = load(data.onLeave)
 			if not f then 
 				error("Error loading 'onLeave', contains syntax error")
 			end
-			b.onLeave = f
+			data.onLeave = f
 		end
-
-		_M.by_name[b.name] = id
-		if not b.transition then 
+			_M.by_name[data.name] = id
+		if not data.transition then 
 			_M.count = _M.count+1
 		end
+		_M.animations[#_M.animations+1] = data
 	end
-	_M.animations = conf.expressions
+end
+
+function _M.Load()
+	generic.displaySplashMessage("Starting:\nModel Expressions")
+	content = nil
+	local conf = configloader.Get()
+
+
+	local conf = configloader.Get()
+	if conf.models_folder then
+		local files = listFilesInFolder(conf.models_folder)
+		for i,file in pairs(files) do 
+			local fullPath = conf.models_folder..file 
+			local modelAnim = models.getModelAnimationList(fullPath)
+			if modelAnim then
+				for id , anim in pairs(modelAnim) do 
+					_M.loadSingleExpression(anim, fullPath, id)
+				end
+			end
+		end
+	end
+
+	generic.displaySplashMessage("Starting:\nExpressions")
+	for i ,b in pairs(conf.expressions) do 
+		_M.loadSingleExpression(b, "/animation.json", i)
+	end
 
 	local res = {}
 	for __, data in pairs(_M.animations) do 
@@ -193,10 +231,14 @@ function _M.SetExpression(id)
 		if _M.previousExpression and _M.previousExpression.onLeave then 
 			_M.previousExpression.onLeave()
 		end
-		setPanelManaged(false) --To avoid frame flicket
+		setPanelManaged(false) --To avoid frame flicker
 		local current_id = aux.id 
-		setPanelAnimation(aux.animation, aux.duration, repeats, allDrop, current_id)
-		
+		if aux.isModel then  
+			setPanelModelAnimation(aux.modelAnimId, repeats, allDrop, current_id)
+		else
+			setPanelAnimation(aux.animation, aux.duration, repeats, allDrop, current_id)
+		end
+
 		if aux.intro then
 			_M.StackExpression(aux.intro)
 		end
@@ -238,7 +280,11 @@ function _M.StackExpression(id)
 			end
 		end
 		local current_id = aux.id 
-		setPanelAnimation(aux.animation, aux.duration, repeats, false, current_id)
+		if aux.isModel then  
+			setPanelModelAnimation(aux.modelAnimId, repeats, false, current_id)
+		else
+			setPanelAnimation(aux.animation, aux.duration, repeats, false, current_id)
+		end
 	else
 		log("Unknown ID: "..tostring(id))
 	end
