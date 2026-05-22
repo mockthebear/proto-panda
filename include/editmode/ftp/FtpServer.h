@@ -737,8 +737,8 @@ private:
   char     cmdLine[ FTP_CMD_SIZE ];   // where to store incoming char from client
   char     cwdName[ FTP_CWD_SIZE ];   // name of current directory
   char     rnfrName[ FTP_CWD_SIZE ];  // name of file for RNFR command
-  const char *   user;     // user name
-  const char *   pass;     // password
+  char           user[FTP_CRED_SIZE];     // user name
+  char           pass[FTP_CRED_SIZE];     // password
   char     command[ 5 ];              // command sent by client
   bool     rnfrCmd;                   // previous command was RNFR
   char *   parameter;                 // point to begin of parameters sent by client

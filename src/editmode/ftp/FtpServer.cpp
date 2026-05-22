@@ -79,12 +79,12 @@ void FtpServer::begin( const char * _user, const char * _pass, const char * _wel
 //  strcpy( user, FTP_USER );
 //  strcpy( pass, FTP_PASS );
   if( strlen( _user ) > 0 && strlen( _user ) < FTP_CRED_SIZE ) {
-    //strcpy( user, _user );
-	  this->user = _user;
+    strncpy( user, _user, FTP_CRED_SIZE - 1 );
+    user[ FTP_CRED_SIZE - 1 ] = '\0';
   }
   if( strlen( _pass ) > 0 && strlen( _pass ) < FTP_CRED_SIZE ) {
-//    strcpy( pass, _pass );
-	  this->pass = _pass;
+    strncpy( pass, _pass, FTP_CRED_SIZE - 1 );
+    pass[ FTP_CRED_SIZE - 1 ] = '\0';
   }
 //  strcpy(_welcomeMessage, welcomeMessage);
 
@@ -132,12 +132,14 @@ void FtpServer::setLocalIp(IPAddress localIp)
 }
 void FtpServer::credentials( const char * _user, const char * _pass )
 {
-  if( strlen( _user ) > 0 && strlen( _user ) < FTP_CRED_SIZE )
-//    strcpy( user, _user );
-	  this->user = _user;
-  if( strlen( _pass ) > 0 && strlen( _pass ) < FTP_CRED_SIZE )
-//    strcpy( pass, _pass );
-	  this->pass = _pass;
+  if( strlen( _user ) > 0 && strlen( _user ) < FTP_CRED_SIZE ) {
+    strncpy( user, _user, FTP_CRED_SIZE - 1 );
+    user[ FTP_CRED_SIZE - 1 ] = '\0';
+  }
+  if( strlen( _pass ) > 0 && strlen( _pass ) < FTP_CRED_SIZE ) {
+    strncpy( pass, _pass, FTP_CRED_SIZE - 1 );
+    pass[ FTP_CRED_SIZE - 1 ] = '\0';
+  }
 }
 
 void FtpServer::iniVariables()
