@@ -10,14 +10,14 @@
     <title>Protopanda expression editor</title>
     <style>
         :root {
-            --primary-color: #4a6fa5;
-            --secondary-color: #f0f2f5;
-            --button-color: #5a8fd3;
-            --button-hover: #4a7bbf;
+            --primary-color: #ff9900;
+            --secondary-color: #1a1a1a;
+            --button-color: #ff9900;
+            --button-hover: #ffaa33;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Courier New', monospace;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -26,7 +26,7 @@
             padding: 20px;
             box-sizing: border-box;
             background-color: var(--secondary-color);
-            color: #333;
+            color: #ccc;
         }
 
         header {
@@ -58,10 +58,10 @@
            change causes the animation to be rebuilt/restarted. */
         @keyframes preview-update-glow {
             0% {
-                box-shadow: 0 0 0 0 rgba(90, 143, 211, 0.9), 0 4px 8px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 0 0 0 rgba(255, 153, 0, 0.9), 0 4px 8px rgba(0, 0, 0, 0.4);
             }
             100% {
-                box-shadow: 0 0 16px 6px rgba(90, 143, 211, 0), 0 4px 8px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 0 16px 6px rgba(255, 153, 0, 0), 0 4px 8px rgba(0, 0, 0, 0.4);
             }
         }
 
@@ -95,17 +95,17 @@
         .panel {
             flex: 1;
             min-height: 300px;
-            background: white;
+            background: #2d2d2d;
             border-radius: 8px;
             padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border: 1px solid #ddd;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            border: 1px solid #444;
         }
 
         .panel h2 {
             color: var(--primary-color);
             margin-top: 0;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #444;
             padding-bottom: 10px;
         }
 
@@ -118,13 +118,15 @@
 
         button {
             background-color: var(--button-color);
-            color: white;
+            color: #111;
             border: none;
             padding: 12px 20px;
-            border-radius: 6px;
+            border-radius: 4px;
             cursor: pointer;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
             font-size: 16px;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, transform 0.1s ease;
         }
 
         button:hover {
@@ -132,19 +134,21 @@
         }
 
         button.secondary {
-            background-color: #6c757d;
+            background-color: #555;
+            color: #eee;
         }
 
         button.secondary:hover {
-            background-color: #5a6268;
+            background-color: #666;
         }
 
         button.danger {
-            background-color: #dc3545;
+            background-color: #ff6666;
+            color: #111;
         }
 
         button.danger:hover {
-            background-color: #c82333;
+            background-color: #ff4444;
         }
 
         .expression-item {
@@ -153,19 +157,20 @@
             align-items: center;
             padding: 10px;
             margin: 10px 0;
-            border: 1px solid #eee;
+            border: 1px solid #444;
             border-radius: 4px;
             cursor: pointer;
+            background-color: #252525;
             transition: background-color 0.2s;
         }
 
         .expression-item:hover {
-            background-color: #f8f9fa;
+            background-color: #3a3a3a;
         }
 
         .expression-item.active {
-            background-color: #e7f1ff;
-            border-color: #cfe2ff;
+            background-color: rgba(255, 153, 0, 0.15);
+            border-color: var(--primary-color);
         }
 
         .add-expression-btn {
@@ -185,7 +190,7 @@
 
         .expression-details {
             font-size: 0.9em;
-            color: #666;
+            color: #aaa;
         }
 
         .expression-controls {
@@ -196,21 +201,23 @@
         .expression-controls button {
             padding: 2px 8px;
             font-size: 12px;
-            background-color: #6c757d;
+            background-color: #555;
+            color: #eee;
             margin: 0;
             border-radius: 3px;
         }
 
         .expression-controls button:hover {
-            background-color: #5a6268;
+            background-color: #666;
         }
 
         .expression-controls button.danger {
-            background-color: #dc3545;
+            background-color: #ff6666;
+            color: #111;
         }
 
         .expression-controls button.danger:hover {
-            background-color: #c82333;
+            background-color: #ff4444;
         }
 
         .expression-controls button:disabled {
@@ -221,7 +228,7 @@
         /* Frame editor styles */
         .frame-editor {
             margin-top: 20px;
-            border: 1px solid #ddd;
+            border: 1px solid #444;
             border-radius: 4px;
             padding: 10px;
         }
@@ -233,13 +240,13 @@
             margin-top: 10px;
             min-height: 50px;
             padding: 10px;
-            border: 1px dashed #ccc;
+            border: 1px dashed #555;
             border-radius: 4px;
         }
 
         .frame-item {
             padding: 5px;
-            background-color: #e9ecef;
+            background-color: #333;
             border-radius: 4px;
             cursor: grab;
             user-select: none;
@@ -249,10 +256,11 @@
             align-items: center;
             width: 80px;
             position: relative;
+            color: #ccc;
         }
 
         .frame-item:hover {
-            background-color: #d1e7ff;
+            background-color: #3a3a3a;
         }
 
         .frame-item.dragging {
@@ -271,8 +279,8 @@
         }
 
         .frame-item.invalid {
-            background-color: #ffe3e3;
-            color: #dc3545;
+            background-color: #3a1e1e;
+            color: #ff6666;
         }
 
         .frame-item img {
@@ -286,8 +294,8 @@
             position: absolute;
             top: -5px;
             right: 2px;
-            background-color: #dc3545;
-            color: white;
+            background-color: #ff6666;
+            color: #111;
             border: none;
             border-radius: 0%;
             width: 1px;
@@ -323,7 +331,10 @@
         select {
             padding: 5px;
             border-radius: 4px;
-            border: 1px solid #ced4da;
+            border: 1px solid #555;
+            background: #1e1e1e;
+            color: #fff;
+            font-family: 'Courier New', monospace;
         }
 
         .animation-type-selector {
@@ -341,7 +352,10 @@
             width: 80px;
             padding: 5px;
             border-radius: 4px;
-            border: 1px solid #ced4da;
+            border: 1px solid #555;
+            background: #1e1e1e;
+            color: #fff;
+            font-family: 'Courier New', monospace;
         }
 
         .full-edit-mode .panel:not(.editor-panel) {
@@ -372,12 +386,12 @@
             left: -4px;
             right: -4px;
             bottom: -4px;
-            background-color: rgba(74, 111, 165, 0.1);
+            background-color: rgba(255, 153, 0, 0.15);
         }
 
         .frames-type-selector {
             margin-top: 5px;
-            border: 1px solid #ddd;
+            border: 1px solid #444;
             border-radius: 4px;
             padding: 10px;
         }
@@ -391,27 +405,31 @@
 
         .frames-type-item {
             padding: 10px;
-            background-color: #e9ecef;
+            background-color: #333;
+            color: #ccc;
             border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.2s;
         }
 
         .frames-type-item:hover {
-            background-color: #d1e7ff;
+            background-color: #3a3a3a;
         }
 
         .frames-type-item.active {
             background-color: var(--button-color);
-            color: white;
+            color: #111;
         }
 
         .expression-name-input {
             margin-top: 10px;
             width: 100%;
             padding: 8px;
-            border: 1px solid #ced4da;
+            border: 1px solid #555;
             border-radius: 4px;
+            background: #1e1e1e;
+            color: #fff;
+            font-family: 'Courier New', monospace;
         }
 
         .transition-checkbox {
@@ -430,14 +448,14 @@
         .frame-definition {
             margin-top: 15px;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid #444;
             border-radius: 4px;
         }
 
         .frame-definition-item {
             padding: 10px;
             margin: 5px 0;
-            background-color: #f8f9fa;
+            background-color: #252525;
             border-radius: 4px;
             display: flex;
             align-items: center;
@@ -446,15 +464,15 @@
         }
 
         .frame-definition-item:hover {
-            background-color: #e9ecef;
+            background-color: #3a3a3a;
         }
 
         .frame-preview {
             width: 64px;
             height: 32px;
             image-rendering: pixelated;
-            border: 1px solid #ddd;
-            background-color: #fff;
+            border: 1px solid #555;
+            background-color: #1e1e1e;
             object-fit: contain;
             flex-shrink: 0;
         }
@@ -470,12 +488,12 @@
 
         .frame-count {
             font-size: 0.85em;
-            color: #666;
+            color: #aaa;
         }
         
         .frame-details {
             font-size: 0.8em;
-            color: #666;
+            color: #aaa;
         }
 
         .frame-definition-form {
@@ -487,14 +505,19 @@
 
         .frame-definition-form input[type="text"] {
             padding: 8px;
-            border: 1px solid #ced4da;
+            border: 1px solid #555;
             border-radius: 4px;
+            background: #1e1e1e;
+            color: #fff;
+            font-family: 'Courier New', monospace;
         }
         
         .frame-definition-form select {
             padding: 8px;
-            border: 1px solid #ced4da;
+            border: 1px solid #555;
             border-radius: 4px;
+            background: #1e1e1e;
+            color: #fff;
         }
 
         .frame-definition-form button {
@@ -518,9 +541,9 @@
             display: none;
             margin-top: 15px;
             padding: 15px;
-            border: 1px solid #ddd;
+            border: 1px solid #444;
             border-radius: 4px;
-            background-color: #f8f9fa;
+            background-color: #252525;
         }
 
 
@@ -551,8 +574,8 @@
         }
 
         .loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
+            border: 5px solid #444;
+            border-top: 5px solid var(--primary-color);
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -576,7 +599,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.72);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -586,14 +609,20 @@
         }
 
         .modal-content {
-            background-color: white;
+            background-color: #2d2d2d;
+            color: #ccc;
             padding: 20px;
             border-radius: 8px;
             width: 80%;
             max-width: 600px;
             max-height: 80vh;
             overflow-y: auto;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 1px solid #555;
+            box-shadow: 0 8px 30px #000;
+        }
+
+        .modal-content h2 {
+            color: var(--primary-color);
         }
 
         progress {
@@ -604,7 +633,7 @@
         }
 
         progress::-webkit-progress-bar {
-            background-color: #f0f0f0;
+            background-color: #1e1e1e;
             border-radius: 10px;
         }
 
@@ -621,24 +650,23 @@
 
         #deletion-progress-container {
             padding: 15px;
-            background-color: #f8f9fa;
+            background-color: #252525;
             border-radius: 4px;
-            border: 1px solid #ddd;
+            border: 1px solid #444;
         }
 
         #deletion-details {
             max-height: 100px;
             overflow-y: auto;
-            background-color: white;
+            background-color: #1e1e1e;
             padding: 5px;
             border-radius: 3px;
-            border: 1px solid #eee;
+            border: 1px solid #444;
         }
 
         #json-viewer-modal .modal-content {
-            background: #f8f8f8;
-            /* Light gray modal background */
-            border: 1px solid #ddd;
+            background: #2d2d2d;
+            border: 1px solid #444;
         }
 
         #json-display {
@@ -691,11 +719,13 @@
 
         .add-frame-class-btn {
             background-color: var(--button-color);
-            color: white;
+            color: #111;
             border: none;
             padding: 5px 10px;
             border-radius: 6px;
             cursor: pointer;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
             font-size: 14px;
             transition: background-color 0.2s;
             white-space: nowrap;
@@ -710,7 +740,9 @@
         #full-animation-type {
             padding: 5px;
             border-radius: 4px;
-            border: 1px solid #ced4da;
+            border: 1px solid #555;
+            background: #1e1e1e;
+            color: #fff;
             width: auto;
             /* Let it take only needed space */
         }
@@ -730,11 +762,12 @@
         #preview-lua {
             margin-left: 10px;
             background-color: #4CAF50;
-            color: white;
+            color: #111;
         }
 
         #preview-lua:disabled {
-            background-color: #cccccc;
+            background-color: #555;
+            color: #999;
             cursor: not-allowed;
         }
 
@@ -760,8 +793,8 @@
             width: 64px;
             height: 32px;
             image-rendering: pixelated;
-            border: 1px solid #ddd;
-            background-color: #fff;
+            border: 1px solid #555;
+            background-color: #1e1e1e;
             cursor: pointer;
             transition: box-shadow 0.15s;
         }
@@ -772,7 +805,7 @@
 
         .editable-frame-label {
             font-size: 0.75em;
-            color: #666;
+            color: #aaa;
             text-align: center;
             width: 100%;
             overflow: hidden;
@@ -786,16 +819,28 @@
             font-size: 11px;
         }
 
-        .pixel-editor-toolbar {
+        .pixel-editor-body {
             display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
+            align-items: flex-start;
+            gap: 15px;
             flex-wrap: wrap;
         }
 
+        .pixel-editor-toolbar {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+            width: 60px;
+            flex-shrink: 0;
+        }
+
         .pixel-editor-toolbar button.tool-btn {
-            background-color: #6c757d;
+            background-color: #555;
+            color: #eee;
+            padding: 8px 4px;
+            font-size: 20px;
+            line-height: 1;
         }
 
         .pixel-editor-toolbar button.tool-btn.active {
@@ -803,15 +848,53 @@
             outline: 2px solid var(--primary-color);
         }
 
+        .pixel-editor-toolbar button.secondary {
+            padding: 8px 4px;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .pixel-color-swatches {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: stretch;
+        }
+
+        .pixel-color-swatches label {
+            font-size: 0.65em;
+            color: #aaa;
+            text-align: center;
+        }
+
+        .pixel-color-swatches input[type="color"] {
+            width: 100%;
+            height: 30px;
+            padding: 0;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .pixel-editor-grid-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            font-size: 0.7em;
+            color: #aaa;
+        }
+
         .pixel-editor-canvas-wrap {
             display: inline-block;
-            border: 1px solid #ccc;
+            border: 1px solid #555;
             line-height: 0;
             background-image:
-                linear-gradient(45deg, #ccc 25%, transparent 25%),
-                linear-gradient(-45deg, #ccc 25%, transparent 25%),
-                linear-gradient(45deg, transparent 75%, #ccc 75%),
-                linear-gradient(-45deg, transparent 75%, #ccc 75%);
+                linear-gradient(45deg, #333 25%, transparent 25%),
+                linear-gradient(-45deg, #333 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #333 75%),
+                linear-gradient(-45deg, transparent 75%, #333 75%);
+            background-color: #1a1a1a;
             background-size: 16px 16px;
             background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
             max-width: 100%;
@@ -826,7 +909,7 @@
 
         #pixel-editor-filename {
             font-size: 0.85em;
-            color: #666;
+            color: #aaa;
             margin-bottom: 10px;
         }
     </style>
@@ -1086,28 +1169,36 @@
     </div>
 
     <div class="modal-overlay" id="pixel-editor-modal">
-        <div class="modal-content" style="width: 90%; max-width: 760px;">
+        <div class="modal-content" style="width: 90%; max-width: 820px;">
             <h2>Edit Frame Pixels</h2>
             <div id="pixel-editor-filename"></div>
+            <small style="display: block; margin-bottom: 10px; color: #666;">Left click draws with color 1, right click draws with color 2.</small>
 
-            <div class="pixel-editor-toolbar">
-                <label style="display: flex; align-items: center; gap: 5px;">
-                    <b>Color:</b>
-                    <input type="color" id="pixel-color-picker" value="#000000">
-                </label>
-                <button id="pixel-tool-pencil" class="tool-btn active" type="button">Pencil</button>
-                <button id="pixel-tool-eraser" class="tool-btn" type="button">Eraser</button>
-                <button id="pixel-tool-fill" class="tool-btn" type="button">Fill</button>
-                <button id="pixel-undo-btn" class="secondary" type="button" disabled title="Undo (Ctrl+Z)">↶ Undo</button>
-                <button id="pixel-redo-btn" class="secondary" type="button" disabled title="Redo (Ctrl+Y)">↷ Redo</button>
-                <button id="pixel-clear-btn" class="secondary" type="button">Clear All</button>
-                <label style="display: flex; align-items: center; gap: 5px;">
-                    <input type="checkbox" id="pixel-grid-toggle" checked> Grid
-                </label>
-            </div>
+            <div class="pixel-editor-body">
+                <div class="pixel-editor-toolbar">
+                    <button id="pixel-tool-pencil" class="tool-btn active" type="button" title="Pencil">✏️</button>
+                    <button id="pixel-tool-eraser" class="tool-btn" type="button" title="Eraser">🧹</button>
+                    <button id="pixel-tool-fill" class="tool-btn" type="button" title="Fill">🪣</button>
 
-            <div class="pixel-editor-canvas-wrap">
-                <canvas id="pixel-editor-canvas" width="640" height="320"></canvas>
+                    <div class="pixel-color-swatches">
+                        <label for="pixel-color-picker">🖱️L</label>
+                        <input type="color" id="pixel-color-picker" value="#000000" title="Color 1 (left click)">
+                        <label for="pixel-color-picker-2">🖱️R</label>
+                        <input type="color" id="pixel-color-picker-2" value="#ffffff" title="Color 2 (right click)">
+                    </div>
+
+                    <button id="pixel-undo-btn" class="secondary" type="button" disabled title="Undo (Ctrl+Z)">↶</button>
+                    <button id="pixel-redo-btn" class="secondary" type="button" disabled title="Redo (Ctrl+Y)">↷</button>
+                    <button id="pixel-clear-btn" class="secondary" type="button" title="Clear All">🗑️</button>
+
+                    <label class="pixel-editor-grid-toggle" title="Toggle grid">
+                        <input type="checkbox" id="pixel-grid-toggle" checked> #️⃣
+                    </label>
+                </div>
+
+                <div class="pixel-editor-canvas-wrap">
+                    <canvas id="pixel-editor-canvas" width="640" height="320"></canvas>
+                </div>
             </div>
 
             <div class="edit-controls" style="margin-top: 15px;">
@@ -3461,6 +3552,15 @@
         let pixelEditorIsDrawing = false;
         let pixelEditorShowGrid = true;
         let pixelEditorIsNewFrame = false; // true when adding a brand new frame instead of editing an existing one
+        let pixelEditorHoverPos = null;    // { px, py } of the cell currently under the mouse, or null
+
+        // Fills a pixel buffer with fully opaque black. Frames have no
+        // transparency support — every pixel is always opaque, and black is
+        // the default/background color (used for new frames and Clear All).
+        function pixelEditorFillOpaqueBlack(data) {
+            data.fill(0);
+            for (let i = 3; i < data.length; i += 4) data[i] = 255;
+        }
 
         // Undo/redo history for the pixel editor. Each entry is a full snapshot
         // (Uint8ClampedArray copy) of pixelEditorData taken right before a
@@ -3734,15 +3834,23 @@
             const offCtx = offCanvas.getContext('2d');
             offCtx.imageSmoothingEnabled = false;
 
+            // Frames have no transparency, so paint an opaque black backdrop
+            // first — any transparent areas in an older/imported PNG then
+            // composite down to black instead of leaving stray alpha.
+            offCtx.fillStyle = '#000000';
+            offCtx.fillRect(0, 0, PIXEL_EDITOR_W, PIXEL_EDITOR_H);
+
             try {
                 const img = await loadImageForEditing(`${stripped}?t=${Date.now()}`);
                 offCtx.drawImage(img, 0, 0, PIXEL_EDITOR_W, PIXEL_EDITOR_H);
             } catch (err) {
-                console.warn('Could not load existing frame image, starting from a blank canvas:', err);
-                offCtx.clearRect(0, 0, PIXEL_EDITOR_W, PIXEL_EDITOR_H);
+                console.warn('Could not load existing frame image, starting from a blank black canvas:', err);
             }
 
             pixelEditorData = offCtx.getImageData(0, 0, PIXEL_EDITOR_W, PIXEL_EDITOR_H).data;
+            // Guarantee full opacity regardless of what the source PNG contained.
+            for (let i = 3; i < pixelEditorData.length; i += 4) pixelEditorData[i] = 255;
+            pixelEditorHoverPos = null;
             pixelEditorResetHistory();
             renderPixelEditorCanvas();
             document.getElementById('pixel-editor-modal').style.display = 'flex';
@@ -3768,6 +3876,8 @@
             canvas.height = PIXEL_EDITOR_H * PIXEL_EDITOR_SCALE;
 
             pixelEditorData = new Uint8ClampedArray(PIXEL_EDITOR_W * PIXEL_EDITOR_H * 4);
+            pixelEditorFillOpaqueBlack(pixelEditorData);
+            pixelEditorHoverPos = null;
             pixelEditorResetHistory();
             renderPixelEditorCanvas();
             document.getElementById('pixel-editor-modal').style.display = 'flex';
@@ -3779,6 +3889,7 @@
             pixelEditorGroupDef = null;
             pixelEditorData = null;
             pixelEditorIsNewFrame = false;
+            pixelEditorHoverPos = null;
             pixelEditorResetHistory();
         }
 
@@ -3787,35 +3898,80 @@
             const canvas = document.getElementById('pixel-editor-canvas');
             const ctx = canvas.getContext('2d');
             ctx.imageSmoothingEnabled = false;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // Frames are always fully opaque, so every cell gets painted —
+            // no need to clear/checkerboard anything underneath first.
             for (let y = 0; y < PIXEL_EDITOR_H; y++) {
                 for (let x = 0; x < PIXEL_EDITOR_W; x++) {
                     const idx = (y * PIXEL_EDITOR_W + x) * 4;
-                    const a = pixelEditorData[idx + 3];
-                    if (a === 0) continue;
                     const r = pixelEditorData[idx];
                     const g = pixelEditorData[idx + 1];
                     const b = pixelEditorData[idx + 2];
-                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a / 255})`;
+                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
                     ctx.fillRect(x * PIXEL_EDITOR_SCALE, y * PIXEL_EDITOR_SCALE, PIXEL_EDITOR_SCALE, PIXEL_EDITOR_SCALE);
                 }
             }
 
             if (pixelEditorShowGrid) {
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+                // Drawn as a light line directly over a darker shadow line so the
+                // grid stays clearly visible over both light and dark pixels
+                // (a single faint color would vanish against a same-toned frame).
                 ctx.lineWidth = 1;
                 for (let x = 0; x <= PIXEL_EDITOR_W; x++) {
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
                     ctx.beginPath();
                     ctx.moveTo(x * PIXEL_EDITOR_SCALE + 0.5, 0);
                     ctx.lineTo(x * PIXEL_EDITOR_SCALE + 0.5, canvas.height);
                     ctx.stroke();
+
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                    ctx.beginPath();
+                    ctx.moveTo(x * PIXEL_EDITOR_SCALE + 1.5, 0);
+                    ctx.lineTo(x * PIXEL_EDITOR_SCALE + 1.5, canvas.height);
+                    ctx.stroke();
                 }
                 for (let y = 0; y <= PIXEL_EDITOR_H; y++) {
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
                     ctx.beginPath();
                     ctx.moveTo(0, y * PIXEL_EDITOR_SCALE + 0.5);
                     ctx.lineTo(canvas.width, y * PIXEL_EDITOR_SCALE + 0.5);
                     ctx.stroke();
+
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                    ctx.beginPath();
+                    ctx.moveTo(0, y * PIXEL_EDITOR_SCALE + 1.5);
+                    ctx.lineTo(canvas.width, y * PIXEL_EDITOR_SCALE + 1.5);
+                    ctx.stroke();
+                }
+            }
+
+            // Hover preview: show which cell is about to be drawn/erased before
+            // the click happens. A filled tint previews the resulting color for
+            // pencil/eraser; fill just gets an outline since it affects many
+            // cells at once and a fill-color tint on one cell would be misleading.
+            if (pixelEditorHoverPos) {
+                const { px, py } = pixelEditorHoverPos;
+                if (px >= 0 && px < PIXEL_EDITOR_W && py >= 0 && py < PIXEL_EDITOR_H) {
+                    const cellX = px * PIXEL_EDITOR_SCALE;
+                    const cellY = py * PIXEL_EDITOR_SCALE;
+
+                    if (pixelEditorTool === 'pencil' || pixelEditorTool === 'eraser') {
+                        const colorHex = pixelEditorTool === 'eraser' ?
+                            '#000000' :
+                            document.getElementById('pixel-color-picker').value;
+                        const { r, g, b } = hexToRgb(colorHex);
+                        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.55)`;
+                        ctx.fillRect(cellX, cellY, PIXEL_EDITOR_SCALE, PIXEL_EDITOR_SCALE);
+                    }
+
+                    // High-contrast double outline (white over black) so the
+                    // hovered cell is visible no matter what's underneath.
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(cellX + 1, cellY + 1, PIXEL_EDITOR_SCALE - 2, PIXEL_EDITOR_SCALE - 2);
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(cellX + 0.5, cellY + 0.5, PIXEL_EDITOR_SCALE - 1, PIXEL_EDITOR_SCALE - 1);
                 }
             }
         }
@@ -3825,6 +3981,8 @@
             document.getElementById('pixel-tool-pencil').classList.toggle('active', tool === 'pencil');
             document.getElementById('pixel-tool-eraser').classList.toggle('active', tool === 'eraser');
             document.getElementById('pixel-tool-fill').classList.toggle('active', tool === 'fill');
+            // Refresh so the hover preview immediately reflects the new tool.
+            if (pixelEditorData) renderPixelEditorCanvas();
         }
 
         function hexToRgb(hex) {
@@ -3890,16 +4048,25 @@
             }
         }
 
+        // Which mouse button is driving the current stroke: 0 = left (color 1),
+        // 2 = right (color 2). Set at stroke start (mousedown/touchstart) and
+        // reused for every subsequent paintAtEvent call in that same stroke,
+        // since 'mousemove' events don't carry button-held info reliably.
+        let pixelEditorDrawButton = 0;
+
         function paintAtEvent(e) {
             if (!pixelEditorData) return;
             const { px, py } = pixelEditorCoordsFromEvent(e);
-            const colorHex = document.getElementById('pixel-color-picker').value;
+            const colorHex = pixelEditorDrawButton === 2 ?
+                document.getElementById('pixel-color-picker-2').value :
+                document.getElementById('pixel-color-picker').value;
             const { r, g, b } = hexToRgb(colorHex);
 
             if (pixelEditorTool === 'fill') {
                 floodFillPixelEditor(px, py, r, g, b, 255);
             } else if (pixelEditorTool === 'eraser') {
-                setPixelAt(px, py, 0, 0, 0, 0);
+                // No transparency — "erasing" just paints the background color (black).
+                setPixelAt(px, py, 0, 0, 0, 255);
             } else {
                 setPixelAt(px, py, r, g, b, 255);
             }
@@ -4013,19 +4180,30 @@
             const canvas = document.getElementById('pixel-editor-canvas');
 
             canvas.addEventListener('mousedown', (e) => {
-                if (e.button !== 0) return; // left click only
+                if (e.button !== 0 && e.button !== 2) return; // left (color 1) or right (color 2) only
+                pixelEditorDrawButton = e.button;
                 pixelEditorPushHistory();
                 pixelEditorIsDrawing = true;
                 paintAtEvent(e);
             });
             canvas.addEventListener('mousemove', (e) => {
-                if (pixelEditorIsDrawing && pixelEditorTool !== 'fill') paintAtEvent(e);
+                pixelEditorHoverPos = pixelEditorCoordsFromEvent(e);
+                if (pixelEditorIsDrawing && pixelEditorTool !== 'fill') {
+                    paintAtEvent(e); // already re-renders, hover included
+                } else {
+                    renderPixelEditorCanvas();
+                }
+            });
+            canvas.addEventListener('mouseleave', () => {
+                pixelEditorHoverPos = null;
+                renderPixelEditorCanvas();
             });
             window.addEventListener('mouseup', () => { pixelEditorIsDrawing = false; });
             canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
             canvas.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                pixelEditorDrawButton = 0; // touch always uses color 1
                 pixelEditorPushHistory();
                 pixelEditorIsDrawing = true;
                 paintAtEvent(e);
@@ -4040,6 +4218,10 @@
             document.getElementById('pixel-tool-eraser').addEventListener('click', () => setPixelEditorTool('eraser'));
             document.getElementById('pixel-tool-fill').addEventListener('click', () => setPixelEditorTool('fill'));
 
+            document.getElementById('pixel-color-picker').addEventListener('input', () => {
+                if (pixelEditorData) renderPixelEditorCanvas(); // keep hover preview color in sync
+            });
+
             document.getElementById('pixel-undo-btn').addEventListener('click', pixelEditorUndo);
             document.getElementById('pixel-redo-btn').addEventListener('click', pixelEditorRedo);
 
@@ -4047,7 +4229,7 @@
                 if (!pixelEditorData) return;
                 if (!confirm('Clear all pixels on this frame?')) return;
                 pixelEditorPushHistory();
-                pixelEditorData.fill(0);
+                pixelEditorFillOpaqueBlack(pixelEditorData);
                 renderPixelEditorCanvas();
             });
 
