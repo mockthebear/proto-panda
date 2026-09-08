@@ -1,13 +1,13 @@
 # Rota DIY!
 
-Eu sei man, não deu pra comprar um protopanda montado ou você só quer construir o seu próprio. Eu entendo. Como eles disseram no filme de 2005 "Robôs":
+Eu sei man, não deu pra comprar um Protopanda montado ou você só quer construir o seu próprio. Eu entendo. Como eles disseram no filme de 2005 "Robôs":
 "Oh querido, sinto muito que você perdeu a entrega. Mas tudo bem, fazer o bebê é a parte divertida."
 
 Vamos fazer um então >:3
 
 # Importante
 
-Este projeto ainda está em desenvolvimento e muito poucas pessoas seguiram a rota DIY até agora. É possível, dá pra fazer tranquilo! Mas não será tão bom quanto um protopanda montado com a PCB fornecida.
+Este projeto ainda está em desenvolvimento e pouquíssimas pessoas seguiram a rota DIY até agora. É possível, dá pra fazer tranquilo! Mas não será tão bom quanto um Protopanda montado com a PCB fornecida.
 
 Esse guia vai exigir que você saiba um pouco de solda e o básico de como usar um multímetro (medir voltagem, resistência e continuidade). Existem guias na internet ensinando isso, então isso não será ensinado aqui.
 
@@ -81,7 +81,7 @@ Aqui está o que vamos construir.
 
 ![Diagrama](./diy-schematic.png "Esquema eletrônico")
 
-> IMPORTANTE: No esquematico, tem `IO9`, `IO10`, `IO33` (inner number)... Note que o `GPIO9/IO9` está no pino 15 do esquematico (numero de fora). Neste guia, quando dizemos "conecte algo ao IO15", isso significa conectar ao GPIO15 (que está na posição 8 do numero de fora), e não ao pino 15 (que é o IO9). **USE OS NÚMEROS DENTRO DO QUADRADO, NÃO OS NÚMEROS FORA DELE.**
+> IMPORTANTE: No esquemático, tem `IO9`, `IO10`, `IO33` (inner number)... Note que o `GPIO9/IO9` está no pino 15 do esquemático (número de fora). Neste guia, quando dizemos "conecte algo ao IO15", isso significa conectar ao GPIO15 (que está na posição 8 do número de fora), e não ao pino 15 (que é o IO9). **USE OS NÚMEROS DENTRO DO QUADRADO, NÃO OS NÚMEROS FORA DELE.**
 
 ## Alimentação
 
@@ -126,7 +126,7 @@ Coloque-os na placa assim. Empurre-os para baixo o máximo que puderem.
 
 E, claro, solde os pinos do outro lado.
 
-Agora conecte em uma bateria externa (power bank) que tenha carregamento rápido/Power Delivery, pegue um voltímetro e coloque as pontas de prova (**TOME CUIDADO PARA NÃO ENCURTÁ-LAS**).
+Agora conecte em uma bateria externa (power bank) que tenha carregamento rápido/Power Delivery, pegue um voltímetro e coloque as pontas de prova (**TOME CUIDADO PARA NÃO CURTO-CIRCUITÁ-LAS**).
 Se mostrar 5V, você pode precisar ajustar aqueles interruptores.
 
 ![](./diy-assembly12.png)
@@ -260,7 +260,7 @@ Ou seja trocar o `PANDA_SD_MODE` para 1, e reduzir o clock para 40mhz
 
 > Cartões SD maiores que 32GB não funcionam! Eles também devem estar formatados como FAT32
 
-Se tudo correr bem, o protopanda deve inicializar corretamente e todos os procedimentos devem mostrar isto:
+Se tudo correr bem, o Protopanda deve inicializar corretamente e todos os procedimentos devem mostrar isto:
 
 ![](./diy-assembly32.png)
 
@@ -292,7 +292,7 @@ Antes de testar, vamos garantir que todos os fios estejam conectados! Coloque se
 
 ![](./diy-assembly38.png)
 
-> Important: Os pinos estão sendo vistos de cima para baixo. Se você ver pelo outro lado da placa ou se olhar o conector de frente, esquerda e direita trocam de lugar.
+> Importante: Os pinos estão sendo vistos de cima para baixo. Se você ver pelo outro lado da placa ou se olhar o conector de frente, esquerda e direita trocam de lugar.
 
 Agora que você verificou que cada pino está conectado corretamente, vamos conectar a alimentação dos painéis.
 Pegue o cabo de alimentação que veio com os painéis e corte as pontas.

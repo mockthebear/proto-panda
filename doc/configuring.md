@@ -1,10 +1,10 @@
 # Configuring
 
-First of all. This page is dedicated to the configurations of your protogen. Some configurations are defined in the source code. These configurations will not be talked here. 
+First of all. This page is dedicated to the configurations of your protogen. Some configurations are defined in the source code. These configurations will not be talked about here. 
 
-> Anything in this guide will be considering a unmodified version of the firmware.
+> Anything in this guide will be considering an unmodified version of the firmware.
 
-> For all parts of these guides, they will consider you have a unmodified version of protopanda. 
+> For all parts of these guides, they will consider you have an unmodified version of Protopanda. 
 
 > Some settings are enabled/disabled in your protogen menu. Going on the `settings`
 
@@ -21,9 +21,9 @@ First of all. This page is dedicated to the configurations of your protogen. Som
 
 # Expressions
 
-The whole point of protopanda is beeing easy to create expressions, and now you'll see how easy it its. 
+The whole point of Protopanda is being easy to create expressions, and now you'll see how easy it is. 
 
-For animation overlays or mouth movement based on microphone, check the over [overlay section at the microphone part](#overlay)
+For animation overlays or mouth movement based on microphone, check the [overlay section at the microphone part](#overlay)
 
 ## Inner workings
 
@@ -32,19 +32,19 @@ Everything will be configured inside the `animation.json` file. The two importan
 * frames
 * expressions
 
-The innerworkings of protopanda are planned to draw those animations and jump between them without any delay or loading. To do so in a rather weak hardware some tricks were needed. 
-To draw an animation, first we need the pixels on it. Loading images and decoding the compressed data from the SD card takes time. Like alot of time, if we did that while the protogen runs we would be limited to like 5fps.
+The innerworkings of Protopanda are planned to draw those animations and jump between them without any delay or loading. To do so in a rather weak hardware some tricks were needed. 
+To draw an animation, first we need the pixels on it. Loading images and decoding the compressed data from the SD card takes time. Like a lot of time, if we did that while the protogen runs we would be limited to like 5fps.
 
-To speed up things, we load all images once, decode them all and store in a kind of "bigger image" or an [texture atlas or spritesheet](https://en.wikipedia.org/wiki/Texture_atlas). Loading a whole texture atlas would probally eat all the RAM on the poor Esp32, so we need to load each individual image, one at a time.
+To speed up things, we load all images once, decode them all and store in a kind of "bigger image" or an [texture atlas or spritesheet](https://en.wikipedia.org/wiki/Texture_atlas). Loading a whole texture atlas would probably eat all the RAM on the poor Esp32, so we need to load each individual image, one at a time.
 
 Once those images are loaded and stored inside the internal flash of the esp32 (way way faster than SD card), we simply need to say:
 - Draw this section here
 - Now draw this other section
-- Now this other ones preety please?
+- Now this other ones pretty please?
 
-Saying sounds hard but doing so with the existing codebase super easy. With all sprites loaded, all we need is to specify the animation order, and how long each frame should stay in the screen.
+Saying sounds hard but doing so with the existing codebase is super easy. With all sprites loaded, all we need is to specify the animation order, and how long each frame should stay in the screen.
 
-So, lets get to work!
+So, let's get to work!
 
 ## Frame creating.
 
@@ -62,7 +62,7 @@ Save that as `happy1.png`. Then create another, but change a little. Change to w
 
 Say we named it "happy1.png", "happy2.png" ... until "happy7.png"
 
-We need to move it to the sd card. Once in the SD card, open your favorite text editor he file `animation.json` and add the following part:
+We need to move it to the sd card. Once in the SD card, open your favorite text editor the file `animation.json` and add the following part:
 
 ```json
 {
@@ -76,18 +76,18 @@ We need to move it to the sd card. Once in the SD card, open your favorite text 
 
 The bare minimum you need in a frame object is which files you wanna load and the name.
 
-Not that we need to ALWAYS start the path with a `/`. If you saved the images at the folder `expressions` it would look like `/expressions/happy1.png`.
+Note that we need to ALWAYS start the path with a `/`. If you saved the images at the folder `expressions` it would look like `/expressions/happy1.png`.
 
-Now save and put the SD card back on the protogen. On the startup if you havent fucked up the [JSON syntax](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/JSON), a loading bar will show up. 
+Now save and put the SD card back on the protogen. On the startup if you haven't fucked up the [JSON syntax](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/JSON), a loading bar will show up. 
 **Every time you add or remove frames, that process will happen.** Once it finishes, behold, NOTHING CHANGED.
 
-Thats because only created the frames, duh. We need to say how it is going to play.
+That's because we only created the frames, duh. We need to say how it is going to play.
 
-Back to the `animation.json`, lets review some things before we actually make some animations
+Back to the `animation.json`, let's review some things before we actually make some animations
 
 #### File loading
 
-Say you dont wanna type each individual name on the json. There is a pattern on the name right? happy(number).png. We can use that!
+Say you don't wanna type each individual name on the json. There is a pattern on the name right? happy(number).png. We can use that!
 
 ```json
 {
@@ -101,11 +101,11 @@ Say you dont wanna type each individual name on the json. There is a pattern on 
         },
     <The rest of the animation.json>
 ```
-This will do the same as the json we did first. But we replaced the number with `%d` and we say from which it starts and when it ends. Thats a `sprintf` notation. You can use [this tool](https://onlinephp.io/sprintf) to help with that.
+This will do the same as the json we did first. But we replaced the number with `%d` and we say from which it starts and when it ends. That's a `sprintf` notation. You can use [this tool](https://onlinephp.io/sprintf) to help with that.
 
 #### Flipping
 
-If you load and play the frames loaded, you will notice that right side of the screen the image will be flipped. Thats because they will be draw twice, and one of the screens we physically folded to the other side. So we need to flip it!
+If you load and play the frames loaded, you will notice that the right side of the screen the image will be flipped. That's because they will be drawn twice, and one of the screens we physically folded to the other side. So we need to flip it!
 
 ```json
 {
@@ -121,12 +121,12 @@ If you load and play the frames loaded, you will notice that right side of the s
     <The rest of the animation.json>
 ```
 
-Thats how you do it, and its reccomended that you always put those two if the image dont contains a text.
+That's how you do it, and it's recommended that you always put those two if the image doesn't contain text.
 
 #### Color scheme by side.
 
 Maybe you want your proto to have heterochromia? Like one side with different colors? By default all images are loaded like they're an RGB image. But you can specify to be drawn as RBG... or BGR, or GRB...? 
-Not a conventional thing, but supported nontheless. For that you just need to add:
+Not a conventional thing, but supported nonetheless. For that you just need to add:
 ```json
 {
     <the rest of your frame section>
@@ -134,12 +134,12 @@ Not a conventional thing, but supported nontheless. For that you just need to ad
     "color_scheme_left": "rbg"
 }
 ```
-For the next examples, we will conside you didn't added that.
+For the next examples, we will consider you didn't add that.
 
 ## Animation creating
 
 Now that we have the frames loaded, remember the name you defined. Go to your `animation.json` at the `expressions` section. 
-Lets add a basic animation. We have 7 frames. 
+Let's add a basic animation. We have 7 frames. 
 
 ```json
 {
@@ -163,20 +163,20 @@ Lets add a basic animation. We have 7 frames.
         },
         <the rest of your expressions>
 ```
-We basically saying:
-"Using the frames `happy_frame` lets play sequentially from 1 to 7. Each frame will be for 75 milliseconds on the screen. And on the expression selection menu, the name of this expression will be `happy`.
+We're basically saying:
+"Using the frames `happy_frame` let's play sequentially from 1 to 7. Each frame will be for 75 milliseconds on the screen. And on the expression selection menu, the name of this expression will be `happy`.
 
-> The first frame will always be 1.  No matter if you set `from: 10, to: 15`, it will be `1,2,3,4,5`.
+> The first frame will always be 1. No matter if you set `from: 10, to: 15`, it will be `1,2,3,4,5`.
 
-Thats it! You have your first animation. Turn on your proto and test it!
+That's it! You have your first animation. Turn on your proto and test it!
 
 ### Presets
 
-Sometimes you draw like 20 frames and you're like: heck, i'll have to do this?
+Sometimes you draw like 20 frames and you're like: heck, I'll have to do this?
 ```json
 [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
 ```
-The awnser is, **not always**!
+The answer is, **not always**!
 There are a few presets, in this specific case you can just replace it with `loop`:
 ```json
     {
@@ -267,8 +267,8 @@ You can even do this:
     }
 ```
 
-This way the animation will play oince it starts and when it leaves. 
-Also good idea to add `"transition": true,` to all animations that are just transitions. With that value set to true, those animation wont show up on the expression selection.
+This way the animation will play once it starts and when it leaves. 
+Also good idea to add `"transition": true,` to all animations that are just transitions. With that value set to true, those animations won't show up on the expression selection.
 
 ### Scripts on animations
 
@@ -287,7 +287,7 @@ Since the whole animation system runs mostly on the C++ part of the code, the me
     }
 ```
 
-That way when we select the sad animation, the buzzer of the proto will make a beep in a lower pitch and when leaving it will sound a higger pitch.
+That way when we select the sad animation, the buzzer of the proto will make a beep in a lower pitch and when leaving it will sound a higher pitch.
 
 
 ## First animation on boot
@@ -317,15 +317,15 @@ The whole boop logic is defined in the `misc.json`. The default ones are:
     }
 ```
 
-We go trough each setting. First there are two modes for the boop activation. Those are **gpio** and **lidar**. Lidar is highly not reccomended and is beeing deprecated, so we're not talking about it.
+We go through each setting. First there are two modes for the boop activation. Those are **gpio** and **lidar**. Lidar is highly not recommended and is being deprecated, so we're not talking about it.
 
 ## Boop as GPIO
 
-You're probally familiar with the word [GPIO](https://en.wikipedia.org/wiki/General-purpose_input/output), when this mode is enabled, we decide when the booping is active when a certain gpio is in a certain state.
+You're probably familiar with the word [GPIO](https://en.wikipedia.org/wiki/General-purpose_input/output), when this mode is enabled, we decide when the booping is active when a certain gpio is in a certain state.
 
-Since the guide reccomend using the GPIO 48 and a touch sensor ttp223
+Since the guide recommends using the GPIO 48 and a touch sensor ttp223
 ![alt text](configuring-touch.png)
-Once you're touching it, it sends a HIGH signal on its output. So we detect when its high.
+Once you're touching it, it sends a HIGH signal on its output. So we detect when it's high.
 
 Therefore:
 ```json
@@ -335,7 +335,7 @@ Therefore:
         "enabled": true, //Yes we using the sensor >.>
 }
 ```
-Those sensors are finnicky, and if you turn on your proto while holding near the touch sensor, it might stay stuck saying: "hey something is touching". That is no good, thats why the code is smart enough to detect that when the sensor is on for too long, we should turn it off. Thats why on the guide we say to wire GPIO 13 to the VCC of the sensor.  
+Those sensors are finicky, and if you turn on your proto while holding near the touch sensor, it might stay stuck saying: "hey something is touching". That is no good, that's why the code is smart enough to detect that when the sensor is on for too long, we should turn it off. That's why on the guide we say to wire GPIO 13 to the VCC of the sensor.  
 
 * `"power_gpio": 13,`
 
@@ -355,17 +355,17 @@ For that, we just need to do this:
 }
 ```
 
-Done. Thats it. 
+Done. That's it. 
 
-> Intros and outros will play aswell here.
+> Intros and outros will play as well here.
 
-But lets say you wanna do something a little more polished. Lets say you have a blue screen of death animation and other ones that if you simply go to the boop animation would look wierd. Thats why you can add this:
+But let's say you wanna do something a little more polished. Let's say you have a blue screen of death animation and other ones that if you simply go to the boop animation would look weird. That's why you can add this:
 
 * `"transictionOnlyOnAnimation": "happy",`
 
 That way, only when `happy` is playing that the boop will be triggered.
 
-But lets say you made the proto blink the eye and dont want the animation to start playing while his eyes are closed. Thats why you add this:
+But let's say you made the proto blink the eye and don't want the animation to start playing while his eyes are closed. That's why you add this:
 
 * `"transictionInOnlyOnSpecificFrame": 1`
 
@@ -397,8 +397,8 @@ The mic config sits at the `misc.json`
 
 ## FFT
 
-Here is a bit complex, even for people who are used to software development. Its a part of signal processig, called Fourrier Transformation.
-We use one called [Fast Fourrier Transformation](https://pt.wikipedia.org/wiki/Transformada_r%C3%A1pida_de_Fourier). Which basically gets the audio data and transforms it in to the basic frequencies that sound compose.
+Here is a bit complex, even for people who are used to software development. It's a part of signal processing, called Fourier Transformation.
+We use one called [Fast Fourier Transformation](https://pt.wikipedia.org/wiki/Transformada_r%C3%A1pida_de_Fourier). Which basically gets the audio data and transforms it into the basic frequencies that sound compose.
 
 What the heck? Why you telling me this?!
 Well, This is the FFT running and displaying the result on the panel:
@@ -411,11 +411,11 @@ You can turn on that overlay going in your proto settings and searching for `FFT
 
 ### FFT Parameters
 
-Now it gets a bit complex. To do a propper FFT, we need to sample some data from GPIO 3 (default) at a certain [sample rate](https://en.wikipedia.org/wiki/Sampling_(signal_processing)).
+Now it gets a bit complex. To do a proper FFT, we need to sample some data from GPIO 3 (default) at a certain [sample rate](https://en.wikipedia.org/wiki/Sampling_(signal_processing)).
 
 By default we sample at 44100Hz `"sampling_frequency": 44100,`. Also we allocate 2x 512 floats to store that data `"samples": 512,`.
 Always using two buffers, so technically, 1024, a total of 4kb. **Mind the free heap size when changing this number**.
-Some values are not accepted and they need to be multiple of 2. In case of fail to initialize FFT, check the logs, there will be information about why it was rejected. Thats an ESP32 API requirement.
+Some values are not accepted and they need to be multiples of 2. In case of failure to initialize FFT, check the logs, there will be information about why it was rejected. That's an ESP32 API requirement.
 
 With each sample we need to do the analysis. The parameters for the FFT are:
 ```json
@@ -427,12 +427,12 @@ With each sample we need to do the analysis. The parameters for the FFT are:
 }
 ```
 
-You can increase the band count to make things smoother. I find 32 a good amount for what is needed. But you can increase as you desire. To avoid noise, you can increase or decrease that threshhold. It will cut off any values under that and not account them for the FFT band value. 
+You can increase the band count to make things smoother. I find 32 a good amount for what is needed. But you can increase as you desire. To avoid noise, you can increase or decrease that threshold. It will cut off any values under that and not account them for the FFT band value. 
 That threshold can be also changed during runtime at **settings>microphone config**.
 
 ### Microphone calibrating
 
-Inside the settings, there is an option to calibrate. Its a straightforward procedure. But basically it uses your speech to try and find a certain frequency range and noise on your envoriment to make the mouth move accordingly. There are default values in this section of FFT, but as soon as you change something in the microphone config, they will always be overwritte:
+Inside the settings, there is an option to calibrate. It's a straightforward procedure. But basically it uses your speech to try and find a certain frequency range and noise on your environment to make the mouth move accordingly. There are default values in this section of FFT, but as soon as you change something in the microphone config, they will always be overwritten:
 
 ```json
 {
@@ -466,16 +466,16 @@ Tau is defined as:
 local tau = (currentEnergy > _M.lastEnergyLevel) and 0.05 or 0.2
 ``` 
 
-Now, if the energy gets at least to `speech_min_energy`, then we will change the trigger to true ans set as level 2.
+Now, if the energy gets at least to `speech_min_energy`, then we will change the trigger to true and set as level 2.
 As the energy level goes up, the level keeps increasing until we reach `speech_max_energy`. 
 
-Whats that level? Well, its an arbitrary number we can define. Right now the level is define as the frame id of the mouth animation we use. But it can be any number.
+What's that level? Well, it's an arbitrary number we can define. Right now the level is defined as the frame id of the mouth animation we use. But it can be any number.
 
 ## Overlays
 
 Overlays are sprites drawn over the current playing animation. Those sprites can be controlled using Lua. They all stay in the `animation.json`.
 
-Honestly, the whole section for overlays deserve a dedicated guide section, so we're just covering the mouth movement for now.
+Honestly, the whole section for overlays deserves a dedicated guide section, so we're just covering the mouth movement for now.
 
 ### Mouth movement overlay
 
@@ -514,7 +514,7 @@ At the `overlays` section, this is the mouth movement definition:
 Behind the curtains what it does is basically feed to the FFT controller saying:
 "The levels go from 1 to 5", just give me the current level.
 
-So baically here, you specify the frames of the mouth, as they open based on the levels
+So basically here, you specify the frames of the mouth, as they open based on the levels
 
 ![alt text](configuring-mouths.png)
 
@@ -525,9 +525,9 @@ And then we specify where it should be drawn over.
 
 # Input
 
-Protopanda was made to be controlled. Like change animations, navigate trough menus, play games. So for that we need to set a input mode.
+Protopanda was made to be controlled. Like change animations, navigate through menus, play games. So for that we need to set an input mode.
 
-By default, we use [Bluetooth low energy (BLE)](https://en.wikipedia.org/wiki/Bluetooth_Low_Energy), but you can also use a infrared remote if you wire things propperly. 
+By default, we use [Bluetooth low energy (BLE)](https://en.wikipedia.org/wiki/Bluetooth_Low_Energy), but you can also use an infrared remote if you wire things properly. 
 
 At the `keybinds.json`, you will find this:
 
@@ -536,7 +536,7 @@ At the `keybinds.json`, you will find this:
   "input": {
     "//comment0": "The current avaliable input modes are 'infrared', 'ble' and 'none'",
     "mode": "BLE",
-    "//comment1": "'enableHidControllers' allows for generic controllers like BLE HID devices to connect with protopanda. Support is limited",
+    "//comment1": "'enableHidControllers' allows for generic controllers like BLE HID devices to connect with Protopanda. Support is limited",
     "enableHidControllers": true,
     "pairController": true,
     "maxBleDevices": 1,
@@ -560,18 +560,18 @@ For bluetooth low energy, you will need these directives inside the input:
 }
 ```
 
-Ideally, you would only use the protopanda controller, the one that is built over NRF52832 with custom code and all. Thats the ideal. But not evebody is capable of doing it since its not a begginer friendly alternative. You can hack something using another esp32 but thats also a long way to get there. 
+Ideally, you would only use the Protopanda controller, the one that is built over NRF52832 with custom code and all. That's the ideal. But not everybody is capable of doing it since it's not a beginner friendly alternative. You can hack something using another esp32 but that's also a long way to get there. 
 
-So most of the people who go trough the DIY route will use the reccomended controllers. Those controllers are just BLE mouses and keyboards. Like, literally, they seems to be just a handheld keypad, but its simulating a mouse. 
-Any device that presents itself as a HID device will be able to connect to protopanda when `"enableHidControllers": true,` is enabled. Whether that device will be fully supported by the code is another question. 
+So most of the people who go through the DIY route will use the recommended controllers. Those controllers are just BLE mouses and keyboards. Like, literally, they seem to be just a handheld keypad, but it's simulating a mouse. 
+Any device that presents itself as a HID device will be able to connect to Protopanda when `"enableHidControllers": true,` is enabled. Whether that device will be fully supported by the code is another question. 
 
-When you first boot protopanda, it will require a controller to be paired. In other words it will startup in the pairing mode because of `"pairController": true,`. Disabling that, the protopanda will stay all the time looking for the controller (scanning). Not ideal, specially in a furcon. You can accidentally connect to someone's else mouse or keyboard.
+When you first boot Protopanda, it will require a controller to be paired. In other words it will startup in the pairing mode because of `"pairController": true,`. Disabling that, the Protopanda will stay all the time looking for the controller (scanning). Not ideal, especially in a furcon. You can accidentally connect to someone else's mouse or keyboard.
 
-Also yes, protopanda support more than one controller connected at the same time, up to four. `"maxBleDevices": 1,`. Unless you have a really specific use, no reason to increase that.
+Also yes, Protopanda support more than one controller connected at the same time, up to four. `"maxBleDevices": 1,`. Unless you have a really specific use, no reason to increase that.
 
-Protopanda has a kind of 'diver' scripts to handle specific BLE devices. Right now, the HID is defined as a basic driver. Therefore other drivers can increment its behavior. Thats why the 'BLE-M3' and the 'beauty-r1' are there. Those are dumb devices that simulate the movements of a mouse. Their sole porupose is to doomscroll for you while you press buttons. The drivers simply identify the packages and find the pattern of each button.
+Protopanda has a kind of 'driver' scripts to handle specific BLE devices. Right now, the HID is defined as a basic driver. Therefore other drivers can increment its behavior. That's why the 'BLE-M3' and the 'beauty-r1' are there. Those are dumb devices that simulate the movements of a mouse. Their sole purpose is to doomscroll for you while you press buttons. The drivers simply identify the packages and find the pattern of each button.
 
-For the 'protopanda' driver, it actually handles the connection, send and receives messages. The script of each driver statys in the sd card at `/lualib/drivers`.
+For the 'panda' driver, it actually handles the connection, sends and receives messages. The script of each driver stays in the sd card at `/lualib/drivers`.
 
 This is the basic of a driver:
 
@@ -644,12 +644,12 @@ When mode is defined to infrared, then all the BLE settings are useless, but the
 ```
 
 Simply put, each infrared remote [sends a packet of data](https://learn.sparkfun.com/tutorials/ir-communication/all) when you press a button. Usually this data packet is composed of a usercode and button id.
-You can use a decoder or get the opcodes of your controller at the internet. Also its easy to code something in a arduino to just dump those opcodes. 
+You can use a decoder or get the opcodes of your controller on the internet. Also it's easy to code something in an arduino to just dump those opcodes. 
 
-But thats too much work right? Just point your remote to protopanda IR receiver and press a button. If you're in the serial monitor (or checking the logs later) you will see a message like this:
+But that's too much work right? Just point your remote to Protopanda IR receiver and press a button. If you're in the serial monitor (or checking the logs later) you will see a message like this:
 > Unmapped IR command with usercode FFBC and opcode F9
 
-There we go! You have all the data. Lets say you pressed in the order: up, down, left, right, enter, back, and you got:
+There we go! You have all the data. Let's say you pressed in the order: up, down, left, right, enter, back, and you got:
 ```
 Unmapped IR command with usercode FFBC and opcode F9
 Unmapped IR command with usercode FFBC and opcode F8
@@ -684,7 +684,7 @@ So you just do this:
 }
 ```
 
-See? Easy enought!
+See? Easy enough!
 
 You can even do something more complex like:
 
@@ -757,7 +757,7 @@ Now you ask:
 
 If your mode isn't present here, then you'll have to go the [hard way](#the-hard-way).
 
-Those are the existing modes you can use. See, if you decide to use `noise`, you dont add the parameters r,g,b, you do like this:
+Those are the existing modes you can use. See, if you decide to use `noise`, you don't add the parameters r,g,b, you do like this:
 ```json
 {
     <the rest of your file>
@@ -784,13 +784,13 @@ Those are the existing modes you can use. See, if you decide to use `noise`, you
 }
 ```
 
-Each mode has its avaliable parameters.
+Each mode has its available parameters.
 
 
 ## The hard way
 
-The hard way allows you do do whatever you want. This mode you'll will basically ignore the `leds` section and code your own patterns using lua. It is preety straightforward!
-Lets learn how to do this effect:
+The hard way allows you to do whatever you want. This mode you'll basically ignore the `leds` section and code your own patterns using lua. It is pretty straightforward!
+Let's learn how to do this effect:
 
 ![led](configuring-led-thunder.gif)
 
@@ -829,7 +829,7 @@ function onLoop(dt)
 end
 ```
 
-At the first function you will see we have a `leds.begin()` This function will basically read the json and call:
+At the first function you will see we have a `leds.begin()`. This function will basically read the json and call:
 ```lua
     --countLeft and countRight are 64 by default in the leds json
     ledsBeginDual(countLeft, countRight, 0) 
@@ -838,17 +838,17 @@ At the first function you will see we have a `leds.begin()` This function will b
 ```
 This will set the behavior. This behavior is handled by the core that handles animation and bluetooth. But honestly, we're not using it. You can leave it unchanged, it will start the led for us. Or comment that `leds.begin` line and start the leds using `ledsBeginDual` by yourself.
 
-After that, on the second function we should replace: `ledsSetManaged(true)` to `ledsSetManaged(false)`. This will say: "Dont update the leds on the second core". This will leave the leds without even light up. And thats what we want! Nothing will change a thing on them.
+After that, on the second function we should replace: `ledsSetManaged(true)` to `ledsSetManaged(false)`. This will say: "Don't update the leds on the second core". This will leave the leds without even lighting up. And that's what we want! Nothing will change a thing on them.
 
-Now, inside the `onLoop`, this is where we going to code our behavior. Since we declared 64 leds on the left side and 64 leds on the right side, thats a total of 128 leds. That is important because from led 0 to led 63 those are the left leds. And 64 to 123 are the right leds.
+Now, inside the `onLoop`, this is where we're going to code our behavior. Since we declared 64 leds on the left side and 64 leds on the right side, that's a total of 128 leds. That is important because from led 0 to led 63 those are the left leds. And 64 to 127 are the right leds.
 
-So lets say we want to set the first led on the left side to red and the first on the right blue?
+So let's say we want to set the first led on the left side to red and the first on the right blue?
 ```lua
 ledsSetColor(0, 255, 0, 0)
 ledsSetColor(63, 0, 0, 255)
 ledsDisplay()
 ```
-You can check the [lua reference here](lua-doc.md), but making it short. Its saying the led `0`, will have the color RGB `255,0,0`. We do the same for the led 63, which is the first led of the other side but we send `0,0,255`.
+You can check the [lua reference here](lua-doc.md), but making it short. It's saying the led `0`, will have the color RGB `255,0,0`. We do the same for the led 63, which is the first led of the other side but we send `0,0,255`.
 And after that you send the command so the leds update their color with `ledsDisplay()`.
 We can set all segment a single color too:
 ```lua

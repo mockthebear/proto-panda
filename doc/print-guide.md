@@ -1,6 +1,6 @@
 # Print guide and assembly guide
 
-Printing protopanda is easier than the original MK16 model. It requires less support and has some features like to reduce the amount of material used.
+Printing Protopanda is easier than the original MK16 model. It requires less support and has some features like to reduce the amount of material used.
 
 It also adds a bit of complexity in other parts, so it may look nicer, or have more features.
 Any of those parts are interchangeable with the [original MK16](https://www.thingiverse.com/thing:4894173) model.
@@ -11,12 +11,12 @@ You can download the models [here](https://www.thingiverse.com/thing:7188042)
 
 # Parts
 
-**The basic requirement is a 3d printer with 25x25cm bed.** Generally speaking, the whole set can be printed entirely in PLA. But that is not reccomended for some parts due strenght issues.
-Be aware that PLA under directly sunlight can bend and warp, also it can easily become maleable on temperatures over 50ºC. 
+**The basic requirement is a 3D printer with 25x25cm bed.** Generally speaking, the whole set can be printed entirely in PLA. But that is not recommended for some parts due strength issues.
+Be aware that PLA under directly sunlight can bend and warp, also it can easily become malleable on temperatures over 50ºC. 
 
-> Some parts of the guide will reccomend using ASA or ABS, but they're toxic while printing. Weight your decisions and needs.
+> Some parts of the guide will recommend using ASA or ABS, but they're toxic while printing. Weigh your decisions and needs.
 
-Bellow you can click on each of those images. Each session has a printing guide, reccomended settings for each part, tools and accessories necessary and assembly guide.
+Below you can click on each of those images. Each session has a printing guide, recommended settings for each part, tools and accessories necessary and assembly guide.
 
 | Front frame                                     | Headphones                                           | Back head                                                          |
 |-------------------------------------------------|------------------------------------------------------|--------------------------------------------------------------------|
@@ -83,14 +83,14 @@ Bellow you can click on each of those images. Each session has a printing guide,
 ### Headphones Consumables 
 * Two component glue
 * 10x M3 heat insert (4~6mm in height)
-* ASA filaament or PLA filament
+* ASA filament or PLA filament
 * 2x 10mmX2mm neodimium magnet
 * 6x M3 heat insert 3mm height
 
 ## Headphones Printing guide
 
 ### Part 1
-The headphones can totally be printed in PLA. It will come out nice and it don't have thin parts that can easily break or crack. **Ideally use ASA.** You can use PETG, but petg is notoriously hard to sand and just a little moisture can make your primes come out like garbage.
+The headphones can totally be printed in PLA. It will come out nice and it don't have thin parts that can easily break or crack. **Ideally use ASA.** You can use PETG, but petg is notoriously hard to sand and just a little moisture can make your prints come out like garbage.
 Prefer something easier to print here
 
 * Material: ASA or PLA.
@@ -102,7 +102,7 @@ Place the part with the back facing the plate like this
 ![Headphones](./guide-front-headphones-plate.png)
 
 ### Part 2
-The fins can totally be printed in PLA. It will come out nice and it don't have thin parts that can easily break or crack. **Ideally use ASA.** You can use PETG, but petg is notoriously hard to sand and just a little moisture can make your primes come out like garbage.
+The fins can totally be printed in PLA. It will come out nice and it don't have thin parts that can easily break or crack. **Ideally use ASA.** You can use PETG, but petg is notoriously hard to sand and just a little moisture can make your prints come out like garbage.
 Prefer something easier to print here
 
 * Material: ASA or PLA.
@@ -110,7 +110,7 @@ Prefer something easier to print here
 * Supports: tree
 * Brim: Good idea but not required and they can affect the surface requiring more sanding
 
-Once you load the STL file it will probally show in a wierd angle. 
+Once you load the STL file it will probably show in a weird angle. 
 ![Fins](./guide-front-headphones-fin-part1.png)
 
 Then will be needed to place it flat. Select in orca the tool to place it flat and choose one of the regions
@@ -124,7 +124,7 @@ It should look something like this when placed
 
 ![Fins](./guide-front-headphones-fin-part3.png)
 
-You can order to print like this, but lets be efficient. Create a copy of the model by selecting it and pressil ctrl-c and then ctrl-v.
+You can order to print like this, but lets be efficient. Create a copy of the model by selecting it and pressing ctrl-c and then ctrl-v.
 Then right click on the new body and select mirror then mirror on the Y axis. If they are too close, move them apart. Should look like this:
 
 ![Fins](./guide-front-headphones-fin-part4.png)
@@ -133,15 +133,15 @@ When printing it should look like this:
 
 ![Fins](./guide-front-headphones-fin-part5.png)
 
-If you see the plastic sagging at the tip of the fin, increase the support treshold angle or add a "support enforcer on the tip"
+If you see the plastic sagging at the tip of the fin, increase the support threshold angle or add a "support enforcer on the tip"
 
-**BUT MOCK, CANT YOU PRINT IT WITH THE BACK ON THE PRINT BED INSTEAD????**
-Yeah. You can! But the original mk16 fin has some soft curves that most printers will striggle to replicate with that orientation. Thats a great idea if you have a custom fin with a flat surface.
+**BUT MOCK, CAN'T YOU PRINT IT WITH THE BACK ON THE PRINT BED INSTEAD????**
+Yeah. You can! But the original mk16 fin has some soft curves that most printers will struggle to replicate with that orientation. That's a great idea if you have a custom fin with a flat surface.
 ![Fins](./guide-front-headphones-fin-part6.png)
 
 ## Headphones Assembly guide
 
-Now that you have all parts, now its a good time to sand it and trim all the support parts that got stuck. Doing it later will be harder.
+Now that you have all parts, now it's a good time to sand it and trim all the support parts that got stuck. Doing it later will be harder.
 
 ![Headphones](./guide-front-headphones-assembly-part0.jpg)
 
@@ -149,26 +149,26 @@ Now grab two of the M4 screws, put them in two of the holes of one side until th
 
 ![Headphones](./guide-front-headphones-assembly-part1.png)
 
-Retract the screws until the fin touches the headset. Screw the scres in to make sure they enter the fins holes. This is only to get them aligned.
+Retract the screws until the fin touches the headset. Screw the screws in to make sure they enter the fins holes. This is only to get them aligned.
 Do this for both sides.
 
-Once you get it right, its time to mix the two compound glue and make sure its well mixed.
+Once you get it right, it's time to mix the two compound glue and make sure it's well mixed.
 
 ![Headphones](./guide-front-headphones-assembly-part2.png)
 
 Now spread between the screw holes on each of the fins. Avoid putting too much and avoid putting too close of the outer edge or the screw holes.
-Putting too much or too close will cause the glue to get smushed and leak trough the outer side... Which you will have to clean it up. 
+Putting too much or too close will cause the glue to get smushed and leak through the outer side... Which you will have to clean it up. 
 Glue on the screw hole will make you have a hard time taking the screws off and putting the heatset.
 
-Save some glue for the magned in the top of the head.
+Save some glue for the magnet in the top of the head.
 
 ![Headphones](./guide-front-headphones-assembly-part3.png)
 
-Now put both of the fins in place and use the screws to keep them aligned. **Dont screw it all the way in**
+Now put both of the fins in place and use the screws to keep them aligned. **Don't screw it all the way in**
 
 ![Headphones](./guide-front-headphones-assembly-part4.png)
 
-If you notice the screws not beeing enough to get the fins completely straight and touching the whole sides, use the c-clamps to keep them close
+If you notice the screws not being enough to get the fins completely straight and touching the whole sides, use the c-clamps to keep them close
 
 ![Headphones](./guide-front-headphones-assembly-part5.png)
 
@@ -182,17 +182,17 @@ Spread some glue on top of the magnet and if you have a few leftover magnets, pu
 
 ![Headphones](./guide-front-headphones-assembly-part8.png)
 
-Now its a good idea do clean any bits of glue that came out of the edges. **Make sure you wash your hands very well too!**
+Now it's a good idea to clean any bits of glue that came out of the edges. **Make sure you wash your hands very well too!**
 Leave it still until the glue is completely cured.
 
 __tic tac tic tac goes the clock__
 
-Now grab your heatsets and your soldering iron with the heatset tip and warm ir up to 300ºC (If using PLA then 250).
+Now grab your heatsets and your soldering iron with the heatset tip and warm it up to 300ºC (If using PLA then 250).
 
 ![Headphones](./guide-front-headphones-assembly-part9.png)
 
 Place the M3 (the long one), over the hole and put the soldering iron it, applying only a tiny amount of force. Wait a few seconds until you see the heatset going on the hole and melting the plastic around it.
-The apply a little more pressure, but dont go too fast. We want it to go slowly while it melts the material around it. Make it go 2 to 3 mm deep. If you got 7mm long heatset, you can go as they get to the surface. If they're 5mm, then go that deep.
+Then apply a little more pressure, but don't go too fast. We want it to go slowly while it melts the material around it. Make it go 2 to 3 mm deep. If you got 7mm long heatset, you can go as they get to the surface. If they're 5mm, then go that deep.
 
 ![Headphones](./heatset.gif)
 
@@ -200,7 +200,7 @@ Do this for all the holes without the screws. Then remove the screws and do it f
 
 ![Headphones](./guide-front-headphones-assembly-part10.png)
 
-Now to wrap it up. Get the the M3 3mm heat sets and put them on the holes in the back of the headset. Put them just enough so they align with the surface. Try to do it as straight as possible relative to the surface.
+Now to wrap it up. Get the M3 3mm heat sets and put them on the holes in the back of the headset. Put them just enough so they align with the surface. Try to do it as straight as possible relative to the surface.
 
 ![Headphones](./guide-front-headphones-assembly-part11.png)
 
@@ -220,18 +220,18 @@ Once you finished, this part is complete!
 * Set of straight cutting pliers
 
 ### Consumables 
-* ASA filaament or PLA filament
+* ASA filament or PLA filament
 * 6x M3 heat insert 3mm height
 
 ## Back head Printing guide
 
 ### Back of the head itself
 
-Due the way 3d printers work, we need support in certain places so the material don't just fall. Luckly you're dealing with a model that MOSTLY avoid this need!
+Due the way 3D printers work, we need support in certain places so the material don't just fall. Luckily you're dealing with a model that MOSTLY avoid this need!
 It was designed so the minimum amount of support is needed and it has holes to improve hearing, airflow and saving up on material!
 
-* Material: ASA, PETG, PLA. PETG is reccomended
-* Layer height: you can go with 0.24. Print quality dont really matter much here.
+* Material: ASA, PETG, PLA. PETG is recommended
+* Layer height: you can go with 0.24. Print quality don't really matter much here.
 * Supports: tree, with a support blocker
 
 The model has a flat surface, first use the "Lay on face" to put the model facing up.
@@ -245,13 +245,13 @@ Like this
 
 ![Front frame](./guide-back-head-print-part2.png)  
 
-If you print like this, there is a high chance the model wobble and you get terrible results or it simply falls off from the print bed. Thats why we going to enable supports.
+If you print like this, there is a high chance the model wobbles and you get terrible results or it simply falls off from the print bed. That's why we're going to enable supports.
 
 ![Front frame](./guide-back-head-print-part3.png)  
 
 **MOCK. THERE IS ALOT OF SUPPORTS THERE. WHAT THE HECK?!**
 
-Yeah, those supports dont really matter honestly. They just get in the way and are a waste of material.
+Yeah, those supports don't really matter honestly. They just get in the way and are a waste of material.
 So we need to disable MOST of them. For that, we're going to add a "support blocker".
 
 ![Front frame](./guide-back-head-print-part4.png)  
@@ -296,8 +296,8 @@ There are 6 holes that those inserts should be placed
 
 ![Front frame](./guide-back-head-assembly-part1.png)  
 
-First, place the helmet facing the side, make sure its stable. Then put one of the heatsets with the thin part facing the hole. Put the soldering iron tip on the top of the heatset and wait a few seconds until it starts
-melting the plastic and going trough the plastic. Try to do this slowly without pushing too hard. Use as little force as possible and try to avoid pushing it past the surface. Try to keep the soldering iron as straight as possible relative to the surface.
+First, place the helmet facing the side, make sure it's stable. Then put one of the heatsets with the thin part facing the hole. Put the soldering iron tip on the top of the heatset and wait a few seconds until it starts
+melting the plastic and going through the plastic. Try to do this slowly without pushing too hard. Use as little force as possible and try to avoid pushing it past the surface. Try to keep the soldering iron as straight as possible relative to the surface.
 
 ![Front frame](./heatset-head.gif)  
 
@@ -326,7 +326,7 @@ The front frame is where all the electronics usually go.
 * Layer height: 0.12mm~0.24mm
 * Supports: Tree
 * Brim: none
-Dont attempt printing in PLA. It will crack at some point. PETG or ASA is mandatory.
+Don't attempt printing in PLA. It will crack at some point. PETG or ASA is mandatory.
 
 Load the model and place it flat on the print bed
 
@@ -348,7 +348,7 @@ Now slice and you will notice only two supports appear
 
 ![front frame](./guide-front-frame-print-part4.png)
 
-Thats it. Print it like that.
+That's it. Print it like that.
 
 ## Front frame assembly guide
 
@@ -358,7 +358,7 @@ The front frame is where all the electronics usually go.
 # Led holder
 [Back to top](#print-guide-and-assembly-guide)
 
-Its recommenmded to have a multicolor 3d printer here. Its possible to do it without one too but the results might not come as good.
+It's recommended to have a multicolor 3D printer here. It's possible to do it without one too but the results might not come as good.
 This section will require a bit of soldering and electronics. You can totally use the original MK16 led holders if you want, this guide
 only exists because the way I made the holders, feels to me that they come out better.
 
@@ -395,7 +395,7 @@ Firstly you will load the model and then place flat on the print bed
 Then click on the model, press Ctrl+C and then Ctrl+V to create a copy. 
 
 
-Right click one of them and selec mirror and then mirror Y
+Right click one of them and select mirror and then mirror Y
 
 ![Led holder](./guide-led-holder-pring-part0.png)
 
@@ -405,7 +405,7 @@ Then they should look like this on the print bed
 
 Make them all white. If you get some silver PLA or other color that reflects light better than white, use it instead.
 
-Now, if you have a multicolor print, make the first layer back. If you dont have a multicolor print, you can use black PLA, and then pause the print mid print and swap the filament.
+Now, if you have a multicolor print, make the first layer back. If you don't have a multicolor print, you can use black PLA, and then pause the print mid print and swap the filament.
 
 ![Led holder](./guide-led-holder-pring-part2.png)
 
@@ -413,13 +413,13 @@ Now, if you have a multicolor print, make the first layer back. If you dont have
 
 * Material: Transparent PLA or Black PLA
 * PEI: **SMOOTH**
-* Layer height: dont matter
+* Layer height: don't matter
 * Infill: 100%
 * Supports: none
 * Brim: No
 * Internal solid infill pattern: aligned rectilinear
 
-Now come a tricky part. If you dont have a multicolor print, you an either lasercut a piece of acrylic in to a circle and fit on the model. Or you can print a circle using transparent PLA and fit in the circle.
+Now come a tricky part. If you don't have a multicolor print, you can either lasercut a piece of acrylic in to a circle and fit on the model. Or you can print a circle using transparent PLA and fit in the circle.
 Using a smooth PEI sheet here is important. You can go with a texturized one, but you will need to enable ironing and print it upside down and enable supports.
 
 #### Non multicolor print method
@@ -438,13 +438,13 @@ That way the object will become two. The inner circle and the outer.
 
 ![Led holder](./guide-led-holder-pring-part5.png)
 
-Just change the filament of one of the circle to be the transparent one. Remmber to change the infill to 100% and the infill pattern to be aligned and rectilinear
+Just change the filament of one of the circle to be the transparent one. Remember to change the infill to 100% and the infill pattern to be aligned and rectilinear
 
 ![Led holder](./guide-led-holder-pring-part5.5.png)
 
 ![Led holder](./guide-led-holder-pring-part6.png)
 
-Then move them aparta, disable the rings and print the inner circles first then print the circles later in black PLA
+Then move them apart, disable the rings and print the inner circles first then print the circles later in black PLA
 
 ![Led holder](./guide-led-holder-pring-part7.png)
 
@@ -458,14 +458,14 @@ Then you need to print a black sticker with white or transparent background and 
 
 #### Multicolor print method
 
-First import the model facing down. Keep it all balck!
+First import the model facing down. Keep it all black!
 
 For the logo, get an SVG of your logo, you can use [this site which has a bunch of SVGS](https://www.svgrepo.com/).
 Select a SVG, download it, make the whole model black then right click on the model and select "Add modifier" and select an SVG
 
 ![Led holder](./guide-led-holder-pring-part8.png)
 
-Adjust the SVG size and position to be on the middle of the model. Also make sure it is thick enough to go trough the model
+Adjust the SVG size and position to be on the middle of the model. Also make sure it is thick enough to go through the model
 
 ![Led holder](./guide-led-holder-pring-part9.png)
 
@@ -478,7 +478,7 @@ It should look like this when sliced
 
 ![Led holder](./guide-led-holder-pring-part11.png)
 
-But wait, its not finished. We need t he light to go trough it... And if you notice, that part that supposed to be transparent is now black!
+But wait, it's not finished. We need the light to go through it... And if you notice, that part that's supposed to be transparent is now black!
 
 ![Led holder](./guide-led-holder-pring-part12.png)
 
@@ -494,7 +494,7 @@ While the bottom surface looking like this:
 
 ![Led holder](./guide-led-holder-pring-part15.png)
 
-Print two of them! Remmeber that you might need to flip one of the circles.
+Print two of them! Remember that you might need to flip one of the circles.
 
 ### Asembly Led Holder
 
@@ -506,15 +506,15 @@ Once you get the correct one, cut them in to two strips of 21~22cm.
 
 ![Led holder](./guide-led-holder-assembly-part2.png)
 
-Now lets solder the terminals of the strip. Make sure to solder them in the correct orientation. Those adderessable led strips have an arrow indicating the direction
+Now lets solder the terminals of the strip. Make sure to solder them in the correct orientation. Those addressable led strips have an arrow indicating the direction
 
 ![Led holder](./guide-led-holder-assembly-part3.png)
 
-Once you solder, remember to put somee heatshrink tube to cover the contacts, or later cover it with electrical tape or hotglue
+Once you solder, remember to put some heatshrink tube to cover the contacts, or later cover it with electrical tape or hotglue
 
 ![Led holder](./guide-led-holder-assembly-part4.png)
 
-Make sure to test to see if they're working. I'm testing using a protopanda, but you can upload an [FastLed sketch to an arduino board.](https://docs.arduino.cc/libraries/fastled/)
+Make sure to test to see if they're working. I'm testing using a Protopanda, but you can upload an [FastLed sketch to an arduino board.](https://docs.arduino.cc/libraries/fastled/)
 
 ![led holder](./led-strip.gif)
 
@@ -552,12 +552,12 @@ Alternatively, you can try using a 5x5 matrixes. But the leds will be visible.
 
 ![Led holder](./guide-led-holder-assembly-part10.png)
 
-Altough the results aren't that good in person. You can clearly see the individual leds.
+Although the results aren't that good in person. You can clearly see the individual leds.
 
 ![Led holder](./guide-led-holder-assembly-part11.png)
 
-Once you decide which one you using, you can use just a bit of super glue. But **DONT DO IT NOW**!! You will need to align it once you finish assembling all parts.
-Dont use too much because they already fit snug in to the fin hole. And if you ever need to replace the led strip, you can easily open it
+Once you decide which one you're using, you can use just a bit of super glue. But **DON'T DO IT NOW**!! You will need to align it once you finish assembling all parts.
+Don't use too much because they already fit snug in to the fin hole. And if you ever need to replace the led strip, you can easily open it
 
 # Clips
 [Back to top](#print-guide-and-assembly-guide)
@@ -575,13 +575,13 @@ Clips are used to join together the [back of the head](#back-head) with the [hea
 
 ## Printing clips
 
-* Material: PETG, ASA, ABS or something stronger (PETG reccomended)
-* Layer height: doe'snt matter
+* Material: PETG, ASA, ABS or something stronger (PETG recommended)
+* Layer height: doesn't matter
 * Supports: no
 * Brim: none
 
 Yeah, you heard that right. PETG or ASA. **DO NOT ATTEMPT TO PRINT THIS IN PLA.** It __WILL__ crack eventually.
-Its reccomended to print 8 of each. The small one is used in case your head fits perfectly on the model. If it needs extra space, print the [extender](#extender) and use the big clips.
+It's recommended to print 8 of each. The small one is used in case your head fits perfectly on the model. If it needs extra space, print the [extender](#extender) and use the big clips.
 
 Once you load the model, first click on lay flat
 
@@ -607,7 +607,7 @@ For assembly guide, check the [Assembling all parts together ](#assembling-all-p
 ## Ears materials
 
 The model support 2 and 4 ears. You can choose to print just two of them or all four of them. Or completely skip this section and make your own ears later.
-The ears will be printed in TPU. You can print them in PLA or PETG but they might end up too heavy or breaking easily since you wont be able to bend them.
+The ears will be printed in TPU. You can print them in PLA or PETG but they might end up too heavy or breaking easily since you won't be able to bend them.
 
 ![ears](./tpu-ears-all.gif)
 
@@ -637,15 +637,15 @@ The ears will be printed in TPU. You can print them in PLA or PETG but they migh
 * Top shell layers: 0
 * Walls: 0
 
-They're printed using TPU so its flexible and ultra durable
+They're printed using TPU so it's flexible and ultra durable
 
 ![ears](./tpu-ears.gif)
 
-You will see the ears are split in to parts. Thats because they're too big and dont fit on the printer.
+You will see the ears are split in to parts. That's because they're too big and don't fit on the printer.
 
 ![ears](./guide-ear-print-part1.png)
 
-The requirement is is changing the infill to 10%, removing walls and top shell layers.
+The requirement is changing the infill to 10%, removing walls and top shell layers.
 And add a few modifier cylinders on those holes. They should have 3 walls, those are the places where the heatsets will stay.
 
 ![ears](./guide-ear-print-part2.png)
@@ -687,21 +687,21 @@ once they're printed, heat your soldering iron on about 300~350ºC with a m4 tip
 
 ### Back of the head and ears
 
-First position four M4 crews in the holes, push or screw them in the holes until they start poking on the other side 
+First position four M4 screws in the holes, push or screw them in the holes until they start poking on the other side 
 
-![ealls](./assembly-all-part0.png)
+![ears](./assembly-all-part0.png)
 
 ![all](./assembly-all-part2.png)
 
 Then position the left ear with the topmost screw, start rotating the screw so it gets closer. Then align the ear with the bottom one. Do this for all screws
 
-![eallars](./assembly-all-part1.png)
+![ears](./assembly-all-part1.png)
 
 Do this for all four ears.
 
 ### Back of the head and headphones
 
-**BUT MOCK, I DONT WANNA USE SCREWS, CAN I USE THE OLD FASHION WAY AND GLUE?**
+**BUT MOCK, I DON'T WANNA USE SCREWS, CAN I USE THE OLD FASHION WAY AND GLUE?**
 
 yeah.
 
@@ -711,11 +711,11 @@ Get 6 clips and 6 M3 6mm screws. Screw the clips in place with just enough press
 
 ![all](./assembly-all-part3.png)
 
-Now slide in the extender (if not using the extender, use the small clips and do the headphones now.), you'll notice the alignment might be a little tricky. Thats why there is a aligment hole.
+Now slide in the extender (if not using the extender, use the small clips and do the headphones now.), you'll notice the alignment might be a little tricky. That's why there is an alignment hole.
 
 ![all](./assembly-all-part4.png)
 
-The idea there is you use a piece of filament or some other thing to keep the parts in place. If the hole end up beeing too small due, you can drill it with a 1.7mm drill.
+The idea there is you use a piece of filament or some other thing to keep the parts in place. If the hole end up being too small due, you can drill it with a 1.7mm drill.
 
 ![all](./assembly-all-part5.png)
 
@@ -723,15 +723,15 @@ Here I'm using piece of PLA filament to align.
 
 ![all](./assembly-all-part6.png)
 
-Now place all the screws in the extender and tighten all screws. Dont tight too hard though.
+Now place all the screws in the extender and tighten all screws. Don't tight too hard though.
 
 ![all](./assembly-all-part7.png)
 
-Now just slide in the headphones. With the alinment holes it will be in place, ready to screw.
+Now just slide in the headphones. With the alignment holes it will be in place, ready to screw.
 
 ![all](./assembly-all-part8.png)
 
-Once everrything is secured with screws, you can put a pinch of glue on the filament strand at the back of the head and then cut it with a straight cutting plier.
+Once everything is secured with screws, you can put a pinch of glue on the filament strand at the back of the head and then cut it with a straight cutting plier.
 
 ![all](./assembly-all-part9.png)
 

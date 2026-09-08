@@ -10,6 +10,7 @@
         "gpio_state": 1,
         "enabled": true,
         "boop_delay": 0,
+        "boopTriggerDuration": 50,
         "boopAnimationName": "boop",
         "transictionOnlyOnAnimation": "normal"
     },

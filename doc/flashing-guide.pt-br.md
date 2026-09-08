@@ -1,4 +1,4 @@
-# Flashing protopanda
+# Flashing Protopanda
 
 Já que você está aqui, há algumas coisas que precisam ser mencionadas antes.
 Este guia cobrirá como configurar o ambiente, como compilar, como gravar o firmware e o que colocar no cartão SD.
@@ -12,7 +12,7 @@ Atualmente, este guia NÃO inclui uma maneira de atualizar coisas do cartão SD 
 
 # Configurando o ambiente
 
-O Protopanda é escrito em C++ e projetado para ser usado em um Esp32S3 utilizando o framework Arduino. Para isso, você precisará apenas de um software e um plugin para ele. E TALVEZ um driver.
+O Protopanda é escrito em C++ e projetado para ser usado em um ESP32S3 utilizando o framework Arduino. Para isso, você precisará apenas de um software e um plugin para ele. E TALVEZ um driver.
 
 ## Passo 1 - Software e drivers
 
@@ -27,9 +27,9 @@ Pode levar algum tempo para baixar todos os arquivos e pode solicitar que você 
 
 **Certifique-se de não ter platformio e pioarduino instalados ao mesmo tempo**
 
-## Passo 2 - Baixando o protopanda
+## Passo 2 - Baixando o Protopanda
 
-Agora vá até a página do protopanda no GitHub, clique para baixá-lo.
+Agora vá até a página do Protopanda no GitHub, clique para baixá-lo.
 
 ![](./flashing-guide-2.png)
 
@@ -47,15 +47,15 @@ Se você estiver usando uma placa ESP32S3 (o caminho DIY/faz você mesmo), a pla
 
 ![](./flashing-guide-8.png)
 
-Mas se você decidiu comprar um protopanda montado ou fez o seu usando a PCB fornecida, use a porta USB-MINI na frente do controlador.
+Mas se você decidiu comprar um Protopanda montado ou fez o seu usando a PCB fornecida, use a porta USB-MINI na frente do controlador.
 
 ![](./flashing-guide-9.png)
 
 ## Passo 4 - Drivers?!
 
-Agora conecte o protopanda ou o ESP32 ao seu computador. Se aparecer uma mensagem dizendo "Dispositivo desconhecido" ou algo assim, significa que você pode precisar de um driver.
+Agora conecte o Protopanda ou o ESP32 ao seu computador. Se aparecer uma mensagem dizendo "Dispositivo desconhecido" ou algo assim, significa que você pode precisar de um driver.
 
-Primeiramente, dependendo de qual placa você está usando, pode ser necessário baixar um driver. Se você estiver usando um protopanda comprado montado, será um [driver ch340](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all). Caso contrário, será outro. **Baixe apenas se for realmente necessário!**
+Primeiramente, dependendo de qual placa você está usando, pode ser necessário baixar um driver. Se você estiver usando um Protopanda comprado montado, será um [driver ch340](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all). Caso contrário, será outro. **Baixe apenas se for realmente necessário!**
 A maioria dos sistemas operacionais já vem com a maioria desses drivers ou os instala automaticamente.
 
 Se você não receber nenhuma mensagem, pode clicar no ícone de tomada no canto inferior esquerdo do VS Code. Esse ícone é usado para selecionar a porta de comunicação serial com o dispositivo.
@@ -110,7 +110,7 @@ Pronto, você compilou!
 ## Configuração
 
 Existe um arquivo `include/tools/config_defaults.hpp`. Nele você pode alterar algumas configurações do projeto.
-Se você decidiu montar o seu próprio protopanda, então você DEVE modificar essas configurações:
+Se você decidiu montar o seu próprio Protopanda, então você DEVE modificar essas configurações:
 
 ```cpp
 #define PANDA_SD_MODE 2
@@ -122,11 +122,11 @@ Mude para:
 #define SPI_MAX_CLOCK (40 * 1000 * 1000)
 ```
 
-Isso por que quando se usa fios, especialmente mais longos, pode causar ruido quando se opera em altas velocidade. Trocando o clock para a metade impede que esse ruido seja significativo ao ponto de atrapalhar a operação.
+Isso porque quando se usa fios, especialmente mais longos, pode causar ruído quando se opera em altas velocidades. Trocando o clock para a metade impede que esse ruído seja significativo ao ponto de atrapalhar a operação.
 
-Além disso alguns módulos SD tem uma modificação que um ou dois pinos estão ligado ao GND, fazendo assim impossivel que ele opere no modo SD_MMC. Para trocar de volta para o modo SPI basta alterar PANDA_SD_MODE para 1. O modo SPI é mais lento porém funciona na maioria dos casos
+Além disso, alguns módulos SD têm uma modificação que um ou dois pinos estão ligados ao GND, fazendo assim impossível que ele opere no modo SD_MMC. Para trocar de volta para o modo SPI basta alterar PANDA_SD_MODE para 1. O modo SPI é mais lento porém funciona na maioria dos casos.
 
-Sempre que alterar algo nesse arquivo é necessário recompilar e gravar novamente o firmware.
+Sempre que alterar algo nesse arquivo, é necessário recompilar e gravar novamente o firmware.
 
 ## Gravando (Flashing)
 
@@ -188,7 +188,7 @@ Connecting..................
 ```
 
 Isso provavelmente significa que o ESP não está entrando no modo de boot corretamente. Você pode forçar segurando o botão flash e depois pressionando uma vez o botão reset na placa.
-No caso do protopanda montado, há dois botões na parte superior do case, o da esquerda é o flash e o da direita é o reset.
+No caso do Protopanda montado, há dois botões na parte superior do case, o da esquerda é o flash e o da direita é o reset.
 
 ![](./flashing-guide-12.png)
 
@@ -198,7 +198,7 @@ Na placa ESP32 eles estão escritos como "RST" e "BOOT".
 
 ## Lendo o serial
 
-Você pode depurar e ler algumas saídas seriais que o protopanda gera. Com o dispositivo gravado e conectado ao computador, há um segundo ícone de tomada, chamado "Serial monitor" (Monitor Serial).
+Você pode depurar e ler algumas saídas seriais que o Protopanda gera. Com o dispositivo gravado e conectado ao computador, há um segundo ícone de tomada, chamado "Serial monitor" (Monitor Serial).
 
 ![](./flashing-guide-14.png)
 

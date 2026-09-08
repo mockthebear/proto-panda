@@ -35,7 +35,7 @@ Então você precisará da eletrônica:
 * 4x [Porcas M2](https://pt.aliexpress.com/item/1005005139195269.html)
 * 2x [Parafusos M3 16mm~18mm](https://pt.aliexpress.com/item/32973784147.html)
 * 4~6x [Parafusos M3 8mm](https://pt.aliexpress.com/item/32973784147.html)
-* 2x [Porca M3 auto-roscante](https://pt.aliexpress.com/item/1005008207473770.html)
+* 2x [Porcas M3 auto-roscantes](https://pt.aliexpress.com/item/1005008207473770.html)
 
 
 ![img](./front-frame-materials.png)
@@ -92,7 +92,7 @@ Mas como você pode ver, está um pouco longo demais. Você pode deixar como est
 
 Se quiser deixar como está, pule para [Cabo de alimentação](#cabo-de-alimentação)
 
-Como você pode ver, o cabo tem cerca de 19~20cm. Mas precisamos de pelo menos 11CM.
+Como você pode ver, o cabo tem cerca de 19~20cm. Mas precisamos de pelo menos 11cm.
 
 ![img](./front-frame-cable-2.png)
 

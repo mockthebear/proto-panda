@@ -1,13 +1,13 @@
 # DIY Route!
 
-Ok, so you don't have a way to buy an assembled protopanda or just wanna build your own for yourself. I get it. As they said in the 2005 movie "Robots":
+Ok, so you don't have a way to buy an assembled Protopanda or just wanna build your own for yourself. I get it. As they said in the 2005 movie "Robots":
 "Oh honey I'm so sorry you missed the delivery. But that's okay, making the baby is the fun part."
 
 Let's do it!
 
 # Important information
 
-This project is still a work in progress and very little amount of people have done the DIY route so far. It's possible and you can totally do it! But it won't be as good as a protopanda assembled from the provided PCB.
+This project is still a work in progress and very little amount of people have done the DIY route so far. It's possible and you can totally do it! But it won't be as good as a Protopanda assembled from the provided PCB.
 
 This guide will require that you know a little of soldering and the basics of using a multimeter (measuring voltage, resistance and continuity). There are guides on the internet teaching those, so this won't be taught here.
 
@@ -139,7 +139,7 @@ Now check the output of the DC converter. It should say between 4.9~5.2v.
 
 ![](./diy-assembly13.png)
 
-Once this is done, let's solder the capacitor. First, carefully look on the capacitor, there is a usually white band. That indicates where the negative pole is. Place it in the board with the polarity in the correct way!!!! **This is important. DO NOT PLACE THE CAPACITOR BACKWARDS**
+Once this is done, let's solder the capacitor. First, carefully look on the capacitor, there is usually a white band. That indicates where the negative pole is. Place it in the board with the polarity in the correct way!!!! **This is important. DO NOT PLACE THE CAPACITOR BACKWARDS**
 
 **If you solder the capacitor and the 5V stops showing, that means the module has a faulty over current protection, you might be fine without it. So if that happens, just remove the capacitor!**
 
@@ -200,7 +200,7 @@ Note that all of those can be skipped.
 
 * If you don't want the buzzer, edit the `config_defaults.hpp` commenting this line: `USE_BUZZER`
 * If you don't want the internal button to enable wifi on boot, edit the `config_defaults.hpp` commenting this line: `ENABLE_EDIT_MODE`
-* If you don't want the resistor divider (recommended if you're not gonna use the PD trigger but a battery) `config_defaults.hpp` commenting this line: `USE_PIN_BATTERY_IN`
+* If you don't want the resistor divider (recommended if you're not gonna use the PD trigger but a battery) edit the `config_defaults.hpp` commenting this line: `USE_PIN_BATTERY_IN`
 
 ![](./diy-assembly23.png)
 
@@ -257,11 +257,11 @@ And when completed:
 
 Now after you double check, put the SD card (make sure you put all the required files in the SD card as it says in the [flashing guide](./flashing-guide.md#what-goes-in-the-sd-card)). 
 Powering on it should detect the card. If it does not, check if you did the [configuration part of the SD card for the DIY mode](./flashing-guide.md#configuration). 
-That means, changing the `PANDA_SD_MODE` to `1` and reduce clock speed to 40mhz
+That means, changing the `PANDA_SD_MODE` to `1` and reducing clock speed to 40mhz
 
-> SD cards bigger than 32gb doesnt work! They also need to be formatted in to FAT32
+> SD cards bigger than 32gb don't work! They also need to be formatted into FAT32
 
-If everything goes well, the protopanda should boot correctly and all the procedures should show this:
+If everything goes well, the Protopanda should boot correctly and all the procedures should show this:
 
 ![](./diy-assembly32.png)
 
@@ -293,7 +293,7 @@ Before testing, let's make sure all wires are connected! Put your multimeter in 
 
 ![](./diy-assembly38.png)
 
-> Important: The wiring above is looking from up to down. If you plug jumper cables directly in to the HUB75 cable and make it facing you, thata will make the left and right sides to be flipped!
+> Important: The wiring above is looking from up to down. If you plug jumper cables directly into the HUB75 cable and make it facing you, that will make the left and right sides to be flipped!
 
 Now that you've made sure every pin is correctly connected, let's wire the power for the panels.
 Get the power cable that came with the panels and cut their tips.

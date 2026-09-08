@@ -1,12 +1,12 @@
 # Guia de impressão e montagem
 
-Imprimir o protopanda é mais fácil que o modelo MK16 original. Precisa de menos suporte e tem alguns recursos que ajudam a reduzir a quantidade de material de impressão. E Peso também.
-Também adiciona um pouco de complexidade em outras partes, isso é para algumas partes ficarem mais bonitas, mais resistentes ou ter mais funcionalidades. 
-Todas as peças do modelo protopanda podem ser trocadas pela sua versão do [MK16 original](https://www.thingiverse.com/thing:4894173).
+Imprimir o Protopanda é mais fácil que o modelo MK16 original. Precisa de menos suporte e tem alguns recursos que ajudam a reduzir a quantidade de material de impressão. E peso também.
+Também adiciona um pouco de complexidade em outras partes, isso é para algumas partes ficarem mais bonitas, mais resistentes ou terem mais funcionalidades. 
+Todas as peças do modelo Protopanda podem ser trocadas pela sua versão do [MK16 original](https://www.thingiverse.com/thing:4894173).
 
-# Modelos 3d
+# Modelos 3D
 
-Você pode baixar os modelos do protogen versão protopanda [aqui](https://www.thingiverse.com/thing:7188042)
+Você pode baixar os modelos do protogen versão Protopanda [aqui](https://www.thingiverse.com/thing:7188042)
 
 # Peças
 
@@ -15,7 +15,7 @@ PLA tem um problema que em temperaturas acima de 50ºC ele fica maleável, e mui
 
 > Algumas partes do guia vão recomendar usar ASA ou ABS, mas eles são tóxicos durante a impressão. Pense bem no que você precisa.
 
-Abaixo você pode clicar em cada uma das imagens. Cada seção tem um guia de impressão, configurações recomendadas para cada peça, ferramentas e materias.
+Abaixo você pode clicar em cada uma das imagens. Cada seção tem um guia de impressão, configurações recomendadas para cada peça, ferramentas e materiais.
 
 | Frame frontal                                | Headset                                      | Parte de trás da cabeça                                             |
 |-------------------------------------------------|------------------------------------------------------|--------------------------------------------------------------------|
@@ -48,9 +48,9 @@ Abaixo você pode clicar em cada uma das imagens. Cada seção tem um guia de im
 * Alicate de corte reto
 * Sargento (opcional)
 
-### Todos os Consumiveis necessários
-> Quase todas as peças que requerem parafuso, podem ser simplesmente coladas. No mk16 as peças são coladas com excessão do frame frontal
-* Cola de dois componentes (araldite ta ótimo)
+### Todos os Consumíveis necessários
+> Quase todas as peças que requerem parafuso, podem ser simplesmente coladas. No MK16 as peças são coladas com exceção do frame frontal
+* Cola de dois componentes (araldite tá ótimo)
 * 10x [inserto de latão M3 (5~7mm de altura)](https://pt.aliexpress.com/item/1005003582355741.html)
 * 18x [inserto de latão M3 3mm de altura](https://pt.aliexpress.com/item/1005003582355741.html)
 * 8 a 16x [inserto de latão M4 (5~7mm de altura)](https://pt.aliexpress.com/item/1005003582355741.html)
@@ -79,8 +79,8 @@ Abaixo você pode clicar em cada uma das imagens. Cada seção tem um guia de im
 * Alicate de corte reto
 * Grampo C (opcional)
 
-### Materiais consumiveis
-* Cola de dois componentes (araldite ta top)
+### Materiais consumíveis
+* Cola de dois componentes (araldite tá top)
 * 10x insertos de latão M3 (4~6mm de altura)
 * Filamento ASA ou PLA
 * 2x imãs de neodímio 10mmX2mm
@@ -110,7 +110,7 @@ Não tem muito problema ir de PLA aqui.
 * Material: ASA ou PLA
 * Altura da camada: 0.16mm ou menos
 * Suportes: árvore
-* Brim: é uma boa, mas não é totalmente necessário. E pode afetar a superficie fazendo que vocÊ tenha que lixar mais.
+* Brim: é uma boa, mas não é totalmente necessário. E pode afetar a superfície fazendo que você tenha que lixar mais.
 
 Quando você carregar o arquivo STL, provavelmente vai aparecer num ângulo estranho:
 
@@ -128,7 +128,7 @@ Quando posicionada, deve ficar mais ou menos assim:
 
 ![fins](./guide-front-headphones-fin-part3.png)
 
-Dá pra imprimir assim, mas da pra imprimir as 2 juntas. Faça uma cópia do modelo selecionando e apertando ctrl-c e depois ctrl-v.
+Dá pra imprimir assim, mas dá pra imprimir as 2 juntas. Faça uma cópia do modelo selecionando e apertando ctrl-c e depois ctrl-v.
 Depois clique com o direito no novo corpo e selecione espelhar, depois espelhar no eixo Y. Se estiverem muito perto, afaste um do outro. Deve ficar assim:
 
 ![fins](./guide-front-headphones-fin-part4.png)
@@ -141,7 +141,7 @@ Se ficar uns artefatos na pontinha lá no final, aumente o ângulo limite do sup
 
 **MAS MOCK, DÁ PRA IMPRIMIR COM A PARTE DE TRÁS NA MESA EM VEZ DISSO????**
 
-Dá sim! Mas o problema que a original do MK16 tem uns curvas suaves que a maioria das impressoras vai ter dificuldade de reproduzir nessa quando impresso nessa posição. É uma ótima ideia se você tiver um modelo personalizada com superfície reta, ai dá até pra usar ironing lá.
+Dá sim! Mas o problema é que a original do MK16 tem umas curvas suaves que a maioria das impressoras vai ter dificuldade de reproduzir quando impresso nessa posição. É uma ótima ideia se você tiver um modelo personalizado com superfície reta, aí dá até pra usar ironing lá.
 
 ![fins](./guide-front-headphones-fin-part6.png)
 
@@ -155,14 +155,14 @@ Agora pegue dois dos parafusos M4, coloque em dois furos de um lado até que sai
 
 ![Fones](./guide-front-headphones-assembly-part1.png)
 
-Desparafuse um pouco até que a asinha fique encostando bem noi headset. Ai você aperta um pouco os parafusos pra que eles entrem um pouco na asinha e ela fique fixa. Isso é só pra alinhar.
+Desparafuse um pouco até que a asinha fique encostando bem no headset. Ai você aperta um pouco os parafusos pra que eles entrem um pouco na asinha e ela fique fixa. Isso é só pra alinhar.
 Faça isso dos dois lados.
 
 Depois que você tiver tudo certinho, partiu misturar a cola, mistura bastante viu?
 
 ![Fones](./guide-front-headphones-assembly-part2.png)
 
-Agora espalha entre os furos dos em cada asinha. Evite colocar muita cola e evite colocar muito perto da borda de fora ou dos furos.
+Agora espalha entre os furos de cada asinha. Evite colocar muita cola e evite colocar muito perto da borda de fora ou dos furos.
 Colocar cola demais ou muito perto da borda vai fazer a cola vazar pro lado de fora... e você vai ter que limpar.
 Cola no furo do parafuso vai dificultar na hora de tirar os parafusos.
 
@@ -174,7 +174,7 @@ Agora coloque as duas asinhas no lugar e use os parafusos pra manter elas alinha
 
 ![Fones](./guide-front-headphones-assembly-part4.png)
 
-Se os parafusos não forem suficientes pra deixar as asinhas completamente alinhadinhas e encostando nas laterais, mete uns 2 sargentos ali pra segurar, só não aperta muito pra n marcar.
+Se os parafusos não forem suficientes pra deixar as asinhas completamente alinhadinhas e encostando nas laterais, mete uns 2 sargentos ali pra segurar, só não aperta muito pra não marcar.
 
 ![Fones](./guide-front-headphones-assembly-part5.png)
 
@@ -197,7 +197,7 @@ Agora pegue seus insertos de latão e seu ferro de solda com a ponta própria e 
 ![Fones](./guide-front-headphones-assembly-part9.png)
 
 Coloque o inserto M3 (o comprido) bem em cima do furo, coloque o ferro de solda direto nele e alinhe o máximo que der com o buraco. Aplicando só um **pouquinho** de pressão! Espere alguns segundos até ver o inserto entrando no furo e derretendo o plástico em volta.
-Aí aplique um pouco mais de pressão, mas não vá muito rápido. A ideia é que ele entre devagar enquanto derrete o plastico em volta. Pode empurrar ele uns 2~3mm abaixo da superficie. Se o inserto tiver 7mm, pode ir até ele ficar na superfície. Se for de 5mm, enfia uns 2~3mm.
+Aí aplique um pouco mais de pressão, mas não vá muito rápido. A ideia é que ele entre devagar enquanto derrete o plástico em volta. Pode empurrar ele uns 2~3mm abaixo da superfície. Se o inserto tiver 7mm, pode ir até ele ficar na superfície. Se for de 5mm, enfia uns 2~3mm.
 
 ![Fones](./heatset.gif)
 
@@ -225,7 +225,7 @@ Quando terminar, essa parte está completa!
 * Chave de fenda
 * Alicate de corte reto
 
-### Consumiveis
+### Consumíveis
 * Filamento ASA ou PLA
 * 6x insertos de latão M3 3mm de altura
 
@@ -233,8 +233,8 @@ Quando terminar, essa parte está completa!
 
 ### A parte de trás em si
 
-Modelos com buracos e partes "flutuantes" recisam de suporte pra que o material não caia. Sorte que você está lidando com um modelo que na MAIORIA partes não precisa (eficiência >:3)!
-Ele foi desenhado pra precisar do mínimo de suporte possível e tem furos pra que você consiga escutar melhor e ventilar... Mas no fim é pra econimizar material e não gerar muito lixo.
+Modelos com buracos e partes "flutuantes" precisam de suporte pra que o material não caia. Sorte que você está lidando com um modelo que na MAIORIA partes não precisa (eficiência >:3)!
+Ele foi desenhado pra precisar do mínimo de suporte possível e tem furos pra que você consiga escutar melhor e ventilar... Mas no fim é pra economizar material e não gerar muito lixo.
 
 * Material: ASA, PETG, PLA. PETG é recomendado
 * Altura da camada: pode usar 0.24. A qualidade não importa muito aqui
@@ -276,7 +276,7 @@ Quando terminar, vai ficar BUNYTO:
 
 ## Extensor
 
-As vezes, sua cabeça é grande e ai precisa fazer um pouco maior. Pra isso temos essa peça ai que deixa a cabeça mais longa. No caso ela aumenta 2,5cm.
+Às vezes, sua cabeça é grande e aí precisa fazer um pouco maior. Pra isso temos essa peça aí que deixa a cabeça mais longa. No caso ela aumenta 2,5cm.
 
 * Material: ASA ou PLA
 * Altura da camada: qualquer uma
@@ -287,7 +287,7 @@ Mesmo processo da parte de trás. Carregue o modelo, deixe ele reto, desabilite 
 
 ![Frame frontal](./guide-front-extender.png)
 
-Imprimiu ta pronto, cabô.
+Imprimiu tá pronto, cabô.
 
 ## Guia de montagem da parte de trás
 
@@ -301,7 +301,7 @@ Tem 6 furos onde esses insertos devem ser colocados:
 
 ![Frame frontal](./guide-back-head-assembly-part1.png)
 
-Primeiro, coloque o capacete de lado, tenta deixar em um lugar em que ele n fique muito bambo. Então coloque um dos insertos com a parte fina virada pro furo. Coloque a ponta do ferro de solda em cima do inserto e espere alguns segundos até ele começar a
+Primeiro, coloque o capacete de lado, tenta deixar em um lugar em que ele não fique muito bambo. Então coloque um dos insertos com a parte fina virada pro furo. Coloque a ponta do ferro de solda em cima do inserto e espere alguns segundos até ele começar a
 derreter o plástico e entrar no furo. Tente fazer isso devagar, sem forçar muito. Use o mínimo de força possível e tente não afundar além da superfície. Mantenha o ferro de solda o mais reto possível em relação à superfície:
 
 ![Frame frontal](./heatset-head.gif)
@@ -324,7 +324,7 @@ A Frame frontal é onde geralmente vai toda a eletrônica.
 * Impressora 3D
 * Orca slicer (ou outro fatiador com recursos parecidos)
 
-### Consumiveis
+### Consumíveis
 * PETG preto
 
 ## Guia de impressão do Frame frontal
@@ -378,9 +378,9 @@ Você também pode trocar a fita de LED ws2812b por um LED de cor única também
 * Impressora 3D (multicolor se possível)
 * Placa lisa de PEI (aquela com as estrelinha fica muito top)
 * Orca slicer (ou outro fatiador com recursos parecidos)
-* Ferro de solda e materias de solda
+* Ferro de solda e materiais de solda
 
-### Consumiveis
+### Consumíveis
 * PLA branco ou qualquer cor reflexiva
 * PLA preto
 * PLA transparente
@@ -428,7 +428,7 @@ Agora, se você tiver uma impressora multicolor, deixe a primeira camada preta. 
 * Padrão de preenchimento sólido interno: retilíneo alinhado
 
 Agora vem uma parte um pouco complicada. Se você não tiver uma impressora que imprime colorido, pode cortar um círculo de acrílico a laser e encaixar no modelo. Ou pode imprimir um círculo usando PLA transparente e encaixar no círculo de fora.
-Usar uma placa PEI lisa aqui é importante. Dá pra usar uma texturizada, mas ai você vai ter que imprimir ela de cabeça pra baixo, ligar suporte e se quiser uma superficie boa, tem que habilitar "ironing"
+Usar uma placa PEI lisa aqui é importante. Dá pra usar uma texturizada, mas aí você vai ter que imprimir ela de cabeça pra baixo, ligar suporte e se quiser uma superfície boa, tem que habilitar "ironing"
 
 #### Método sem impressora colorida
 
@@ -472,7 +472,7 @@ Escolha um SVG, baixe, depois clique com o direito no modelo e selecione "Add mo
 
 ![Suporte de LED](./guide-led-holder-pring-part8.png)
 
-Ajuste o tamanho e posição do SVG pra ficar no meio do circulo. Aumente a espessura fazendo ele atravessar o modelo em cima e em baixo:
+Ajuste o tamanho e posição do SVG pra ficar no meio do círculo. Aumente a espessura fazendo ele atravessar o modelo em cima e em baixo:
 
 ![Suporte de LED](./guide-led-holder-pring-part9.png)
 
@@ -521,7 +521,7 @@ Depois de soldar, lembre-se de colocar um tubo termo-retrátil pra cobrir os con
 
 ![Suporte de LED](./guide-led-holder-assembly-part4.png)
 
-Teste pra ver se estão funcionando. Estou testando usando um protopanda, mas você pode usar um arduino ou esp32 com um exemplo da [biblioteca fastled](https://docs.arduino.cc/libraries/fastled/):
+Teste pra ver se estão funcionando. Estou testando usando um Protopanda, mas você pode usar um arduino ou esp32 com um exemplo da [biblioteca fastled](https://docs.arduino.cc/libraries/fastled/):
 
 ![suporte de LED](./led-strip.gif)
 
@@ -559,11 +559,11 @@ Outra opção é tentar usar matrizes 5x5. Mas os LEDs vão ficar visíveis:
 
 ![Suporte de LED](./guide-led-holder-assembly-part10.png)
 
-E o pior, os leds estouram muito nas fotos e ficam visiveis ao olho nú (da pra perceber onde tá os leds):
+E o pior, os leds estouram muito nas fotos e ficam visíveis ao olho nu (dá pra perceber onde tá os leds):
 
 ![Suporte de LED](./guide-led-holder-assembly-part11.png)
 
-Depois de decidir qual vai usar, pode usar só um pouquinho de super bonde. Mas **NÃO FAÇA ISSO AGORA**!! Você vai precisar alinhar quando terminar de montar no protogen.
+Depois de decidir qual vai usar, pode usar só um pouquinho de super bonder. Mas **NÃO FAÇA ISSO AGORA**!! Você vai precisar alinhar quando terminar de montar no protogen.
 E não use muita cola porque elas já encaixam certinho no furo da asinha. E se precisar trocar a fita de LED algum dia, dá pra abrir fácil assim.
 
 # Clipes
@@ -577,7 +577,7 @@ Os clipes são usados pra juntar a [parte de trás da cabeça](#parte-de-trás-d
 * Impressora 3D
 * Orca slicer (ou outro fatiador com recursos parecidos)
 
-### Consumiveis
+### Consumíveis
 * PETG, ASA, ABS ou algo mais resistente
 
 ## Impressão dos clipes
@@ -602,11 +602,11 @@ Depois, copie cada uma dessas peças até ter pelo menos 8 de cada:
 
 ![clipe](./guide-clip-print-part2.png)
 
-impresso, ta pronto. Os que sobrarem, guarde de reserva.
+Impresso, tá pronto. Os que sobrarem, guarde de reserva.
 
 ## Montagem dos clipes
 
-Eles devem juntar a [parte de trás da cabeça](#parte-de-trás-da-cabeça), o [extensor](#extensor) e os [Headset](#fones-de-ouvido).
+Eles devem juntar a [parte de trás da cabeça](#parte-de-trás-da-cabeça), o [extensor](#extensor) e o [Headset](#headset).
 Para o guia de montagem, veja a seção [Montando tudo junto](#montando-tudo-junto).
 
 # Orelhas
@@ -625,7 +625,7 @@ Vamos imprimir em TPU. Dá pra imprimir em PLA ou PETG, mas podem ficar pesadas 
 * Ferro de solda com ponta para inserto de latão
 * Chave de fenda
 
-### Consumiveis
+### Consumíveis
 * Filamento de TPU
 * 8 a 16x insertos de latão M4 (5~7mm de altura)
 * 8 a 16x parafusos M4 de 10~15mm
@@ -660,7 +660,7 @@ Quando fatiar, deve ficar assim:
 
 ![orelhas](./guide-ear-print-part3.png)
 
-Dá pra colocar duas orelhas ao mesmo tempo **(LEMBRE DE ESPELHAR ELAS)**. Quando terminar, abuse da do super bonder pra colar a ponta na orelha.
+Dá pra colocar duas orelhas ao mesmo tempo **(LEMBRE DE ESPELHAR ELAS)**. Quando terminar, abuse do super bonder pra colar a ponta na orelha.
 
 Depois de impressas, esquente seu ferro de solda por volta de 300~350ºC com uma ponta M4 e coloque todos os quatro insertos de latão M4.
 
@@ -679,11 +679,11 @@ Depois de impressas, esquente seu ferro de solda por volta de 300~350ºC com uma
 ### Consumables 
 * 1x [Frame frontal](#frame-frontal)
 * 1x [Headset](#headset)
-* 1x [Parte de trás da cabeça](#parte-de-trás-da-cabeç)
+* 1x [Parte de trás da cabeça](#parte-de-trás-da-cabeça)
 * 6x [Clipes](#clipes) 
-* 1x [Extensor](#Extensor) (opicional)
+* 1x [Extensor](#Extensor) (opcional)
 * 2x [Suporte dos leds](#suporte-de-led)
-* 2x~4x [Orelhass](#orelhas) (opicional)
+* 2x~4x [Orelhas](#orelhas) (opcional)
 * 12x~18x parafusos M3 6mm (cabeça chata)
 * 8x~16x parafusos M4 15mm (cabeça chata)
 
@@ -716,7 +716,7 @@ Pegue 6 clipes e 6 parafusos M3 6mm. Parafuse os clipes no lugar com pressão su
 
 ![tudo](./assembly-all-part3.png)
 
-Agora encaixe o extensor (se não for usar o extensor, use os clipes pequenos faça isso com o headset no lugar). Você vai notar que o alinhamento pode ser um pouco chatinho. Por isso existe um furo de alinhamento:
+Agora encaixe o extensor (se não for usar o extensor, use os clipes pequenos, faça isso com o headset no lugar). Você vai notar que o alinhamento pode ser um pouco chatinho. Por isso existe um furo de alinhamento:
 
 ![tudo](./assembly-all-part4.png)
 
@@ -732,7 +732,7 @@ Agora coloque todos os parafusos no extensor e aperte todos. Mas não aperte dem
 
 ![tudo](./assembly-all-part7.png)
 
-Agora é só encaixar os Headset. Com os furos de alinhamento, vai ficar no lugar certo, pronto pra aparafusar:
+Agora é só encaixar o Headset. Com os furos de alinhamento, vai ficar no lugar certo, pronto pra aparafusar:
 
 ![tudo](./assembly-all-part8.png)
 

@@ -1237,8 +1237,8 @@ Returns the center point of the model.
 
 [↑ Back to top](#topics)
 
-Sprites are 2D images that can be drawn over the screen. They work like objects, which have position, rotation and its own frames. 
-Frames can be created from a empty square, or loading a PNG. They should be used as overlays in managed mode.
+Sprites are 2D images that can be drawn over the screen. They work like objects, which have position, rotation and their own frames. 
+Frames can be created from an empty square, or loading a PNG. They should be used as overlays in managed mode.
 
 #### `Sprite()`
 Creates a new, empty `Sprite` object and registers it in the animation's sprite pool.
@@ -1252,7 +1252,7 @@ Returns the internal ID of the sprite.
 
 #### `sprite:CreateEmptyTexture(width, height)`
 Allocates a blank pixel buffer for the sprite of the given size.
-This will increase in 1 the number of frames
+This will increase in 1 the number of frames.
 - **Parameters**:
   - `width` (int)
   - `height` (int)
@@ -1272,7 +1272,7 @@ Crops the sprite to a sub-region. This does not remove data from the texture, on
 - **Returns**: `nil`
 
 #### `sprite:SetPixelColor(id, x, y, color)`
-Sets the color of an individual pixel of a specific frame in the sprite
+Sets the color of an individual pixel of a specific frame in the sprite.
 - **Parameters**:
   - `id` (int) Frame id
   - `x, y` (int) position
@@ -1300,7 +1300,7 @@ Sets the sprite's rotation.
 - **Returns**: `nil`
 
 #### `sprite:SetFrameId(frameId)`
-Sets the current frame index that will be drawn
+Sets the current frame index that will be drawn.
 - **Parameters**:
   - `frameId` (int)
 - **Returns**: `nil`

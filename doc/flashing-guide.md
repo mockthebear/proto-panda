@@ -1,8 +1,8 @@
-# Flashing protopanda
+# Flashing Protopanda
 
 So, since you're here, there are a few things needed to mention before. 
-This guide will cover how to setup the environment, how to build, how to flash the firmware and what to put in the SD card.
-Currently this guide does not include a way to transfer stuff from the SD card from an older version to a newer. If you're here for this, consider rewriting the animation.json or other file you modified with your changes. An auto upgrade tool is planned for future release, but for now the process completely manual.
+This guide will cover how to set up the environment, how to build, how to flash the firmware and what to put in the SD card.
+Currently this guide does not include a way to transfer stuff from the SD card from an older version to a newer. If you're here for this, consider rewriting the animation.json or other file you modified with your changes. An auto upgrade tool is planned for future release, but for now the process is completely manual.
 
 ## Guides
 
@@ -26,9 +26,9 @@ It might take some time to download all files and it might request to restart vs
 
 **Make sure you don't have both platformio and pioarduino at the same time**
 
-## Step 2 - Downloading protopanda
+## Step 2 - Downloading Protopanda
 
-Now you'll go in protopanda page at github, click to download it.
+Now you'll go in Protopanda page at github, click to download it.
 
 ![](./flashing-guide-2.png)
 
@@ -46,15 +46,15 @@ If you're using an ESP32S3 board (the DIY route), the board has two USB-C ports,
 
 ![](./flashing-guide-8.png)
 
-But if you decided to buy an assembled protopanda or did yours using the provided PCB, use the micro USB port in front of the controller.
+But if you decided to buy an assembled Protopanda or did yours using the provided PCB, use the micro USB port in front of the controller.
 
 ![](./flashing-guide-9.png)
 
 ## Step 4 - Drivers?!
 
-Now plug protopanda or the ESP32 to your computer. If you get a notice saying "Device unknown" or something like that, it means you might need a driver. 
+Now plug Protopanda or the ESP32 to your computer. If you get a notice saying "Device unknown" or something like that, it means you might need a driver. 
 
-First of all, depending on which board you're using, you might need to download a driver. If you're using a protopanda you bought assembled, it's gonna be a [ch340 driver](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all). Otherwise it's gonna be a different one. **Only download it if it is actually needed!**
+First of all, depending on which board you're using, you might need to download a driver. If you're using a Protopanda you bought assembled, it's gonna be a [ch340 driver](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all). Otherwise it's gonna be a different one. **Only download it if it is actually needed!**
 Most operational systems already come with most of those drivers or install them automatically for you.
 
 If you don't get any message, you can click in the bottom left icon of a power plug in VS Code. That icon is used to select the COM serial port with the device. 
@@ -108,7 +108,7 @@ There you go, you built it!
 ## Configuration
 
 There is a file in the folder `include/tools/config_defaults.hpp`. There you can change some settings from the project.
-If you're building protopanda for a DIY version, you MUST change these two configs:
+If you're building Protopanda for a DIY version, you MUST change these two configs:
 
 ```cpp
 #define PANDA_SD_MODE 2
@@ -119,9 +119,9 @@ Change them to:
 #define PANDA_SD_MODE 1
 #define SPI_MAX_CLOCK (40 * 1000 * 1000)
 ```
-Thats because long wires can cause noise, so the sd card needs to run slower. And the SD mode needs to be changed from SD_MMC to SPI. Most of the SD card modules out there short two pins to ground, that can make itimpossible to use the SD_MMC mode, so changing PANDA_SD_MODE to 1, changes back to SPI.
+That's because long wires can cause noise, so the sd card needs to run slower. And the SD mode needs to be changed from SD_MMC to SPI. Most of the SD card modules out there short two pins to ground, that can make it impossible to use the SD_MMC mode, so changing PANDA_SD_MODE to 1, changes back to SPI.
 
-Every time you change something in this file its necessary to recompile and flash the firmware again.
+Every time you change something in this file it's necessary to recompile and flash the firmware again.
 
 ## Flashing
 
@@ -179,17 +179,17 @@ But if you keep seeing:
 Connecting..................
 ```
 That's probably due to the ESP not entering boot mode correctly. You can force it by holding the flash button and then pressing the reset button once on the board.
-In case of the assembled protopanda, there are two buttons on the top of the case, the left one is the flash and the right is the reset.
+In case of the assembled Protopanda, there are two buttons on the top of the case, the left one is the flash and the right is the reset.
 
 ![](./flashing-guide-12.png)
 
-On the ESP32 board they're named "RST" and "BOOT"
+On the ESP32 board they're named "RST" and "BOOT".
 
 ![](./flashing-guide-13.png)
 
 ## Reading serial
 
-You can debug and read some serial output that protopanda generates. With the device flashed and connected to the computer, there is a second outlet button, it's named "Serial monitor"
+You can debug and read some serial output that Protopanda generates. With the device flashed and connected to the computer, there is a second outlet button, it's named "Serial monitor".
 
 ![](./flashing-guide-14.png)
 

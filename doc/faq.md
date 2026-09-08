@@ -1,8 +1,8 @@
 # FAQ
 
-**What is protopanda?**
+**What is Protopanda?**
 
-Initially it was the name of the firmware I designed to make my life easier when making protogens. But now its a whole ecosystem including hardware, firmware and 3d models.
+Initially it was the name of the firmware I designed to make my life easier when making protogens. But now it's a whole ecosystem including hardware, firmware and 3D models.
 
 ---
 
@@ -18,55 +18,55 @@ No.
 
 ---
 
-**Can it use MAXMAX7219 matrixes instead of HUB75**
+**Can it use MAX7219 matrixes instead of HUB75**
 
-Yes! [Check the configuration guide.](./configuration.md)
+Yes! [Check the configuration guide.](./configuring.md)
 
 ---
 
 **Can it use a microphone?**
 
-Yes! [Check the configuration guide.](./configuration.md)
+Yes! [Check the configuration guide.](./configuring.md)
 
 ---
 
-**How i change the animation speed?**
+**How do I change the animation speed?**
 
 [Here](./configuring.md#expressions). You can also simply repeat one frame as many times you want too.
 
 ---
 
-**I got a controller, but its not connecting, why?**
+**I got a controller, but it's not connecting, why?**
 
 Press the boot/internal button for 5s until a screen shows "Waiting for controller".
 
---
+---
 
 **Do I really need the SD card?**
 
-Yes. Technically its possible to adapt the code to use only internal flash, but that comes with a series of problems and storage space. So stick with the SD card.
+Yes. Technically it's possible to adapt the code to use only internal flash, but that comes with a series of problems and storage space. So stick with the SD card.
 
 ---
 
 **How do I change the side led pattern?**
 
-You can [check the configuration guide.](./configuration.md) in the LED topic.
+You can [check the configuration guide.](./configuring.md) in the LED topic.
 
 ---
 
 **I'm stuck at the "SD NOT FOUND" screen.**
 
-Check your wiring. Seriously. Check again, each pin. Most of the times is just bad wiring.
+Check your wiring. Seriously. Check again, each pin. Most of the time it's just bad wiring.
 If you soldered, check your solder. 
-If it dont solve the problem, format the SD card to FAT32. 
+If it doesn't solve the problem, format the SD card to FAT32. 
 If it still fails, try another SD card. 
 If it still fails, replace the SD card module.
 
 ---
 
-**Why boop is always triggered?**
+**Why is boop always triggered?**
 
-You probally wired the boop sensor wrong. Swap the pins at `misc.json`:
+You probably wired the boop sensor wrong. Swap the pins at `misc.json`:
 ```json
         "gpio": 48,
         "power_gpio": 13,
@@ -75,31 +75,33 @@ Swap 48 with 13 and 13 with 48.
 
 ---
 
-**When I turn on my proto, i'm stuck in a "waiting controller" screen.**
+**When I turn on my proto, I'm stuck in a "waiting controller" screen.**
 
-First time protopanda boots, it will require a remote controller. You can skip this by changing some settings in `misc.json`.
-You can disable bluetooth `""mode": "BLE",`. You can choose none or infrared. With none, no input will be used and protopanda will have no way to change expressions unless you code something.
-In infrared mode, you'll need to add a infrared receiver to use a IR controller.
+First time Protopanda boots, it will require a remote controller. You can skip this by changing some settings in `misc.json`.
+You can disable bluetooth `""mode": "BLE",`. You can choose none or infrared. With none, no input will be used and Protopanda will have no way to change expressions unless you code something.
+In infrared mode, you'll need to add an infrared receiver to use an IR controller.
 
 ---
 
 **I paired a controller already, but it still stuck on that controller screen!**
 
-You need to connect the internal button! Its on the schematic. If you conntected it already its stuck pressed or you wired it wrong.
+You need to connect the internal button! It's on the schematic. If you connected it already it's stuck pressed or you wired it wrong.
 
 ---
 
 **I changed the facial expressions at the SD card but nothing changed.**
 
-Expressions are pre decoded and cache to make displaying them faster. So you'll need to clear that cache.
+Expressions are pre decoded and cached to make displaying them faster. So you'll need to clear that cache.
 Delete the 'cache' folder, or go to settings>Rebuild bulk file in your proto menu.
+
 ---
 
 **I changed a .json file and reflashed the firmware, but nothing changed!**
 
 JSON files should be at the SD card, not in the firmware. Change the json in your sd card and that will work.
+
 ---
 
-**I got the reccomended controller from aliexpress, but its not pairing!**
+**I got the recommended controller from aliexpress, but it's not pairing!**
 
 Check if the controller is on. If is the same controller and if in `keybinds.json` this setting is set to true: `"enableHidControllers": true,`

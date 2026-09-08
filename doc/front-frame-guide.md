@@ -1,6 +1,6 @@
 # Front frame
 
-Here you will learn how to assemble the front frame. Note that some parts can be a little different if you are doing a DIY protopanda instead of an assembled one with the PCB.
+Here you will learn how to assemble the front frame. Note that some parts can be a little different if you are doing a DIY Protopanda instead of an assembled one with the PCB.
 
 1) [Tools](#tools)
 1) [Panels](#Panels)
@@ -58,7 +58,7 @@ Then you will need the electronics:
 
 ## Panels
 
-First we need to disassemble the panels to remove the original support. Use a thin screwdriver
+First we need to disassemble the panels to remove the original support. Use a thin screwdriver.
 There are a total of 6 screws, they're really tiny, so be careful and save them.
 
 ![img](./front-frame-screw-1.png)
@@ -67,11 +67,11 @@ Once removed take off the support.
 
 ![img](./front-frame-screw-2.png)
 
-Now its time to put one of the panels in the LEFT side of the frame.
+Now it's time to put one of the panels in the LEFT side of the frame.
 
 ![img](./front-frame-fixing-panel-1.png)
 
-There is a correct orientation of the panel. Note on the panel there are white arrows. Align them facing forward like the red arrows. Also align the panel uusing that hole pointed by the yellow arrow.
+There is a correct orientation of the panel. Note on the panel there are white arrows. Align them facing forward like the red arrows. Also align the panel using that hole pointed by the yellow arrow.
 
 Then follow those steps:
 1) Align the panel
@@ -84,11 +84,11 @@ Then follow those steps:
 
 ## HUB75 Cables
 
-Now its time to install the first cable. This cable will transfer the signal from the first panel to the second one.
+Now it's time to install the first cable. This cable will transfer the signal from the first panel to the second one.
 
 ![img](./front-frame-cable-1.png)
 
-But as you can see, theres a bit too much cable in there. You can leave it as is, or you can trim the cable down. Thats whats I'll teach you right now. But please pay attention on what you doing, if you wire them backwards you will certainly destroy one or both panels.
+But as you can see, there's a bit too much cable in there. You can leave it as is, or you can trim the cable down. That's what I'll teach you right now. But please pay attention on what you are doing, if you wire them backwards you will certainly destroy one or both panels.
 
 If you want to leave it as is, skip to [Power cable](#power-cable)  
 
@@ -109,7 +109,7 @@ If you need extra help, try googling on how to crimp idc connectors.
 
 ## Power cable
 
-For powering the HUB75, you can use the original cable. But its bulky and too long. So you can trim it down. 
+For powering the HUB75, you can use the original cable. But it's bulky and too long. So you can trim it down. 
 
 ![img](./front-frame-cable-6.png)
 
@@ -128,22 +128,22 @@ Thats how they should look like:
 
 ![img](./front-frame-cable-9.png)
 
-They go in the protopanda at the screw terminal.
+They go in the Protopanda at the screw terminal.
 
 ![img](./front-frame-cable-11.png)
 
 If you're doing DIY route, then go at the schematic where is written **HUB75 POWER**
-In case it isnt clear, red means positive and black negative.
+In case it isn't clear, red means positive and black negative.
 
 ![img](./front-frame-cable-12.png)
 
 ## Other cables
 
-Now its a good idea do plug in the other cables.
+Now it's a good idea to plug in the other cables.
 
 ![img](./front-frame-cable-13.png)
 
-If you doing the DIY route, you can choose any kind of connector you want, or just wire directly to the display and boop sensor. I used PHT connector but that was my prefference for the way I did. Do it your way!
+If you're doing the DIY route, you can choose any kind of connector you want, or just wire directly to the display and boop sensor. I used PHT connector but that was my preference for the way I did. Do it your way!
 
 ![img](./front-frame-stuff-1.png)
 
@@ -151,7 +151,7 @@ Specifically for proto panda controller, there is a spot dedicated to it. But th
 
 ![img](./front-frame-stuff-3.png)
 
-With a long screwdriver you can each all 3 screws.
+With a long screwdriver you can reach all 3 screws.
 
 ![img](./front-frame-stuff-4.png)
 
@@ -162,7 +162,7 @@ Then it should look like this.
 
 ## Internal screen
 
-You can totally use the screen with the pin header. But personally, i like to use those [KF2510](https://pt.aliexpress.com/item/1005011814149800.html) connectors. 
+You can totally use the screen with the pin header. But personally, I like to use those [KF2510](https://pt.aliexpress.com/item/1005011814149800.html) connectors. 
 
 I soldered the 90 degree connector and cut off the pins that came out the other side.
 
@@ -172,11 +172,11 @@ Then grab the screws and the nuts to attach it to the frame:
 
 ![img](./front-frame-stuff-7.png)
 
-Put the screws trough the holes
+Put the screws through the holes
 
 ![img](./front-frame-stuff-8.png)
 
-And screw them tto the nuts at the other side
+And screw them to the nuts at the other side
 
 ![img](./front-frame-stuff-9.png)
 
@@ -202,7 +202,7 @@ Then place the fan on the bottom of the front frame, with the wires facing forwa
 ![img](./front-frame-fan-2.png)
 ![img](./front-frame-fan-3.png)
 
-Use the nuts at the bottom part and tight the screws.
+Use the nuts at the bottom part and tighten the screws.
 
 ![img](./front-frame-fan-4.png)
 
@@ -210,11 +210,11 @@ Use the nuts at the bottom part and tight the screws.
 
 Now we're not fiddling with any more wiring, let's connect the last cables on the second panel. PAY ATTENTION TO THE DIRECTION OF THE ARROWS IN THE PANEL.
 
-There shold be 4 screws to fix it in place. They are circled in yellow.
+There should be 4 screws to fix it in place. They are circled in yellow.
 
 ![img](front-frame-panel-fix-1.png)
 
-No need the 5th one. The process to align the panel is the same as the previous one.
+No need for the 5th one. The process to align the panel is the same as the previous one.
 
 ## Fur support
 
@@ -229,7 +229,7 @@ Use the M3 8mm screws and the nuts to fix it in place. It should snap in place b
 
 ## Connector cover
 
-Since we dont wanna damage the HUB75 connectors with our cheeks, lets add a cover for them.
+Since we don't wanna damage the HUB75 connectors with our cheeks, let's add a cover for them.
 Use 2x M3 8MM screws to fix it on the front frame 
 
 ![img](./front-frame-cover-1.png)
@@ -240,17 +240,17 @@ It should look like this:
 
 ## Fresnel lens
 
-The fresnel lens is completely opitional but a nice to have. Without it might be hard to focus your vision at the internal screen. With it is way way easier. The effects are mostly in person.
+The fresnel lens is completely optional but a nice to have. Without it might be hard to focus your vision at the internal screen. With it is way way easier. The effects are mostly in person.
 
 ![img](./front-frame-fresne-1.png)
 
-For assembling it, you will need to cut the fresnel in a 64x34cm rectangle. Glue it in the 3d printed slot using super glue (JUST A TINY DROP)
+For assembling it, you will need to cut the fresnel in a 64x34cm rectangle. Glue it in the 3D printed slot using super glue (JUST A TINY DROP)
 
 ![img](./front-frame-fresne-2.png)
 
 Screw a 8MM M3 screw to attach both parts together
 
-,![img](./front-frame-fresne-3.png)
+![img](./front-frame-fresne-3.png)
 
 Then use the two M3 5MM screws and put them in the hole of the other part
 
@@ -274,7 +274,7 @@ That's why we will place it in a slot.
 
 ![img](./front-frame-usb-2.png)
 
-Make sure the cable is going inside that slot and doing a little curve inside. If needed push it a bit inside,
+Make sure the cable is going inside that slot and doing a little curve inside. If needed push it a bit inside.
 
 ![img](./front-frame-usb-3.png)
 

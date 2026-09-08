@@ -118,7 +118,10 @@ function _M.Load()
 
     _M.minimumLidar = tonumber(dictGet("boop_min") ) or 0
     _M.triggerPosition = tonumber(dictGet("boop_trigg"))  or 0
-    _M.boopTimerDuration = tonumber(dictGet("boop_duration")) or tonumber(_M.config["boop_delay"]) or 500
+    _M.boopTimerDuration = tonumber(_M.config["boopTriggerDuration"])
+        or tonumber(dictGet("boop_duration"))
+        or tonumber(_M.config["boop_delay"])
+        or 500
 
     print("Boop configuration loaded min=".._M.minimumLidar.." trigger=".._M.triggerPosition.." timer=".._M.boopTimerDuration)
 
