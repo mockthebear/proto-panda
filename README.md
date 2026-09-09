@@ -90,7 +90,7 @@ Since you usually won't be running them at full brightness or with all LEDs set 
 
 ## Panels
 
-The recommended option is to use HUB75 panels. They're driven by [mrcodetastic's HUB75 lib](https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA), and these are the [recommended panels](https://pt.aliexpress.com/item/4000002686894.html).
+The recommended option is to use HUB75 panels. They're driven by [mrcodetastic's HUB75 lib](https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA), and these are the [recommended panels](https://s.click.aliexpress.com/e/_c3cirzud).
 
 ![HUB75 panels](doc/panels.jpg "HUB75 panels")
 
@@ -394,12 +394,23 @@ You can define them inside `hardware.json`:
 
 ## Bluetooth
 
-Since version 2.0, Protopanda supports almost any kind of BLE device that has HID. All you need to do is adapt an existing driver if needed, or write a new one. Currently, the devices supported are:
-* https://github.com/mockthebear/ble-fursuit-paw
-* https://pt.aliexpress.com/item/1005008459884910.html
-* https://pt.aliexpress.com/item/1005009845485445.html
+#### Remote Controller
 
-A BLE joystick works best.
+To control it, you can:
+* Use a Protopanda controller built with an NRF52832.
+* Use an IR controller and write a driver for it.
+* Write your own solution using the two extra GPIOs left.
+* Buy a BLE HID device that's compatible.
+
+##### Compatible Devices
+
+[**Mocute controller**](https://s.click.aliexpress.com/e/_c3LuWnTx). The best alternative, input-wise. It works as a mouse, keyboard, or joystick. Use it in mouse mode or keyboard mode.
+
+[**Lazy TikTok scrolling keypad**](https://s.click.aliexpress.com/e/_c34s4Pj7). High latency. It's a dumb device that simulates mouse and keyboard movements to scroll TikTok on your phone. Luckily, those movements have been mapped to Protopanda input. Best size/form factor.
+
+[**VRPARK**](https://s.click.aliexpress.com/e/_c4a88Ce9). The cheapest and crappiest of them all. Easiest to find.
+
+If you find a generic BLE HID device, like a mouse or keyboard, it should be compatible in some way.
 
 ### Keybind
 
@@ -464,23 +475,6 @@ Check out the [guide for making your own Protopanda!](./doc/diy-guide.md)
 
 ![Electronics schematic](doc/diy-schematic.png "Electronics schematic")
 
-#### Remote Controller
-
-To control it, you can:
-* Use a Protopanda controller built with an NRF52832.
-* Use an IR controller and write a driver for it.
-* Write your own solution using the two extra GPIOs left.
-* Buy a BLE HID device that's compatible.
-
-##### Compatible Devices
-
-[**Mocute controller**](https://pt.aliexpress.com/item/32962516758.html). The best alternative, input-wise. It works as a mouse, keyboard, or joystick. Use it in mouse mode or keyboard mode.
-
-[**Lazy TikTok scrolling keypad**](https://pt.aliexpress.com/item/1005008459884910.html). High latency. It's a dumb device that simulates mouse and keyboard movements to scroll TikTok on your phone. Luckily, those movements have been mapped to Protopanda input. Best size/form factor.
-
-[**VRPARK**](https://pt.aliexpress.com/item/32792719676.html). The cheapest and crappiest of them all. Easiest to find.
-
-If you find a generic BLE HID device, like a mouse or keyboard, it should be compatible in some way.
 
 ## Printing and Assembling Guide
 

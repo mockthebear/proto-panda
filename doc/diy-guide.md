@@ -26,9 +26,9 @@ Some buck converters have issues with extra capacitors, so the 1000~4700uF capac
 4) [OLED screen](https://aliexpress.com/item/1005006141235306.html)
 5) [ESP32 N16R8 dev board](https://aliexpress.com/item/1005009906920237.html)
 6) [Buzzer 5 or 3.3v](https://aliexpress.com/item/1005006201550296.html)
-7) [Connector for the HUB75](https://aliexpress.com/item/1005007851512814.html) (Get the 16 pin one)
+7) [Connector for the HUB75](https://s.click.aliexpress.com/e/_c3ach1LL) (Get the 16 pin one)
 8) [WS2812b LED strip](https://pt.aliexpress.com/item/1005007989431712.html)
-9) [40x10mm 5v fan](https://pt.aliexpress.com/item/1005009148488355.html)
+9) [40x10mm 5v fan](https://s.click.aliexpress.com/e/_c3s50nXT)
 10) Some female pin headers
 11) Some resistors (1k, 3k and 10k)
 12) An electrolytic capacitor between 1000uF to 4700uF at least 6.3v

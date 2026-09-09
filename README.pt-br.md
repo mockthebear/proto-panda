@@ -88,7 +88,7 @@ Na maioria dos casos, você não estará operando os painéis no brilho máximo 
 
 ## Painéis
 
-O recomendado é usar painéis HUB75. Eles são controlados pela [biblioteca HUB75 do mrcodetastic](https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA), e estes são os [painéis recomendados](https://pt.aliexpress.com/item/4000002686894.html).
+O recomendado é usar painéis HUB75. Eles são controlados pela [biblioteca HUB75 do mrcodetastic](https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA), e estes são os [painéis recomendados](https://s.click.aliexpress.com/e/_c3cirzud).
 
 ![Painéis HUB75](doc/panels.jpg "Painéis HUB75")
 
@@ -390,12 +390,23 @@ Você pode defini-los dentro do `hardware.json`:
 
 ## Bluetooth
 
-Desde a versão 2.0, o Protopanda suporta quase qualquer dispositivo BLE (Bluetooth Low Energy) que tenha HID. É possível criar novos "drivers" usando Lua. Por padrão, o Protopanda suporta:
-* https://github.com/mockthebear/ble-fursuit-paw
-* https://pt.aliexpress.com/item/1005008459884910.html
-* https://pt.aliexpress.com/item/1005009845485445.html
+#### Controle Remoto
 
-Teoricamente, qualquer joystick que rode em low energy deve ser suportado através de keybinds.
+Para controlar, você pode:
+* Usar um controle Protopanda feito com um NRF52832.
+* Usar um controle IR e escrever um driver para ele.
+* Escrever sua própria solução usando os dois GPIOs extras que sobraram.
+* Comprar um dispositivo BLE HID compatível.
+
+##### Dispositivos Compatíveis
+
+[**Controle Mocute**](https://s.click.aliexpress.com/e/_c3LuWnTx). Melhor alternativa em termos de input. Funciona tanto como mouse, teclado ou joystick. Use no modo mouse ou teclado.
+
+[**Teclado preguiçoso de rolar TikTok**](https://s.click.aliexpress.com/e/_c34s4Pj7). Latência alta. É um dispositivo simples que simula movimentos de mouse e teclado para rolar o TikTok no celular. Por sorte, esses movimentos foram mapeados para o input do Protopanda. Melhor tamanho/formato.
+
+[**VRPARK**](https://s.click.aliexpress.com/e/_c4a88Ce9). O mais barato e de pior qualidade entre todos. Mais fácil de achar.
+
+Se você encontrar um dispositivo BLE HID genérico, como um mouse ou teclado, ele deve ser compatível de alguma forma.
 
 ### Keybind
 
@@ -459,23 +470,6 @@ Pois bem, existe um [guia para montar o seu próprio Protopanda!](./doc/diy-guid
 
 ![Diagrama](doc/diy-schematic.png "Esquema elétrico")
 
-#### Controle Remoto
-
-Para controlar, você pode:
-* Usar um controle Protopanda feito com um NRF52832.
-* Usar um controle IR e escrever um driver para ele.
-* Escrever sua própria solução usando os dois GPIOs extras que sobraram.
-* Comprar um dispositivo BLE HID compatível.
-
-##### Dispositivos Compatíveis
-
-[**Controle Mocute**](https://pt.aliexpress.com/item/32962516758.html). Melhor alternativa em termos de input. Funciona tanto como mouse, teclado ou joystick. Use no modo mouse ou teclado.
-
-[**Teclado preguiçoso de rolar TikTok**](https://pt.aliexpress.com/item/1005008459884910.html). Latência alta. É um dispositivo simples que simula movimentos de mouse e teclado para rolar o TikTok no celular. Por sorte, esses movimentos foram mapeados para o input do Protopanda. Melhor tamanho/formato.
-
-[**VRPARK**](https://pt.aliexpress.com/item/32792719676.html). O mais barato e de pior qualidade entre todos. Mais fácil de achar.
-
-Se você encontrar um dispositivo BLE HID genérico, como um mouse ou teclado, ele deve ser compatível de alguma forma.
 
 ## Imprimindo e Montando as Peças
 

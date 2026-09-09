@@ -52,13 +52,13 @@ Below you can click on each of those images. Each session has a printing guide, 
 ### All consumables required
 > Almost all parts that require screws can be glued instead. The original MK16 does that. With exception of the front frame.
 * Two component glue
-* 10x M3 [heat insert (5~7mm in height)](https://pt.aliexpress.com/item/1005003582355741.html)
-* 18x M3 [heat insert 3mm height](https://pt.aliexpress.com/item/1005003582355741.html)
-* 8x to [16x M4 heat insert (5~7mm in height)](https://pt.aliexpress.com/item/1005003582355741.html)
+* 10x M3 [heat insert (5~7mm in height)](https://s.click.aliexpress.com/e/_c4BiltpB)
+* 18x M3 [heat insert 3mm height](https://s.click.aliexpress.com/e/_c4BiltpB)
+* 8x to [16x M4 heat insert (5~7mm in height)](https://s.click.aliexpress.com/e/_c4BiltpB)
 * 8x to 16x 10~15mm M4 [flat head screws](https://pt.aliexpress.com/item/32973784147.html)
 * 4x [M3 flat head 10mm screws](https://pt.aliexpress.com/item/32973784147.html)
 * 12x to 18x [M3 6mm screws](https://pt.aliexpress.com/item/32973784147.html)
-* 2x [10mmX2mm neodimium magnet](https://pt.aliexpress.com/item/1005011876332886.html)
+* 2x [10mmX2mm neodimium magnet](https://s.click.aliexpress.com/e/_c3g4O0S5)
 * PETG, ASA and TPU
 * Transparent PLA
 * Black PLA

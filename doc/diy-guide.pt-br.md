@@ -21,12 +21,12 @@ Alguns conversores buck têm problemas com capacitores extras, então o capacito
 # Peças necessárias
 
 1) Um dos conversores buck 5v 3A: [opção 1](https://aliexpress.com/item/1005005505907937.html) / [opção 2](https://pt.aliexpress.com/item/1005011601387749.html) / [opção 3](https://pt.aliexpress.com/item/1005006009759175.html)
-2) Gatilho PD: [opção 1](https://aliexpress.com/item/1005007889747084.html) / [opção 2](https://pt.aliexpress.com/item/1005012106478427.html)
+2) Gatilho PD: [opção 1](https://aliexpress.com/item/1005007889747084.html) / [opção 2](https://s.click.aliexpress.com/e/_c4CyOWHT)
 3) [Módulo SD Card](https://pt.aliexpress.com/item/1005009221606482.html)
 4) [Tela OLED](https://aliexpress.com/item/1005006141235306.html)
 5) [Placa de desenvolvimento ESP32 N16R8](https://aliexpress.com/item/1005009906920237.html)
 6) [Buzzer 5 ou 3.3v](https://aliexpress.com/item/1005006201550296.html)
-7) [Conector para o HUB75](https://aliexpress.com/item/1005007851512814.html) (Pegue o de 16 pinos)
+7) [Conector para o HUB75](https://s.click.aliexpress.com/e/_c3ach1LL) (Pegue o de 16 pinos)
 8) [Fita de LED WS2812b](https://pt.aliexpress.com/item/1005007989431712.html)
 9) [Fan 40x10mm 5v](https://pt.aliexpress.com/item/1005009148488355.html)
 10) Algumas barras de pino fêmea e macho

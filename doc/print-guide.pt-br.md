@@ -51,13 +51,13 @@ Abaixo você pode clicar em cada uma das imagens. Cada seção tem um guia de im
 ### Todos os Consumíveis necessários
 > Quase todas as peças que requerem parafuso, podem ser simplesmente coladas. No MK16 as peças são coladas com exceção do frame frontal
 * Cola de dois componentes (araldite tá ótimo)
-* 10x [inserto de latão M3 (5~7mm de altura)](https://pt.aliexpress.com/item/1005003582355741.html)
-* 18x [inserto de latão M3 3mm de altura](https://pt.aliexpress.com/item/1005003582355741.html)
-* 8 a 16x [inserto de latão M4 (5~7mm de altura)](https://pt.aliexpress.com/item/1005003582355741.html)
+* 10x [inserto de latão M3 (5~7mm de altura)](https://s.click.aliexpress.com/e/_c4BiltpB)
+* 18x [inserto de latão M3 3mm de altura](https://s.click.aliexpress.com/e/_c4BiltpB)
+* 8 a 16x [inserto de latão M4 (5~7mm de altura)](https://s.click.aliexpress.com/e/_c4BiltpB)
 * 8 a 16x [parafusos M4 de cabeça chata 10~15mm](https://pt.aliexpress.com/item/32973784147.html)
 * 4x [parafusos M3 de cabeça chata 10mm](https://pt.aliexpress.com/item/32973784147.html)
 * 12 a [18x parafusos M3 6mm](https://pt.aliexpress.com/item/32973784147.html)
-* 2x [imãs de neodímio 10mmX2mm](https://pt.aliexpress.com/item/1005011876332886.html)
+* 2x [imãs de neodímio 10mmX2mm](https://s.click.aliexpress.com/e/_c3g4O0S5)
 * PETG, ASA e TPU
 * PLA transparente
 * PLA preto
