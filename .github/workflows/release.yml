@@ -1,20 +1,32 @@
 name: Firmware release
 
 on:
-  push:
-    tags:
-      - "[0-9]+.[0-9]+.[0-9]+*"
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing Git tag and GitHub Release to build assets for
+        required: true
+        type: string
+
+env:
+  RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
 
 permissions:
   contents: write
 
 jobs:
   build:
-    name: Build ${{ github.ref_name }} firmware
+    name: Build ${{ github.event.release.tag_name || inputs.tag }} firmware
     runs-on: ubuntu-latest
+    outputs:
+      firmware_version: ${{ steps.version.outputs.firmware_version }}
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-python@v5
         with:
@@ -33,32 +45,36 @@ jobs:
       - name: Install PlatformIO
         run: python -m pip install --upgrade platformio==6.1.19
 
-      - name: Verify tag matches firmware version
+      - name: Verify release tag matches firmware version
+        id: version
         shell: bash
         run: |
           firmware_version="$(sed -nE 's/^#define PANDA_VERSION "([^"]+)".*/\1/p' include/tools/config_default.hpp)"
-          tag_version="$GITHUB_REF_NAME"
+          tag_version="${RELEASE_TAG#v}"
           test -n "$firmware_version"
           test "$firmware_version" = "$tag_version" || {
-            echo "Tag $GITHUB_REF_NAME does not match PANDA_VERSION $firmware_version"
+            echo "Release tag $RELEASE_TAG does not match PANDA_VERSION $firmware_version"
             exit 1
           }
+          echo "firmware_version=$firmware_version" >> "$GITHUB_OUTPUT"
 
       - name: Build universal release firmware
         run: pio run -e release
 
       - name: Package release assets
+        env:
+          FIRMWARE_VERSION: ${{ steps.version.outputs.firmware_version }}
         shell: bash
         run: |
           mkdir -p dist
-          cp .pio/build/release/firmware.bin "dist/protopanda-${GITHUB_REF_NAME}.bin"
+          cp .pio/build/release/firmware.bin "dist/protopanda-${FIRMWARE_VERSION}.bin"
           python3 - <<'PY'
           import os
           from pathlib import Path
           from zipfile import ZIP_DEFLATED, ZipFile
 
           root = Path(".")
-          output = Path("dist") / f"protopanda-{os.environ['GITHUB_REF_NAME']}-sd-card.zip"
+          output = Path("dist") / f"protopanda-{os.environ['FIRMWARE_VERSION']}-sd-card.zip"
           required_directories = ("scripts", "expressions", "lualib")
 
           with ZipFile(output, "w", ZIP_DEFLATED) as archive:
@@ -85,30 +101,24 @@ jobs:
           path: dist/
           if-no-files-found: error
 
-  release:
-    name: Publish GitHub Release
+  upload:
+    name: Upload GitHub Release assets
     needs: build
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
       - name: Download release assets
         uses: actions/download-artifact@v4
         with:
           name: release-assets
           path: dist
 
-      - name: Create release
+      - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            "dist/protopanda-${GITHUB_REF_NAME}.bin" \
-            "dist/protopanda-${GITHUB_REF_NAME}-sd-card.zip" \
-            dist/SHA256SUMS.txt \
-            --title "ProtoPanda $GITHUB_REF_NAME" \
-            --generate-notes \
-            --notes $'## SD-card package\n\n> **Configuration notice:** The included SD-card files use default `hardware.json` and `misc.json` settings. Before using them, verify that both files match your ProtoPanda kit and intended setup.\n\n> **Back up first:** Copy your current SD-card contents before replacing files. Release packages do not migrate custom animations, scripts, or settings automatically.' \
-            --verify-tag
+          gh release upload "$RELEASE_TAG" \
+            "dist/protopanda-${{ needs.build.outputs.firmware_version }}.bin" \
+            "dist/protopanda-${{ needs.build.outputs.firmware_version }}-sd-card.zip" \
+            dist/SHA256SUMS.txt

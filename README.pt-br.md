@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/licença-AGPL--3.0-blue.svg" alt="Licença: AGPL-3.0"></a>
-  <img src="https://img.shields.io/badge/firmware-3.3.5-orange.svg" alt="Versão do firmware">
-  <img src="https://img.shields.io/badge/placa-ESP32--S3--N16R8-informational.svg" alt="Placa: ESP32-S3-N16R8">
+  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/mockthebear/proto-panda?display_name=tag&sort=semver&label=firmware&color=orange" alt="Versão do firmware"></a>
+  <a href="#hardware"><img src="https://img.shields.io/badge/placa-ESP32--S3--N16R8-informational.svg" alt="Placa: ESP32-S3-N16R8"></a>
   <a href="https://t.me/mockdiodes"><img src="https://img.shields.io/badge/Telegram-Canal-26A5E4.svg?logo=telegram&logoColor=white" alt="Canal no Telegram"></a>
   <a href="https://t.me/protopandachat"><img src="https://img.shields.io/badge/Telegram-Chat-26A5E4.svg?logo=telegram&logoColor=white" alt="Chat no Telegram"></a>
 </p>
