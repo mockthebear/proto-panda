@@ -112,6 +112,10 @@ function _M.Load()
         end
     end
 
+    if _M.mode == "gpio" then 
+        return
+    end
+
     if dictGet("boop_configured") ~= "1" then  
         print("Boop is not configured yet.")
         _M.configured = false
