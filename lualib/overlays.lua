@@ -208,12 +208,7 @@ _M.modes["frame_by_fft_level"] = function(obj, dt)
                 obj.showing = false
                 obj.sprite:setVisibility(false)
             end
-        end    
-    else 
-        if obj.showing == false then  
-            obj.showing = true
-            obj.sprite:setVisibility(true)
-        end      
+        end         
     end
     obj.sprite:SetFrameId(level)
 end
