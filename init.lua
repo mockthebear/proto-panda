@@ -52,9 +52,15 @@ end
 function onPreflight()
     ledsSetManaged(true)
     setPanelManaged(true)
-    expressions.Next()
-    if configloader.Get().starting_animation ~= nil then
-        expressions.SetExpression(configloader.Get().starting_animation)
+
+    if configloader.Get().main_animation ~= nil then
+        expressions.SetExpression(configloader.Get().main_animation)
+    else
+        expressions.Next()
+    end
+
+    if configloader.Get().startup_animation ~= nil or configloader.Get().starting_animation then
+        expressions.StackExpression("startup")
     end
 
     input.Start() 

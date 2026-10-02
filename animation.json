@@ -284,7 +284,6 @@
       "frames"    : "frames_startup",
       "animation" : "loop",
       "transition": true,
-      "outro"    : "normal",
       "duration"  : 75
     },
     {

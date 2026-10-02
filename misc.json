@@ -1,5 +1,6 @@
 {
-    "starting_animation": "startup",
+    "startup_animation": "startup",
+    "main_animation": "normal",
     "edit_mode_cycle_animation": true,
     
     "boop": {
