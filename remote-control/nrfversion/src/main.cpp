@@ -117,6 +117,17 @@ static inline void led(int pin, bool on) {
 
 static bool tryLSM(uint8_t addr) {
   imu = new LSM6DS3(I2C_MODE, addr);
+
+  imu->settings.gyroEnabled      = 1;
+  imu->settings.gyroRange        = 2000;
+  imu->settings.gyroSampleRate   = 104;
+  imu->settings.gyroBandWidth    = 100;
+
+  imu->settings.accelEnabled     = 1;
+  imu->settings.accelRange       = 4;     // note: library uses g value, not the enum
+  imu->settings.accelSampleRate  = 104;
+  imu->settings.accelBandWidth   = 50;    // 50 Hz roughly matches ODR/2; see below
+  
   if (imu->begin() == 0) {
     imuAddr = addr;
     return true;
@@ -308,7 +319,7 @@ void setup() {
   Bluefruit.Advertising.restartOnDisconnect(true);
   Bluefruit.Advertising.setInterval(64, 64);   // 40 ms
   Bluefruit.Advertising.start(0);
-
+  led(PIN_LED_2, false); 
   led(PIN_LED_1, true); 
   LOGF("Proto paw started, advertising\n");
 }
