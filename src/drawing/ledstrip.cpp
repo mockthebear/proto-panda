@@ -63,7 +63,9 @@ bool LedStrip::BeginDual(uint16_t ledCount, uint16_t secondLedCount, uint8_t max
 
 CRGB* LedStrip::allocateCRGB(size_t len){
     CRGB* pixels = (CRGB*)ps_malloc(sizeof(CRGB) * len);
-    memset(pixels, 0, sizeof(CRGB) * len);
+    for (int a=0;a<len;++a){
+        pixels[a] = CRGB(0,0,0);
+    }
     return pixels;
 }
 

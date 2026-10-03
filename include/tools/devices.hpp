@@ -123,26 +123,54 @@ class Devices{
         }
 
         static float getInternalAccelerometerX(){
+            #ifdef USE_INTERNAL_ACCELEROMETER
             return internalAX;
+            #else
+            return 0.0f;
+            #endif
         };
         static float getInternalAccelerometerY(){
+            #ifdef USE_INTERNAL_ACCELEROMETER
             return internalAY;
+            #else
+            return 0.0f;
+            #endif
         };
         static float getInternalAccelerometerZ(){
+            #ifdef USE_INTERNAL_ACCELEROMETER
             return internalAZ;
+            #else
+            return 0.0f;
+            #endif
         };
         static float getInternalTemperature(){
+            #ifdef USE_INTERNAL_ACCELEROMETER
             return internalT;
+            #else
+            return 0.0f;
+            #endif
         };
 
         static float getInternalGyroscopeX(){
+            #ifdef USE_INTERNAL_ACCELEROMETER
             return internalGX;
+            #else
+            return 0.0f;
+            #endif
         };
         static float getInternalGyroscopeY(){
+            #ifdef USE_INTERNAL_ACCELEROMETER
             return internalGY;
+            #else
+            return 0.0f;
+            #endif
         };
         static float getInternalGyroscopeZ(){
+            #ifdef USE_INTERNAL_ACCELEROMETER
             return internalGZ;
+            #else
+            return 0.0f;
+            #endif
         };
 
         static BaseDisplay *Display;
@@ -177,11 +205,11 @@ class Devices{
 
 #ifdef USE_INTERNAL_ACCELEROMETER
         static LSM6DS3 *lsm6;
-#endif
+
         static float internalAX, internalAY, internalAZ;
         static float internalGX, internalGY, internalGZ;
         static float internalT;
-
+#endif
 #ifdef USE_BUZZER
         static ToneESP32 buzzer;
         static uint32_t m_toneDuration;
