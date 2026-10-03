@@ -588,6 +588,13 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("getFps", Devices::getAutoFps); 
   m_lua->FuncRegister("getFreeHeap", Devices::getFreeHeap); 
   m_lua->FuncRegister("getTotalHeap", Devices::getTotalHeap); 
+  m_lua->FuncRegister("getInternalGyroscopeZ", Devices::getInternalGyroscopeZ);
+  m_lua->FuncRegister("getInternalGyroscopeY", Devices::getInternalGyroscopeY);
+  m_lua->FuncRegister("getInternalGyroscopeX", Devices::getInternalGyroscopeX);
+  m_lua->FuncRegister("getInternalTemperature", Devices::getInternalTemperature);
+  m_lua->FuncRegister("getInternalAccelerometerZ", Devices::getInternalAccelerometerZ);
+  m_lua->FuncRegister("getInternalAccelerometerY", Devices::getInternalAccelerometerY);
+  m_lua->FuncRegister("getInternalAccelerometerX", Devices::getInternalAccelerometerX);
   #ifdef USE_SERVO
   m_lua->FuncRegisterOptional("startServos", Devices::StartServos, 180, 0.125f, 0.025f, 50);
   m_lua->FuncRegister("servoPause", Devices::ServoPause);

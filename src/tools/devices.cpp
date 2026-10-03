@@ -423,8 +423,6 @@ bool Devices::ReadInternalAcceleromter(){
     if (lsm6->accelerationAvailable()) {
       lsm6->readAcceleration(internalAX, internalAY, internalAZ);
     }
-    if (lsm6->gyroscopeAvailable()) {
-    }
     return true;
   #else 
     return false;
@@ -461,10 +459,6 @@ void Devices::ReadSensors(){
   ReadInternalTemperature();
 }
 
-
-int Devices::GetSensorReading(){ //todo
-  return 0;
-}
 
 bool Devices::ServoPause(int servoId){
   if (!HasServo()){

@@ -72,9 +72,6 @@ class Devices{
             return maxBrightness;
         }
 
-       
-        static int GetSensorReading();
-
         static void SetVoltageStartThreshold(float v){
             VoltageStartThreshold = v;
         }
