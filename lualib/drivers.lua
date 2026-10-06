@@ -80,6 +80,11 @@ function drivers.Start(maxClients)
             left_analog_y = 0,
             right_analog_x = 0,
             right_analog_y = 0,
+
+            stick_x = 0,
+            stick_y = 0,
+            gyro = {x=0,y=0,z=0},
+            accelerometer = {x=0,y=0,z=0},
         }
 
         for __,b in pairs(drivers.JOSYTICK_BUTTONS_MAP) do  
