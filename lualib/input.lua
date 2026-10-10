@@ -43,7 +43,27 @@ _G.BUTTON_BACK = 6
 _G.BUTTON_AUX_A = 7
 _G.BUTTON_AUX_B = 8
 
+-- Text used in the "[KEYBIND] Mapped ..." log line for each match mode
+local MODE_LOG_TEXT = {
+    equals  = "equals",
+    greater = "is greater than",
+    lesser  = "is lesser than",
+    mask    = "has pressed button number",
+}
 
+--[[
+    Keybind syntax (the key of each entry in "keybinds"):
+
+        <type>.<resource>.<index>     e.g. panda.buttons.1       value at a table index
+        <type>.<resource>=<value>     e.g. joystick.hat=6        equals
+        <type>.<resource>><number>    e.g. mouse.x>10            greater than
+        <type>.<resource><number>     e.g. mouse.x<-10           lesser than
+        <type>.<resource>&<n>         e.g. joystick.button&4     bit position: active while the n-th
+                                                                 button is pressed (1 = first button,
+                                                                 2 = second, 4 = fourth...). The value
+                                                                 is a bitmask, so with buttons 1 and 3
+                                                                 held (value 5) both &1 and &3 are active.
+]]
 function input.parseInputLocation(str)
     local idx = 1
     local parsed = {
@@ -54,12 +74,12 @@ function input.parseInputLocation(str)
     local mappedLogString = ""
     for element in str:gmatch("([^%.]+)") do  
         if idx == 1 then  
-            if not drivers[element] then  
+            if not drivers.inputs[element] then  
                 error("There is no driver for the type '"..element.."' in "..str)
             end
             controllerType = element
         elseif idx == 2 then  
-            local handler = drivers[controllerType][0]
+            local handler = drivers.inputs[controllerType][0]
             local toMatch = nil
 
             if not handler then  
@@ -84,6 +104,13 @@ function input.parseInputLocation(str)
                 if not toMatch then 
                     error("Unavalible resource '"..element.."' in '"..str.."'. is expected to be a number")
                 end
+            elseif element:match(".-&.+") then 
+                mode = 'mask'
+                element, toMatch = element:match("(.-)&(.+)")
+                toMatch = tonumber(toMatch)
+                if not toMatch or math.type(toMatch) ~= 'integer' or toMatch < 1 or toMatch > 63 then 
+                    error("Unavalible resource '"..element.."' in '"..str.."'. the number after & is expected to be a button number from 1 to 63")
+                end
             end
 
 
@@ -99,7 +126,7 @@ function input.parseInputLocation(str)
 
             --Reference of the element directly
             for i=0,MAX_BLE_CLIENTS-1 do 
-                local reference = drivers[controllerType][i][element]
+                local reference = drivers.inputs[controllerType][i][element]
                 if type(reference) == 'table' then  
                     parsed.reference = true
                     parsed.resource[i] = reference
@@ -111,7 +138,7 @@ function input.parseInputLocation(str)
             if toMatch then  
                 parsed.match = tonumber(toMatch) or toMatch
                 parsed.mode = mode
-                mappedLogString = "'"..controllerType.."' when '"..element.."' equals '"..parsed.match.."'"
+                mappedLogString = "'"..controllerType.."' when '"..element.."' "..(MODE_LOG_TEXT[mode] or "equals").." '"..parsed.match.."'"
                 break
             end
         elseif idx == 3 then
@@ -122,7 +149,7 @@ function input.parseInputLocation(str)
         idx = idx+1
     end
 
-    local dataLocation = drivers[controllerType][0][parsed.name]
+    local dataLocation = drivers.inputs[controllerType][0][parsed.name]
     if type(dataLocation) ~= 'table' and not parsed.match then   
         error("Cannot use indexing on '"..str.."'. Maybe you meant = on the last dot?")
     end
@@ -287,7 +314,7 @@ function input.updatGenericButtonStates(inputModes, clientId, pdButtonIdOffset)
     end
 
     for _, name in pairs(inputModes) do
-        local controller = drivers[name]
+        local controller = drivers.inputs[name]
         --Search for inputs on each type.. joystick, panda, mouse, keyboard etc
         if keybind[name] then
             for __, bind in pairs(keybind[name]) do
@@ -309,6 +336,14 @@ function input.updatGenericButtonStates(inputModes, clientId, pdButtonIdOffset)
                     elseif bind.mode == 'lesser' then 
                         local n = tonumber(element) or 0
                         if n < bind.match then  
+                            reading = 1
+                        else 
+                            reading = 0
+                        end
+                    elseif bind.mode == 'mask' then 
+                        -- active while the n-th button (bit n-1) of the value is set
+                        local n = math.tointeger(tonumber(element) or 0) or 0
+                        if ((n >> (bind.match - 1)) & 1) == 1 then  
                             reading = 1
                         else 
                             reading = 0

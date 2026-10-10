@@ -6,7 +6,7 @@
     "enableHidControllers": true,
     "pairController": true,
     "maxBleDevices": 1,
-    "drivers": ["panda", "BLE-M3", "beauty-r1"]
+    "drivers": ["panda", "hid", "BLE-M3", "beauty-r1"]
   },
   "infrared": [
     {
@@ -38,12 +38,13 @@
     "panda.buttons.7": "BUTTON_AUX_A",
     "panda.buttons.8": "BUTTON_AUX_B",
 
-    "joystick.right_hat=5": "BUTTON_LEFT",
-    "joystick.right_hat=3": "BUTTON_DOWN",
-    "joystick.right_hat=1": "BUTTON_RIGHT",
-    "joystick.right_hat=7": "BUTTON_UP",
-    "joystick.buttons.4": "BUTTON_CONFIRM",
-    "joystick.buttons.1": "BUTTON_BACK",
+    "joystick.hat_left=1":  "BUTTON_LEFT",
+    "joystick.hat_down=1":  "BUTTON_DOWN",
+    "joystick.hat_right=1": "BUTTON_RIGHT",
+    "joystick.hat_up=1":    "BUTTON_UP",
+    
+    "joystick.button&1": "BUTTON_CONFIRM",
+    "joystick.button&4": "BUTTON_BACK",
 
     "joystick.left_analog_x<-10": "BUTTON_LEFT",
     "joystick.left_analog_y>10": "BUTTON_DOWN",

@@ -16,38 +16,38 @@ function blem3.processPackets(connectionId, controllerId, data)
     if data[1] == 7 and data[2] == 184 and data[3] == 2 then  
         if prevPacket[2] == 240 and prevPacket[3] == 1 then  
             --LEFT
-            local beauty = drivers.generic[controllerId]
+            local beauty = drivers.inputs.generic[controllerId]
             beauty.timeout = millis()+250
             beauty.buttons[4] = 1
         end
     elseif data[1] == 7 and data[2] == 240 and data[3] == 1  then
         if prevPacket[1] == 7 and prevPacket[2] == 184 and prevPacket[3] == 2 then  
-            local beauty = drivers.generic[controllerId]
+            local beauty = drivers.inputs.generic[controllerId]
             beauty.timeout = millis()+250
             beauty.buttons[3] = 1
         end       
     elseif data[1] == 7 and data[2] == 244 and data[3] == 3 and data[4] == 116 and (prevPacket[4] == 160 or prevPacket[4] == 32) then
         --down
-        local beauty = drivers.generic[controllerId]
+        local beauty = drivers.inputs.generic[controllerId]
         beauty.timeout = millis()+250
         beauty.buttons[1] = 1
     elseif data[1] == 7 and (data[4] == 72 or data[4] == 120) and data[5] == 5 then
         if prevPacket[5] == 4 then  
             --up
-            local beauty = drivers.generic[controllerId]
+            local beauty = drivers.inputs.generic[controllerId]
             beauty.timeout = millis()+250
             beauty.buttons[2] = 1
         end
  
     elseif data[1] == 4 and data[2] == 244 and data[3] == 1 and data[4] == 204 then
         --Confirm   
-        local beauty = drivers.generic[controllerId]
+        local beauty = drivers.inputs.generic[controllerId]
         beauty.timeout = millis()+250
         beauty.buttons[5] = 1   
 
     elseif (data[1] == 7 and data[2] == 0 and data[3] == 0) or (data[1] == 6 and data[2] == 0 and data[3] == 0 or data[4] == 0 and data[5] == 0) then
         --back
-        local beauty = drivers.generic[controllerId]
+        local beauty = drivers.inputs.generic[controllerId]
         beauty.timeout = millis()+250
         beauty.buttons[6] = 1
     end
@@ -57,9 +57,9 @@ function blem3.processPackets(connectionId, controllerId, data)
 end
 
 function blem3.onUpdate(drivers, i)
-    if drivers.generic[i].timeout and drivers.generic[i].timeout < millis() then  
-        drivers.generic[i].timeout = nil
-        local buttons = drivers.generic[i].buttons
+    if drivers.inputs.generic[i].timeout and drivers.inputs.generic[i].timeout < millis() then  
+        drivers.inputs.generic[i].timeout = nil
+        local buttons = drivers.inputs.generic[i].buttons
         for a,c in pairs(buttons) do
             buttons[a] = 0
         end
