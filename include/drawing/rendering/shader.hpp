@@ -14,6 +14,7 @@ class ShaderProcessor{
         static void ShaderTexture(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb);
         static void ShaderTrans(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb);
         static void ShaderFFT(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb);
+        static void ShaderWobble(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb);
 
         static uint32_t FrameId;
         static uint32_t Time;

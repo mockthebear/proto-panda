@@ -72,9 +72,61 @@ void ShaderProcessor::Hsv2Rgb(uint8_t h, uint8_t s, uint8_t v, uint8_t& r, uint8
 
 void ShaderProcessor::ShaderNone(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb){}
 
+void ShaderProcessor::ShaderWobble(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb){
 
-void ShaderProcessor::ShaderRowShift(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b,
-                                      ShaderType shdr, float shaderStrength, FrameBuffer *fb){
+    if (shaderStrength <= 0.0f) return;
+
+    static unsigned long lastTime = ~0UL;
+    static int ix, iy, w00, w10, w01, w11;
+
+    if (ShaderProcessor::Time != lastTime) {
+        lastTime = ShaderProcessor::Time;
+
+        const float t = (float)ShaderProcessor::Time / 1000.0f;   // assumes Time is in ms
+        const float offsetY = sinf(t) * 2.f;
+        const float offsetX = sinf(t / 2.0f) * 1.f;
+
+        ix = (int)floorf(offsetX);
+        iy = (int)floorf(offsetY);
+        const int fx = (int)((offsetX - ix) * 256.0f + 0.5f);
+        const int fy = (int)((offsetY - iy) * 256.0f + 0.5f);
+        w00 = (256 - fx) * (256 - fy);
+        w10 = fx * (256 - fy);
+        w01 = (256 - fx) * fy;
+        w11 = fx * fy;
+    }
+
+    const int w = (int)fb->GetSizeX();
+    const int h = (int)fb->GetSizeY();
+
+    const int sx = x - ix, sy = y - iy;
+    const uint16_t c00 = fb->GetPixel(sx,     sy);
+    const uint16_t c10 = fb->GetPixel(sx - 1, sy);
+    const uint16_t c01 = fb->GetPixel(sx,     sy - 1);
+    const uint16_t c11 = fb->GetPixel(sx - 1, sy - 1);
+
+    auto blend = [&](int shift, int mask) {
+        return (int)((((c00 >> shift) & mask) * w00 + ((c10 >> shift) & mask) * w10 +
+                      ((c01 >> shift) & mask) * w01 + ((c11 >> shift) & mask) * w11 + 32768) >> 16);
+    };
+
+    const int r5 = blend(11, 0x1F), g6 = blend(5, 0x3F), b5 = blend(0, 0x1F);
+    const uint8_t shiftedR = (r5 << 3) | (r5 >> 2);
+    const uint8_t shiftedG = (g6 << 2) | (g6 >> 4);
+    const uint8_t shiftedB = (b5 << 3) | (b5 >> 2);
+
+    if (shaderStrength >= 1.0f) {
+        r = shiftedR;
+        g = shiftedG;
+        b = shiftedB;
+    } else {
+        r = (uint8_t)(r * (1.0f - shaderStrength) + shiftedR * shaderStrength);
+        g = (uint8_t)(g * (1.0f - shaderStrength) + shiftedG * shaderStrength);
+        b = (uint8_t)(b * (1.0f - shaderStrength) + shiftedB * shaderStrength);
+    }
+}
+
+void ShaderProcessor::ShaderRowShift(int16_t &x, int16_t &y, uint8_t &r, uint8_t &g, uint8_t &b, ShaderType shdr, float shaderStrength, FrameBuffer *fb){
 
     static const int8_t waveTable[4] = { -2, 0, 2, 0 };
 
@@ -471,6 +523,10 @@ void ShaderProcessor::UpdateColorByShader(int16_t &x, int16_t &y, uint8_t &r, ui
 
     case SHADER_FIRE:
         ShaderFire(x, y, r, g, b, shdr, shaderStrength, fb);  
+        break;
+    
+    case SHADER_WOBBLE:
+        ShaderWobble(x, y, r, g, b, shdr, shaderStrength, fb);  
         break;
     
     case SHADER_TEXTURE:

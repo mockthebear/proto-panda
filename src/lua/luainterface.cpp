@@ -912,6 +912,7 @@ void LuaInterface::RegisterConstants()
   m_lua->setConstant("SHADER_NONE",         (int)SHADER_NONE);
   m_lua->setConstant("SHADER_RAINBOW",      (int)SHADER_RAINBOW);
   m_lua->setConstant("SHADER_FIRE",         (int)SHADER_FIRE);
+  m_lua->setConstant("SHADER_WOBBLE",         (int)SHADER_WOBBLE);
   m_lua->setConstant("SHADER_TEXTURE",      (int)SHADER_TEXTURE);
   m_lua->setConstant("SHADER_TRANS",        (int)SHADER_TRANS);
   
