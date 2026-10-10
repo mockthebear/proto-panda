@@ -43,7 +43,7 @@ class AdvertisedDeviceCallbacks;
 
 class BleServiceHandler{
   public:
-    BleServiceHandler(NimBLEUUID u):uuid(u),queueMutex(xSemaphoreCreateMutex()),luaOnConnectCallback(nullptr),luaOnDisconnectCallback(nullptr){};
+    BleServiceHandler(NimBLEUUID u):uuid(u),encryptionRequired(u == NimBLEUUID((uint16_t)0x1812)),queueMutex(xSemaphoreCreateMutex()),luaOnConnectCallback(nullptr),luaOnDisconnectCallback(nullptr){};
     BleCharacteristicsHandler* AddCharacteristics(std::string uuid);
 
     void AddPairedDeviceAddress(std::string addr);
@@ -53,6 +53,11 @@ class BleServiceHandler{
     }
     void SetOnDisconnectCallback(LuaFunctionCallback * cb){
       luaOnDisconnectCallback = cb;
+    }
+
+    /** Pair/bond/encrypt right after connecting. Enabled by default for the HID service (0x1812). */
+    void SetEncryptionRequired(bool enable){
+      encryptionRequired = enable;
     }
 
     void AddNameRequired(std::string namer){
@@ -71,6 +76,7 @@ class BleServiceHandler{
 
     static MultiReturn<std::vector<std::string>> GetCharacteristicsFromService(int clientId, std::string servName, bool refresh);
     NimBLEUUID uuid;
+    bool encryptionRequired;
 
     void NotifyDisconnect(int conId, int clientId, const char* reason);
 

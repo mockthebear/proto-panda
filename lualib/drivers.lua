@@ -24,11 +24,7 @@ local drivers = {
     paired_data = {},
 
     validEntries = {
-        ['joystick'] = true,
-        ['mouse'] = true,
-        ['keyboard'] = true,
         ['generic'] = true,
-
     },
 
 
@@ -106,6 +102,7 @@ function drivers.EnableDrivers(input)
             hid.handler = BleServiceHandler("00001812-0000-1000-8000-00805f9b34fb")
             hid.handler:SetOnConnectCallback(drivers.onConnectHID)
             hid.handler:SetOnDisconnectCallback(drivers.onDisconnectHID)
+            hid.handler:SetEncryptionRequired(true)
             hid.mouseListener = hid.handler:AddCharacteristics("2a4d")
             hid.mouseListener:SetSubscribeCallback(drivers.onHidCallback) 
             hid.mouseListener:SetCallbackModeStream(false)
@@ -144,8 +141,12 @@ function drivers.EnableDrivers(input)
                     log("Skipping "..driverName.." because it inherit HID and hid is not enabled")
                 end
             elseif content.type == "core" then
-                drivers.validEntries[driverName] = true
-                drivers[driverName] = content.getDriverModules(drivers.maxClients)
+
+                local modules = content.getDriverModules(drivers.maxClients)
+                for inputName , object in pairs(modules) do
+                    drivers.validEntries[inputName] = true
+                    drivers[inputName] = object
+                end
                 drivers.core[driverName] = content
                 print("Loaded core driver "..driverName)
             else 

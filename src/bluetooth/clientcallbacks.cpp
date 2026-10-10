@@ -49,8 +49,8 @@ void ClientCallbacks::onDisconnect(NimBLEClient* pClient, int reason){
 
 void ClientCallbacks::onPassKeyEntry(NimBLEConnInfo& connInfo)  {
         Serial.printf("Server Passkey Entry\n");
-        /** This should prompt the user to enter the passkey displayed on the peer device. */
-        NimBLEDevice::injectPassKey(connInfo, 123456);
+        /** Uses the passkey configured with setBleSecurityPasskey() (default 123456). */
+        NimBLEDevice::injectPassKey(connInfo, g_remoteControls.getSecurityPasskey());
   }
 
 
@@ -67,5 +67,6 @@ void ClientCallbacks::onAuthenticationComplete(NimBLEConnInfo& connInfo) {
     NimBLEDevice::getClientByHandle(connInfo.getConnHandle())->disconnect();
     return;
   }
+  Logger::Info("[BLE] Authentication complete: encrypted=%d authenticated=%d bonded=%d", connInfo.isEncrypted(), connInfo.isAuthenticated(), connInfo.isBonded());
 }
 #endif
