@@ -6,7 +6,6 @@ local hid = {
 
 local DEBUG_INPUT = true
 local DEBUG_LOG = print
-
 function hid.getDriverModules(maxClients)
     local hidData = {
         mouse = {},
@@ -239,6 +238,41 @@ local function handleMouse(rep, controllerId, data)
     end
 end
 
+-- Names for the keyboard debug log (HID usage page 0x07)
+local KEY_NAMES = {
+    [40]="Enter", [41]="Esc", [42]="Backspace", [43]="Tab", [44]="Space",
+    [45]="-", [46]="=", [47]="[", [48]="]", [49]="\\", [50]="# (non-US)",
+    [51]=";", [52]="'", [53]="`", [54]=",", [55]=".", [56]="/", [57]="CapsLock",
+    [70]="PrintScreen", [71]="ScrollLock", [72]="Pause", [73]="Insert", [74]="Home",
+    [75]="PageUp", [76]="Delete", [77]="End", [78]="PageDown",
+    [79]="Right", [80]="Left", [81]="Down", [82]="Up", [83]="NumLock",
+    [84]="Keypad /", [85]="Keypad *", [86]="Keypad -", [87]="Keypad +", [88]="Keypad Enter",
+    [98]="Keypad 0", [99]="Keypad .", [100]="\\ (non-US)", [101]="Menu",
+}
+
+for i = 0, 25 do KEY_NAMES[4 + i] = string.char(65 + i) end  -- 4..29  = A..Z
+for i = 1, 9 do KEY_NAMES[29 + i] = tostring(i) end -- 30..38 = 1..9
+KEY_NAMES[39] = "0"
+for i = 1, 12 do KEY_NAMES[57 + i] = "F" .. i end -- 58..69 = F1..F12
+for i = 1, 9 do KEY_NAMES[88 + i] = "Keypad " .. i end -- 89..97 = keypad 1..9
+
+local MODIFIER_NAMES = {
+    [0]="LCtrl", [1]="LShift", [2]="LAlt", [3]="LGui",
+    [4]="RCtrl", [5]="RShift", [6]="RAlt", [7]="RGui",
+}
+
+local function describeKeys(mods, keys)
+    local out = {}
+    for bit = 0, 7 do
+        if mods & (1 << bit) ~= 0 then out[#out + 1] = MODIFIER_NAMES[bit] end
+    end
+    for _, usage in ipairs(keys) do
+        out[#out + 1] = KEY_NAMES[usage] or string.format("0x%02X", usage)
+    end
+    if #out == 0 then return "released" end
+    return table.concat(out, "+")
+end
+
 local function handleKeyboard(rep, controllerId, data)
     local kb = drivers.inputs.keyboard[controllerId]
     if not kb then return end
@@ -267,7 +301,7 @@ local function handleKeyboard(rep, controllerId, data)
     kb.keys = keys
     kb.button = keys[1] or 0
     if DEBUG_INPUT then
-        DEBUG_LOG("keyboard.modifiers=" .. mods .. " keys=" .. table.concat(keys, ","))
+        DEBUG_LOG("keyboard.modifiers=" .. mods .. " keys=" .. table.concat(keys, ",") .. "  -> " .. describeKeys(mods, keys))
     end
 end
 
