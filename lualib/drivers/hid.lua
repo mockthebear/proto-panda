@@ -5,6 +5,8 @@ local hid = {
 }
 
 local DEBUG_INPUT = true
+local DEBUG_LOG = print
+
 function hid.getDriverModules(maxClients)
     local hidData = {
         mouse = {},
@@ -232,8 +234,8 @@ local function handleMouse(rep, controllerId, data)
         if dx ~= 0 then action = action .. ('mouse.x=' .. dx .. ' '); empty = false end
         if dy ~= 0 then action = action .. ('mouse.y=' .. dy .. ' '); empty = false end
         if wheel ~= 0 then action = action .. ('mouse.wheel=' .. wheel .. ' '); empty = false end
-        if action ~= "" then log(action) end
-        if empty then log("Mouse all zeros.") end
+        if action ~= "" then DEBUG_LOG(action) end
+        if empty then DEBUG_LOG("Mouse all zeros.") end
     end
 end
 
@@ -265,7 +267,7 @@ local function handleKeyboard(rep, controllerId, data)
     kb.keys = keys
     kb.button = keys[1] or 0
     if DEBUG_INPUT then
-        log("keyboard.modifiers=" .. mods .. " keys=" .. table.concat(keys, ","))
+        DEBUG_LOG("keyboard.modifiers=" .. mods .. " keys=" .. table.concat(keys, ","))
     end
 end
 
@@ -288,7 +290,7 @@ local function handleConsumer(rep, controllerId, data)
     kb.consumer = usage              -- full 16 bit usage (0xE9 volume up, 0xCD play/pause, ...)
     kb.button = usage & 0xFF         -- what your old 2-byte branch stored (data[1])
     if DEBUG_INPUT then
-        log(string.format("consumer usage=0x%04X", usage))
+        DEBUG_LOG(string.format("consumer usage=0x%04X", usage))
     end
 end
 
@@ -356,7 +358,7 @@ local function handleJoystick(rep, controllerId, data)
             mask, table.concat(pressed, ","))
         if sig ~= joy.lastLog then
             joy.lastLog = sig
-            log(sig)
+            DEBUG_LOG(sig)
         end
     end
 end
@@ -375,14 +377,14 @@ function hid.dispatchHidReport(controllerId, data, layout)
     if not handler then return false end
     if #list > 1 and not layout.warned then
         layout.warned = true
-        log("HID: several reports have " .. #data .. " bytes, using the first one (" .. rep.kind .. ")")
+        DEBUG_LOG("HID: several reports have " .. #data .. " bytes, using the first one (" .. rep.kind .. ")")
     end
     handler(rep, controllerId, data)
     return true
 end
 
 function hid.onDisconnectHID(connectionId, controllerId, reason)
-    log("Disconnected "..connectionId.." due ".. reason)
+    DEBUG_LOG("Disconnected "..connectionId.." due ".. reason)
     hid.hidLayouts[controllerId] = nil
     drivers.DisconnectDevice(controllerId, 'hid')
 end
@@ -391,7 +393,7 @@ function hid.onConnectHID(connectionId, controllerId, address, name)
     local matchedDriver, matchName = drivers.FindDriver(connectionId, controllerId, address, name)
     drivers.ConnectDevice(controllerId, address, matchName or 'hid')
 
-    log("Connected conId="..connectionId.." controller="..controllerId.." addr=\""..address.."\" name=["..name.."] type="..(matchName or 'hid'))
+    DEBUG_LOG("Connected conId="..connectionId.." controller="..controllerId.." addr=\""..address.."\" name=["..name.."] type="..(matchName or 'hid'))
 
     if matchName then  
         return
@@ -401,17 +403,17 @@ function hid.onConnectHID(connectionId, controllerId, address, name)
     if ok and map and #map > 0 then
         local hex = {}
         for i = 1, #map do hex[i] = string.format("%02X", map[i]) end
-        log("HID report map hex: " .. table.concat(hex, " "))
+        DEBUG_LOG("HID report map hex: " .. table.concat(hex, " "))
 
         local good, layout = pcall(hid.parseReportMap, map)
         if good then
             hid.hidLayouts[controllerId] = layout
-            log("HID report map: " .. hid.describeReportMap(layout))
+            DEBUG_LOG("HID report map: " .. hid.describeReportMap(layout))
         else
-            log("HID report map parse failed: " .. tostring(layout))
+            DEBUG_LOG("HID report map parse failed: " .. tostring(layout))
         end
     else
-        log("HID report map not available, using packet length heuristics")
+        DEBUG_LOG("HID report map not available, using packet length heuristics")
     end
 end
 
@@ -452,7 +454,7 @@ function hid.legacyHidCallback(connectionId, controllerId, data)
     if len == 2 then
         --Mouse press
         if DEBUG_INPUT then
-            log("keyboard.button="..  data[1] .. ' -> '.. data[2])
+            DEBUG_LOG("keyboard.button="..  data[1] .. ' -> '.. data[2])
         end
         local keyboard = drivers.inputs.keyboard[controllerId]
         keyboard.button = data[1]
@@ -495,10 +497,10 @@ function hid.legacyHidCallback(connectionId, controllerId, data)
 
         if DEBUG_INPUT then
             if action ~= "" then
-                log(action)
+                DEBUG_LOG(action)
             end
             if empty then
-                log("Mouse all zeros.")
+                DEBUG_LOG("Mouse all zeros.")
             end
         end
 
@@ -532,7 +534,7 @@ function hid.legacyHidCallback(connectionId, controllerId, data)
         joystickObject.right_analog_y = data[4] - 128
 
         if DEBUG_INPUT then
-            log("Joystick moved: "..
+            DEBUG_LOG("Joystick moved: "..
                 "  joystickObject.left_hat="..joystickObject.left_hat ..
                 ", joystickObject.right_hat="..joystickObject.right_hat ..
                 ", joystickObject.left_analog_x="..joystickObject.left_analog_x..
@@ -546,7 +548,7 @@ function hid.legacyHidCallback(connectionId, controllerId, data)
         for i,b in pairs(data) do
             str = str ..b..', '
         end
-        log("Packet size is unknown: "..(#data)..", data is: "..str)
+        DEBUG_LOG("Packet size is unknown: "..(#data)..", data is: "..str)
     end
 end
 
