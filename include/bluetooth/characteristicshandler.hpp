@@ -10,9 +10,10 @@
 
 class BleMessage{
   public:
-    BleMessage(int cliId, int  id, uint8_t* pData, size_t length):m_CliId(cliId),m_id(id),message(pData, pData + length){}
+    BleMessage(int cliId, int  id, uint8_t* pData, size_t length, int handle):m_CliId(cliId),m_id(id),m_handle(handle),message(pData, pData + length){}
     int m_CliId;
     int m_id;
+    int m_handle;     // attribute handle of the characteristic that sent this packet
     PSRAMVector<uint8_t> message;
 };
 
@@ -34,11 +35,11 @@ class BleCharacteristicsHandler{
       m_stream = stream;
     };
     
-    void AddMessage(int cliID, int id, uint8_t* pData, size_t length, bool isNotify);
+    void AddMessage(int cliID, int id, uint8_t* pData, size_t length, bool isNotify, int handle = -1);
     void SendMessages();
     notify_callback getLambda(int id, int cliID){
         return [this, id, cliID](NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
-          this->AddMessage(cliID, id, pData, length, isNotify);
+          this->AddMessage(cliID, id, pData, length, isNotify, pRemoteCharacteristic ? (int)pRemoteCharacteristic->getHandle() : -1);
         };
     }
     bool GetMessageAndSend();

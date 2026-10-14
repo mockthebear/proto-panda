@@ -43,7 +43,7 @@ class AdvertisedDeviceCallbacks;
 
 class BleServiceHandler{
   public:
-    BleServiceHandler(NimBLEUUID u):uuid(u),encryptionRequired(u == NimBLEUUID((uint16_t)0x1812)),queueMutex(xSemaphoreCreateMutex()),luaOnConnectCallback(nullptr),luaOnDisconnectCallback(nullptr){};
+    BleServiceHandler(NimBLEUUID u):uuid(u),encryptionRequired(false),queueMutex(xSemaphoreCreateMutex()),luaOnConnectCallback(nullptr),luaOnDisconnectCallback(nullptr){};
     BleCharacteristicsHandler* AddCharacteristics(std::string uuid);
 
     void AddPairedDeviceAddress(std::string addr);
@@ -55,7 +55,6 @@ class BleServiceHandler{
       luaOnDisconnectCallback = cb;
     }
 
-    /** Pair/bond/encrypt right after connecting. Enabled by default for the HID service (0x1812). */
     void SetEncryptionRequired(bool enable){
       encryptionRequired = enable;
     }
@@ -71,6 +70,7 @@ class BleServiceHandler{
     MultiReturn<std::vector<std::string>> GetCharacteristicsFromOurService(int clientId);
     bool WriteToCharacteristics(std::vector<uint8_t> bytes, int clientId, std::string charName, bool reply);
     MultiReturn<std::vector<uint8_t>> ReadFromCharacteristics(int clientId, std::string charName);
+    MultiReturn<std::vector<uint8_t>> ReadDescriptor(int clientId, int charHandle, std::string descName);
     std::vector<BleCharacteristicsHandler*> getRegisteredCharacteristics();
 
 

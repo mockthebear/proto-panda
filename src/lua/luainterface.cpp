@@ -1011,6 +1011,7 @@ bool LuaInterface::Start()
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","AddNameRequired",&BleServiceHandler::AddNameRequired);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","GetServices",&BleServiceHandler::GetServices);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","ReadFromCharacteristics",&BleServiceHandler::ReadFromCharacteristics);
+  ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","ReadDescriptor",&BleServiceHandler::ReadDescriptor);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","GetRSSI",&BleServiceHandler::GetRSSI);
   ClassRegister<BleServiceHandler>::RegisterClassMethod(_state,"BleServiceHandler","GetClientIdFromControllerId",&BleServiceHandler::GetClientIdFromControllerId);
 
