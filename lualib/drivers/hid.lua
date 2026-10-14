@@ -1,7 +1,32 @@
 local hid = {
     hidLayouts = {},
     type="core",
-    mode = {'joystick', 'mouse', 'keyboard'},
+    mode = {'joystick', 'mouse', 'keyboard', 'consumer'},
+
+    reportIdByHandle = {}
+}
+
+-- Names for the keyboard debug log (HID usage page 0x07)
+local KEY_NAMES = {
+    [40]="Enter", [41]="Esc", [42]="Backspace", [43]="Tab", [44]="Space",
+    [45]="-", [46]="=", [47]="[", [48]="]", [49]="\\", [50]="# (non-US)",
+    [51]=";", [52]="'", [53]="`", [54]=",", [55]=".", [56]="/", [57]="CapsLock",
+    [70]="PrintScreen", [71]="ScrollLock", [72]="Pause", [73]="Insert", [74]="Home",
+    [75]="PageUp", [76]="Delete", [77]="End", [78]="PageDown",
+    [79]="Right", [80]="Left", [81]="Down", [82]="Up", [83]="NumLock",
+    [84]="Keypad /", [85]="Keypad *", [86]="Keypad -", [87]="Keypad +", [88]="Keypad Enter",
+    [98]="Keypad 0", [99]="Keypad .", [100]="\\ (non-US)", [101]="Menu",
+}
+for i = 0, 25 do KEY_NAMES[4 + i] = string.char(65 + i) end 
+for i = 1, 9 do KEY_NAMES[29 + i] = tostring(i) end
+KEY_NAMES[39] = "0"
+for i = 1, 12 do KEY_NAMES[57 + i] = "F" .. i end   
+for i = 1, 9 do KEY_NAMES[88 + i] = "Keypad " .. i end
+
+-- bit n of keyboard.modifiers
+local MODIFIER_NAMES = {
+    [0]="LCtrl", [1]="LShift", [2]="LAlt", [3]="LGui",
+    [4]="RCtrl", [5]="RShift", [6]="RAlt", [7]="RGui",
 }
 
 local DEBUG_INPUT = true
@@ -10,6 +35,7 @@ function hid.getDriverModules(maxClients)
     local hidData = {
         mouse = {},
         keyboard = {},
+        consumer = {},
         joystick = {},
     }
     for i=0,maxClients-1 do  
@@ -20,15 +46,20 @@ function hid.getDriverModules(maxClients)
             buttons={0,0,0,0,0,0,0,0}
         }
         hidData.keyboard[i] = {
-            button = 0
+            button = 0,  
+            held = {},
+            keys = {}, 
+            modifiers = 0, 
+        }
+        hidData.consumer[i] = {
+            button = 0,     
+            held = {},
         }
          hidData.joystick[i] = {  
-            -- Bitmask of the pressed buttons: HID button N is bit N-1,
-            -- so buttons 1 and 3 together read as 5. Use it with e.g. "joystick.buttons&4".
             buttons = 0,
-            button = 0,     -- same value, also written by the legacy (no report map) path
+            button = 0,   
 
-            hat = -1,       -- 0=N 1=NE 2=E 3=SE 4=S 5=SW 6=W 7=NW, -1 when released
+            hat = -1,    
             hat_up = 0, 
             hat_right = 0, 
             hat_down = 0, 
@@ -61,14 +92,13 @@ local function kindOf(page, usage)
     if page == 0x01 then
         if usage == 0x02 then return "mouse" end
         if usage == 0x06 or usage == 0x07 then return "keyboard" end
-        if usage == 0x04 or usage == 0x05 then return "joystick" end  -- joystick / gamepad
+        if usage == 0x04 or usage == 0x05 then return "joystick" end 
     elseif page == 0x0C then
         return "consumer"
     end
     return "other"
 end
 
--- map: table of bytes (1-indexed), as returned by ReadFromCharacteristics(..., "2a4b")
 function hid.parseReportMap(map)
     local layout = { reports = {}, order = {}, byLength = {} }
     local g = { page = 0, lmin = 0, lmaxRaw = 0, lmaxSize = 1, size = 0, count = 0, id = 0 }
@@ -80,7 +110,7 @@ function hid.parseReportMap(map)
     while pos <= n do
         local prefix = map[pos]
         pos = pos + 1
-        if prefix == 0xFE then                       -- long item, skip
+        if prefix == 0xFE then  
             pos = pos + 2 + (map[pos] or 0)
         else
             local size = prefix & 3
@@ -91,31 +121,31 @@ function hid.parseReportMap(map)
             for i = 0, size - 1 do raw = raw | (map[pos + i] << (8 * i)) end
             pos = pos + size
 
-            if typ == 1 then                          -- global items
+            if typ == 1 then
                 if     tag == 0x0 then g.page = raw
                 elseif tag == 0x1 then g.lmin = toSigned(raw, size)
                 elseif tag == 0x2 then g.lmaxRaw, g.lmaxSize = raw, size
                 elseif tag == 0x7 then g.size = raw
                 elseif tag == 0x8 then g.id = raw
                 elseif tag == 0x9 then g.count = raw
-                elseif tag == 0xA then                -- push
+                elseif tag == 0xA then
                     local copy = {}
                     for k, v in pairs(g) do copy[k] = v end
                     stack[#stack + 1] = copy
-                elseif tag == 0xB then                -- pop
+                elseif tag == 0xB then
                     g = table.remove(stack) or g
                 end
-            elseif typ == 2 then                      -- local items
+            elseif typ == 2 then
                 if     tag == 0x0 then usages[#usages + 1] = raw & 0xFFFF
                 elseif tag == 0x1 then umin = raw & 0xFFFF
                 elseif tag == 0x2 then umax = raw & 0xFFFF end
-            else                                      -- main items
-                if tag == 0xA then                    -- collection
+
+                if tag == 0xA then
                     depth = depth + 1
                     if depth == 1 then app = { page = g.page, usage = usages[1] or umin or 0 } end
-                elseif tag == 0xC then                -- end collection
+                elseif tag == 0xC then   
                     if depth > 0 then depth = depth - 1 end
-                elseif tag == 0x8 then                -- input
+                elseif tag == 0x8 then 
                     local rep = layout.reports[g.id]
                     if not rep then
                         rep = { id = g.id, bits = 0, fields = {},
@@ -125,7 +155,7 @@ function hid.parseReportMap(map)
                     end
                     local isConst = (raw & 1) ~= 0
                     local isVar   = (raw & 2) ~= 0
-                    -- logical max is only signed when logical min is negative
+
                     local lmax = (g.lmin < 0) and toSigned(g.lmaxRaw, g.lmaxSize) or g.lmaxRaw
                     if not isConst then
                         if isVar then
@@ -142,7 +172,7 @@ function hid.parseReportMap(map)
                                     offset = rep.bits + (i - 1) * g.size,
                                     lmin = g.lmin, lmax = lmax }
                             end
-                        else                          -- array (e.g. keyboard keys, consumer usage)
+                        else 
                             rep.fields[#rep.fields + 1] = {
                                 page = g.page, array = true, count = g.count, size = g.size,
                                 offset = rep.bits, lmin = g.lmin, lmax = lmax,
@@ -151,7 +181,7 @@ function hid.parseReportMap(map)
                     end
                     rep.bits = rep.bits + g.count * g.size
                 end
-                usages, umin, umax = {}, nil, nil     -- local items reset after every main item
+                usages, umin, umax = {}, nil, nil 
             end
         end
     end
@@ -194,7 +224,6 @@ local function fieldValue(data, f)
     return v
 end
 
--- usage code held by an array slot, or nil when the slot is empty / out of range
 local function arrayUsage(f, v)
     if v < f.lmin or v > f.lmax then return nil end
     local u = v + f.base
@@ -212,7 +241,7 @@ local function handleMouse(rep, controllerId, data)
     local action, empty = "", true
 
     for _, f in ipairs(rep.fields) do
-        if f.page == 0x09 then                                    -- buttons
+        if f.page == 0x09 then 
             local state = (fieldValue(data, f) ~= 0) and 1 or 0
             if mb[f.usage] ~= state then
                 action = action .. ('mouse.buttons.' .. f.usage .. ' -> ' .. state .. ' ')
@@ -228,7 +257,7 @@ local function handleMouse(rep, controllerId, data)
         end
     end
 
-    -- Some mice send X/Y in one report and buttons/wheel in another, so only update what this report has
+
     if hasX then mouse.x = dx end
     if hasY then mouse.y = dy end
     if hasWheel then mouse.wheel = wheel end
@@ -244,28 +273,7 @@ local function handleMouse(rep, controllerId, data)
     end
 end
 
--- Names for the keyboard debug log (HID usage page 0x07)
-local KEY_NAMES = {
-    [40]="Enter", [41]="Esc", [42]="Backspace", [43]="Tab", [44]="Space",
-    [45]="-", [46]="=", [47]="[", [48]="]", [49]="\\", [50]="# (non-US)",
-    [51]=";", [52]="'", [53]="`", [54]=",", [55]=".", [56]="/", [57]="CapsLock",
-    [70]="PrintScreen", [71]="ScrollLock", [72]="Pause", [73]="Insert", [74]="Home",
-    [75]="PageUp", [76]="Delete", [77]="End", [78]="PageDown",
-    [79]="Right", [80]="Left", [81]="Down", [82]="Up", [83]="NumLock",
-    [84]="Keypad /", [85]="Keypad *", [86]="Keypad -", [87]="Keypad +", [88]="Keypad Enter",
-    [98]="Keypad 0", [99]="Keypad .", [100]="\\ (non-US)", [101]="Menu",
-}
-for i = 0, 25 do KEY_NAMES[4 + i] = string.char(65 + i) end      -- 4..29  = A..Z
-for i = 1, 9 do KEY_NAMES[29 + i] = tostring(i) end              -- 30..38 = 1..9
-KEY_NAMES[39] = "0"
-for i = 1, 12 do KEY_NAMES[57 + i] = "F" .. i end                -- 58..69 = F1..F12
-for i = 1, 9 do KEY_NAMES[88 + i] = "Keypad " .. i end           -- 89..97 = keypad 1..9
 
--- bit n of keyboard.modifiers
-local MODIFIER_NAMES = {
-    [0]="LCtrl", [1]="LShift", [2]="LAlt", [3]="LGui",
-    [4]="RCtrl", [5]="RShift", [6]="RAlt", [7]="RGui",
-}
 
 local function describeKeys(mods, keys)
     local out = {}
@@ -303,6 +311,11 @@ local function handleKeyboard(rep, controllerId, data)
         end
     end
 
+    local held = kb.held
+    if not held then held = {}; kb.held = held end
+    for k in pairs(held) do held[k] = nil end
+    for _, u in ipairs(keys) do held[u] = true end
+
     kb.modifiers = mods
     kb.keys = keys
     kb.button = keys[1] or 0
@@ -316,6 +329,7 @@ local CONSUMER_NAMES = {
     [0x30]="Power", [0x40]="Menu", [0x41]="Menu Pick", [0x42]="Menu Up", [0x43]="Menu Down",
     [0x44]="Menu Left", [0x45]="Menu Right", [0x46]="Menu Escape",
     [0x6F]="Brightness Up", [0x70]="Brightness Down",
+    [0xB0]="Play", [0xB1]="Pause", [0xB3]="Fast Forward", [0xB4]="Rewind",
     [0xB5]="Next Track", [0xB6]="Previous Track", [0xB7]="Stop", [0xB8]="Eject",
     [0xCD]="Play/Pause", [0xE2]="Mute", [0xE9]="Volume Up", [0xEA]="Volume Down",
     [0x18A]="Mail", [0x192]="Calculator", [0x221]="AC Search", [0x223]="AC Home",
@@ -323,26 +337,33 @@ local CONSUMER_NAMES = {
 }
 
 local function handleConsumer(rep, controllerId, data)
-    local kb = drivers.inputs.keyboard[controllerId]
-    if not kb then return end
-    local usage = 0
+    local cons = drivers.inputs.consumer[controllerId]
+    if not cons then return end
+    local held = cons.held
+    for k in pairs(held) do held[k] = nil end
+    local first = 0
+
     for _, f in ipairs(rep.fields) do
         if f.page == 0x0C then
             if f.array then
                 for i = 0, f.count - 1 do
                     local u = arrayUsage(f, getBits(data, f.offset + i * f.size, f.size))
-                    if u then usage = u; break end
+                    if u then
+                        held[u] = true
+                        if first == 0 then first = u end
+                    end
                 end
             elseif fieldValue(data, f) ~= 0 then
-                usage = f.usage
+                held[f.usage] = true
+                if first == 0 then first = f.usage end
             end
         end
     end
-    kb.consumer = usage              -- full 16 bit usage (0xE9 volume up, 0xCD play/pause, ...)
-    kb.button = usage & 0xFF         -- what your old 2-byte branch stored (data[1])
+
+    cons.button = first
     if DEBUG_INPUT then
-        DEBUG_LOG(string.format("consumer usage=0x%04X  -> %s", usage,
-            usage == 0 and "released" or (CONSUMER_NAMES[usage] or "?")))
+        DEBUG_LOG(string.format("consumer usage=0x%04X  -> %s", first,
+            first == 0 and "released" or (CONSUMER_NAMES[first] or "?")))
     end
 end
 
@@ -359,22 +380,22 @@ local function handleJoystick(rep, controllerId, data)
     local mask = 0
 
     for _, f in ipairs(rep.fields) do
-        if f.page == 0x09 then                                    -- buttons 1..N
+        if f.page == 0x09 then                                    
             if fieldValue(data, f) ~= 0 then
                 pressed[#pressed + 1] = f.usage
                 if f.usage >= 1 and f.usage <= 63 then
-                    mask = mask | (1 << (f.usage - 1))            -- button N -> bit N-1
+                    mask = mask | (1 << (f.usage - 1))       
                 end
             end
         elseif f.page == 0x01 then
-            if f.usage == 0x39 then                               -- hat switch
+            if f.usage == 0x39 then  
                 local v = fieldValue(data, f)
-                hat = (v >= f.lmin and v <= f.lmax) and (v - f.lmin) or nil   -- nil = released
+                hat = (v >= f.lmin and v <= f.lmax) and (v - f.lmin) or nil
                 hatCount = f.lmax - f.lmin + 1
-            elseif f.usage >= 0x30 and f.usage <= 0x37 then       -- X Y Z Rx Ry Rz Slider Dial
-                axes[f.usage] = fieldValue(data, f) - ((f.lmin + f.lmax + 1) // 2)   -- centre = 0
+            elseif f.usage >= 0x30 and f.usage <= 0x37 then 
+                axes[f.usage] = fieldValue(data, f) - ((f.lmin + f.lmax + 1) // 2)
             end
-        elseif f.page == 0x02 then                                -- simulation: accelerator, brake...
+        elseif f.page == 0x02 then  
             sim[f.usage] = fieldValue(data, f)
         end
     end
@@ -382,7 +403,6 @@ local function handleJoystick(rep, controllerId, data)
     joy.buttons = mask
     joy.button = mask
 
-    -- Right stick is Z/Rz on most pads (Xbox style, Q36); otherwise Rx/Ry.
     local rx, ry
     if axes[0x32] and axes[0x35] then rx, ry = axes[0x32], axes[0x35]
     else rx, ry = axes[0x33], axes[0x34] end
@@ -399,8 +419,8 @@ local function handleJoystick(rep, controllerId, data)
     joy.hat_left  = (eight and (hat == 5 or hat == 6 or hat == 7)) and 1 or 0
 
     joy.hat_directions = hatCount
-    if sim[0xC5] then joy.brake = sim[0xC5] end              -- usually the left trigger
-    if sim[0xC4] then joy.accelerator = sim[0xC4] end        -- usually the right trigger
+    if sim[0xC5] then joy.brake = sim[0xC5] end
+    if sim[0xC4] then joy.accelerator = sim[0xC4] end
 
     if DEBUG_INPUT then
         local sig = string.format("joystick L(%s,%s) R(%s,%s) hat=%s brake=%s accel=%s buttons=%d [%s]",
@@ -420,11 +440,10 @@ local HANDLERS = {
     consumer = handleConsumer, joystick = handleJoystick,
 }
 
--- true when the packet was decoded through the report map
+
 function hid.dispatchHidReport(controllerId, data, layout, reportId)
-    -- reportId comes from the characteristic's Report Reference descriptor (nil / -1 when unknown)
     local rep = reportId and layout.reports[reportId]
-    if rep and rep.bytes ~= #data then rep = nil end   -- size does not match the map, do not trust it
+    if rep and rep.bytes ~= #data then rep = nil end
 
     if not rep then
         local list = layout.byLength[#data]
@@ -442,10 +461,6 @@ function hid.dispatchHidReport(controllerId, data, layout, reportId)
     return true
 end
 
--- Every notification carries the attribute handle of the characteristic it came from.
--- For HID the Report Reference descriptor (0x2908) of that characteristic holds the report ID
--- (byte 1 = report ID, byte 2 = type). It is read once per handle and cached.
-hid.reportIdByHandle = {}
 
 function hid.reportIdOf(connectionId, controllerId, handle)
     local cache = hid.reportIdByHandle[controllerId]
