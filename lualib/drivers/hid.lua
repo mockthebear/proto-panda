@@ -207,6 +207,7 @@ local function handleMouse(rep, controllerId, data)
     local mouse = drivers.inputs.mouse[controllerId]
     if not mouse then return end
     local dx, dy, wheel, hwheel = 0, 0, 0, 0
+    local hasX, hasY, hasWheel, hasPan = false, false, false, false
     local mb = mouse.buttons
     local action, empty = "", true
 
@@ -219,20 +220,25 @@ local function handleMouse(rep, controllerId, data)
                 mb[f.usage] = state
             end
         elseif f.page == 0x01 then
-            if     f.usage == 0x30 then dx = fieldValue(data, f)
-            elseif f.usage == 0x31 then dy = fieldValue(data, f)
-            elseif f.usage == 0x38 then wheel = fieldValue(data, f) end
+            if     f.usage == 0x30 then dx = fieldValue(data, f); hasX = true
+            elseif f.usage == 0x31 then dy = fieldValue(data, f); hasY = true
+            elseif f.usage == 0x38 then wheel = fieldValue(data, f); hasWheel = true end
         elseif f.page == 0x0C and f.usage == 0x238 then           -- AC Pan (horizontal wheel)
-            hwheel = fieldValue(data, f)
+            hwheel = fieldValue(data, f); hasPan = true
         end
     end
 
-    mouse.x, mouse.y, mouse.wheel, mouse.hwheel = dx, dy, wheel, hwheel
+    -- Some mice send X/Y in one report and buttons/wheel in another, so only update what this report has
+    if hasX then mouse.x = dx end
+    if hasY then mouse.y = dy end
+    if hasWheel then mouse.wheel = wheel end
+    if hasPan then mouse.hwheel = hwheel end
 
     if DEBUG_INPUT then
         if dx ~= 0 then action = action .. ('mouse.x=' .. dx .. ' '); empty = false end
         if dy ~= 0 then action = action .. ('mouse.y=' .. dy .. ' '); empty = false end
         if wheel ~= 0 then action = action .. ('mouse.wheel=' .. wheel .. ' '); empty = false end
+        if hwheel ~= 0 then action = action .. ('mouse.hwheel=' .. hwheel .. ' '); empty = false end
         if action ~= "" then DEBUG_LOG(action) end
         if empty then DEBUG_LOG("Mouse all zeros.") end
     end
@@ -249,13 +255,13 @@ local KEY_NAMES = {
     [84]="Keypad /", [85]="Keypad *", [86]="Keypad -", [87]="Keypad +", [88]="Keypad Enter",
     [98]="Keypad 0", [99]="Keypad .", [100]="\\ (non-US)", [101]="Menu",
 }
-
-for i = 0, 25 do KEY_NAMES[4 + i] = string.char(65 + i) end  -- 4..29  = A..Z
-for i = 1, 9 do KEY_NAMES[29 + i] = tostring(i) end -- 30..38 = 1..9
+for i = 0, 25 do KEY_NAMES[4 + i] = string.char(65 + i) end      -- 4..29  = A..Z
+for i = 1, 9 do KEY_NAMES[29 + i] = tostring(i) end              -- 30..38 = 1..9
 KEY_NAMES[39] = "0"
-for i = 1, 12 do KEY_NAMES[57 + i] = "F" .. i end -- 58..69 = F1..F12
-for i = 1, 9 do KEY_NAMES[88 + i] = "Keypad " .. i end -- 89..97 = keypad 1..9
+for i = 1, 12 do KEY_NAMES[57 + i] = "F" .. i end                -- 58..69 = F1..F12
+for i = 1, 9 do KEY_NAMES[88 + i] = "Keypad " .. i end           -- 89..97 = keypad 1..9
 
+-- bit n of keyboard.modifiers
 local MODIFIER_NAMES = {
     [0]="LCtrl", [1]="LShift", [2]="LAlt", [3]="LGui",
     [4]="RCtrl", [5]="RShift", [6]="RAlt", [7]="RGui",
@@ -305,6 +311,17 @@ local function handleKeyboard(rep, controllerId, data)
     end
 end
 
+-- Names for the consumer control log (HID usage page 0x0C)
+local CONSUMER_NAMES = {
+    [0x30]="Power", [0x40]="Menu", [0x41]="Menu Pick", [0x42]="Menu Up", [0x43]="Menu Down",
+    [0x44]="Menu Left", [0x45]="Menu Right", [0x46]="Menu Escape",
+    [0x6F]="Brightness Up", [0x70]="Brightness Down",
+    [0xB5]="Next Track", [0xB6]="Previous Track", [0xB7]="Stop", [0xB8]="Eject",
+    [0xCD]="Play/Pause", [0xE2]="Mute", [0xE9]="Volume Up", [0xEA]="Volume Down",
+    [0x18A]="Mail", [0x192]="Calculator", [0x221]="AC Search", [0x223]="AC Home",
+    [0x224]="AC Back", [0x225]="AC Forward",
+}
+
 local function handleConsumer(rep, controllerId, data)
     local kb = drivers.inputs.keyboard[controllerId]
     if not kb then return end
@@ -324,7 +341,8 @@ local function handleConsumer(rep, controllerId, data)
     kb.consumer = usage              -- full 16 bit usage (0xE9 volume up, 0xCD play/pause, ...)
     kb.button = usage & 0xFF         -- what your old 2-byte branch stored (data[1])
     if DEBUG_INPUT then
-        DEBUG_LOG(string.format("consumer usage=0x%04X", usage))
+        DEBUG_LOG(string.format("consumer usage=0x%04X  -> %s", usage,
+            usage == 0 and "released" or (CONSUMER_NAMES[usage] or "?")))
     end
 end
 
@@ -403,23 +421,53 @@ local HANDLERS = {
 }
 
 -- true when the packet was decoded through the report map
-function hid.dispatchHidReport(controllerId, data, layout)
-    local list = layout.byLength[#data]
-    if not list then return false end
-    local rep = list[1]
+function hid.dispatchHidReport(controllerId, data, layout, reportId)
+    -- reportId comes from the characteristic's Report Reference descriptor (nil / -1 when unknown)
+    local rep = reportId and layout.reports[reportId]
+    if rep and rep.bytes ~= #data then rep = nil end   -- size does not match the map, do not trust it
+
+    if not rep then
+        local list = layout.byLength[#data]
+        if not list then return false end
+        rep = list[1]
+        if #list > 1 and not layout.warned then
+            layout.warned = true
+            DEBUG_LOG("HID: several reports have " .. #data .. " bytes and no report ID is available, using the first one (" .. rep.kind .. ")")
+        end
+    end
+
     local handler = HANDLERS[rep.kind]
     if not handler then return false end
-    if #list > 1 and not layout.warned then
-        layout.warned = true
-        DEBUG_LOG("HID: several reports have " .. #data .. " bytes, using the first one (" .. rep.kind .. ")")
-    end
     handler(rep, controllerId, data)
     return true
+end
+
+-- Every notification carries the attribute handle of the characteristic it came from.
+-- For HID the Report Reference descriptor (0x2908) of that characteristic holds the report ID
+-- (byte 1 = report ID, byte 2 = type). It is read once per handle and cached.
+hid.reportIdByHandle = {}
+
+function hid.reportIdOf(connectionId, controllerId, handle)
+    local cache = hid.reportIdByHandle[controllerId]
+    if not cache then
+        cache = {}
+        hid.reportIdByHandle[controllerId] = cache
+    end
+    local id = cache[handle]
+    if id == nil then
+        id = -1
+        local ok, value = hid.handler:ReadDescriptor(connectionId, handle, "2908")
+        if ok and value and #value >= 1 then id = value[1] end
+        cache[handle] = id
+        DEBUG_LOG(string.format("HID characteristic handle 0x%04X is report ID %d", handle, id))
+    end
+    return id
 end
 
 function hid.onDisconnectHID(connectionId, controllerId, reason)
     DEBUG_LOG("Disconnected "..connectionId.." due ".. reason)
     hid.hidLayouts[controllerId] = nil
+    hid.reportIdByHandle[controllerId] = nil
     drivers.DisconnectDevice(controllerId, 'hid')
 end
 
@@ -451,16 +499,25 @@ function hid.onConnectHID(connectionId, controllerId, address, name)
     end
 end
 
-function hid.onHidCallback(connectionId, controllerId, data)
+-- handle = attribute handle of the characteristic that sent the packet (nil on older firmware)
+function hid.onHidCallback(connectionId, controllerId, data, handle)
     local controlling = drivers.type_by_id[controllerId]
     if controlling and controlling.processPackets then
-        controlling.processPackets(connectionId, controllerId, data)
+        controlling.processPackets(connectionId, controllerId, data, handle)
         return
     end
 
     local layout = hid.hidLayouts[controllerId]
-    if layout and hid.dispatchHidReport(controllerId, data, layout) then
-        return
+    if layout then
+        -- The report ID is only needed when several reports have the same size
+        local reportId = nil
+        local sameSize = layout.byLength[#data]
+        if handle and sameSize and #sameSize > 1 then
+            reportId = hid.reportIdOf(connectionId, controllerId, handle)
+        end
+        if hid.dispatchHidReport(controllerId, data, layout, reportId) then
+            return
+        end
     end
     hid.legacyHidCallback(connectionId, controllerId, data)
 end
