@@ -58,49 +58,50 @@ function drivers.EnableDrivers(input)
     for i,driverName in pairs(driversToLoad) do  
         local success, content = pcall(dofile,"/lualib/drivers/"..driverName..'.lua')
         if success and content then
-            if driverName ~= 'hid' or input.enableHidControllers then
-                if drivers.loaded[driverName] then  
-                    error("Duplicated driver declared: "..driverName)
-                end  
+            if drivers.loaded[driverName] then  
+                error("Duplicated driver declared: "..driverName)
+            end  
+            if content.type == "core" then
                 drivers.loaded[driverName] = content
-                --todo change to derivate
-                if content.type == "hid" then
-                    if input.enableHidControllers then
-                        if content.mode then  
-                            for i, mode in pairs(content.mode) do 
-                                if not drivers.validEntries[mode] then  
-                                    error("Invalid mode '"..mode.."' in driver "..driverName)
-                                end
-                            end
-                            content.handler = drivers.loaded["hid"].handler
-                            drivers.device_attribute_map[driverName] = content.mode
-                        else 
-                            error("No mode set for "..driverName)
-                        end
-
-                        content.attribute_map = drivers.device_attribute_map[driverName]
-                        print("Loaded hid driver "..driverName)
-                    else 
-                        drivers.loaded[driverName] = nil
-                        log("Skipping "..driverName.." because it inherit HID and hid is not enabled")
+                local modules = content.getDriverModules(drivers.maxClients)
+                for inputName , object in pairs(modules) do
+                    if type(inputName) ~= 'string' then  
+                        error("Input method "..tostring(inputName).." is not valid for driver "..driverName)
                     end
-                elseif content.type == "core" then
-                    local modules = content.getDriverModules(drivers.maxClients)
-                    for inputName , object in pairs(modules) do
-                        if type(inputName) ~= 'string' then  
-                            error("Input method "..tostring(inputName).." is not valid for driver "..driverName)
-                        end
-                        print("Added input method: "..inputName)
-                        drivers.validEntries[inputName] = true
-                        drivers.inputs[inputName] = object
-                    end
-                    drivers.core[driverName] = content
-                    print("Loaded core driver "..driverName)
-                else 
-                    error("Undefined driver type "..tostring(content.type))
+                    print("Added input method: "..inputName)
+                    drivers.validEntries[inputName] = true
+                    drivers.inputs[inputName] = object
                 end
-            else 
-                log("Failed to load driver '"..driverName.."' due "..tostring(content))
+                drivers.core[driverName] = content
+                print("Loaded core driver "..driverName)
+            end
+        end
+    end
+    for i,driverName in pairs(driversToLoad) do  
+        local success, content = pcall(dofile,"/lualib/drivers/"..driverName..'.lua')
+        if success and content then
+            if content.type ~= "core" then
+                if drivers.core[content.type] then  
+                    if drivers.loaded[driverName] then  
+                        error("Duplicated driver declared: "..driverName)
+                    end  
+                    drivers.loaded[driverName] = content
+                    if content.mode then  
+                        for i, mode in pairs(content.mode) do 
+                            if not drivers.validEntries[mode] then  
+                                error("Invalid mode '"..mode.."' in driver "..driverName)
+                            end
+                        end
+                        content.handler = drivers.loaded[content.type].handler
+                        drivers.device_attribute_map[driverName] = content.mode
+                    else 
+                        error("No mode set for "..driverName)
+                    end
+                    content.attribute_map = drivers.device_attribute_map[driverName]
+                    print("Loaded hid driver "..driverName)
+                else 
+                    log("Expected driver "..driverName.." to inherit from "..content.type.." but given driver is not loaded, ignoring driver "..driverName..".")
+                end
             end
         end
     end
