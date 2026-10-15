@@ -128,7 +128,7 @@ function input.parseInputLocation(str)
     for element in str:gmatch("([^%.]+)") do  
         if idx == 1 then  
             if not drivers.inputs[element] then  
-                error("There is no driver for the type '"..element.."' in "..str)
+                return nil, nil, "There is no driver for the type '"..element.."' in ["..str.."] skipping it."
             end
             controllerType = element
         elseif idx == 2 then  

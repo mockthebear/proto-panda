@@ -3,6 +3,7 @@
     "//comment0": "The current avaliable input modes are 'infrared', 'ble' and 'none'",
     "mode": "BLE",
     "maxBleDevices": 1,
+    "//comment1": "If you want to disable hid devices, like mouses or keyboard working as controllers, remove 'hid' from the list bellow",
     "drivers": ["panda", "hid", "BLE-M3", "beauty-r1"] 
   },
   "infrared": [
