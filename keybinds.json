@@ -2,9 +2,8 @@
   "input": {
     "//comment0": "The current avaliable input modes are 'infrared', 'ble' and 'none'",
     "mode": "BLE",
-    "pairController": true,
     "maxBleDevices": 1,
-    "drivers": ["panda", "hid", "BLE-M3", "beauty-r1"]
+    "drivers": ["panda", "hid", "BLE-M3", "beauty-r1"] 
   },
   "infrared": [
     {
@@ -58,6 +57,13 @@
     "consumer.button=Menu": "BUTTON_BACK",
     "consumer.button=Volume Up": "BUTTON_UP",
     "consumer.button=Volume Down": "BUTTON_DOWN",
+
+    "generic.buttons.4": "BUTTON_LEFT",
+    "generic.buttons.1": "BUTTON_DOWN",
+    "generic.buttons.3": "BUTTON_RIGHT",
+    "generic.buttons.2": "BUTTON_UP",
+    "generic.buttons.5": "BUTTON_CONFIRM",
+    "generic.buttons.6": "BUTTON_BACK",
 
 
     "keyboard.button=Up": "BUTTON_UP",
