@@ -539,6 +539,7 @@ function hid.onConnectHID(connectionId, controllerId, address, name)
 end
 
 function hid.onHidCallback(connectionId, controllerId, data, handle)
+
     local controlling = drivers.type_by_id[controllerId]
     if controlling and controlling.processPackets then
         controlling.processPackets(connectionId, controllerId, data, handle)
@@ -579,11 +580,14 @@ function hid.legacyHidCallback(connectionId, controllerId, data)
     local action = ""
     if len == 2 then
         --Mouse press
+        local value = data[2] | (data[1] << 8)
+
         if DEBUG_INPUT then
-            DEBUG_LOG("keyboard.button="..  data[1] .. ' -> '.. data[2])
+            DEBUG_LOG("keyboard.button=".. data[2].." keyboard.modifiers="..data[1].." -> "..describeKeys(data[1], {data[2]}))
         end
         local keyboard = drivers.inputs.keyboard[controllerId]
-        keyboard.button = data[1]
+        keyboard.modifiers = data[1]
+        keyboard.button = data[2]
     elseif len == 4 or len == 3 then
         local empty = true
         local mouse = drivers.inputs.mouse[controllerId]
