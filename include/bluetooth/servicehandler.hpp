@@ -43,7 +43,7 @@ class AdvertisedDeviceCallbacks;
 
 class BleServiceHandler{
   public:
-    BleServiceHandler(NimBLEUUID u):uuid(u),queueMutex(xSemaphoreCreateMutex()),luaOnConnectCallback(nullptr),luaOnDisconnectCallback(nullptr){};
+    BleServiceHandler(NimBLEUUID u):uuid(u),encryptionRequired(false),queueMutex(xSemaphoreCreateMutex()),luaOnConnectCallback(nullptr),luaOnDisconnectCallback(nullptr){};
     BleCharacteristicsHandler* AddCharacteristics(std::string uuid);
 
     void AddPairedDeviceAddress(std::string addr);
@@ -53,6 +53,10 @@ class BleServiceHandler{
     }
     void SetOnDisconnectCallback(LuaFunctionCallback * cb){
       luaOnDisconnectCallback = cb;
+    }
+
+    void SetEncryptionRequired(bool enable){
+      encryptionRequired = enable;
     }
 
     void AddNameRequired(std::string namer){
@@ -66,11 +70,13 @@ class BleServiceHandler{
     MultiReturn<std::vector<std::string>> GetCharacteristicsFromOurService(int clientId);
     bool WriteToCharacteristics(std::vector<uint8_t> bytes, int clientId, std::string charName, bool reply);
     MultiReturn<std::vector<uint8_t>> ReadFromCharacteristics(int clientId, std::string charName);
+    MultiReturn<std::vector<uint8_t>> ReadDescriptor(int clientId, int charHandle, std::string descName);
     std::vector<BleCharacteristicsHandler*> getRegisteredCharacteristics();
 
 
     static MultiReturn<std::vector<std::string>> GetCharacteristicsFromService(int clientId, std::string servName, bool refresh);
     NimBLEUUID uuid;
+    bool encryptionRequired;
 
     void NotifyDisconnect(int conId, int clientId, const char* reason);
 

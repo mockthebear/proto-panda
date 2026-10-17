@@ -81,6 +81,59 @@ MultiReturn<std::vector<uint8_t>> BleServiceHandler::ReadFromCharacteristics(int
     return MultiReturn<std::vector<uint8_t>>(true, std::vector<uint8_t>(val.data(), val.data()+val.size()));
 }
 
+MultiReturn<std::vector<uint8_t>> BleServiceHandler::ReadDescriptor(int clientId, int charHandle, std::string descName){
+    NimBLEUUID descId(descName);
+
+    if (descId == NimBLEUUID()){
+        return MultiReturn<std::vector<uint8_t>>("UUID is invalid");
+    }
+
+    BluetoothDeviceHandler *dev = nullptr;
+    xSemaphoreTake(queueMutex, portMAX_DELAY);
+    for (auto &it : m_connectedDevices){
+        if (it->getId() == clientId){
+            dev = it;
+            break;
+        }
+    }
+    xSemaphoreGive(queueMutex);
+
+    if (dev == nullptr){
+        return MultiReturn<std::vector<uint8_t>>("device is not found");
+    }
+
+    if (dev->m_client == nullptr){
+        return MultiReturn<std::vector<uint8_t>>("device dont seems to have a valid client");
+    }
+
+    NimBLERemoteService* svc = dev->m_client->getService(uuid);
+    if (svc == nullptr){
+        return MultiReturn<std::vector<uint8_t>>("For some reason. The device lost the service?!");
+    }
+
+    NimBLERemoteCharacteristic* chr = nullptr;
+    for (auto *it : svc->getCharacteristics(false)){
+        if (it->getHandle() == charHandle){
+            chr = it;
+            break;
+        }
+    }
+    if (chr == nullptr){
+        return MultiReturn<std::vector<uint8_t>>("Service does not have a characteristic with that handle");
+    }
+
+    NimBLERemoteDescriptor* desc = chr->getDescriptor(descId);
+    if (desc == nullptr){
+        return MultiReturn<std::vector<uint8_t>>("Characteristic does not have that descriptor");
+    }
+
+    NimBLEAttValue val = desc->readValue();
+    if (val.size() == 0){
+        return MultiReturn<std::vector<uint8_t>>("Not read");
+    }
+    return MultiReturn<std::vector<uint8_t>>(true, std::vector<uint8_t>(val.data(), val.data()+val.size()));
+}
+
 int BleServiceHandler::GetClientIdFromControllerId(uint32_t id){
     xSemaphoreTake(queueMutex, portMAX_DELAY);
     for (auto &it : m_connectedDevices){

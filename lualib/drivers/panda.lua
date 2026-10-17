@@ -8,13 +8,15 @@ local panda = {
 
 
 function panda.getDriverModules(maxClients)
-	local pandaData = {}
+	local pandaData = {
+        panda = {}
+    }
 	for i=0,maxClients-1 do  
 		local buttons = {}
         for b=1,MAX_BLE_BUTTONS do  
             buttons[b] = 0
         end 
-		pandaData[i] = {
+		pandaData.panda[i] = {
             az = 0,
             ax = 0, 
             ay = 0,
@@ -30,7 +32,6 @@ function panda.getDriverModules(maxClients)
     panda.modules = pandaData
   	return pandaData
 end
-
 
 local function readInt16(data, index)
     local low = data[index]
@@ -73,7 +74,7 @@ function panda.onSubscribeMessagePanda(connectionId, clientId, data)
         return
     end
 
-    parsePandaData(drivers.panda[clientId], data)
+    parsePandaData(drivers.inputs.panda[clientId], data)
 end
 
 function panda.onDisconnectPanda(connectionId, controllerId, reason)

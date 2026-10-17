@@ -35,6 +35,16 @@ class BleManager{
     
     void setMaximumControls(int n){maxClients = n;};
 
+    /**
+     * Security configuration. Can be called before or after beginRadio():
+     * the values are stored here and (re)applied to NimBLE. They only affect
+     * connections/pairings made after the call.
+     */
+    void setSecurityIOCap(int cap);                               // BLE_HS_IO_*
+    void setSecurityAuth(bool bonding, bool mitm, bool sc);
+    void setSecurityPasskey(uint32_t pin);                        // 0 - 999999
+    uint32_t getSecurityPasskey() const { return m_passkey; }
+
     int getConnectedClientsCount(){
       return clientCount;
     }
@@ -95,6 +105,16 @@ class BleManager{
     PSRAMMap<std::string, BluetoothDeviceHandler*> clients; //Clients are stored by their address
 
     bool connectToServer();
+    void applySecuritySettings();
+
+    // Security defaults: bonding + secure connections, "Just Works" pairing.
+    // (MITM must stay off while the IO capability is NoInputNoOutput, otherwise pairing fails.)
+    bool     m_radioStarted = false;
+    uint8_t  m_ioCap        = BLE_HS_IO_NO_INPUT_OUTPUT;
+    bool     m_bonding      = true;
+    bool     m_mitm         = false;
+    bool     m_secureConn   = true;
+    uint32_t m_passkey      = 123456;
     uint16_t clientCount;
   
     uint32_t  maxClients, lastScanClearTime, m_scanStartAt;

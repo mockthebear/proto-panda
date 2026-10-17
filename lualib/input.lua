@@ -43,7 +43,80 @@ _G.BUTTON_BACK = 6
 _G.BUTTON_AUX_A = 7
 _G.BUTTON_AUX_B = 8
 
+local function testBit(n, pos)
+    return (n >> pos) % 2 == 1
+end
 
+input.keyNames = {}
+local bindCache = {} 
+
+-- ignore case, spaces, _ and -
+local function normalizeName(name)
+    local key = tostring(name):lower()
+    key = key:gsub("[%s_%-]", "")
+    return key
+end
+
+function input.loadKeyNames()
+    bindCache = {}   -- binds parsed before the names were known must be parsed again
+    for driverName, module in pairs(drivers.loaded or {}) do
+        if type(module) == 'table' and type(module.getKeyNames) == 'function' then
+            local ok, byType = pcall(module.getKeyNames)
+            if ok and type(byType) == 'table' then
+                for inputType, names in pairs(byType) do
+                    local merged = input.keyNames[inputType]
+                    if not merged then
+                        merged = {}
+                        input.keyNames[inputType] = merged
+                    end
+                    for name, code in pairs(names) do
+                        merged[normalizeName(name)] = code
+                    end
+                end
+            else
+                log("Driver '"..tostring(driverName).."' getKeyNames failed: "..tostring(byType))
+            end
+        end
+    end
+end
+
+local function resolveKeyName(controllerType, token)
+    local names = input.keyNames[controllerType]
+    local key = normalizeName(token)
+    if names and names[key] then
+        return names[key]
+    end
+    local number = tonumber(token)
+    if number then
+        return number
+    end
+    return nil, "there is no key named '"..tostring(token).."' for '"..tostring(controllerType).."'"
+end
+
+-- Text used in the "[KEYBIND] Mapped ..." log line for each match mode
+local MODE_LOG_TEXT = {
+    equals  = "equals",
+    greater = "is greater than",
+    lesser  = "is lesser than",
+    mask    = "has pressed button number",
+}
+
+--[[
+    Keybind syntax (the key of each entry in "keybinds"). A line that can not be resolved (for example
+    a key name no driver defines) is logged as "[KEYBIND] Skipped ..." and ignored, the others still load:
+
+        <type>.<resource>.<index>     e.g. panda.buttons.1       value at a table index
+        <type>.<resource>=<value>     e.g. joystick.hat=6        equals
+        <type>.<resource>><number>    e.g. mouse.x>10            greater than
+        <type>.<resource><number>     e.g. mouse.x<-10           lesser than
+        keyboard.button=<key>         e.g. keyboard.button=a, =up, =enter, =f1, =1   key held (any combination)
+        consumer.button=<key>         e.g. consumer.button=play, =next, =volumeup    media key held
+        <type>.<resource>&<n>         e.g. joystick.button&4     bit position: active while the n-th
+                                                                 button is pressed (1 = first button,
+                                                                 2 = second, 4 = fourth...). The value
+                                                                 is a bitmask, so with buttons 1 and 3
+                                                                 held (value 5) both &1 and &3 are active.
+]]
 function input.parseInputLocation(str)
     local idx = 1
     local parsed = {
@@ -54,12 +127,12 @@ function input.parseInputLocation(str)
     local mappedLogString = ""
     for element in str:gmatch("([^%.]+)") do  
         if idx == 1 then  
-            if not drivers[element] then  
-                error("There is no driver for the type '"..element.."' in "..str)
+            if not drivers.inputs[element] then  
+                return nil, nil, "There is no driver for the type '"..element.."' in ["..str.."] skipping it."
             end
             controllerType = element
         elseif idx == 2 then  
-            local handler = drivers[controllerType][0]
+            local handler = drivers.inputs[controllerType][0]
             local toMatch = nil
 
             if not handler then  
@@ -84,6 +157,13 @@ function input.parseInputLocation(str)
                 if not toMatch then 
                     error("Unavalible resource '"..element.."' in '"..str.."'. is expected to be a number")
                 end
+            elseif element:match(".-&.+") then 
+                mode = 'mask'
+                element, toMatch = element:match("(.-)&(.+)")
+                toMatch = tonumber(toMatch)
+                if not toMatch or math.type(toMatch) ~= 'integer' or toMatch < 1 or toMatch > 32 then 
+                    error("Unavalible resource '"..element.."' in '"..str.."'. the number after & is expected to be a button number from 1 to 32")
+                end
             end
 
 
@@ -99,7 +179,7 @@ function input.parseInputLocation(str)
 
             --Reference of the element directly
             for i=0,MAX_BLE_CLIENTS-1 do 
-                local reference = drivers[controllerType][i][element]
+                local reference = drivers.inputs[controllerType][i][element]
                 if type(reference) == 'table' then  
                     parsed.reference = true
                     parsed.resource[i] = reference
@@ -109,9 +189,22 @@ function input.parseInputLocation(str)
             end
             
             if toMatch then  
+                -- keyboard / consumer keys: accept names and match against every key that is held
+                if mode == 'equals' and element == 'button' and input.keyNames[controllerType] then
+                    local code, why = resolveKeyName(controllerType, tostring(toMatch))
+                    if not code then
+                        return nil, controllerType, why          -- not fatal: the caller logs and skips this line
+                    end
+                    toMatch = code
+                    parsed.held = true
+                end
+                -- a word compared with a numeric resource can never match (for instance when no driver defines key names)
+                if mode == 'equals' and type(handler[element]) == 'number' and tonumber(toMatch) == nil then
+                    return nil, controllerType, "'"..tostring(toMatch).."' is not a number, but '"..controllerType.."."..element.."' holds numbers (is the key name defined by a driver?)"
+                end
                 parsed.match = tonumber(toMatch) or toMatch
                 parsed.mode = mode
-                mappedLogString = "'"..controllerType.."' when '"..element.."' equals '"..parsed.match.."'"
+                mappedLogString = "'"..controllerType.."' when '"..element.."' "..(MODE_LOG_TEXT[mode] or "equals").." '"..parsed.match.."'"
                 break
             end
         elseif idx == 3 then
@@ -122,7 +215,7 @@ function input.parseInputLocation(str)
         idx = idx+1
     end
 
-    local dataLocation = drivers[controllerType][0][parsed.name]
+    local dataLocation = drivers.inputs[controllerType][0][parsed.name]
     if type(dataLocation) ~= 'table' and not parsed.match then   
         error("Cannot use indexing on '"..str.."'. Maybe you meant = on the last dot?")
     end
@@ -257,26 +350,80 @@ function input.Load()
 
     drivers.WrapUp()
 
+    input.loadKeyNames()
+
     input.SetKeybinds(confs.keybinds) 
 end
 
 function input.SetKeybinds(keybinds) 
     for location, target in pairs(keybinds) do  
         local binding, controllerType, logMsg = input.parseInputLocation(location)
-        local toInsert = input.keybind[controllerType]
-        if not toInsert then  
-            toInsert = {}
-            --Lua stores references of tables :3
-            --This makes our life easier
-            input.keybind[controllerType] = toInsert
+        if not binding then
+            log("[KEYBIND] Skipped '"..tostring(location).."' -> "..tostring(target)..": "..tostring(logMsg))
+        else
+            local toInsert = input.keybind[controllerType]
+            if not toInsert then  
+                toInsert = {}
+                --Lua stores references of tables :3
+                --This makes our life easier
+                input.keybind[controllerType] = toInsert
+            end
+            if not _G[target] or not tonumber(_G[target]) then  
+                error("Unknown action "..target)
+            end
+            log("[KEYBIND] Mapped "..tostring(target).." on "..tostring(logMsg))
+            binding.action = tonumber(_G[target])
+            toInsert[#toInsert+1] = binding
         end
-        if not _G[target] or not tonumber(_G[target]) then  
-            error("Unknown action "..target)
-        end
-        log("[KEYBIND] Mapped "..tostring(target).." on "..tostring(logMsg))
-        binding.action = tonumber(_G[target])
-        toInsert[#toInsert+1] = binding
     end
+end
+
+-- Current reading (1 / 0) of one parsed bind for one controller.
+-- `controller` is drivers.inputs[<type>], `clientId` the controller id.
+local function evalBind(bind, controller, clientId)
+    local element = bind.resource[clientId]
+    local reading = 0
+    if not bind.reference then  
+        element = controller[clientId][element]
+    end
+    if bind.match then  
+        if bind.mode == 'equals' then
+            reading = element == bind.match and 1 or 0
+            if reading == 0 and bind.held then
+                -- not the first key, but it may still be held together with others (a + b)
+                local held = controller[clientId].held
+                if held and held[bind.match] then reading = 1 end
+            end
+        elseif bind.mode == 'greater' then 
+            local n = tonumber(element) or 0
+            if n > bind.match then  
+                reading = 1
+            else 
+                reading = 0
+            end
+        elseif bind.mode == 'lesser' then 
+            local n = tonumber(element) or 0
+            if n < bind.match then  
+                reading = 1
+            else 
+                reading = 0
+            end
+        elseif bind.mode == 'mask' then 
+            -- active while the n-th button (bit n-1) of the value is set
+            local n = math.tointeger(tonumber(element) or 0) or 0
+            if testBit(n, bind.match - 1) then  
+                reading = 1
+            else 
+                reading = 0
+            end
+        end
+    elseif bind.location then 
+        if type(element) ~= 'table' then  
+            error(tostring(bind.resource[clientId]).." is looking for "..tostring(controller[clientId]).." at "..bind.location.." ref is "..tostring(bind.reference).." element = "..tostring(element))
+        end
+        reading = element[bind.location]
+    end
+    return reading
 end
 
 function input.updatGenericButtonStates(inputModes, clientId, pdButtonIdOffset)
@@ -287,39 +434,11 @@ function input.updatGenericButtonStates(inputModes, clientId, pdButtonIdOffset)
     end
 
     for _, name in pairs(inputModes) do
-        local controller = drivers[name]
+        local controller = drivers.inputs[name]
         --Search for inputs on each type.. joystick, panda, mouse, keyboard etc
         if keybind[name] then
             for __, bind in pairs(keybind[name]) do
-                local element = bind.resource[clientId]
-                local reading = 0
-                if not bind.reference then  
-                    element = controller[clientId][element]
-                end
-                if bind.match then  
-                    if bind.mode == 'equals' then
-                        reading = element == bind.match and 1 or 0
-                    elseif bind.mode == 'greater' then 
-                        local n = tonumber(element) or 0
-                        if n > bind.match then  
-                            reading = 1
-                        else 
-                            reading = 0
-                        end
-                    elseif bind.mode == 'lesser' then 
-                        local n = tonumber(element) or 0
-                        if n < bind.match then  
-                            reading = 1
-                        else 
-                            reading = 0
-                        end
-                    end
-                elseif bind.location then 
-                    if type(element) ~= 'table' then  
-                        error(tostring(bind.resource[clientId]).." is looking for "..tostring(controller[clientId]).." at "..bind.location.." ref is "..tostring(bind.reference).." element = "..tostring(element))
-                    end
-                    reading = element[bind.location]
-                end
+                local reading = evalBind(bind, controller, clientId)
                 if reading == 1 and actions[bind.action] == 0 then  
                     actions[bind.action] = 1
                 end
@@ -341,6 +460,152 @@ function input.updatGenericButtonStates(inputModes, clientId, pdButtonIdOffset)
     for idx=1,MAX_BLE_BUTTONS do
         input.updateButtonByreading(pdButtonIdOffset+idx, actions[idx])
     end
+end
+
+local function isConnected(id)
+    return type(id) == 'number' and id >= 0 and id < MAX_BLE_CLIENTS and drivers.type_by_id[id] ~= nil
+end
+
+-- parsed + cached expression, false when it can not be used (logged once)
+local function getBind(expr)
+    if type(expr) ~= 'string' then return false end
+    local cached = bindCache[expr]
+    if cached ~= nil then return cached end
+    local ok, binding, controllerType, why = pcall(input.parseInputLocation, expr)
+    if not ok then
+        log("[INPUT] '"..expr.."': "..tostring(binding))
+        binding = false
+    elseif not binding then
+        log("[INPUT] '"..expr.."' ignored: "..tostring(why))
+        binding = false
+    else
+        binding.controllerType = controllerType
+    end
+    bindCache[expr] = binding
+    return binding
+end
+
+
+
+local statusCache = {}
+
+local function getStatusLocation(str)
+    if type(str) ~= 'string' then return false end
+    local cached = statusCache[str]
+    if cached ~= nil then return cached end
+
+    local parts = {}
+    for part in str:gmatch("([^%.]+)") do parts[#parts + 1] = part end
+    local controllerType, name, index = parts[1], parts[2], parts[3]
+    local sample = controllerType and drivers.inputs[controllerType] and drivers.inputs[controllerType][0]
+
+    local why
+    if not sample then
+        why = "there is no input type '"..tostring(controllerType).."'"
+    elseif #parts > 3 or name == nil or sample[name] == nil then
+        why = "'"..tostring(controllerType).."' has no resource '"..tostring(name).."'"
+    elseif type(sample[name]) == 'table' and index == nil then
+        why = "'"..name.."' is a table, use an index like '"..str..".1'"
+    elseif type(sample[name]) ~= 'table' and index ~= nil then
+        why = "'"..name.."' is not a table, it can not be indexed"
+    end
+    if why then
+        log("[INPUT] readStatus('"..str.."'): "..why)
+        statusCache[str] = false
+        return false
+    end
+
+    local loc = { type = controllerType, name = name, index = index and (tonumber(index) or index) }
+    statusCache[str] = loc
+    return loc
+end
+
+local function statusValue(loc, id)
+    local object = drivers.inputs[loc.type][id]
+    if not object then return 0 end
+    local v = object[loc.name]
+    if loc.index ~= nil then
+        if type(v) ~= 'table' then return 0 end
+        v = v[loc.index]
+    end
+    if v == true then return 1 end
+    if v == nil or v == false then return 0 end
+    return tonumber(v) or 0
+end
+
+--   input.readStatus("mouse.x")                  -> -3
+--   input.readStatus("joystick.left_analog_x")   -> 0
+--   input.readStatus("mouse.buttons.1")          -> 1 / 0
+function input.readStatus(location, controller)
+    local loc = getStatusLocation(location)
+    if not loc then return 0 end
+    if controller ~= nil then
+        return isConnected(controller) and statusValue(loc, controller) or 0
+    end
+    for id = 0, MAX_BLE_CLIENTS - 1 do
+        if isConnected(id) then
+            local v = statusValue(loc, id)
+            if v ~= 0 then return v end
+        end
+    end
+    return 0
+end
+
+
+--   input.readPressedStatus("keyboard.button", "up") 
+--   input.readPressedStatus("consumer.button", "play")
+--   input.readPressedStatus("mouse.x>10")
+--   input.readPressedStatus("joystick.button&4")
+--   input.readPressedStatus("keyboard.button", "a", 1)
+function input.readPressedStatus(location, value, controller)
+    local expr = location
+    if value ~= nil then
+        expr = tostring(location).."="..tostring(value)
+    end
+    local bind = getBind(expr)
+    if not bind then return false end
+    local data = drivers.inputs[bind.controllerType]
+    if controller ~= nil then
+        return isConnected(controller) and evalBind(bind, data, controller) == 1
+    end
+    for id = 0, MAX_BLE_CLIENTS - 1 do
+        if isConnected(id) and evalBind(bind, data, id) == 1 then
+            return true
+        end
+    end
+    return false
+end
+
+function input.getKeyCode(controllerType, name)
+    local code = resolveKeyName(controllerType, tostring(name))
+    return code
+end
+
+function input.getHeldKeys(controllerType, controller)
+    local out, seen = {}, {}
+    local data = drivers.inputs[controllerType]
+    if not data then return out end
+    local function collect(id)
+        local object = data[id]
+        local held = object and object.held
+        if held then
+            for code, down in pairs(held) do
+                if down and not seen[code] then
+                    seen[code] = true
+                    out[#out + 1] = code
+                end
+            end
+        end
+    end
+    if controller ~= nil then
+        if isConnected(controller) then collect(controller) end
+    else
+        for id = 0, MAX_BLE_CLIENTS - 1 do
+            if isConnected(id) then collect(id) end
+        end
+    end
+    table.sort(out)
+    return out
 end
 
 function input.updateButtonByreading(buttonId, reading)
