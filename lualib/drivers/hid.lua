@@ -5,7 +5,9 @@ local hid = {
     mode = {'joystick', 'mouse', 'keyboard', 'consumer'},
 }
 
-local DEBUG_INPUT = true
+local configloader = require("configloader")
+
+local DEBUG_INPUT = configloader.Get().input.debugInput
 local DEBUG_LOG = print
 
 local function buildKeyTables(entries)

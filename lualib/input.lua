@@ -292,7 +292,7 @@ function input.Load()
     drivers.Start(maxN)
 
     if mode == "BLE" then
-        setLogDiscoveredBleDevices(true)
+        setLogDiscoveredBleDevices(confs.input.debugInput and true or false)
         generic.displaySplashMessage("Starting:\nBLE")
         startBLE()
         setMaximumControls(maxN)
