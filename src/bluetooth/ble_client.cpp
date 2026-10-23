@@ -98,83 +98,87 @@ bool BleManager::connectToServer(){
   NimBLEAddress peerAddr(toConnect.address, toConnect.addressType);
   BleServiceHandler *handler = toConnect.handler;
   BluetoothDeviceHandler *device = toConnect.deviceHandler;
-
+  bool idAllocated = false;
 
   device->m_callbacks = &callbacks;
-  device->m_deviceName = toConnect.name;    
-  
-  /** Check if we have a client we should reuse first **/
-  
+  device->m_deviceName = toConnect.name;
+
+  /** Releases everything this attempt acquired. The device handler is only handed
+   *  over to the service handler on success, so on failure it is ours to free. */
+  auto fail = [&](const char* reason) -> bool {
+    Logger::Error("[BLE] Connection to %s aborted: %s", peerAddr.toString().c_str(), reason);
+    if (pClient){
+      if (pClient->isConnected()){
+        pClient->disconnect();
+      }
+      NimBLEDevice::deleteClient(pClient);
+      pClient = nullptr;
+    }
+    if (idAllocated){
+      availableIds.push(device->m_controllerId);
+    }
+    delete device;
+    return false;
+  };
+
+  /** Reuse a client that already knows this peer, or any idle one. */
   if (NimBLEDevice::getCreatedClientCount()) {
     pClient = NimBLEDevice::getClientByPeerAddress(peerAddr);
-    if (pClient) {
-      if (!pClient->connect(peerAddr)) {
-        Logger::Info("Failed to reconnect, last error = %d\n", pClient->getLastError());
-        NimBLEDevice::deleteClient(pClient);
-        device->m_client = nullptr;
-        return false;
-      }
-      Logger::Info("Reconnected client\n");
-    } else {
-      /**
-      *  We don't already have a client that knows this device,
-      *  check for a client that is disconnected that we can use.
-       */
+    if (!pClient) {
       pClient = NimBLEDevice::getDisconnectedClient();
     }
   }
+
   /** No client to reuse? Create a new one. */
-  
-  if (NimBLEDevice::getCreatedClientCount() >= NIMBLE_MAX_CONNECTIONS) {
-      Logger::Info("[BLE] Max clients reached - no more connections available\n");
-      return false;
-  }
   if (!pClient){
-
-    pClient = NimBLEDevice::createClient();
-
-    if (!pClient){
-      Logger::Info("[BLE] UNEXPECTED FAILURE, NULL CLIENT\n");
-      return false;
+    if (NimBLEDevice::getCreatedClientCount() >= NIMBLE_MAX_CONNECTIONS) {
+      return fail("max clients reached - no more connections available");
     }
-    device->m_client = pClient;
-
-    pClient->setClientCallbacks(device->m_callbacks, false);
+    pClient = NimBLEDevice::createClient();
+    if (!pClient){
+      return fail("unexpected failure, null client");
+    }
     pClient->setConnectionParams(24, 24, 0, 150);
     pClient->setConnectTimeout(5 * 1000);
-      
-    if (!pClient->connect(peerAddr, false)) { 
+  }
+
+  pClient->setClientCallbacks(&callbacks, false);
+  device->m_client = pClient;
+
+  /** A reused client may still be disconnected, so always check before connecting. */
+  if (!pClient->isConnected()){
+    if (!pClient->connect(peerAddr)) {
       Logger::Info("Failed to connect, last error = %d\n", pClient->getLastError());
-      NimBLEDevice::deleteClient(pClient);
-      device->m_client = nullptr; 
-      return false;
+      return fail("could not connect");
     }
   }
 
   Serial.printf("Connected to: %s RSSI: %d, MTU %d\n", pClient->getPeerAddress().toString().c_str(), pClient->getRssi(), pClient->getMTU());
-    
-  /** Now we can access the HID service characteristics */
-  NimBLERemoteService* pSvc = nullptr;
+
+  /** Pair / bond / encrypt the link. HID over GATT requires this before the
+   *  report characteristics can be subscribed. If a bond already exists the
+   *  stored keys are used and no user interaction is needed. */
+  if (handler->encryptionRequired){
+    Logger::Info("[BLE] Securing connection with %s", pClient->getPeerAddress().toString().c_str());
+    if (!pClient->secureConnection()){
+      return fail("pairing/encryption failed");
+    }
+  }
 
   if (!availableIds.empty()) {
     device->m_controllerId = availableIds.top();
     availableIds.pop();
   } else {
-      device->m_controllerId = nextId++;
+    device->m_controllerId = nextId++;
   }
+  idAllocated = true;
 
-  
-  device->m_client = pClient;
-  pSvc = pClient->getService(handler->uuid);
+  NimBLERemoteService* pSvc = pClient->getService(handler->uuid);
   if (!pSvc) {
-      Serial.printf("Service not found!\n");
-      pClient->disconnect();
-
-      return false;
+    return fail("service not found");
   }
 
   // Look for report characteristics to subscribe to
-  // Instead of using getProperties(), we'll try to subscribe and see if it works
   std::vector<BleCharacteristicsHandler*> searchList = handler->getRegisteredCharacteristics();
   std::vector<NimBLERemoteCharacteristic*> pChars = pSvc->getCharacteristics(true);
 
@@ -182,22 +186,21 @@ bool BleManager::connectToServer(){
     vTaskDelay(1);
     bool matched = false;
     for (auto pChr : pChars) {
-        if (pChr->getUUID() == element->uuid){
-          matched = true;
-          if(pChr->canNotify()) {
-            if(!pChr->subscribe(true, element->getLambda(device->getId(), device->m_controllerId))) {
-              Logger::Error("[BLE] Characteristics %s in service %s, failed to subscribe.", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
-              pClient->disconnect();
-              NimBLEDevice::deleteClient(pClient);
-              g_remoteControls.availableIds.push(device->m_controllerId);    
-    
-              return false;
-            }else{
-              Logger::Error("[BLE] Subscribed on characteristics %s in service %s.", element->uuid.toString().c_str(), pChr->getUUID().toString().c_str());
-            }
-            continue;
-          }
-        }
+      NimBLEUUID chrUuid = pChr->getUUID();
+      chrUuid.to128(); /** element->uuid is always stored as 128 bit, compare like with like */
+      if (!(chrUuid == element->uuid)){
+        continue;
+      }
+      matched = true;
+      if (!pChr->canNotify()){
+        continue; /** e.g. HID output/feature reports */
+      }
+      /** A HID device can expose several characteristics with the same UUID (0x2A4D), all of them are subscribed. */
+      if (!pChr->subscribe(true, element->getLambda(device->getId(), device->m_controllerId))) {
+        Logger::Error("[BLE] Characteristics %s (handle 0x%04X) in service %s, failed to subscribe.", element->uuid.toString().c_str(), pChr->getHandle(), handler->uuid.toString().c_str());
+        return fail("failed to subscribe");
+      }
+      Logger::Info("[BLE] Subscribed on characteristics %s (handle 0x%04X) in service %s.", element->uuid.toString().c_str(), pChr->getHandle(), handler->uuid.toString().c_str());
     }
     if (element->required && matched == false){
       Logger::Error("[BLE] Characteristics %s in service %s, is required but not present, dropping. Here follows the list of the avaliable uuids:", element->uuid.toString().c_str(), handler->uuid.toString().c_str());
@@ -207,11 +210,7 @@ bool BleManager::connectToServer(){
         ss << aux.to16().toString().c_str() << ", ";
       }
       Logger::Error("[BLE] avaliable characteristics: %s", ss.str().c_str());
-      pClient->disconnect();
-      NimBLEDevice::deleteClient(pClient);
-      g_remoteControls.availableIds.push(device->m_controllerId);  
-         
-      return false;
+      return fail("required characteristic not present");
     }
   }
 
@@ -273,6 +272,39 @@ void BleManager::setScanningMode(bool mode){
   }
 }
 
+void BleManager::applySecuritySettings(){
+  NimBLEDevice::setSecurityIOCap(m_ioCap);
+  NimBLEDevice::setSecurityAuth(m_bonding, m_mitm, m_secureConn);
+}
+
+void BleManager::setSecurityIOCap(int cap){
+  if (cap < BLE_HS_IO_DISPLAY_ONLY || cap > BLE_HS_IO_KEYBOARD_DISPLAY){
+    Logger::Error("[BLE] Invalid IO capability %d", cap);
+    return;
+  }
+  m_ioCap = (uint8_t)cap;
+  if (m_radioStarted){
+    NimBLEDevice::setSecurityIOCap(m_ioCap);
+  }
+}
+
+void BleManager::setSecurityAuth(bool bonding, bool mitm, bool sc){
+  m_bonding = bonding;
+  m_mitm = mitm;
+  m_secureConn = sc;
+  if (m_radioStarted){
+    NimBLEDevice::setSecurityAuth(m_bonding, m_mitm, m_secureConn);
+  }
+}
+
+void BleManager::setSecurityPasskey(uint32_t pin){
+  if (pin > 999999){
+    Logger::Error("[BLE] Passkey must be between 0 and 999999");
+    return;
+  }
+  m_passkey = pin;
+}
+
 BleManager* BleManager::Get(){
   return m_myself;
 };
@@ -292,7 +324,8 @@ bool BleManager::beginRadio(int powerLevel){
     return false;
   }
   NimBLEDevice::init("Protopanda");
-  NimBLEDevice::setSecurityAuth(true, true, true);
+  m_radioStarted = true;
+  applySecuritySettings(); /** IO capability + auth flags, configurable from Lua before/after this call */
   NimBLEDevice::setPower(ESP_PWR_LVL_P9); /** +9db */
 
   NimBLEScan* pScan = NimBLEDevice::getScan();

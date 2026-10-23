@@ -2,11 +2,10 @@
   "input": {
     "//comment0": "The current avaliable input modes are 'infrared', 'ble' and 'none'",
     "mode": "BLE",
-    "//comment1": "'enableHidControllers' allows for generic controllers like BLE HID devices to connect with protopanda. Support is limited",
-    "enableHidControllers": true,
-    "pairController": true,
     "maxBleDevices": 1,
-    "drivers": ["panda", "BLE-M3", "beauty-r1"]
+    "debugInput": false,
+    "//comment1": "If you want to disable hid devices, like mouses or keyboard working as controllers, remove 'hid' from the list bellow",
+    "drivers": ["panda", "hid", "BLE-M3", "beauty-r1"] 
   },
   "infrared": [
     {
@@ -38,17 +37,28 @@
     "panda.buttons.7": "BUTTON_AUX_A",
     "panda.buttons.8": "BUTTON_AUX_B",
 
-    "joystick.right_hat=5": "BUTTON_LEFT",
-    "joystick.right_hat=3": "BUTTON_DOWN",
-    "joystick.right_hat=1": "BUTTON_RIGHT",
-    "joystick.right_hat=7": "BUTTON_UP",
-    "joystick.buttons.4": "BUTTON_CONFIRM",
-    "joystick.buttons.1": "BUTTON_BACK",
+    "joystick.hat_left=1":  "BUTTON_LEFT",
+    "joystick.hat_down=1":  "BUTTON_DOWN",
+    "joystick.hat_right=1": "BUTTON_RIGHT",
+    "joystick.hat_up=1":    "BUTTON_UP",
+    
+    "joystick.button&1": "BUTTON_CONFIRM",
+    "joystick.button&4": "BUTTON_BACK",
 
     "joystick.left_analog_x<-10": "BUTTON_LEFT",
     "joystick.left_analog_y>10": "BUTTON_DOWN",
     "joystick.left_analog_x>10": "BUTTON_RIGHT",
     "joystick.left_analog_y<-7": "BUTTON_UP",
+
+
+    "consumer.button=Fast Forward": "BUTTON_UP",
+    "consumer.button=Rewind": "BUTTON_DOWN",
+    "consumer.button=Next Track": "BUTTON_RIGHT",
+    "consumer.button=Previous Track": "BUTTON_LEFT",
+    "consumer.button=PlayPause": "BUTTON_CONFIRM",
+    "consumer.button=Menu": "BUTTON_BACK",
+    "consumer.button=Volume Up": "BUTTON_UP",
+    "consumer.button=Volume Down": "BUTTON_DOWN",
 
     "generic.buttons.4": "BUTTON_LEFT",
     "generic.buttons.1": "BUTTON_DOWN",
@@ -56,14 +66,15 @@
     "generic.buttons.2": "BUTTON_UP",
     "generic.buttons.5": "BUTTON_CONFIRM",
     "generic.buttons.6": "BUTTON_BACK",
-    "keyboard.button=180": "BUTTON_DOWN",
-    "keyboard.button=179": "BUTTON_UP",
-    "keyboard.button=181": "BUTTON_RIGHT",
-    "keyboard.button=182": "BUTTON_LEFT",
-    "keyboard.button=205": "BUTTON_CONFIRM",
-    "keyboard.button=234": "BUTTON_BACK",
-    "keyboard.button=233": "BUTTON_AUX_A",
-    "keyboard.button=64": "BUTTON_AUX_B",
+
+
+    "keyboard.button=Up": "BUTTON_UP",
+    "keyboard.button=Down": "BUTTON_DOWN",
+    "keyboard.button=Left": "BUTTON_LEFT",
+    "keyboard.button=Right": "BUTTON_RIGHT",
+    "keyboard.button=Enter": "BUTTON_CONFIRM",
+    "keyboard.button=Esc": "BUTTON_BACK",
+    
     "mouse.x>10": "BUTTON_LEFT",
     "mouse.x<-10": "BUTTON_RIGHT",
     "mouse.y<-10": "BUTTON_UP",
