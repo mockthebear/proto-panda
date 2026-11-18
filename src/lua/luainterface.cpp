@@ -2,6 +2,7 @@
 #ifdef ENABLE_LUA
 #include "lua/luaobject.hpp"
 #include "tools/logger.hpp"
+#include "tools/clock.hpp"
 #include "tools/devices.hpp"
 #include "tools/sensors.hpp"
 #include "tools/oledscreen.hpp"
@@ -610,6 +611,10 @@ void LuaInterface::RegisterMethods()
   m_lua->FuncRegister("getFps", Devices::getAutoFps); 
   m_lua->FuncRegister("getFreeHeap", Devices::getFreeHeap); 
   m_lua->FuncRegister("getTotalHeap", Devices::getTotalHeap); 
+  m_lua->FuncRegister("setClockFromBle", Clock::SetFromBle);
+  m_lua->FuncRegister("hasValidClock", Clock::IsValid);
+  m_lua->FuncRegister("getClockDate", Clock::GetLocalDateString);
+  m_lua->FuncRegister("getClockTime", Clock::GetLocalTimeString);
   m_lua->FuncRegister("getInternalGyroscopeZ", Devices::getInternalGyroscopeZ);
   m_lua->FuncRegister("getInternalGyroscopeY", Devices::getInternalGyroscopeY);
   m_lua->FuncRegister("getInternalGyroscopeX", Devices::getInternalGyroscopeX);

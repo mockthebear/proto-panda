@@ -71,7 +71,7 @@ MultiReturn<std::vector<uint8_t>> BleServiceHandler::ReadFromCharacteristics(int
         return MultiReturn<std::vector<uint8_t>>("For some reason. The device lost the service?!");
     }
     NimBLERemoteCharacteristic* chr = svc->getCharacteristic(charId);
-    if (svc == nullptr){
+    if (chr == nullptr){
         return MultiReturn<std::vector<uint8_t>>("Service does not have the characteristics");
     } 
     NimBLEAttValue val = chr->readValue();

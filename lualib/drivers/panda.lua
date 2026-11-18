@@ -6,6 +6,9 @@ local panda = {
     },
 }
 
+local TIME_CHARACTERISTIC_UUID = "d4d3c10c-c4c1-c2c3-b4b3-b2b1a4a3a2a1"
+local MIN_VALID_EPOCH = 1577836800
+
 
 function panda.getDriverModules(maxClients)
 	local pandaData = {
@@ -66,6 +69,45 @@ local function parsePandaData(controllerInfo, data)
     controllerInfo.last_update = millis()
 end
 
+local function readUInt32LE(data, index)
+    return data[index]
+        + data[index + 1] * 0x100
+        + data[index + 2] * 0x10000
+        + data[index + 3] * 0x1000000
+end
+
+local function readInt16LE(data, index)
+    local value = data[index] + data[index + 1] * 0x100
+    if value >= 0x8000 then
+        value = value - 0x10000
+    end
+    return value
+end
+
+function panda.syncClock(connectionId)
+    local ok, data = panda.handler:ReadFromCharacteristics(connectionId, TIME_CHARACTERISTIC_UUID)
+    if not ok or not data or #data < 4 then
+        return
+    end
+
+    local epoch = readUInt32LE(data, 1)
+    if epoch < MIN_VALID_EPOCH then
+        log("Ignoring invalid controller clock value")
+        return
+    end
+
+    local utcOffsetMinutes = 0
+    if #data >= 6 then
+        utcOffsetMinutes = readInt16LE(data, 5)
+    end
+
+    if setClockFromBle(epoch, utcOffsetMinutes) then
+        log("Clock synchronized from controller")
+    else
+        log("Ignoring controller clock with invalid timezone offset")
+    end
+end
+
 
 
 function panda.onSubscribeMessagePanda(connectionId, clientId, data)
@@ -86,6 +128,7 @@ function panda.onConnectPanda(connectionId, controllerId, address, name)
     drivers.ConnectDevice(controllerId, address, "panda")
     log("Connected protopanda hand controller "..address.." "..tostring(name)..' this controller will be the '..controllerId)
     panda.handler:WriteToCharacteristics({0,0,0,controllerId}, connectionId, "d4d3fafb-c4c1-c2c3-b4b3-b2b1a4a3a2a1", true)
+    panda.syncClock(connectionId)
 end
 
 

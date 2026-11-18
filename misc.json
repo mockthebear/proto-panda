@@ -1,6 +1,8 @@
 {
     "startup_animation": "startup",
     "main_animation": "normal",
+    "showDate": false,
+    "showTime": true,
     "edit_mode_cycle_animation": true,
     
     "boop": {
