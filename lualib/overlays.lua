@@ -8,6 +8,9 @@ local _M = {
     active = {},
 
     enabled = true,
+    -- Audio-reactive overlays (currently the mouth) can be disabled without
+    -- affecting decorative overlays or the FFT analyzer itself.
+    microphone_enabled = true,
     modes = {},
     starttup = {},
 
@@ -157,7 +160,7 @@ _M.starttup["frame_by_fft_level"] = function(obj)
         end
         obj.behavior.push_to_talk_button = n
     end
-    if menu.push_to_talk then  
+    if not _M.microphone_enabled or menu.push_to_talk then
         obj.showing = false
         obj.sprite:setVisibility(false)
     end
@@ -192,12 +195,17 @@ _M.modes["random_flashing"] = function(obj, dt)
 end
 
 _M.modes["frame_by_fft_level"] = function(obj, dt)
+    if not _M.microphone_enabled then
+        obj.sprite:setVisibility(false)
+        return
+    end
+
     if fft.calibrating then 
         dt = 0
     end
     local setting = obj.behavior
     local level = fft.getSpeechLevel(dt, setting.attack, setting.release, obj.frameCount)
-    if menu.push_to_talk then  
+    if not _M.microphone_enabled or menu.push_to_talk then
         if not obj.showing then  
             if input.readButtonStatus(setting.push_to_talk_button) == BUTTON_PRESSED then  
                 obj.showing = true
@@ -221,6 +229,29 @@ _M.onEnable["frame_by_fft_level"] = function(obj)
         return false
     end
     return true
+end
+
+function _M.setMicrophoneEnabled(enabled)
+    _M.microphone_enabled = enabled
+
+    for _, overlay in pairs(_M.active) do
+        for _, obj in pairs(overlay.objects) do
+            if obj.mode == "frame_by_fft_level" then
+                if not enabled then
+                    obj.showing = false
+                    obj.sprite:setVisibility(false)
+                    clearOverlaySprite(obj.sprite)
+                elseif _M.enabled then
+                    local onEnable = _M.onEnable[obj.mode]
+                    if not onEnable or onEnable(obj) then
+                        obj.showing = true
+                        obj.sprite:setVisibility(true)
+                        setOverlaySprite(obj.sprite)
+                    end
+                end
+            end
+        end
+    end
 end
 
 

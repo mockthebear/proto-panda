@@ -101,6 +101,8 @@ function _M.setup(expressions)
     setFFTOverlay(_M.has_fft_overlay)
     _M.inverted_left_right = dictGet("inverted_left_right") == "1" 
     overlays.enabled = (tonumber(dictGet("enable_overlays")) or 1) == 1 
+    _M.microphone_enabled = (tonumber(dictGet("enable_microphone")) or 1) == 1
+    overlays.setMicrophoneEnabled(_M.microphone_enabled)
     _M.reapplyButtons()
     _M.settings_icon = oledCreateIcon({0x00, 0x00, 0x16, 0x80, 0x3f, 0xc0, 0x7f, 0xe0, 0x39, 0xc0, 0x70, 0xe0, 0x70, 0xe0, 0x39, 0xc0, 0x7f, 0xe0, 0x3f, 0xc0, 0x16, 0x80, 0x00, 0x00}, 12, 12)
     _M.face_icon = oledCreateIcon({0x00, 0x00, 0x00, 0x00, 0x01, 0xc0, 0x21, 0xc0, 0x60, 0x00, 0x00, 0x00, 0x00, 0x20, 0x15, 0x40, 0x2a, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, 12, 12)
@@ -130,6 +132,21 @@ function _M.setup(expressions)
             end
             dictSet("push_to_talk", _M.push_to_talk and "1" or "0")
             dictSave()
+        end)
+
+        _M.settings.addElement(function() return "Mic ["..(_M.microphone_enabled and "ON" or "OFF").."]" end, function()
+            _M.microphone_enabled = not _M.microphone_enabled
+            overlays.setMicrophoneEnabled(_M.microphone_enabled)
+            dictSet("enable_microphone", _M.microphone_enabled and "1" or "0")
+            dictSave()
+        end)
+    end
+
+    if input.mode == "BLE" then
+        _M.settings.addElement(function() return "Pair controller" end, function()
+            drivers.beginPairing()
+            _M.manualPairing = true
+            _M.enterMainMenu()
         end)
     end
 
@@ -243,6 +260,9 @@ function _M.setup(expressions)
         dictSet("has_fft_overlay", "0")
         dictSet("enable_overlays", "1")
         dictSet("has_boop", "0")
+        dictSet("enable_microphone", "1")
+        _M.microphone_enabled = true
+        overlays.setMicrophoneEnabled(true)
         fft.ResetDefaults()
         dictSave()
         _M.reapplyButtons()
