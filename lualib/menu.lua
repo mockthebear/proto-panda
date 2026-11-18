@@ -234,6 +234,10 @@ function _M.setup(expressions)
         restart()
     end)
 
+    _M.settings.addElement(function() return "Restart Proto" end, function()
+        generic.displayWarning("Restart", "Proto will reboot", 2000)
+        restart()
+    end)
 
     _M.settings.addElement(function() return _M.inverted_left_right  and "Invert controls" or "De invert controls" end,  function()
         if _M.inverted_left_right  then  
