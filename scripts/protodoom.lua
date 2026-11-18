@@ -4,7 +4,7 @@
 -- Credits: jung (@junglivre)
 
 local _M = {
-    VERSION_REQUIRED = "1.0.0",
+    VERSION_REQUIRED = "3.2.1",
     shouldStop = false,
     state = "title",
     width = 64,

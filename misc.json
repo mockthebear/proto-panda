@@ -51,6 +51,10 @@
         "name": "Proto DOOM",
         "file": "/scripts/protodoom.lua"
         },
+      {
+      "name": "DVD",
+      "file": "/scripts/dvd.lua"
+      },
         {
         "name": "Color Test",
         "file": "/scripts/colortest.lua"
