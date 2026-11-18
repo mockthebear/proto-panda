@@ -53,14 +53,18 @@ function onPreflight()
     ledsSetManaged(true)
     setPanelManaged(true)
 
-    if configloader.Get().main_animation ~= nil then
-        expressions.SetExpression(configloader.Get().main_animation)
+    local config = configloader.Get()
+
+    if config.main_animation ~= nil then
+        expressions.SetExpression(config.main_animation)
     else
         expressions.Next()
     end
 
-    if configloader.Get().startup_animation ~= nil or configloader.Get().starting_animation then
-        expressions.StackExpression("startup")
+    -- Keep the old key working for existing SD cards while using the configured name.
+    local startupAnimation = config.startup_animation or config.starting_animation
+    if startupAnimation ~= nil then
+        expressions.StackExpression(startupAnimation)
     end
 
     input.Start() 
