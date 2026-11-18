@@ -127,7 +127,8 @@ end
 function panda.onConnectPanda(connectionId, controllerId, address, name)
     drivers.ConnectDevice(controllerId, address, "panda")
     log("Connected protopanda hand controller "..address.." "..tostring(name)..' this controller will be the '..controllerId)
-    panda.handler:WriteToCharacteristics({0,0,0,controllerId}, connectionId, "d4d3fafb-c4c1-c2c3-b4b3-b2b1a4a3a2a1", true)
+    -- The mobile controllers decode this uint32 as little-endian.
+    panda.handler:WriteToCharacteristics({controllerId,0,0,0}, connectionId, "d4d3fafb-c4c1-c2c3-b4b3-b2b1a4a3a2a1", true)
     panda.syncClock(connectionId)
 end
 
