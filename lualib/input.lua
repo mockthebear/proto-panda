@@ -744,7 +744,34 @@ function input.readButtonStatus(button)
     if input.legacyReadButtonStatus then  
         return input.legacyReadButtonStatus()
     end
-    return input.panda_buttons_state[button]
+
+    -- Normal UI bindings use BUTTON_* (the first eight slots). Treat those
+    -- as shared controls, while DEVICE_n_BUTTON_* remains addressable for
+    -- scripts that explicitly need an individual controller.
+    if button > MAX_BLE_BUTTONS then
+        return input.panda_buttons_state[button]
+    end
+
+    local held = false
+    local justReleased = false
+    for deviceId = 0, MAX_BLE_CLIENTS - 1 do
+        local state = input.panda_buttons_state[button + deviceId * MAX_BLE_BUTTONS]
+        if state == BUTTON_JUST_PRESSED then
+            return BUTTON_JUST_PRESSED
+        elseif state == BUTTON_PRESSED then
+            held = true
+        elseif state == BUTTON_JUST_RELEASED then
+            justReleased = true
+        end
+    end
+
+    if held then
+        return BUTTON_PRESSED
+    end
+    if justReleased then
+        return BUTTON_JUST_RELEASED
+    end
+    return BUTTON_RELEASED
 end
 
 local function checkRegisterGlobalCompat(gfname, fn)

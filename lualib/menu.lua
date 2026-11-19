@@ -89,6 +89,8 @@ function _M.setup(expressions)
     
     
     local cfg = configloader.Get()
+    _M.show_date = cfg.showDate == true
+    _M.show_time = cfg.showTime == true
 
     _M.original_left = BUTTON_LEFT
     _M.original_right = BUTTON_RIGHT
@@ -99,6 +101,8 @@ function _M.setup(expressions)
     setFFTOverlay(_M.has_fft_overlay)
     _M.inverted_left_right = dictGet("inverted_left_right") == "1" 
     overlays.enabled = (tonumber(dictGet("enable_overlays")) or 1) == 1 
+    _M.microphone_enabled = (tonumber(dictGet("enable_microphone")) or 1) == 1
+    overlays.setMicrophoneEnabled(_M.microphone_enabled)
     _M.reapplyButtons()
     _M.settings_icon = oledCreateIcon({0x00, 0x00, 0x16, 0x80, 0x3f, 0xc0, 0x7f, 0xe0, 0x39, 0xc0, 0x70, 0xe0, 0x70, 0xe0, 0x39, 0xc0, 0x7f, 0xe0, 0x3f, 0xc0, 0x16, 0x80, 0x00, 0x00}, 12, 12)
     _M.face_icon = oledCreateIcon({0x00, 0x00, 0x00, 0x00, 0x01, 0xc0, 0x21, 0xc0, 0x60, 0x00, 0x00, 0x00, 0x00, 0x20, 0x15, 0x40, 0x2a, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, 12, 12)
@@ -128,6 +132,21 @@ function _M.setup(expressions)
             end
             dictSet("push_to_talk", _M.push_to_talk and "1" or "0")
             dictSave()
+        end)
+
+        _M.settings.addElement(function() return "Mic ["..(_M.microphone_enabled and "ON" or "OFF").."]" end, function()
+            _M.microphone_enabled = not _M.microphone_enabled
+            overlays.setMicrophoneEnabled(_M.microphone_enabled)
+            dictSet("enable_microphone", _M.microphone_enabled and "1" or "0")
+            dictSave()
+        end)
+    end
+
+    if input.mode == "BLE" then
+        _M.settings.addElement(function() return "Pair controller" end, function()
+            drivers.beginPairing()
+            _M.manualPairing = true
+            _M.enterMainMenu()
         end)
     end
 
@@ -215,6 +234,10 @@ function _M.setup(expressions)
         restart()
     end)
 
+    _M.settings.addElement(function() return "Restart Proto" end, function()
+        generic.displayWarning("Restart", "Proto will reboot", 2000)
+        restart()
+    end)
 
     _M.settings.addElement(function() return _M.inverted_left_right  and "Invert controls" or "De invert controls" end,  function()
         if _M.inverted_left_right  then  
@@ -241,6 +264,9 @@ function _M.setup(expressions)
         dictSet("has_fft_overlay", "0")
         dictSet("enable_overlays", "1")
         dictSet("has_boop", "0")
+        dictSet("enable_microphone", "1")
+        _M.microphone_enabled = true
+        overlays.setMicrophoneEnabled(true)
         fft.ResetDefaults()
         dictSave()
         _M.reapplyButtons()
@@ -595,30 +621,54 @@ function _M.DrawBottomBar()
         startX = startX + 15
     end
 
-    oledSetCursor(startX + 8, posY+4);
+    local clockDate = _M.show_date and getClockDate() or ""
+    local clockTime = _M.show_time and getClockTime() or ""
+    local hasClock = clockDate ~= "" or clockTime ~= ""
+
+    -- The OLED only has a 1x font below this size. Keep the clock compact in
+    -- its own corner so it complements, rather than replaces, the status bar.
+    local statusText = ""
     if (_M.infoShown == 1) then
         local f = getFps()
         if f > 200 then
-            oledDrawText("FPS: >200")
+            statusText = hasClock and "FPS:200" or "FPS: >200"
         else 
-            oledDrawText(string.format("FPS: %2.2f", f))
+            statusText = hasClock and string.format("FPS:%.0f", f) or string.format("FPS: %2.2f", f)
         end
     elseif (_M.infoShown == 2) then
-            oledDrawText(string.format("Ram: %2.2f%%", getFreePsram()/getTotalPsram() * 100))
+        statusText = hasClock and string.format("RAM:%.0f%%", getFreePsram()/getTotalPsram() * 100) or string.format("Ram: %2.2f%%", getFreePsram()/getTotalPsram() * 100)
     elseif (_M.infoShown == 3) then
         if getLuaFps then
             local c = getLuaFps()
-            oledDrawText(string.format("UPS: %3.1f", c))
+            statusText = hasClock and string.format("UPS:%.0f", c) or string.format("UPS: %3.1f", c)
         else
-            oledDrawText(string.format("FPS: %2.2f", getFps()))
+            statusText = hasClock and string.format("FPS:%.0f", getFps()) or string.format("FPS: %2.2f", getFps())
         end
     elseif (_M.infoShown == 4) then
-        oledDrawText(string.format("F.Heap: %2.2f%%", getFreeHeap()/getTotalHeap() * 100))
+        statusText = hasClock and string.format("HP:%.0f%%", getFreeHeap()/getTotalHeap() * 100) or string.format("F.Heap: %2.2f%%", getFreeHeap()/getTotalHeap() * 100)
     elseif (_M.infoShown == 5) then
         if USE_PIN_BATTERY_IN == 1 then  
-            oledDrawText(string.format("Volts: %2.2f", getAvgBatteryVoltage()))
+            statusText = hasClock and string.format("V:%2.2f", getAvgBatteryVoltage()) or string.format("Volts: %2.2f", getAvgBatteryVoltage())
         else
             _M.infoShown = 1
+        end
+    end
+
+    oledSetCursor(startX + 8, posY+4)
+    oledDrawText(statusText)
+
+    if hasClock then
+        local clockX = 94
+        oledDrawFastVLine(clockX - 4, posY + 1, 16, 1)
+        if clockDate ~= "" and clockTime ~= "" then
+            oledSetCursor(clockX, posY + 1)
+            oledDrawText(clockDate:sub(1, 5))
+            oledSetCursor(clockX, posY + 9)
+            oledDrawText(clockTime)
+        else
+            local clockText = clockDate ~= "" and clockDate:sub(1, 5) or clockTime
+            oledSetCursor(clockX, posY + 4)
+            oledDrawText(clockText)
         end
     end
 
